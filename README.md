@@ -5,12 +5,19 @@ The starting point for the Dockerfile is the Gramine-based from Revm Relay hacka
 
 The point of this is to emphasize the verification process that can be completed even without SGX, by reproducing the MRENCLAVE and inspecting remote attestation quotes.
 
-## Replicating the MRENCLAVE build (no SGX required)
+## Init the git submodules
+
+This repo references mtcs as a submodule, but the Dockerfile simply copies mtcs from the current directory.
+So don't forget to have git apply the submodules when cloning the repo
+```bash
+git submodule update --init --recursive
+```
+## Replicating the MRENCLAVE build (no SGX required
 
 The following will build mtcs, then freeze all dependencies from the docker environment into the gramine manifest, and finally display the resulting MRENCLAVE
 ```bash
 docker build . --tag mtcs
-docker run -it -v ./data:/workdir/data mtcs
+docker run mtcs
 ```
 
 Let's see how long this remains reproducible:
