@@ -1,0 +1,35 @@
+# MTCS manifest file example
+
+loader.entrypoint = "file:{{ gramine.libos }}"
+libos.entrypoint = "{{ mtcs_dir }}/target/release/mtcs-cli"
+
+loader.log_level = "{{ log_level }}"
+
+loader.env.LD_LIBRARY_PATH = "/lib:{{ arch_libdir }}:/usr/{{ arch_libdir }}"
+loader.env.HOME = "{{ home }}"
+
+loader.argv = ["-v", "-i", "{{ mtcs_dir }}/data/{{ testname }}.csv", "-o", "{{ mtcs_dir }}/data/{{ testname }}.out"]
+
+fs.mounts = [
+  { uri = "file:{{ gramine.runtimedir() }}", path = "/lib" },
+  { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
+  { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
+  { uri = "file:{{ mtcs_dir }}", path = "{{ mtcs_dir }}" },
+]
+
+sgx.enclave_size = "512M"
+sgx.max_threads = 4
+sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
+
+sgx.trusted_files = [
+  "file:{{ gramine.libos }}",
+  "file:{{ mtcs_dir }}/target/release/mtcs-cli",
+  "file:{{ mtcs_dir }}/data/{{ testname }}.csv",
+  "file:{{ gramine.runtimedir() }}/",
+  "file:{{ arch_libdir }}/",
+  "file:/usr/{{ arch_libdir }}/",
+]
+
+sgx.allowed_files = [
+  "file:{{ mtcs_dir }}/data/{{ testname }}.out",
+]
