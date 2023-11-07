@@ -2,3 +2,4 @@
 *.manifest
 *.manifest.sgx
 .idea/
+enclaves/tm/target/
