@@ -66,10 +66,10 @@ pub mod execute {
 
             *state
                 .utilization
-                .get_mut(&creditor)
-                .unwrap()
-                .get_mut(&info.sender)
-                .unwrap() += amount;
+                .entry(creditor)
+                .or_default()
+                .entry(info.sender)
+                .or_default() += amount;
             Ok(state)
         })?;
 
@@ -131,13 +131,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 pub mod query {
     use super::*;
+    use std::collections::HashMap;
 
     use crate::msg::GetObligationsResponse;
 
     pub fn get_obligations(deps: Deps, creditor: Addr) -> StdResult<GetObligationsResponse> {
         let state = STATE.load(deps.storage)?;
         Ok(GetObligationsResponse {
-            obligations: state.utilization[&creditor].clone(),
+            obligations: state
+                .utilization
+                .get(&creditor)
+                .unwrap_or(&HashMap::new())
+                .clone(),
         })
     }
 }
