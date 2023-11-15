@@ -1,7 +1,5 @@
-use std::collections::HashMap;
-
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Addr;
+use cosmwasm_std::Uint128;
 
 #[cw_serde]
 pub struct InstantiateMsg;
@@ -9,13 +7,13 @@ pub struct InstantiateMsg;
 #[cw_serde]
 pub enum ExecuteMsg {
     UploadObligation {
-        creditor: Addr,
-        amount: u64,
+        creditor: String,
+        amount: Uint128,
         memo: String,
     },
     ApplyCycle {
-        path: Vec<Addr>,
-        amount: u64,
+        path: Vec<String>,
+        amount: Uint128,
     },
 }
 
@@ -24,11 +22,11 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     // GetCount returns the current count as a json-encoded number
     #[returns(GetObligationsResponse)]
-    GetObligations { creditor: Addr },
+    GetObligations { creditor: String },
 }
 
 // We define a custom struct for each query response
 #[cw_serde]
 pub struct GetObligationsResponse {
-    pub obligations: HashMap<Addr, u64>,
+    pub obligations: Vec<(String, Uint128)>,
 }

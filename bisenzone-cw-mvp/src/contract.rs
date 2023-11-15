@@ -2,11 +2,10 @@ use cosmwasm_std::{
     entry_point, to_json_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 use cw2::set_contract_version;
-use itertools::Itertools;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{State, STATE};
+use crate::state::{State, STATE, UTILIZATION};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-mtcs";
@@ -20,8 +19,7 @@ pub fn instantiate(
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let state = State {
-        utilization: Default::default(),
-        owner: info.sender.clone(),
+        owner: info.sender.to_string(),
     };
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     STATE.save(deps.storage, &state)?;
@@ -49,29 +47,32 @@ pub fn execute(
 }
 
 pub mod execute {
+    use cosmwasm_std::Uint128;
+
     use super::*;
 
     pub fn upload_obligation(
         deps: DepsMut,
         info: MessageInfo,
-        creditor: Addr,
-        amount: u64,
+        creditor: String,
+        amount: Uint128,
         memo: String,
     ) -> Result<Response, ContractError> {
-        STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
-            // Uncomment if we want to only allow ourselves to add obligations
-            // if info.sender != state.owner {
-            //     return Err(ContractError::Unauthorized);
-            // }
+        let creditor = deps.api.addr_validate(&creditor)?;
 
-            *state
-                .utilization
-                .entry(creditor)
-                .or_default()
-                .entry(info.sender)
-                .or_default() += amount;
-            Ok(state)
-        })?;
+        UTILIZATION.update(
+            deps.storage,
+            (&creditor, &info.sender),
+            |utilization| -> Result<_, ContractError> {
+                // Uncomment if we want to only allow ourselves to add obligations
+                // if info.sender != state.owner {
+                //     return Err(ContractError::Unauthorized);
+                // }
+
+                let utilization = utilization.unwrap_or_default() + amount;
+                Ok(utilization)
+            },
+        )?;
 
         Ok(Response::new()
             .add_attribute("action", "upload_obligation")
@@ -80,38 +81,46 @@ pub mod execute {
 
     pub fn apply_cycle(
         deps: DepsMut,
-        path: Vec<Addr>,
-        amount: u64,
+        path: Vec<String>,
+        amount: Uint128,
     ) -> Result<Response, ContractError> {
-        let mut volume_cleared = 0;
+        let mut volume_cleared = Uint128::zero();
 
-        STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
-            validate_cycle(&path, amount, &state)?;
+        let path = path
+            .into_iter()
+            .map(|addr| deps.api.addr_validate(&addr))
+            .collect::<StdResult<Vec<Addr>>>()?;
 
-            for (from, to) in path.into_iter().tuples() {
-                *state
-                    .utilization
-                    .get_mut(&to)
-                    .unwrap()
-                    .get_mut(&from)
-                    .unwrap() -= amount;
-                volume_cleared += amount;
-            }
+        validate_cycle(&path, amount, &deps)?;
 
-            Ok(state)
-        })?;
+        for from_to in path.windows(2) {
+            let (from, to) = (&from_to[0], &from_to[1]);
+
+            UTILIZATION.update(
+                deps.storage,
+                (&to, &from),
+                |utilization| -> Result<_, ContractError> {
+                    let utilization = utilization.unwrap_or_default() - amount;
+                    volume_cleared += amount;
+
+                    Ok(utilization)
+                },
+            )?;
+        }
         Ok(Response::new()
             .add_attribute("action", "apply_cycle")
             .add_attribute("volume_cleared", format!("{}", volume_cleared)))
     }
 
-    fn validate_cycle(path: &[Addr], amount: u64, state: &State) -> Result<(), ContractError> {
+    fn validate_cycle(path: &[Addr], amount: Uint128, deps: &DepsMut) -> Result<(), ContractError> {
         if path.first() != path.last() {
             return Err(ContractError::PathNotCycle);
         }
 
-        for (from, to) in path.iter().tuples() {
-            if amount > state.utilization[to][from] {
+        for from_to in path.windows(2) {
+            let (from, to) = (&from_to[0], &from_to[1]);
+
+            if amount > UTILIZATION.load(deps.storage, (to, from))? {
                 return Err(ContractError::ClearingTooMuch);
             }
         }
@@ -131,18 +140,26 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 pub mod query {
     use super::*;
-    use std::collections::HashMap;
+    use cosmwasm_std::Order;
 
     use crate::msg::GetObligationsResponse;
+    use crate::state::UTILIZATION;
 
-    pub fn get_obligations(deps: Deps, creditor: Addr) -> StdResult<GetObligationsResponse> {
-        let state = STATE.load(deps.storage)?;
+    pub fn get_obligations(deps: Deps, creditor: String) -> StdResult<GetObligationsResponse> {
+        let creditor = deps.api.addr_validate(&creditor)?;
+
+        let keys = UTILIZATION
+            .keys(deps.storage, None, None, Order::Ascending)
+            .collect::<StdResult<Vec<(Addr, Addr)>>>()?
+            .into_iter()
+            .filter(|(from, _)| from == creditor);
         Ok(GetObligationsResponse {
-            obligations: state
-                .utilization
-                .get(&creditor)
-                .unwrap_or(&HashMap::new())
-                .clone(),
+            obligations: keys
+                .map(|(from, to)| {
+                    let utilization = UTILIZATION.load(deps.storage, (&from, &to)).unwrap();
+                    (to.to_string(), utilization)
+                })
+                .collect(),
         })
     }
 }
