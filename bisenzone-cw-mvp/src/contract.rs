@@ -199,70 +199,124 @@ pub mod query {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, from_json};
+    use cosmwasm_std::testing::{
+        mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage,
+    };
+    use cosmwasm_std::{coins, from_json, OwnedDeps};
+    use cw20::BalanceResponse;
+
+    use crate::msg::GetObligationsResponse;
+
+    const ALICE_ADDRESS: &str = "wasm19xlctyn7ha6pqg7pk9lnk8y60rk8646dm86qgv";
+    const BOB_ADDRESS: &str = "wasm19u72czh0w4jraan8esalv48nrwemh8kgax69yw";
+    const CHARLIE_ADDRESS: &str = "wasm12r9t5wmre89rwakr0e5nyhfmaf4kdleyltsm9f";
 
     #[test]
-    fn proper_initialization() {
+    fn test_initialization() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg { count: 17 };
+        let msg = InstantiateMsg;
         let info = mock_info("creator", &coins(1000, "earth"));
 
         // we can just call .unwrap() to assert this was a success
         let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
         assert_eq!(0, res.messages.len());
-
-        // it worked, let's query the state
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: GetCountResponse = from_json(&res).unwrap();
-        assert_eq!(17, value.count);
     }
 
     #[test]
-    fn increment() {
+    fn test_upload_obligation() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg { count: 17 };
+        let msg = InstantiateMsg;
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        // beneficiary can release it
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::Increment {};
+        create_obligation(&mut deps, ALICE_ADDRESS, BOB_ADDRESS, 100, "alice -> bob");
+
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetObligations {
+                creditor: BOB_ADDRESS.to_string(),
+            },
+        )
+        .unwrap();
+        let value: GetObligationsResponse = from_json(&res).unwrap();
+        assert_eq!(&100u32.into(), value.obligations[0].1);
+    }
+
+    fn create_obligation(
+        deps: &mut OwnedDeps<MockStorage, MockApi, MockQuerier>,
+        debtor: &str,
+        creditor: &str,
+        amount: u32,
+        memo: &str,
+    ) {
+        let info = mock_info(debtor, &coins(2, "token"));
+        let msg = ExecuteMsg::UploadObligation {
+            creditor: creditor.to_string(),
+            amount: amount.into(),
+            memo: memo.to_string(),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    }
+
+    #[test]
+    fn test_apply_cycle() {
+        let mut deps = mock_dependencies();
+
+        let msg = InstantiateMsg;
+        let info = mock_info("creator", &coins(2, "token"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        create_obligation(&mut deps, ALICE_ADDRESS, BOB_ADDRESS, 100, "alice -> bob");
+        create_obligation(
+            &mut deps,
+            BOB_ADDRESS,
+            CHARLIE_ADDRESS,
+            80,
+            "bob -> charlie",
+        );
+        create_obligation(
+            &mut deps,
+            CHARLIE_ADDRESS,
+            ALICE_ADDRESS,
+            70,
+            "charlie -> alice",
+        );
+
+        let info = mock_info(ALICE_ADDRESS, &coins(2, "token"));
+        let msg = ExecuteMsg::ApplyCycle {
+            path: [ALICE_ADDRESS, BOB_ADDRESS, CHARLIE_ADDRESS, ALICE_ADDRESS]
+                .into_iter()
+                .map(ToString::to_string)
+                .collect(),
+            amount: 70u32.into(),
+        };
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        // should increase counter by 1
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: GetCountResponse = from_json(&res).unwrap();
-        assert_eq!(18, value.count);
-    }
+        // Cycle should be cleared and only `30` should remain in `alice -> bob`
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetObligations {
+                creditor: BOB_ADDRESS.to_string(),
+            },
+        )
+        .unwrap();
+        let value: GetObligationsResponse = from_json(&res).unwrap();
+        assert_eq!(&30u32.into(), value.obligations[0].1);
 
-    #[test]
-    fn reset() {
-        let mut deps = mock_dependencies();
-
-        let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        // beneficiary can release it
-        let unauth_info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::Reset { count: 5 };
-        let res = execute(deps.as_mut(), mock_env(), unauth_info, msg);
-        match res {
-            Err(ContractError::Unauthorized {}) => {}
-            _ => panic!("Must return unauthorized error"),
-        }
-
-        // only the original creator can reset the counter
-        let auth_info = mock_info("creator", &coins(2, "token"));
-        let msg = ExecuteMsg::Reset { count: 5 };
-        let _res = execute(deps.as_mut(), mock_env(), auth_info, msg).unwrap();
-
-        // should now be 5
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: GetCountResponse = from_json(&res).unwrap();
-        assert_eq!(5, value.count);
+        // Check that alice received her karma tokens
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::Balance {
+                address: ALICE_ADDRESS.to_string(),
+            },
+        )
+        .unwrap();
+        let value: BalanceResponse = from_json(&res).unwrap();
+        assert_eq!(&210u32.into(), value.balance);
     }
 }
