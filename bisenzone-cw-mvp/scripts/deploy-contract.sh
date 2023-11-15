@@ -41,10 +41,9 @@ echo ""
 echo "🚀 Instantiating contract with the following parameters:"
 echo "--------------------------------------------------------"
 echo "Label: ${LABEL}"
-echo "Count: ${COUNT}"
 echo "--------------------------------------------------------"
 
-wasmd tx wasm instantiate "$CODE_ID" "{\"count\":${COUNT}}" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin 2>&1 > /dev/null
+wasmd tx wasm instantiate "$CODE_ID" "null" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin 2>&1 > /dev/null
 
 echo ""
 echo "🕐 Waiting for contract to be queryable..."
@@ -57,4 +56,3 @@ echo "🆔 Code ID: ${CODE_ID}"
 echo "📌 Contract Address: ${CONTRACT}"
 echo "🔑 Contract Key: ${KEY}"
 echo "🔖 Contract Label: ${LABEL}"
-echo "🏷️ Count: ${COUNT}"
