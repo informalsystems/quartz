@@ -7,7 +7,11 @@ pub enum ContractError {
     Std(#[from] StdError),
 
     #[error("Unauthorized")]
-    Unauthorized {},
-    // Add any other custom errors you like here.
-    // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
+    Unauthorized,
+
+    #[error("Specified path does not form a cycle")]
+    PathNotCycle,
+
+    #[error("Amount is greater than utilization")]
+    ClearingTooMuch,
 }

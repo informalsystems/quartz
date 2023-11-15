@@ -1,10 +1,11 @@
-#[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{
+    entry_point, to_json_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+};
 use cw2::set_contract_version;
+use itertools::Itertools;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, GetCountResponse, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{State, STATE};
 
 // version info for migration info
@@ -16,10 +17,10 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: InstantiateMsg,
+    _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let state = State {
-        count: msg.count,
+        utilization: Default::default(),
         owner: info.sender.clone(),
     };
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -27,8 +28,7 @@ pub fn instantiate(
 
     Ok(Response::new()
         .add_attribute("method", "instantiate")
-        .add_attribute("owner", info.sender)
-        .add_attribute("count", msg.count.to_string()))
+        .add_attribute("owner", info.sender))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -39,48 +39,106 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Increment {} => execute::increment(deps),
-        ExecuteMsg::Reset { count } => execute::reset(deps, info, count),
+        ExecuteMsg::UploadObligation {
+            creditor,
+            amount,
+            memo,
+        } => execute::upload_obligation(deps, info, creditor, amount, memo),
+        ExecuteMsg::ApplyCycle { path, amount } => execute::apply_cycle(deps, path, amount),
     }
 }
 
 pub mod execute {
     use super::*;
 
-    pub fn increment(deps: DepsMut) -> Result<Response, ContractError> {
+    pub fn upload_obligation(
+        deps: DepsMut,
+        info: MessageInfo,
+        creditor: Addr,
+        amount: u64,
+        memo: String,
+    ) -> Result<Response, ContractError> {
         STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
-            state.count += 1;
+            // Uncomment if we want to only allow ourselves to add obligations
+            // if info.sender != state.owner {
+            //     return Err(ContractError::Unauthorized);
+            // }
+
+            *state
+                .utilization
+                .get_mut(&creditor)
+                .unwrap()
+                .get_mut(&info.sender)
+                .unwrap() += amount;
             Ok(state)
         })?;
 
-        Ok(Response::new().add_attribute("action", "increment"))
+        Ok(Response::new()
+            .add_attribute("action", "upload_obligation")
+            .add_attribute("memo", memo))
     }
 
-    pub fn reset(deps: DepsMut, info: MessageInfo, count: i32) -> Result<Response, ContractError> {
+    pub fn apply_cycle(
+        deps: DepsMut,
+        path: Vec<Addr>,
+        amount: u64,
+    ) -> Result<Response, ContractError> {
+        let mut volume_cleared = 0;
+
         STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
-            if info.sender != state.owner {
-                return Err(ContractError::Unauthorized {});
+            validate_cycle(&path, amount, &state)?;
+
+            for (from, to) in path.into_iter().tuples() {
+                *state
+                    .utilization
+                    .get_mut(&to)
+                    .unwrap()
+                    .get_mut(&from)
+                    .unwrap() -= amount;
+                volume_cleared += amount;
             }
-            state.count = count;
+
             Ok(state)
         })?;
-        Ok(Response::new().add_attribute("action", "reset"))
+        Ok(Response::new()
+            .add_attribute("action", "apply_cycle")
+            .add_attribute("volume_cleared", format!("{}", volume_cleared)))
+    }
+
+    fn validate_cycle(path: &[Addr], amount: u64, state: &State) -> Result<(), ContractError> {
+        if path.first() != path.last() {
+            return Err(ContractError::PathNotCycle);
+        }
+
+        for (from, to) in path.iter().tuples() {
+            if amount > state.utilization[to][from] {
+                return Err(ContractError::ClearingTooMuch);
+            }
+        }
+
+        Ok(())
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetCount {} => to_json_binary(&query::count(deps)?),
+        QueryMsg::GetObligations { creditor } => {
+            to_json_binary(&query::get_obligations(deps, creditor)?)
+        }
     }
 }
 
 pub mod query {
     use super::*;
 
-    pub fn count(deps: Deps) -> StdResult<GetCountResponse> {
+    use crate::msg::GetObligationsResponse;
+
+    pub fn get_obligations(deps: Deps, creditor: Addr) -> StdResult<GetObligationsResponse> {
         let state = STATE.load(deps.storage)?;
-        Ok(GetCountResponse { count: state.count })
+        Ok(GetObligationsResponse {
+            obligations: state.utilization[&creditor].clone(),
+        })
     }
 }
 
