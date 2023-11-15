@@ -52,7 +52,7 @@ echo "🕐 Waiting for contract to be queryable..."
 sleep 5
 
 RES=$(wasmd query wasm list-contract-by-code "$CODE_ID" --output json)
-CONTRACT=$(echo $RES | | jq -r '.contracts[0]')
+CONTRACT=$(echo $RES | jq -r '.contracts[0]')
 
 echo "🚀 Successfully deployed and instantiated contract!"
 echo "🔗 Chain ID: ${CHAIN_ID}"
