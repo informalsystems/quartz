@@ -1,7 +1,12 @@
 use cosmwasm_std::{
-    entry_point, to_json_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_json_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult, Uint128,
 };
 use cw2::set_contract_version;
+use cw20_base::{
+    contract::{execute_mint, query_balance},
+    state::{MinterData, TokenInfo, TOKEN_INFO},
+};
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -14,7 +19,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -24,6 +29,20 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     STATE.save(deps.storage, &state)?;
 
+    // store token info using cw20-base format
+    let data = TokenInfo {
+        name: "liquidity savings".to_string(),
+        symbol: "!$".to_string(),
+        decimals: 0,
+        total_supply: Uint128::zero(),
+        // set self as minter, so we can properly execute mint and burn
+        mint: Some(MinterData {
+            minter: env.contract.address,
+            cap: None,
+        }),
+    };
+    TOKEN_INFO.save(deps.storage, &data)?;
+
     Ok(Response::new()
         .add_attribute("method", "instantiate")
         .add_attribute("owner", info.sender))
@@ -32,7 +51,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -42,7 +61,9 @@ pub fn execute(
             amount,
             memo,
         } => execute::upload_obligation(deps, info, creditor, amount, memo),
-        ExecuteMsg::ApplyCycle { path, amount } => execute::apply_cycle(deps, path, amount),
+        ExecuteMsg::ApplyCycle { path, amount } => {
+            execute::apply_cycle(deps, env, info, path, amount)
+        }
     }
 }
 
@@ -81,6 +102,8 @@ pub mod execute {
 
     pub fn apply_cycle(
         deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
         path: Vec<String>,
         amount: Uint128,
     ) -> Result<Response, ContractError> {
@@ -98,7 +121,7 @@ pub mod execute {
 
             UTILIZATION.update(
                 deps.storage,
-                (&to, &from),
+                (to, from),
                 |utilization| -> Result<_, ContractError> {
                     let utilization = utilization.unwrap_or_default() - amount;
                     volume_cleared += amount;
@@ -107,6 +130,14 @@ pub mod execute {
                 },
             )?;
         }
+
+        // call into cw20-base to mint the token, call as self as no one else is allowed
+        let sub_info = MessageInfo {
+            sender: env.contract.address.clone(),
+            funds: vec![],
+        };
+        execute_mint(deps, env, sub_info, info.sender.to_string(), volume_cleared)?;
+
         Ok(Response::new()
             .add_attribute("action", "apply_cycle")
             .add_attribute("volume_cleared", format!("{}", volume_cleared)))
@@ -135,6 +166,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetObligations { creditor } => {
             to_json_binary(&query::get_obligations(deps, creditor)?)
         }
+        QueryMsg::Balance { address } => to_json_binary(&query_balance(deps, address)?),
     }
 }
 
