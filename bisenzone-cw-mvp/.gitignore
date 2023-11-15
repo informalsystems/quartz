@@ -1,4 +1,5 @@
 # Build results
+/artifacts
 /target
 /schema
 
