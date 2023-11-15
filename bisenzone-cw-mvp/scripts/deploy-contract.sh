@@ -32,8 +32,10 @@ echo "🚀 Deploying WASM contract '${WASM_BIN}' on chain '${CHAIN_ID}' using ac
 echo "===================================================================="
 
 RES=$(wasmd tx wasm store "$WASM_BIN" --from "$USER_ADDR" $TXFLAG -y --output json)
-sleep 8
 TX_HASH=$(echo $RES | jq -r '.["txhash"]')
+
+sleep 8
+
 RES=$(wasmd query tx "$TX_HASH" --output json)
 CODE_ID=$(echo $RES | jq -r '.logs[0].events[1].attributes[1].value')
 
@@ -49,7 +51,9 @@ echo ""
 echo "🕐 Waiting for contract to be queryable..."
 sleep 5
 
-CONTRACT=$(wasmd query wasm list-contract-by-code "$CODE_ID" --output json | jq -r '.contracts[0]')
+RES=$(wasmd query wasm list-contract-by-code "$CODE_ID" --output json)
+CONTRACT=$(echo $RES | | jq -r '.contracts[0]')
+
 echo "🚀 Successfully deployed and instantiated contract!"
 echo "🔗 Chain ID: ${CHAIN_ID}"
 echo "🆔 Code ID: ${CODE_ID}"
