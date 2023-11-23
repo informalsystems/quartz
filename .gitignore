@@ -3,3 +3,4 @@
 *.manifest.sgx
 .idea/
 enclaves/tm/target/
+utils/tm-prover/target/
