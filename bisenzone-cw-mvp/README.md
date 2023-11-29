@@ -16,7 +16,7 @@ CosmWasm smart contracts used in the Bisenzone MVP.
     ```bash
     # terminal-2
     ./scripts/build-contract.sh
-    ./scripts/deploy-contract.sh artifacts/cw_mtcs.wasm
+    ./scripts/deploy-contract.sh artifacts/cofi_karma_game.wasm
     ```
 * Set contract env var (using the output of the `deploy.sh` script) -
 

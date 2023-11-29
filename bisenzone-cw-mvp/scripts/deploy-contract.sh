@@ -6,7 +6,7 @@ set -eo pipefail
 
 usage() {
   echo "Usage: $0 WASM_BIN [COUNT]"
-  echo "Example: $0 artifacts/cw_mtcs.wasm"
+  echo "Example: $0 artifacts/cofi_karma_game.wasm"
   exit 1
 }
 
