@@ -4,24 +4,19 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 pub struct InstantiateMsg;
 
 #[cw_serde]
-pub enum ExecuteMsg {}
+pub enum ExecuteMsg {
+    JoinComputeNode(execute::JoinComputeNodeMsg),
+}
 
 pub mod execute {
     use super::*;
 
-    #[cw_serde]
-    pub struct Nonce([u8; 32]);
+    use crate::state::Nonce;
 
     #[cw_serde]
     pub struct JoinComputeNodeMsg {
-        compute_node_pub_key: String,
-        nonce: Nonce,
-    }
-
-    #[cw_serde]
-    pub struct ShareEpochKeyMsg {
-        compute_node_pub_key: String,
-        nonce: Nonce,
+        pub compute_node_pub_key: String,
+        pub nonce: Nonce,
     }
 }
 

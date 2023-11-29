@@ -2,6 +2,7 @@ use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Respons
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
+use crate::msg::execute::JoinComputeNodeMsg;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{State, STATE};
 
@@ -29,15 +30,45 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: ExecuteMsg,
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    todo!()
+    match msg {
+        ExecuteMsg::JoinComputeNode(JoinComputeNodeMsg {
+            compute_node_pub_key,
+            nonce,
+        }) => execute::enqueue_join_request(deps, compute_node_pub_key, nonce),
+    }
 }
 
-pub mod execute {}
+pub mod execute {
+    use cosmwasm_std::{DepsMut, Response};
+    use ecies::PublicKey;
+
+    use crate::state::Nonce;
+    use crate::state::{Request, REQUESTS};
+    use crate::ContractError;
+
+    pub fn enqueue_join_request(
+        deps: DepsMut,
+        compute_node_pub_key: String,
+        nonce: Nonce,
+    ) -> Result<Response, ContractError> {
+        let _ = PublicKey::parse_slice(compute_node_pub_key.as_bytes(), None)?;
+
+        REQUESTS.save(
+            deps.storage,
+            &nonce,
+            &Request::JoinComputeNode(compute_node_pub_key.clone()),
+        )?;
+
+        Ok(Response::new()
+            .add_attribute("action", "enqueue_request")
+            .add_attribute("compute_node_pub_key", compute_node_pub_key))
+    }
+}
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
