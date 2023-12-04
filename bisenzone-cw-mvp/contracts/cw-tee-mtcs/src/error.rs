@@ -1,5 +1,5 @@
 use cosmwasm_std::StdError;
-use ecies::SecpError;
+use libsecp256k1::Error as SecpError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

@@ -45,7 +45,7 @@ pub fn execute(
 
 pub mod execute {
     use cosmwasm_std::{DepsMut, Response};
-    use ecies::PublicKey;
+    use libsecp256k1::PublicKey;
 
     use crate::state::Nonce;
     use crate::state::{Request, REQUESTS};
