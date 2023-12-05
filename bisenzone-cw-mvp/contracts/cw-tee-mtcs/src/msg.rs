@@ -11,15 +11,28 @@ pub enum ExecuteMsg {
 pub mod execute {
     use super::*;
 
-    use crate::state::Nonce;
-
     #[cw_serde]
     pub struct JoinComputeNodeMsg {
-        pub compute_node_pub_key: String,
-        pub nonce: Nonce,
+        pub io_exchange_key: String,
+        pub address: String,
+        pub nonce: String,
     }
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    #[returns(query::GetRequestsResponse)]
+    GetRequests {},
+}
+
+pub mod query {
+    use super::*;
+
+    use crate::state::{RawNonce, Request};
+
+    #[cw_serde]
+    pub struct GetRequestsResponse {
+        pub requests: Vec<(RawNonce, Request)>,
+    }
+}

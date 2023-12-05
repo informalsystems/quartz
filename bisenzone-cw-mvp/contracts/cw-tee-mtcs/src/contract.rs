@@ -1,4 +1,6 @@
-use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
@@ -37,45 +39,64 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::JoinComputeNode(JoinComputeNodeMsg {
-            compute_node_pub_key,
+            io_exchange_key,
+            address,
             nonce,
-        }) => execute::enqueue_join_request(deps, compute_node_pub_key, nonce),
+        }) => execute::enqueue_join_request(deps, io_exchange_key, address, nonce),
     }
 }
 
 pub mod execute {
     use cosmwasm_std::{DepsMut, Response};
-    use libsecp256k1::PublicKey;
+    use k256::ecdsa::VerifyingKey;
 
-    use crate::state::Nonce;
+    use crate::state::{RawAddress, RawNonce, RawPublicKey};
     use crate::state::{Request, REQUESTS};
     use crate::ContractError;
 
     pub fn enqueue_join_request(
         deps: DepsMut,
-        compute_node_pub_key: String,
-        nonce: Nonce,
+        io_exchange_key: RawPublicKey,
+        address: RawAddress,
+        nonce: RawNonce,
     ) -> Result<Response, ContractError> {
-        let _ = PublicKey::parse_slice(compute_node_pub_key.as_bytes(), None)?;
+        let _ = VerifyingKey::from_sec1_bytes(&hex::decode(&io_exchange_key)?)?;
+        let _ = deps.api.addr_validate(&address)?;
+        let _ = hex::decode(&nonce);
 
         REQUESTS.save(
             deps.storage,
             &nonce,
-            &Request::JoinComputeNode(compute_node_pub_key.clone()),
+            &Request::JoinComputeNode((io_exchange_key.clone(), address)),
         )?;
 
         Ok(Response::new()
             .add_attribute("action", "enqueue_request")
-            .add_attribute("compute_node_pub_key", compute_node_pub_key))
+            .add_attribute("io_exchange_key", io_exchange_key))
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    todo!()
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetRequests {} => to_json_binary(&query::get_requests(deps)?),
+    }
 }
 
-pub mod query {}
+pub mod query {
+    use cosmwasm_std::{Deps, Order, StdResult};
+
+    use crate::msg::query::GetRequestsResponse;
+    use crate::state::{RawNonce, Request, REQUESTS};
+
+    pub fn get_requests(deps: Deps) -> StdResult<GetRequestsResponse> {
+        Ok(GetRequestsResponse {
+            requests: REQUESTS
+                .range(deps.storage, None, None, Order::Ascending)
+                .collect::<StdResult<Vec<(RawNonce, Request)>>>()?,
+        })
+    }
+}
 
 #[cfg(test)]
 mod tests {}

@@ -48,7 +48,8 @@ cosmwasm-std = { version = "1.5.0", features = [
 ] }
 cw-storage-plus = "1.1.0"
 cw2 = "1.1.1"
-libsecp256k1 = { version = "0.7.1", default-features = false }
+hex = { version = "0.4.3", default-features = false }
+k256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
 schemars = "0.8.15"
 serde = { version = "1.0.189", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.49" }
