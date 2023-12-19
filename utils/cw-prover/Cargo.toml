@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.1.8", features = ["derive"] }
-cosmos-sdk-proto = { version = "0.20.0", features = ["cosmwasm"] }
 cosmrs = "0.15.0"
 tendermint-rpc = { version = "0.34.0", features = ["http-client"] }
 tokio = { version = "1.26.0", features = ["full"] }

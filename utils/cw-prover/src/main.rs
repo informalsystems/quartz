@@ -17,25 +17,8 @@
 use std::error::Error;
 
 use clap::{Parser, Subcommand};
-use cosmos_sdk_proto::cosmwasm::wasm::v1::QueryRawContractStateRequest as RawQueryRawContractStateRequest;
-use cosmos_sdk_proto::traits::Message;
 use cosmrs::AccountId;
-use tendermint_rpc::client::HttpClient as TmRpcClient;
-use tendermint_rpc::{Client, HttpClientUrl};
-
-struct QueryRawContractStateRequest {
-    pub contract_address: AccountId,
-    pub storage_key: String,
-}
-
-impl From<QueryRawContractStateRequest> for RawQueryRawContractStateRequest {
-    fn from(request: QueryRawContractStateRequest) -> Self {
-        Self {
-            address: request.contract_address.to_string(),
-            query_data: request.storage_key.into_bytes(),
-        }
-    }
-}
+use tendermint_rpc::{client::HttpClient as TmRpcClient, Client, HttpClientUrl};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -62,6 +45,9 @@ enum Command {
     },
 }
 
+const WASM_STORE_KEY: &str = "/store/wasm/key";
+const CONTRACT_STORE_PREFIX: u8 = 0x03;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
@@ -72,18 +58,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
             contract_address,
             storage_key,
         } => {
-            let path = "/store/wasm/key".to_owned();
-            let request = QueryRawContractStateRequest {
-                contract_address,
-                storage_key,
+            let path = WASM_STORE_KEY.to_owned();
+            let data = {
+                let mut data = vec![CONTRACT_STORE_PREFIX];
+                data.append(&mut contract_address.to_bytes());
+                data.append(&mut storage_key.into_bytes());
+                data
             };
-            let raw_request = RawQueryRawContractStateRequest::from(request);
-            let data = raw_request.encode_to_vec();
 
             let client = TmRpcClient::builder(rpc_url).build()?;
             let latest_height = client.status().await?.sync_info.latest_block_height;
-            println!("{:?}", latest_height);
-            let result = client.abci_query(Some(path), data, Some(latest_height), true).await?;
+            let result = client
+                .abci_query(Some(path), data, Some(latest_height), true)
+                .await?;
+
             println!(
                 "{}",
                 serde_json::to_string(&result).expect("infallible serializer")
