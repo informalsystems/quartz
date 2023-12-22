@@ -54,6 +54,11 @@ enum Command {
         /// Storage key of the state item for which proofs must be retrieved
         #[clap(long)]
         storage_key: String,
+
+        /// Storage namespace of the state item for which proofs must be retrieved
+        /// (only makes sense when dealing with maps)
+        #[clap(long)]
+        storage_namespace: Option<String>,
     },
 }
 
@@ -69,11 +74,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             rpc_url,
             contract_address,
             storage_key,
+            storage_namespace,
         } => {
             let path = WASM_STORE_KEY.to_owned();
             let data = {
                 let mut data = vec![CONTRACT_STORE_PREFIX];
                 data.append(&mut contract_address.to_bytes());
+                if let Some(namespace) = storage_namespace {
+                    data.extend_from_slice(&encode_length(namespace.as_bytes()));
+                    data.append(&mut namespace.into_bytes());
+                }
                 data.append(&mut storage_key.into_bytes());
                 data
             };
@@ -110,6 +120,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+// Copied from cw-storage-plus
+fn encode_length(namespace: &[u8]) -> [u8; 2] {
+    if namespace.len() > 0xFFFF {
+        panic!("only supports namespaces up to length 0xFFFF")
+    }
+    let length_bytes = (namespace.len() as u32).to_be_bytes();
+    [length_bytes[2], length_bytes[3]]
+}
+
+// Copied from hermes and patched to allow non-string keys
 #[derive(Clone, Debug, PartialEq)]
 struct MerkleProof {
     proofs: Vec<CommitmentProof>,
