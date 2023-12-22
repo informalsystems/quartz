@@ -29,7 +29,11 @@ use ics23::{
     calculate_existence_root, commitment_proof::Proof, verify_membership, CommitmentProof,
     ProofSpec,
 };
+use tendermint::block::Height;
 use tendermint::merkle::proof::ProofOps as TendermintProof;
+use tendermint::AppHash;
+use tendermint_rpc::endpoint::abci_query::AbciQuery;
+use tendermint_rpc::endpoint::status::Response;
 use tendermint_rpc::{client::HttpClient as TmRpcClient, Client, HttpClientUrl};
 
 #[derive(Debug, Parser)]
@@ -76,57 +80,76 @@ async fn main() -> Result<(), Box<dyn Error>> {
             storage_key,
             storage_namespace,
         } => {
-            let path = WASM_STORE_KEY.to_owned();
-            let data = {
-                let mut data = vec![CONTRACT_STORE_PREFIX];
-                data.append(&mut contract_address.to_bytes());
-                if let Some(namespace) = storage_namespace {
-                    data.extend_from_slice(&encode_length(namespace.as_bytes()));
-                    data.append(&mut namespace.into_bytes());
-                }
-                data.append(&mut storage_key.into_bytes());
-                data
-            };
-
             let client = TmRpcClient::builder(rpc_url).build()?;
             let status = client.status().await?;
-            let latest_height = status.sync_info.latest_block_height;
+            let (proof_height, latest_app_hash) = latest_proof_height_hash(status);
+
+            let path = WASM_STORE_KEY.to_owned();
+            let data = query_data(&contract_address, storage_key, storage_namespace);
             let result = client
-                .abci_query(
-                    Some(path),
-                    data,
-                    Some(
-                        (latest_height.value() - 1)
-                            .try_into()
-                            .expect("infallible conversion"),
-                    ),
-                    true,
-                )
+                .abci_query(Some(path), data, Some(proof_height), true)
                 .await?;
 
-            let proof = convert_tm_to_ics_merkle_proof(&result.proof.expect("queried with proof"))?;
-            proof.verify_membership(
-                &ProofSpecs::cosmos(),
-                CommitmentRoot::from_bytes(status.sync_info.latest_app_hash.as_bytes()).into(),
-                vec!["wasm".to_string().into_bytes(), result.key],
-                result.value.clone(),
-                0,
-            )?;
-
-            println!("{}", String::from_utf8(result.value)?);
+            let value = verify_proof(latest_app_hash, result)?;
+            println!("{}", String::from_utf8(value)?);
         }
     };
 
     Ok(())
 }
 
+fn latest_proof_height_hash(status: Response) -> (Height, AppHash) {
+    let proof_height = {
+        let latest_height = status.sync_info.latest_block_height;
+        (latest_height.value() - 1)
+            .try_into()
+            .expect("infallible conversion")
+    };
+    let latest_app_hash = status.sync_info.latest_app_hash;
+
+    (proof_height, latest_app_hash)
+}
+
+fn query_data(
+    contract_address: &AccountId,
+    storage_key: String,
+    storage_namespace: Option<String>,
+) -> Vec<u8> {
+    let mut data = vec![CONTRACT_STORE_PREFIX];
+    data.append(&mut contract_address.to_bytes());
+    if let Some(namespace) = storage_namespace {
+        data.extend_from_slice(&encode_length(namespace.as_bytes()));
+        data.append(&mut namespace.into_bytes());
+    }
+    data.append(&mut storage_key.into_bytes());
+    data
+}
+
 // Copied from cw-storage-plus
 fn encode_length(namespace: &[u8]) -> [u8; 2] {
-    if namespace.len() > 0xFFFF {
-        panic!("only supports namespaces up to length 0xFFFF")
-    }
+    assert!(
+        namespace.len() <= 0xFFFF,
+        "only supports namespaces up to length 0xFFFF"
+    );
+
     let length_bytes = (namespace.len() as u32).to_be_bytes();
     [length_bytes[2], length_bytes[3]]
+}
+
+fn verify_proof(latest_app_hash: AppHash, result: AbciQuery) -> Result<Vec<u8>, Box<dyn Error>> {
+    let proof = convert_tm_to_ics_merkle_proof(&result.proof.expect("queried with proof"))?;
+    let root = CommitmentRoot::from_bytes(latest_app_hash.as_bytes());
+    let prefixed_key = vec!["wasm".to_string().into_bytes(), result.key];
+
+    proof.verify_membership(
+        &ProofSpecs::cosmos(),
+        root.into(),
+        prefixed_key,
+        result.value.clone(),
+        0,
+    )?;
+
+    Ok(result.value)
 }
 
 // Copied from hermes and patched to allow non-string keys
