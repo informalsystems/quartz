@@ -15,6 +15,9 @@
 )]
 
 use std::error::Error;
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use cosmrs::AccountId;
@@ -56,6 +59,10 @@ enum Command {
         /// (only makes sense when dealing with maps)
         #[clap(long)]
         storage_namespace: Option<String>,
+
+        /// Output file to store merkle proof
+        #[clap(long)]
+        proof_file: Option<PathBuf>,
     },
 }
 
@@ -72,6 +79,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             contract_address,
             storage_key,
             storage_namespace,
+            proof_file,
         } => {
             let client = TmRpcClient::builder(rpc_url).build()?;
             let status = client.status().await?;
@@ -83,8 +91,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .abci_query(Some(path), data, Some(proof_height), true)
                 .await?;
 
-            let value = verify_proof(latest_app_hash, result)?;
+            let value = verify_proof(latest_app_hash, result.clone())?;
             println!("{}", String::from_utf8(value)?);
+
+            if let Some(proof_file) = proof_file {
+                write_proof_to_file(proof_file, result)?;
+            }
         }
     };
 
@@ -143,4 +155,12 @@ fn verify_proof(latest_app_hash: AppHash, result: AbciQuery) -> Result<Vec<u8>, 
     )?;
 
     Ok(result.value)
+}
+
+fn write_proof_to_file(proof_file: PathBuf, output: AbciQuery) -> Result<(), Box<dyn Error>> {
+    let file = File::create(proof_file)?;
+    let mut writer = BufWriter::new(file);
+    serde_json::to_writer(&mut writer, &output)?;
+    writer.flush()?;
+    Ok(())
 }
