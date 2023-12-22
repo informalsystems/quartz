@@ -5,7 +5,30 @@ the [Key managers proposal v1](https://github.com/informalsystems/tee-mtcs/issue
 
 ## Testing instructions
 
-* Upload a cycle of obligations -
+* Submit a bootstrap key manager request -
+
+```
+export EXECUTE='{
+    "bootstrap_key_manager": {
+        "compute_mrenclave": "dc43f8c42d8e5f52c8bbd68f426242153f0be10630ff8cca255129a3ca03d273", 
+        "key_manager_mrenclave": "1cf2e52911410fbf3f199056a98d58795a559a2e800933f7fcd13d048462271c", 
+        "tcb_info": ""
+    }
+}'
+wasmd tx wasm execute "$CONTRACT" "$EXECUTE" --from alice --chain-id testing -y
+```
+
+* Query the bootstrap state -
+
+```
+wasmd query wasm contract-state raw "$CONTRACT" 7367787374617465 # BIN_HEX('sgx_state')
+# OR ----
+wasmd query wasm contract-state smart "$CONTRACT" '{
+  "get_sgx_state": { }
+}'
+```
+
+* Submit a join compute node request -
 
 ```
 export EXECUTE='{

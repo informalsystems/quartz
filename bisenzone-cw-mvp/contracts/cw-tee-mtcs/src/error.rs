@@ -11,33 +11,24 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized,
 
-    #[error("Invalid pubkey")]
-    InvalidPubKey(PublicKeyError),
-}
-
-#[derive(Error, Debug)]
-pub enum PublicKeyError {
     #[error("Not Secp256K1")]
     K256(K256Error),
+
     #[error("Invalid hex")]
     Hex(FromHexError),
+
+    #[error("Invalid length")]
+    BadLength,
 }
 
-impl<T: Into<PublicKeyError>> From<T> for ContractError {
-    fn from(e: T) -> Self {
-        let e = e.into();
-        Self::InvalidPubKey(e)
-    }
-}
-
-impl From<K256Error> for PublicKeyError {
+impl From<K256Error> for ContractError {
     fn from(e: K256Error) -> Self {
-        PublicKeyError::K256(e)
+        ContractError::K256(e)
     }
 }
 
-impl From<FromHexError> for PublicKeyError {
+impl From<FromHexError> for ContractError {
     fn from(e: FromHexError) -> Self {
-        PublicKeyError::Hex(e)
+        ContractError::Hex(e)
     }
 }
