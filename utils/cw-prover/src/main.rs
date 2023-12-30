@@ -14,23 +14,23 @@
     unused_qualifications
 )]
 
+mod merkle;
+
 use std::error::Error;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use cosmrs::AccountId;
-use ibc_relayer_types::{
-    core::ics23_commitment::commitment::CommitmentRoot, core::ics23_commitment::specs::ProofSpecs,
-};
 use tendermint::block::Height;
 use tendermint::AppHash;
 use tendermint_rpc::endpoint::abci_query::AbciQuery;
 use tendermint_rpc::endpoint::status::Response;
 use tendermint_rpc::{client::HttpClient as TmRpcClient, Client, HttpClientUrl};
 
-mod merkle;
+use crate::merkle::{CwProof, RawQueryProof};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -91,8 +91,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .abci_query(Some(path), data, Some(proof_height), true)
                 .await?;
 
-            let value = verify_proof(latest_app_hash, result.clone())?;
-            println!("{}", String::from_utf8(value)?);
+            let proof: RawQueryProof = result.clone().try_into().expect("todo");
+            proof.verify(latest_app_hash.clone().into())?;
+
+            println!("{}", String::from_utf8(result.value.clone())?);
 
             if let Some(proof_file) = proof_file {
                 write_proof_to_file(proof_file, result)?;
@@ -139,22 +141,6 @@ fn encode_length(namespace: &[u8]) -> [u8; 2] {
 
     let length_bytes = (namespace.len() as u32).to_be_bytes();
     [length_bytes[2], length_bytes[3]]
-}
-
-fn verify_proof(latest_app_hash: AppHash, result: AbciQuery) -> Result<Vec<u8>, Box<dyn Error>> {
-    let proof = merkle::convert_tm_to_ics_merkle_proof(&result.proof.expect("queried with proof"))?;
-    let root = CommitmentRoot::from_bytes(latest_app_hash.as_bytes());
-    let prefixed_key = vec!["wasm".to_string().into_bytes(), result.key];
-
-    proof.verify_membership(
-        &ProofSpecs::cosmos(),
-        root.into(),
-        prefixed_key,
-        result.value.clone(),
-        0,
-    )?;
-
-    Ok(result.value)
 }
 
 fn write_proof_to_file(proof_file: PathBuf, output: AbciQuery) -> Result<(), Box<dyn Error>> {
