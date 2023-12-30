@@ -91,8 +91,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .abci_query(Some(path), data, Some(proof_height), true)
                 .await?;
 
-            let proof: RawCwProof = result.clone().try_into().expect("todo");
-            proof.verify(latest_app_hash.clone().into())?;
+            let proof: RawCwProof = result.clone().try_into().map_err(into_string)?;
+            proof
+                .verify(latest_app_hash.clone().into())
+                .map_err(into_string)?;
 
             println!("{}", String::from_utf8(result.value.clone())?);
 
@@ -103,6 +105,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     Ok(())
+}
+
+fn into_string<E: ToString>(e: E) -> String {
+    e.to_string()
 }
 
 fn latest_proof_height_hash(status: Response) -> (Height, AppHash) {
