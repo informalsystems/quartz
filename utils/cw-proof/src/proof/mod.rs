@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use ibc_relayer_types::core::ics23_commitment::error::Error as ProofError;
 use ics23::CommitmentProof;
 use tendermint::merkle::proof::ProofOps;

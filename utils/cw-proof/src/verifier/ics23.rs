@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use core::marker::PhantomData;
 
 use ibc_relayer_types::core::ics23_commitment::error::Error as ProofError;

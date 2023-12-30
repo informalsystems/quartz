@@ -1,4 +1,10 @@
+use alloc::{
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 use core::marker::PhantomData;
+
 use cosmrs::AccountId;
 
 use crate::proof::prefix::ConstPrefix;

@@ -14,9 +14,6 @@
     unused_qualifications
 )]
 
-mod proof;
-mod verifier;
-
 use std::{
     error::Error,
     fmt::Debug,
@@ -34,7 +31,7 @@ use tendermint_rpc::{
     Client, HttpClientUrl,
 };
 
-use crate::proof::{cw::RawCwProof, key::CwAbciKey, Proof};
+use cw_proof::proof::{cw::RawCwProof, key::CwAbciKey, Proof};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
