@@ -14,7 +14,7 @@
     unused_qualifications
 )]
 
-mod merkle;
+mod proof;
 
 use std::error::Error;
 use std::fmt::Debug;
@@ -30,7 +30,7 @@ use tendermint_rpc::endpoint::abci_query::AbciQuery;
 use tendermint_rpc::endpoint::status::Response;
 use tendermint_rpc::{client::HttpClient as TmRpcClient, Client, HttpClientUrl};
 
-use crate::merkle::{CwProof, RawQueryProof};
+use crate::proof::{cw::RawCwProof, Proof};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .abci_query(Some(path), data, Some(proof_height), true)
                 .await?;
 
-            let proof: RawQueryProof = result.clone().try_into().expect("todo");
+            let proof: RawCwProof = result.clone().try_into().expect("todo");
             proof.verify(latest_app_hash.clone().into())?;
 
             println!("{}", String::from_utf8(result.value.clone())?);
@@ -153,8 +153,9 @@ fn write_proof_to_file(proof_file: PathBuf, output: AbciQuery) -> Result<(), Box
 
 #[cfg(test)]
 mod tests {
+    use crate::proof::cw::RawCwProof;
+    use crate::proof::Proof;
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
-    use crate::merkle::{CwProof, RawQueryProof};
 
     #[test]
     fn test_query_item() {
@@ -184,11 +185,16 @@ mod tests {
         }
         "#;
 
-        let abci_query: AbciQuery = serde_json::from_str(abci_query_response).expect("deserialization failure for hardcoded response");
-        let proof: RawQueryProof = abci_query.try_into().expect("hardcoded response does not include proof");
+        let abci_query: AbciQuery = serde_json::from_str(abci_query_response)
+            .expect("deserialization failure for hardcoded response");
+        let proof: RawCwProof = abci_query
+            .try_into()
+            .expect("hardcoded response does not include proof");
         let root = "25a8b485e0ff095f7b60a1aab837d65756c9a4cdc216bae7ba9c59b3fb28fbec";
 
-        proof.verify(hex::decode(root).expect("invalid hex")).expect("");
+        proof
+            .verify(hex::decode(root).expect("invalid hex"))
+            .expect("");
     }
 
     #[test]
@@ -219,10 +225,15 @@ mod tests {
         }
         "#;
 
-        let abci_query: AbciQuery = serde_json::from_str(abci_query_response).expect("deserialization failure for hardcoded response");
-        let proof: RawQueryProof = abci_query.try_into().expect("hardcoded response does not include proof");
+        let abci_query: AbciQuery = serde_json::from_str(abci_query_response)
+            .expect("deserialization failure for hardcoded response");
+        let proof: RawCwProof = abci_query
+            .try_into()
+            .expect("hardcoded response does not include proof");
         let root = "632612de75657f50bbb769157bf0ef8dd417409b367b0204bbda4529ab2b2d4f";
 
-        proof.verify(hex::decode(root).expect("invalid hex")).expect("");
+        proof
+            .verify(hex::decode(root).expect("invalid hex"))
+            .expect("");
     }
 }
