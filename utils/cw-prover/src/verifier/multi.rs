@@ -1,4 +1,4 @@
-use crate::proof::verifier::Verifier;
+use crate::verifier::Verifier;
 
 #[derive(Clone, Debug)]
 pub struct MultiVerifier<V, const N: usize> {

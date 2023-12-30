@@ -3,9 +3,8 @@ use ics23::CommitmentProof;
 use tendermint::merkle::proof::ProofOps;
 
 pub mod cw;
-mod key;
-mod prefix;
-mod verifier;
+pub mod key;
+pub mod prefix;
 
 // Copied from hermes
 pub fn convert_tm_to_ics_merkle_proof(

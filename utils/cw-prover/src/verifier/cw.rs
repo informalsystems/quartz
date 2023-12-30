@@ -1,10 +1,7 @@
 use ibc_relayer_types::core::ics23_commitment::error::Error as ProofError;
 use ics23::CommitmentProof;
 
-use crate::{
-    proof::verifier::ics23::Ics23MembershipVerifier, proof::verifier::multi::MultiVerifier,
-    proof::verifier::Verifier,
-};
+use crate::verifier::{ics23::Ics23MembershipVerifier, multi::MultiVerifier, Verifier};
 
 #[derive(Clone, Debug)]
 pub struct CwVerifier(MultiVerifier<Ics23MembershipVerifier<Vec<u8>, Vec<u8>>, 2>);

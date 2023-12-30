@@ -1,8 +1,12 @@
-use crate::proof::verifier::Verifier;
+use core::marker::PhantomData;
+
 use ibc_relayer_types::core::ics23_commitment::error::Error as ProofError;
-use ics23::commitment_proof::Proof;
-use ics23::{calculate_existence_root, verify_membership, CommitmentProof, ProofSpec};
-use std::marker::PhantomData;
+use ics23::{
+    calculate_existence_root, commitment_proof::Proof, verify_membership, CommitmentProof,
+    ProofSpec,
+};
+
+use crate::verifier::Verifier;
 
 #[derive(Clone, Debug)]
 pub struct Ics23MembershipVerifier<K, V> {

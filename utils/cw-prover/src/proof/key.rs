@@ -1,5 +1,6 @@
+use core::marker::PhantomData;
+
 use crate::proof::prefix::ConstPrefix;
-use std::marker::PhantomData;
 
 pub trait IntoKeys {
     fn into_keys(self) -> Vec<Vec<u8>>;

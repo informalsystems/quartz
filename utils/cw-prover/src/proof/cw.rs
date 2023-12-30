@@ -1,12 +1,16 @@
-use crate::proof;
-use crate::proof::key::{IntoKeys, PrefixedKey};
-use crate::proof::prefix::PrefixWasm;
-use crate::proof::verifier::cw::CwVerifier;
-use crate::proof::Proof;
+use core::fmt::Debug;
+
 use ibc_relayer_types::core::ics23_commitment::error::Error as ProofError;
-use std::fmt::Debug;
 use tendermint::merkle::proof::ProofOps;
 use tendermint_rpc::endpoint::abci_query::AbciQuery;
+
+use crate::{
+    proof,
+    proof::key::{IntoKeys, PrefixedKey},
+    proof::prefix::PrefixWasm,
+    proof::Proof,
+    verifier::cw::CwVerifier,
+};
 
 pub type RawCwProof = CwProof<Vec<u8>, Vec<u8>>;
 

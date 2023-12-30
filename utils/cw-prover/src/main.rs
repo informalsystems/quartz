@@ -15,6 +15,7 @@
 )]
 
 mod proof;
+mod verifier;
 
 use std::error::Error;
 use std::fmt::Debug;
