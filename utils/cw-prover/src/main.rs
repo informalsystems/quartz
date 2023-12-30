@@ -150,3 +150,79 @@ fn write_proof_to_file(proof_file: PathBuf, output: AbciQuery) -> Result<(), Box
     writer.flush()?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use tendermint_rpc::endpoint::abci_query::AbciQuery;
+    use crate::merkle::{CwProof, RawQueryProof};
+
+    #[test]
+    fn test_query_item() {
+        let abci_query_response = r#"{
+          "code": 0,
+          "log": "",
+          "info": "",
+          "index": "0",
+          "key": "A63kpfWAOkOYNcY2OVqNZI3uV7L8kNmNwX+ohxWbaWOLc2d4c3RhdGU=",
+          "value": "eyJjb21wdXRlX21yZW5jbGF2ZSI6ImRjNDNmOGM0MmQ4ZTVmNTJjOGJiZDY4ZjQyNjI0MjE1M2YwYmUxMDYzMGZmOGNjYTI1NTEyOWEzY2EwM2QyNzMiLCJrZXlfbWFuYWdlcl9tcmVuY2xhdmUiOiIxY2YyZTUyOTExNDEwZmJmM2YxOTkwNTZhOThkNTg3OTVhNTU5YTJlODAwOTMzZjdmY2QxM2QwNDg0NjIyNzFjIiwidGNiX2luZm8iOiIzMTIzODc2In0=",
+          "proof": {
+            "ops": [
+              {
+                "field_type": "ics23:iavl",
+                "key": "A63kpfWAOkOYNcY2OVqNZI3uV7L8kNmNwX+ohxWbaWOLc2d4c3RhdGU=",
+                "data": "CrgDCikDreSl9YA6Q5g1xjY5Wo1kje5XsvyQ2Y3Bf6iHFZtpY4tzZ3hzdGF0ZRLIAXsiY29tcHV0ZV9tcmVuY2xhdmUiOiJkYzQzZjhjNDJkOGU1ZjUyYzhiYmQ2OGY0MjYyNDIxNTNmMGJlMTA2MzBmZjhjY2EyNTUxMjlhM2NhMDNkMjczIiwia2V5X21hbmFnZXJfbXJlbmNsYXZlIjoiMWNmMmU1MjkxMTQxMGZiZjNmMTk5MDU2YTk4ZDU4Nzk1YTU1OWEyZTgwMDkzM2Y3ZmNkMTNkMDQ4NDYyMjcxYyIsInRjYl9pbmZvIjoiMzEyMzg3NiJ9GgwIARgBIAEqBAACmAEiKggBEiYCBJgBIFclzyzP2y2LTcBhP0IxBhvnlMJiEFCsDEMUQ9dM5dvYICIsCAESBQQGmAEgGiEgfUSWe0VMFTsxkzDuMQNE05aSzdRTTvkWzZXkfplWUbEiKggBEiYGDJBnIEkK+nmGmXpOfREXvfonLrK4mEZx1XF4DgJp86QIVF1EICIsCAESBQgakGcgGiEgBl/NSR16eG1vDenJA6GEEJ9xcQv9Bwxv8wyhAL5JLwE="
+              },
+              {
+                "field_type": "ics23:simple",
+                "key": "d2FzbQ==",
+                "data": "CqgBCgR3YXNtEiDYWxn2B9M/eGP18Gwl3zgWZkT7Yn/iFlcS0THfmfcfDBoJCAEYASABKgEAIiUIARIhAWLU8PgnJ/EMp4BYvtTN9MX/rS70dNQ3ZAzrJLssrLjRIiUIARIhAcFEiiCwgvh2CwGJrnfnBCvuNl9u4BgngCVVKihSxYahIiUIARIhAVPQq6npMIxTVF19htERZGPpp0TZZaNLGho3+Y1oBFLg"
+              }
+            ]
+          },
+          "height": "7355",
+          "codespace": ""
+        }
+        "#;
+
+        let abci_query: AbciQuery = serde_json::from_str(abci_query_response).expect("deserialization failure for hardcoded response");
+        let proof: RawQueryProof = abci_query.try_into().expect("hardcoded response does not include proof");
+        let root = "25a8b485e0ff095f7b60a1aab837d65756c9a4cdc216bae7ba9c59b3fb28fbec";
+
+        proof.verify(hex::decode(root).expect("invalid hex")).expect("");
+    }
+
+    #[test]
+    fn test_query_map() {
+        let abci_query_response = r#"{
+          "code": 0,
+          "log": "",
+          "info": "",
+          "index": "0",
+          "key": "A63kpfWAOkOYNcY2OVqNZI3uV7L8kNmNwX+ohxWbaWOLAAhyZXF1ZXN0czQyNWQ4N2Y4NjIwZTFkZWRlZWU3MDU5MGNjNTViMTY0YjhmMDE0ODBlZTU5ZTBiMWRhMzU0MzZhMmY3YzI3Nzc=",
+          "value": "eyJqb2luX2NvbXB1dGVfbm9kZSI6WyIwM0U2N0VGMDkyMTM2MzMwNzRGQjRGQkYzMzg2NDNGNEYwQzU3NEVENjBFRjExRDAzNDIyRUVCMDZGQTM4QzhGM0YiLCJ3YXNtMTBuNGRzbGp5eWZwMmsyaHk2ZTh2dWM5cnkzMnB4MmVnd3Q1ZTBtIl19",
+          "proof": {
+            "ops": [
+              {
+                "field_type": "ics23:iavl",
+                "key": "A63kpfWAOkOYNcY2OVqNZI3uV7L8kNmNwX+ohxWbaWOLAAhyZXF1ZXN0czQyNWQ4N2Y4NjIwZTFkZWRlZWU3MDU5MGNjNTViMTY0YjhmMDE0ODBlZTU5ZTBiMWRhMzU0MzZhMmY3YzI3Nzc=",
+                "data": "CrwDCmsDreSl9YA6Q5g1xjY5Wo1kje5XsvyQ2Y3Bf6iHFZtpY4sACHJlcXVlc3RzNDI1ZDg3Zjg2MjBlMWRlZGVlZTcwNTkwY2M1NWIxNjRiOGYwMTQ4MGVlNTllMGIxZGEzNTQzNmEyZjdjMjc3NxKKAXsiam9pbl9jb21wdXRlX25vZGUiOlsiMDNFNjdFRjA5MjEzNjMzMDc0RkI0RkJGMzM4NjQzRjRGMEM1NzRFRDYwRUYxMUQwMzQyMkVFQjA2RkEzOEM4RjNGIiwid2FzbTEwbjRkc2xqeXlmcDJrMmh5NmU4dnVjOXJ5MzJweDJlZ3d0NWUwbSJdfRoMCAEYASABKgQAApBnIioIARImAgSQZyDcejBg60yYaDEvKvExWQf9XKfIaNU/Amt6hqCn7y+CSiAiKggBEiYEBpBnICanihuey/DZHbttCL13YV1SMnCD6D6J2zssxb7sqwrlICIsCAESBQYMkGcgGiEg+89wQcyopgtcMvQ2ceLVOsi6b3IcMYCR2UZrrqAV1xsiLAgBEgUIGpBnIBohIAZfzUkdenhtbw3pyQOhhBCfcXEL/QcMb/MMoQC+SS8B"
+              },
+              {
+                "field_type": "ics23:simple",
+                "key": "d2FzbQ==",
+                "data": "CqgBCgR3YXNtEiDYWxn2B9M/eGP18Gwl3zgWZkT7Yn/iFlcS0THfmfcfDBoJCAEYASABKgEAIiUIARIhAWLU8PgnJ/EMp4BYvtTN9MX/rS70dNQ3ZAzrJLssrLjRIiUIARIhARcbvq+IA7uFZQ37EHO4TUVW33UPw2gl4PnFAPf/w+LDIiUIARIhAZIp1f1XIqpz3QSNX3F9i7IGdc8DHeSpBJ/Qhg3httiR"
+              }
+            ]
+          },
+          "height": "7589",
+          "codespace": ""
+        }
+        "#;
+
+        let abci_query: AbciQuery = serde_json::from_str(abci_query_response).expect("deserialization failure for hardcoded response");
+        let proof: RawQueryProof = abci_query.try_into().expect("hardcoded response does not include proof");
+        let root = "632612de75657f50bbb769157bf0ef8dd417409b367b0204bbda4529ab2b2d4f";
+
+        proof.verify(hex::decode(root).expect("invalid hex")).expect("");
+    }
+}

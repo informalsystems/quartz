@@ -443,7 +443,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "cosmrs",
- "ibc-proto",
+ "hex",
  "ibc-relayer-types",
  "ics23",
  "prost",
