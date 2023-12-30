@@ -6,7 +6,7 @@ use crate::error::ProofError;
 use crate::verifier::{ics23::Ics23MembershipVerifier, multi::MultiVerifier, Verifier};
 
 #[derive(Clone, Debug)]
-pub struct CwVerifier(MultiVerifier<Ics23MembershipVerifier<Vec<u8>, Vec<u8>>, 2>);
+pub struct CwVerifier(MultiVerifier<Ics23MembershipVerifier<Vec<u8>>, 2>);
 
 impl CwVerifier {
     pub fn verify(
@@ -14,7 +14,7 @@ impl CwVerifier {
         proofs: &[CommitmentProof; 2],
         root: &Vec<u8>,
         keys: &[Vec<u8>; 2],
-        value: &Vec<u8>,
+        value: &[u8],
     ) -> Result<(), ProofError> {
         if root.is_empty() {
             return Err(ProofError::EmptyMerkleRoot);

@@ -10,12 +10,12 @@ use crate::error::ProofError;
 use crate::verifier::Verifier;
 
 #[derive(Clone, Debug)]
-pub struct Ics23MembershipVerifier<K, V> {
+pub struct Ics23MembershipVerifier<K> {
     spec: ProofSpec,
-    _phantom: PhantomData<(K, V)>,
+    _phantom: PhantomData<K>,
 }
 
-impl<K, V> Ics23MembershipVerifier<K, V> {
+impl<K> Ics23MembershipVerifier<K> {
     pub fn new(spec: ProofSpec) -> Self {
         Self {
             spec,
@@ -24,22 +24,22 @@ impl<K, V> Ics23MembershipVerifier<K, V> {
     }
 }
 
-impl<K, V> Verifier for Ics23MembershipVerifier<K, V>
+impl<K> Verifier for Ics23MembershipVerifier<K>
 where
     K: AsRef<[u8]>,
-    V: AsRef<[u8]>,
 {
     type Proof = CommitmentProof;
     type Root = Vec<u8>;
     type Key = K;
-    type Value = V;
+    type Value = Vec<u8>;
+    type ValueRef = [u8];
     type Error = ProofError;
 
     fn verify(
         &self,
         commitment_proof: &Self::Proof,
         key: &Self::Key,
-        value: &Self::Value,
+        value: &Self::ValueRef,
     ) -> Result<Self::Root, Self::Error> {
         if value.as_ref().is_empty() {
             return Err(ProofError::EmptyVerifiedValue);
@@ -57,7 +57,7 @@ where
             &self.spec,
             &root,
             key.as_ref(),
-            value.as_ref(),
+            value,
         ) {
             return Err(ProofError::VerificationFailure);
         }
