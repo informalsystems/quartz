@@ -5,15 +5,18 @@ use tendermint::merkle::proof::ProofOps;
 use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
 use crate::{
-    proof,
-    proof::key::{IntoKeys, PrefixedKey},
-    proof::prefix::PrefixWasm,
-    proof::Proof,
+    proof::{
+        convert_tm_to_ics_merkle_proof,
+        key::{IntoKeys, PrefixedKey},
+        prefix::PrefixWasm,
+        Proof,
+    },
     verifier::cw::CwVerifier,
 };
 
 pub type RawCwProof = CwProof<Vec<u8>, Vec<u8>>;
 
+#[derive(Clone, Debug)]
 pub struct CwProof<K, V> {
     proof: ProofOps,
     key: PrefixedKey<PrefixWasm, K>,
@@ -59,7 +62,7 @@ where
         }
 
         let Self { proof, key, value } = self;
-        let proofs = proof::convert_tm_to_ics_merkle_proof(&proof)?;
+        let proofs = convert_tm_to_ics_merkle_proof(&proof)?;
 
         let cw_verifier = CwVerifier::new();
         cw_verifier.verify(

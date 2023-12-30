@@ -17,21 +17,24 @@
 mod proof;
 mod verifier;
 
-use std::error::Error;
-use std::fmt::Debug;
-use std::fs::File;
-use std::io::{BufWriter, Write};
-use std::path::PathBuf;
+use std::{
+    error::Error,
+    fmt::Debug,
+    fs::File,
+    io::{BufWriter, Write},
+    path::PathBuf,
+};
 
 use clap::{Parser, Subcommand};
 use cosmrs::AccountId;
-use tendermint::block::Height;
-use tendermint::AppHash;
-use tendermint_rpc::endpoint::abci_query::AbciQuery;
-use tendermint_rpc::endpoint::status::Response;
-use tendermint_rpc::{client::HttpClient as TmRpcClient, Client, HttpClientUrl};
+use tendermint::{block::Height, AppHash};
+use tendermint_rpc::{
+    client::HttpClient as TmRpcClient,
+    endpoint::{abci_query::AbciQuery, status::Response},
+    Client, HttpClientUrl,
+};
 
-use crate::proof::{cw::RawCwProof, Proof};
+use crate::proof::{cw::RawCwProof, key::CwAbciKey, Proof};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -68,7 +71,6 @@ enum Command {
 }
 
 const WASM_STORE_KEY: &str = "/store/wasm/key";
-const CONTRACT_STORE_PREFIX: u8 = 0x03;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -87,7 +89,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let (proof_height, latest_app_hash) = latest_proof_height_hash(status);
 
             let path = WASM_STORE_KEY.to_owned();
-            let data = query_data(&contract_address, storage_key, storage_namespace);
+            let data = CwAbciKey::new(contract_address, storage_key, storage_namespace);
             let result = client
                 .abci_query(Some(path), data, Some(proof_height), true)
                 .await?;
@@ -118,32 +120,6 @@ fn latest_proof_height_hash(status: Response) -> (Height, AppHash) {
     (proof_height, latest_app_hash)
 }
 
-fn query_data(
-    contract_address: &AccountId,
-    storage_key: String,
-    storage_namespace: Option<String>,
-) -> Vec<u8> {
-    let mut data = vec![CONTRACT_STORE_PREFIX];
-    data.append(&mut contract_address.to_bytes());
-    if let Some(namespace) = storage_namespace {
-        data.extend_from_slice(&encode_length(namespace.as_bytes()));
-        data.append(&mut namespace.into_bytes());
-    }
-    data.append(&mut storage_key.into_bytes());
-    data
-}
-
-// Copied from cw-storage-plus
-fn encode_length(namespace: &[u8]) -> [u8; 2] {
-    assert!(
-        namespace.len() <= 0xFFFF,
-        "only supports namespaces up to length 0xFFFF"
-    );
-
-    let length_bytes = (namespace.len() as u32).to_be_bytes();
-    [length_bytes[2], length_bytes[3]]
-}
-
 fn write_proof_to_file(proof_file: PathBuf, output: AbciQuery) -> Result<(), Box<dyn Error>> {
     let file = File::create(proof_file)?;
     let mut writer = BufWriter::new(file);
@@ -154,9 +130,10 @@ fn write_proof_to_file(proof_file: PathBuf, output: AbciQuery) -> Result<(), Box
 
 #[cfg(test)]
 mod tests {
+    use tendermint_rpc::endpoint::abci_query::AbciQuery;
+
     use crate::proof::cw::RawCwProof;
     use crate::proof::Proof;
-    use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
     #[test]
     fn test_query_item() {
