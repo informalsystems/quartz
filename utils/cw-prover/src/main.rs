@@ -128,9 +128,7 @@ fn write_proof_to_file(proof_file: PathBuf, output: AbciQuery) -> Result<(), Box
 #[cfg(test)]
 mod tests {
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
-
-    use crate::proof::cw::RawCwProof;
-    use crate::proof::Proof;
+    use cw_proof::{proof::cw::RawCwProof, proof::Proof};
 
     #[test]
     fn test_query_item() {
