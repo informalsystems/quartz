@@ -11,5 +11,5 @@ pub enum ProofError {
     /// invalid merkle proof
     InvalidMerkleProof,
     /// proof verification failed
-    VerificationFailure, 
+    VerificationFailure,
 }
