@@ -1,8 +1,9 @@
 use alloc::vec::Vec;
 
-use ibc_relayer_types::core::ics23_commitment::error::Error as ProofError;
 use ics23::CommitmentProof;
 use tendermint::merkle::proof::ProofOps;
+
+use crate::error::ProofError;
 
 pub mod cw;
 pub mod key;
@@ -18,7 +19,7 @@ pub fn convert_tm_to_ics_merkle_proof(
         let mut parsed = CommitmentProof { proof: None };
 
         prost::Message::merge(&mut parsed, op.data.as_slice())
-            .map_err(ProofError::commitment_proof_decoding_failed)?;
+            .map_err(|_| ProofError::CommitmentProofDecodingFailed)?;
 
         proofs.push(parsed);
     }

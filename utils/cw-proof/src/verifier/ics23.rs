@@ -1,12 +1,12 @@
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 
-use ibc_relayer_types::core::ics23_commitment::error::Error as ProofError;
 use ics23::{
     calculate_existence_root, commitment_proof::Proof, verify_membership, CommitmentProof,
     ProofSpec,
 };
 
+use crate::error::ProofError;
 use crate::verifier::Verifier;
 
 #[derive(Clone, Debug)]
@@ -42,15 +42,15 @@ where
         value: &Self::Value,
     ) -> Result<Self::Root, Self::Error> {
         if value.as_ref().is_empty() {
-            return Err(ProofError::empty_verified_value());
+            return Err(ProofError::EmptyVerifiedValue);
         }
 
         let Some(Proof::Exist(existence_proof)) = &commitment_proof.proof else {
-            return Err(ProofError::invalid_merkle_proof());
+            return Err(ProofError::InvalidMerkleProof);
         };
 
         let root = calculate_existence_root::<ics23::HostFunctionsManager>(existence_proof)
-            .map_err(|_| ProofError::invalid_merkle_proof())?;
+            .map_err(|_| ProofError::InvalidMerkleProof)?;
 
         if !verify_membership::<ics23::HostFunctionsManager>(
             commitment_proof,
@@ -59,7 +59,7 @@ where
             key.as_ref(),
             value.as_ref(),
         ) {
-            return Err(ProofError::verification_failure());
+            return Err(ProofError::VerificationFailure);
         }
 
         Ok(root)

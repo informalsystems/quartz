@@ -17,3 +17,4 @@ extern crate alloc;
 
 pub mod proof;
 pub mod verifier;
+pub mod error;

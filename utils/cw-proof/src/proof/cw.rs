@@ -1,11 +1,12 @@
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt::Debug;
 
-use ibc_relayer_types::core::ics23_commitment::error::Error as ProofError;
+use displaydoc::Display;
 use tendermint::merkle::proof::ProofOps;
 use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
 use crate::{
+    error::ProofError,
     proof::{
         convert_tm_to_ics_merkle_proof,
         key::{IntoKeys, PrefixedKey},
@@ -24,7 +25,8 @@ pub struct CwProof<K, V> {
     value: V,
 }
 
-#[derive(Clone, Debug)]
+/// ABCI query response doesn't contain proof
+#[derive(Clone, Debug, Display)]
 pub struct ErrorWithoutProof;
 
 impl TryFrom<AbciQuery> for RawCwProof {

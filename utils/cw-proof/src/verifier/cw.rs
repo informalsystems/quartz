@@ -1,8 +1,8 @@
 use alloc::vec::Vec;
 
-use ibc_relayer_types::core::ics23_commitment::error::Error as ProofError;
 use ics23::CommitmentProof;
 
+use crate::error::ProofError;
 use crate::verifier::{ics23::Ics23MembershipVerifier, multi::MultiVerifier, Verifier};
 
 #[derive(Clone, Debug)]
@@ -25,12 +25,12 @@ impl CwVerifier {
         value: &Vec<u8>,
     ) -> Result<(), ProofError> {
         if root.is_empty() {
-            return Err(ProofError::empty_merkle_root());
+            return Err(ProofError::EmptyMerkleRoot);
         }
 
         let verified = self.0.verify_against_root(proofs, keys, value, root)?;
         if !verified {
-            return Err(ProofError::verification_failure());
+            return Err(ProofError::VerificationFailure);
         }
 
         Ok(())
