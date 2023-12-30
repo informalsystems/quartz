@@ -9,14 +9,6 @@ use crate::verifier::{ics23::Ics23MembershipVerifier, multi::MultiVerifier, Veri
 pub struct CwVerifier(MultiVerifier<Ics23MembershipVerifier<Vec<u8>, Vec<u8>>, 2>);
 
 impl CwVerifier {
-    pub fn new() -> Self {
-        let mv = MultiVerifier::new([
-            Ics23MembershipVerifier::new(ics23::iavl_spec()),
-            Ics23MembershipVerifier::new(ics23::tendermint_spec()),
-        ]);
-        Self(mv)
-    }
-
     pub fn verify(
         &self,
         proofs: &[CommitmentProof; 2],
@@ -34,5 +26,15 @@ impl CwVerifier {
         }
 
         Ok(())
+    }
+}
+
+impl Default for CwVerifier {
+    fn default() -> Self {
+        let mv = MultiVerifier::new([
+            Ics23MembershipVerifier::new(ics23::iavl_spec()),
+            Ics23MembershipVerifier::new(ics23::tendermint_spec()),
+        ]);
+        Self(mv)
     }
 }

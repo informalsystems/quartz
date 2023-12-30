@@ -67,7 +67,7 @@ where
         let Self { proof, key, value } = self;
         let proofs = convert_tm_to_ics_merkle_proof(&proof)?;
 
-        let cw_verifier = CwVerifier::new();
+        let cw_verifier = CwVerifier::default();
         cw_verifier.verify(
             &into_array_of_size_2(proofs)?,
             &root,
