@@ -24,13 +24,10 @@ impl CwVerifier<'_> {
             return Err(ProofError::EmptyMerkleRoot);
         }
 
-        let value = Cow::Borrowed(value);
-        let verified = self.0.verify_against_root(proofs, keys, &value, root)?;
-        if !verified {
-            return Err(ProofError::VerificationFailure);
-        }
-
-        Ok(())
+        self.0
+            .verify_against_root(proofs, keys, &Cow::Borrowed(value), root)?
+            .then_some(())
+            .ok_or(ProofError::VerificationFailure)
     }
 }
 
