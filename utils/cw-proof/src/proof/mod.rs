@@ -32,5 +32,5 @@ pub trait Proof {
     type Value;
     type ProofOps;
 
-    fn verify(self, root: Vec<u8>) -> Result<(), ProofError>;
+    fn verify(&self, root: Vec<u8>) -> Result<(), ProofError>;
 }

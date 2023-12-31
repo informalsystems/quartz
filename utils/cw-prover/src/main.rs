@@ -26,12 +26,11 @@ use clap::{Parser, Subcommand};
 use cosmrs::AccountId;
 use tendermint::{block::Height, AppHash};
 use tendermint_rpc::{
-    client::HttpClient as TmRpcClient,
-    endpoint::{abci_query::AbciQuery, status::Response},
-    Client, HttpClientUrl,
+    client::HttpClient as TmRpcClient, endpoint::status::Response, Client, HttpClientUrl,
 };
 
-use cw_proof::proof::{cw::RawCwProof, key::CwAbciKey, Proof};
+use cw_proof::proof::cw::RawCwProof;
+use cw_proof::proof::{cw::CwProof, key::CwAbciKey, Proof};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -91,7 +90,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .abci_query(Some(path), data, Some(proof_height), true)
                 .await?;
 
-            let proof: RawCwProof = result.clone().try_into().map_err(into_string)?;
+            let proof: CwProof = result.clone().try_into().map_err(into_string)?;
             proof
                 .verify(latest_app_hash.clone().into())
                 .map_err(into_string)?;
@@ -99,7 +98,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             println!("{}", String::from_utf8(result.value.clone())?);
 
             if let Some(proof_file) = proof_file {
-                write_proof_to_file(proof_file, result)?;
+                write_proof_to_file(proof_file, proof.into())?;
             }
         }
     };
@@ -123,18 +122,18 @@ fn latest_proof_height_hash(status: Response) -> (Height, AppHash) {
     (proof_height, latest_app_hash)
 }
 
-fn write_proof_to_file(proof_file: PathBuf, output: AbciQuery) -> Result<(), Box<dyn Error>> {
+fn write_proof_to_file(proof_file: PathBuf, proof: RawCwProof) -> Result<(), Box<dyn Error>> {
     let file = File::create(proof_file)?;
     let mut writer = BufWriter::new(file);
-    serde_json::to_writer(&mut writer, &output)?;
+    serde_json::to_writer(&mut writer, &proof)?;
     writer.flush()?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use tendermint_rpc::endpoint::abci_query::AbciQuery;
     use cw_proof::{proof::cw::RawCwProof, proof::Proof};
+    use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
     #[test]
     fn test_query_item() {
