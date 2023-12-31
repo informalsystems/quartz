@@ -1,3 +1,4 @@
+use alloc::borrow::Cow;
 use alloc::vec::Vec;
 
 use ics23::CommitmentProof;
@@ -5,10 +6,13 @@ use ics23::CommitmentProof;
 use crate::error::ProofError;
 use crate::verifier::{ics23::Ics23MembershipVerifier, multi::MultiVerifier, Verifier};
 
-#[derive(Clone, Debug)]
-pub struct CwVerifier(MultiVerifier<Ics23MembershipVerifier<Vec<u8>>, 2>);
+type Key = Vec<u8>;
+type Value<'a> = Cow<'a, [u8]>;
 
-impl CwVerifier {
+#[derive(Clone, Debug)]
+pub struct CwVerifier<'a>(MultiVerifier<Ics23MembershipVerifier<Key, Value<'a>>, 2>);
+
+impl CwVerifier<'_> {
     pub fn verify(
         &self,
         proofs: &[CommitmentProof; 2],
@@ -20,7 +24,8 @@ impl CwVerifier {
             return Err(ProofError::EmptyMerkleRoot);
         }
 
-        let verified = self.0.verify_against_root(proofs, keys, value, root)?;
+        let value = Cow::Borrowed(value);
+        let verified = self.0.verify_against_root(proofs, keys, &value, root)?;
         if !verified {
             return Err(ProofError::VerificationFailure);
         }
@@ -29,7 +34,7 @@ impl CwVerifier {
     }
 }
 
-impl Default for CwVerifier {
+impl Default for CwVerifier<'_> {
     fn default() -> Self {
         let mv = MultiVerifier::new([
             Ics23MembershipVerifier::new(ics23::iavl_spec()),

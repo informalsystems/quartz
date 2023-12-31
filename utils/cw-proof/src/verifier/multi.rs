@@ -1,6 +1,3 @@
-use alloc::borrow::ToOwned;
-use core::borrow::Borrow;
-
 use crate::verifier::Verifier;
 
 #[derive(Clone, Debug)]
@@ -19,27 +16,27 @@ impl<V, const N: usize> Verifier for MultiVerifier<V, N>
 where
     V: Verifier,
     V::Root: Into<V::Value> + Clone,
+    V::Value: Clone,
 {
     type Proof = [V::Proof; N];
     type Root = V::Root;
     type Key = [V::Key; N];
     type Value = V::Value;
-    type ValueRef = V::ValueRef;
     type Error = V::Error;
 
     fn verify(
         &self,
         proofs: &Self::Proof,
         keys: &Self::Key,
-        value: &Self::ValueRef,
+        value: &Self::Value,
     ) -> Result<Self::Root, Self::Error> {
         let mut root = None;
-        let mut value: V::Value = value.to_owned();
+        let mut value: V::Value = value.clone();
 
         for (idx, verifier) in self.verifiers.iter().enumerate() {
             let proof = &proofs[idx];
             let key = &keys[N - idx - 1];
-            let sub_root = verifier.verify(proof, key, value.borrow())?;
+            let sub_root = verifier.verify(proof, key, &value)?;
 
             value = sub_root.clone().into();
             root = Some(sub_root);
