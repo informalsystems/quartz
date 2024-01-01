@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::{Deque, Item};
 
 pub type RawNonce = String;
 pub type RawPublicKey = String;
@@ -27,5 +27,5 @@ pub struct SgxState {
 }
 
 pub const STATE: Item<State> = Item::new("state");
-pub const REQUESTS: Map<&RawNonce, Request> = Map::new("requests");
+pub const REQUESTS: Deque<(RawNonce, Request)> = Deque::new("requests");
 pub const SGX_STATE: Item<SgxState> = Item::new("sgxstate");

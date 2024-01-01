@@ -108,10 +108,12 @@ pub mod execute {
         let _ = deps.api.addr_validate(&address)?;
         let _ = hex::decode(&nonce);
 
-        REQUESTS.save(
+        REQUESTS.push_back(
             deps.storage,
-            &nonce,
-            &Request::JoinComputeNode((io_exchange_key.clone(), address)),
+            &(
+                nonce,
+                Request::JoinComputeNode((io_exchange_key.clone(), address)),
+            ),
         )?;
 
         Ok(Response::new()
@@ -129,10 +131,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 pub mod query {
-    use cosmwasm_std::{Deps, Order, StdResult};
+    use cosmwasm_std::{Deps, StdResult};
 
     use crate::msg::query::{GetRequestsResponse, GetSgxStateResponse};
-    use crate::state::{RawNonce, Request, SgxState, REQUESTS, SGX_STATE};
+    use crate::state::{SgxState, REQUESTS, SGX_STATE};
 
     pub fn get_sgx_state(deps: Deps) -> StdResult<GetSgxStateResponse> {
         let SgxState {
@@ -148,9 +150,7 @@ pub mod query {
 
     pub fn get_requests(deps: Deps) -> StdResult<GetRequestsResponse> {
         Ok(GetRequestsResponse {
-            requests: REQUESTS
-                .range(deps.storage, None, None, Order::Ascending)
-                .collect::<StdResult<Vec<(RawNonce, Request)>>>()?,
+            requests: REQUESTS.iter(deps.storage)?.flat_map(|r| r.ok()).collect(),
         })
     }
 }
