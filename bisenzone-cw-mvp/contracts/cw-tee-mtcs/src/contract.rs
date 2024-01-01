@@ -108,13 +108,12 @@ pub mod execute {
         let _ = deps.api.addr_validate(&address)?;
         let _ = hex::decode(&nonce);
 
-        REQUESTS.push_back(
-            deps.storage,
-            &(
-                nonce,
-                Request::JoinComputeNode((io_exchange_key.clone(), address)),
-            ),
-        )?;
+        let mut requests = REQUESTS.may_load(deps.storage)?.unwrap_or_default();
+        requests.push((
+            nonce,
+            Request::JoinComputeNode((io_exchange_key.clone(), address)),
+        ));
+        REQUESTS.save(deps.storage, &requests)?;
 
         Ok(Response::new()
             .add_attribute("action", "enqueue_request")
@@ -150,7 +149,7 @@ pub mod query {
 
     pub fn get_requests(deps: Deps) -> StdResult<GetRequestsResponse> {
         Ok(GetRequestsResponse {
-            requests: REQUESTS.iter(deps.storage)?.flat_map(|r| r.ok()).collect(),
+            requests: REQUESTS.load(deps.storage)?,
         })
     }
 }
