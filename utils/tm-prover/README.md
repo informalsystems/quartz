@@ -7,10 +7,11 @@ block height and trusted height/hash.
 
 ```bash
 cargo run -- --chain-id osmosis-1 \
-          --primary https://rpc.osmosis.zone \
-          --witnesses https://rpc.osmosis.zone \
-          --trusted-height 12230413 \
-          --trusted-hash D3742DD1573436AF972472135A24B31D5ACE9A2C04791A76196F875955B90F1D \
-          --height 12230423 \
+          --primary "http://127.0.0.1:26657" \
+          --witnesses "http://127.0.0.1:26657" \
+          --trusted-height 400 \
+          --trusted-hash "DEA1738C2AEE72E935E39CE6EB8765B8782B791038789AC2FEA446526FDE8638" \
+          --contract-address "wasm17p9rzwnnfxcjp32un9ug7yhhzgtkhvl9jfksztgw5uh69wac2pgsm0v070" \
+          --storage-key "requests" \
           --trace-file light-client-proof.json
 ```

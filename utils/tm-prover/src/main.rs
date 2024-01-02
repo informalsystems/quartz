@@ -20,7 +20,12 @@ use color_eyre::{
     eyre::{eyre, Result},
     Report,
 };
+use cosmrs::AccountId;
+use cw_proof::error::ProofError;
+use cw_proof::proof::cw::RawCwProof;
+use cw_proof::proof::{cw::CwProof, key::CwAbciKey, Proof};
 use futures::future::join_all;
+use serde::{Deserialize, Serialize};
 use tendermint::{crypto::default::Sha256, evidence::Evidence};
 use tendermint_light_client::{
     builder::LightClientBuilder,
@@ -29,9 +34,11 @@ use tendermint_light_client::{
     types::{Hash, Height, LightBlock, TrustThreshold},
 };
 use tendermint_light_client_detector::{detect_divergence, Error, Provider, Trace};
-use tendermint_rpc::{Client, HttpClient, HttpClientUrl};
+use tendermint_rpc::{client::HttpClient, Client, HttpClientUrl};
 use tracing::{error, info, metadata::LevelFilter};
 use tracing_subscriber::{util::SubscriberInitExt, EnvFilter};
+
+const WASM_STORE_KEY: &str = "/store/wasm/key";
 
 fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {
     if let Some((l, r)) = s.split_once('/') {
@@ -74,6 +81,12 @@ impl Verbosity {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct ProofOutput {
+    light_client_proof: Vec<LightBlock>,
+    merkle_proof: RawCwProof,
+}
+
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
@@ -82,7 +95,7 @@ struct Cli {
     chain_id: String,
 
     /// Primary RPC address
-    #[clap(long)]
+    #[clap(long, default_value = "http://127.0.0.1:26657")]
     primary: HttpClientUrl,
 
     /// Comma-separated list of witnesses RPC addresses
@@ -96,10 +109,6 @@ struct Cli {
     /// Hash of trusted header
     #[clap(long)]
     trusted_hash: Hash,
-
-    /// Height of the header to verify
-    #[clap(long)]
-    height: Option<Height>,
 
     /// Trust threshold
     #[clap(long, value_parser = parse_trust_threshold, default_value_t = TrustThreshold::TWO_THIRDS)]
@@ -124,6 +133,14 @@ struct Cli {
     /// Increase verbosity
     #[clap(flatten)]
     verbose: Verbosity,
+
+    /// Address of the CosmWasm contract
+    #[clap(long)]
+    contract_address: AccountId,
+
+    /// Storage key of the state item for which proofs must be retrieved
+    #[clap(long)]
+    storage_key: String,
 }
 
 #[tokio::main]
@@ -150,23 +167,31 @@ async fn main() -> Result<()> {
 
     let mut primary = make_provider(
         &args.chain_id,
-        args.primary,
+        args.primary.clone(),
         args.trusted_height,
         args.trusted_hash,
         options,
     )
     .await?;
 
+    let client = HttpClient::builder(args.primary.clone()).build()?;
+
     let trusted_block = primary
         .latest_trusted()
         .ok_or_else(|| eyre!("No trusted state found for primary"))?;
 
-    let primary_block = if let Some(target_height) = args.height {
-        info!("Verifying to height {} on primary...", target_height);
-        primary.verify_to_height(target_height)
-    } else {
+    let primary_block = {
         info!("Verifying to latest height on primary...");
-        primary.verify_to_highest()
+
+        let status = client.status().await?;
+        let proof_height = {
+            let latest_height = status.sync_info.latest_block_height;
+            (latest_height.value() - 1)
+                .try_into()
+                .expect("infallible conversion")
+        };
+
+        primary.verify_to_height(proof_height)
     }?;
 
     info!("Verified to height {} on primary", primary_block.height());
@@ -197,14 +222,36 @@ async fn main() -> Result<()> {
     )
     .await?;
 
+    let status = client.status().await?;
+    let (proof_height, latest_app_hash) =
+        (primary_block.height(), status.sync_info.latest_app_hash);
+
+    let path = WASM_STORE_KEY.to_owned();
+    let data = CwAbciKey::new(args.contract_address, args.storage_key, None);
+    let result = client
+        .abci_query(Some(path), data, Some(proof_height), true)
+        .await?;
+
+    let proof: CwProof = result
+        .clone()
+        .try_into()
+        .expect("result should contain proof");
+    proof
+        .verify(latest_app_hash.clone().into())
+        .map_err(|e: ProofError| eyre!(e))?;
+
     if let Some(trace_file) = args.trace_file {
-        write_trace_to_file(trace_file, primary_trace).await?;
+        let output = ProofOutput {
+            light_client_proof: primary_trace,
+            merkle_proof: proof.into(),
+        };
+        write_proof_to_file(trace_file, output).await?;
     };
 
     Ok(())
 }
 
-async fn write_trace_to_file(trace_file: PathBuf, output: Vec<LightBlock>) -> Result<()> {
+async fn write_proof_to_file(trace_file: PathBuf, output: ProofOutput) -> Result<()> {
     info!("Writing proof to output file ({})", trace_file.display());
 
     let file = File::create(trace_file)?;

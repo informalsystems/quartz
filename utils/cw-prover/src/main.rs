@@ -24,13 +24,12 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use cosmrs::AccountId;
+use cw_proof::proof::cw::RawCwProof;
+use cw_proof::proof::{cw::CwProof, key::CwAbciKey, Proof};
 use tendermint::{block::Height, AppHash};
 use tendermint_rpc::{
     client::HttpClient as TmRpcClient, endpoint::status::Response, Client, HttpClientUrl,
 };
-
-use cw_proof::proof::cw::RawCwProof;
-use cw_proof::proof::{cw::CwProof, key::CwAbciKey, Proof};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
