@@ -5,11 +5,19 @@ pub struct InstantiateMsg;
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    BootstrapKeyManager(execute::BootstrapKeyManagerMsg),
     JoinComputeNode(execute::JoinComputeNodeMsg),
 }
 
 pub mod execute {
     use super::*;
+
+    #[cw_serde]
+    pub struct BootstrapKeyManagerMsg {
+        pub compute_mrenclave: String,
+        pub key_manager_mrenclave: String,
+        pub tcb_info: String,
+    }
 
     #[cw_serde]
     pub struct JoinComputeNodeMsg {
@@ -22,6 +30,8 @@ pub mod execute {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(query::GetSgxStateResponse)]
+    GetSgxState {},
     #[returns(query::GetRequestsResponse)]
     GetRequests {},
 }
@@ -29,7 +39,13 @@ pub enum QueryMsg {
 pub mod query {
     use super::*;
 
-    use crate::state::{RawNonce, Request};
+    use crate::state::{RawMrenclave, RawNonce, Request};
+
+    #[cw_serde]
+    pub struct GetSgxStateResponse {
+        pub compute_mrenclave: RawMrenclave,
+        pub key_manager_mrenclave: RawMrenclave,
+    }
 
     #[cw_serde]
     pub struct GetRequestsResponse {
