@@ -22,8 +22,8 @@ use crate::{
 pub struct CwProof<K = Vec<u8>, V = Vec<u8>> {
     proof: ProofOps,
     // TODO(hu55a1n1): replace `K` with `CwAbciKey`
-    key: PrefixedKey<PrefixWasm, K>,
-    value: V,
+    pub key: PrefixedKey<PrefixWasm, K>,
+    pub value: V,
 }
 
 /// ABCI query response doesn't contain proof
