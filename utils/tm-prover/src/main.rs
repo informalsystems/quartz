@@ -195,7 +195,7 @@ async fn main() -> Result<()> {
     }?;
 
     info!("Verified to height {} on primary", primary_block.height());
-    let primary_trace = primary.get_trace(primary_block.height());
+    let mut primary_trace = primary.get_trace(primary_block.height());
 
     let witnesses = join_all(args.witnesses.0.into_iter().map(|addr| {
         make_provider(
@@ -241,6 +241,9 @@ async fn main() -> Result<()> {
         .map_err(|e: ProofError| eyre!(e))?;
 
     if let Some(trace_file) = args.trace_file {
+        let latest_block = primary.fetch_light_block(status.sync_info.latest_block_height)?;
+        primary_trace.push(latest_block);
+
         let output = ProofOutput {
             light_client_proof: primary_trace,
             merkle_proof: proof.into(),
