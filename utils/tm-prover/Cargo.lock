@@ -2130,7 +2130,6 @@ dependencies = [
  "futures",
  "serde",
  "serde_json",
- "serde_with",
  "tendermint",
  "tendermint-light-client",
  "tendermint-light-client-detector",

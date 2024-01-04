@@ -180,22 +180,23 @@ async fn main() -> Result<()> {
         .latest_trusted()
         .ok_or_else(|| eyre!("No trusted state found for primary"))?;
 
-    let primary_block = {
-        info!("Verifying to latest height on primary...");
+    let status = client.status().await?;
+    let latest_height = status.sync_info.latest_block_height;
 
-        let status = client.status().await?;
-        let proof_height = {
-            let latest_height = status.sync_info.latest_block_height;
-            (latest_height.value() - 1)
-                .try_into()
-                .expect("infallible conversion")
-        };
+    // `proof_height` is the height at which we want to query the blockchain's state
+    // This is one less than than the `latest_height` because we want to verify the merkle-proof for
+    // the state against the `app_hash` at `latest_height`.
+    // (because Tendermint commits to the latest `app_hash` in the subsequent block)
+    let proof_height = (latest_height.value() - 1)
+        .try_into()
+        .expect("infallible conversion");
 
-        primary.verify_to_height(proof_height)
-    }?;
+    info!("Verifying to latest height on primary...");
+
+    let primary_block = primary.verify_to_height(latest_height)?;
 
     info!("Verified to height {} on primary", primary_block.height());
-    let primary_trace = primary.get_trace(primary_block.height());
+    let mut primary_trace = primary.get_trace(primary_block.height());
 
     let witnesses = join_all(args.witnesses.0.into_iter().map(|addr| {
         make_provider(
@@ -223,8 +224,7 @@ async fn main() -> Result<()> {
     .await?;
 
     let status = client.status().await?;
-    let (proof_height, latest_app_hash) =
-        (primary_block.height(), status.sync_info.latest_app_hash);
+    let latest_app_hash = status.sync_info.latest_app_hash;
 
     let path = WASM_STORE_KEY.to_owned();
     let data = CwAbciKey::new(args.contract_address, args.storage_key, None);
@@ -241,6 +241,12 @@ async fn main() -> Result<()> {
         .map_err(|e: ProofError| eyre!(e))?;
 
     if let Some(trace_file) = args.trace_file {
+        // replace the last block in the trace (i.e. the (latest - 1) block) with the latest block
+        // we don't actually verify the latest block because it will be verified on the other side
+        let latest_block = primary.fetch_light_block(status.sync_info.latest_block_height)?;
+        let _ = primary_trace.pop();
+        primary_trace.push(latest_block);
+
         let output = ProofOutput {
             light_client_proof: primary_trace,
             merkle_proof: proof.into(),
