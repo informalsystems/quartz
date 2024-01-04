@@ -241,7 +241,10 @@ async fn main() -> Result<()> {
         .map_err(|e: ProofError| eyre!(e))?;
 
     if let Some(trace_file) = args.trace_file {
+        // replace the last block in the trace (i.e. the (latest - 1) block) with the latest block
+        // we don't actually verify the latest block because it will be verified on the other side
         let latest_block = primary.fetch_light_block(status.sync_info.latest_block_height)?;
+        let _ = primary_trace.pop();
         primary_trace.push(latest_block);
 
         let output = ProofOutput {
