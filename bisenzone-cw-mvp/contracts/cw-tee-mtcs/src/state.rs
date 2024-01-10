@@ -26,6 +26,12 @@ pub struct SgxState {
     pub tcb_info: RawTcbInfo,
 }
 
+#[cw_serde]
+pub struct EpochState {
+    pub epoch_key: RawPublicKey,
+}
+
 pub const STATE: Item<State> = Item::new("state");
 pub const REQUESTS: Item<Vec<(RawNonce, Request)>> = Item::new("requests");
-pub const SGX_STATE: Item<SgxState> = Item::new("sgxstate");
+pub const SGX_STATE: Item<SgxState> = Item::new("sgx_state");
+pub const EPOCH_STATE: Item<EpochState> = Item::new("epoch_state");
