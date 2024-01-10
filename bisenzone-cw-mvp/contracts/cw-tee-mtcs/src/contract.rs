@@ -4,7 +4,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::execute::{BootstrapKeyManagerMsg, JoinComputeNodeMsg};
+use crate::msg::execute::{BootstrapKeyManagerMsg, JoinComputeNodeMsg, RegisterEpochKeyMsg};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{State, STATE};
 
@@ -45,6 +45,9 @@ pub fn execute(
         }) => {
             execute::bootstrap_key_manger(deps, compute_mrenclave, key_manager_mrenclave, tcb_info)
         }
+        ExecuteMsg::RegisterEpochKey(RegisterEpochKeyMsg { epoch_key }) => {
+            execute::register_epoch_key(deps, epoch_key)
+        }
         ExecuteMsg::JoinComputeNode(JoinComputeNodeMsg {
             io_exchange_key,
             address,
@@ -58,8 +61,8 @@ pub mod execute {
     use k256::ecdsa::VerifyingKey;
 
     use crate::state::{
-        Mrenclave, RawAddress, RawMrenclave, RawNonce, RawPublicKey, RawTcbInfo, SgxState,
-        SGX_STATE,
+        EpochState, Mrenclave, RawAddress, RawMrenclave, RawNonce, RawPublicKey, RawTcbInfo,
+        SgxState, EPOCH_STATE, SGX_STATE,
     };
     use crate::state::{Request, REQUESTS};
     use crate::ContractError;
@@ -96,6 +99,22 @@ pub mod execute {
             .add_attribute("compute_mrenclave", compute_mrenclave)
             .add_attribute("key_manager_mrenclave", key_manager_mrenclave)
             .add_attribute("tcb_info", tcb_info))
+    }
+
+    pub fn register_epoch_key(
+        deps: DepsMut,
+        epoch_key: RawPublicKey,
+    ) -> Result<Response, ContractError> {
+        let _ = VerifyingKey::from_sec1_bytes(&hex::decode(&epoch_key)?)?;
+
+        let epoch_state = EpochState {
+            epoch_key: epoch_key.clone(),
+        };
+        EPOCH_STATE.save(deps.storage, &epoch_state)?;
+
+        Ok(Response::new()
+            .add_attribute("action", "register_epoch_key")
+            .add_attribute("epoch_key", epoch_key))
     }
 
     pub fn enqueue_join_request(

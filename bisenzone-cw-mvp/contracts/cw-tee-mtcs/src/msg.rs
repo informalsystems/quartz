@@ -6,6 +6,7 @@ pub struct InstantiateMsg;
 #[cw_serde]
 pub enum ExecuteMsg {
     BootstrapKeyManager(execute::BootstrapKeyManagerMsg),
+    RegisterEpochKey(execute::RegisterEpochKeyMsg),
     JoinComputeNode(execute::JoinComputeNodeMsg),
 }
 
@@ -17,6 +18,11 @@ pub mod execute {
         pub compute_mrenclave: String,
         pub key_manager_mrenclave: String,
         pub tcb_info: String,
+    }
+
+    #[cw_serde]
+    pub struct RegisterEpochKeyMsg {
+        pub epoch_key: String,
     }
 
     #[cw_serde]
