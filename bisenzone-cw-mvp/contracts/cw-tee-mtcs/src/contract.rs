@@ -144,6 +144,7 @@ pub mod execute {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetSgxState {} => to_json_binary(&query::get_sgx_state(deps)?),
+        QueryMsg::GetEpochState {} => to_json_binary(&query::get_epoch_state(deps)?),
         QueryMsg::GetRequests {} => to_json_binary(&query::get_requests(deps)?),
     }
 }
@@ -151,8 +152,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub mod query {
     use cosmwasm_std::{Deps, StdResult};
 
-    use crate::msg::query::{GetRequestsResponse, GetSgxStateResponse};
-    use crate::state::{SgxState, REQUESTS, SGX_STATE};
+    use crate::msg::query::{GetEpochStateResponse, GetRequestsResponse, GetSgxStateResponse};
+    use crate::state::{EpochState, SgxState, EPOCH_STATE, REQUESTS, SGX_STATE};
 
     pub fn get_sgx_state(deps: Deps) -> StdResult<GetSgxStateResponse> {
         let SgxState {
@@ -164,6 +165,11 @@ pub mod query {
             compute_mrenclave,
             key_manager_mrenclave,
         })
+    }
+
+    pub fn get_epoch_state(deps: Deps) -> StdResult<GetEpochStateResponse> {
+        let EpochState { epoch_key } = EPOCH_STATE.load(deps.storage)?;
+        Ok(GetEpochStateResponse { epoch_key })
     }
 
     pub fn get_requests(deps: Deps) -> StdResult<GetRequestsResponse> {

@@ -38,6 +38,8 @@ pub mod execute {
 pub enum QueryMsg {
     #[returns(query::GetSgxStateResponse)]
     GetSgxState {},
+    #[returns(query::GetEpochStateResponse)]
+    GetEpochState {},
     #[returns(query::GetRequestsResponse)]
     GetRequests {},
 }
@@ -45,12 +47,17 @@ pub enum QueryMsg {
 pub mod query {
     use super::*;
 
-    use crate::state::{RawMrenclave, RawNonce, Request};
+    use crate::state::{RawMrenclave, RawNonce, RawPublicKey, Request};
 
     #[cw_serde]
     pub struct GetSgxStateResponse {
         pub compute_mrenclave: RawMrenclave,
         pub key_manager_mrenclave: RawMrenclave,
+    }
+
+    #[cw_serde]
+    pub struct GetEpochStateResponse {
+        pub epoch_key: RawPublicKey,
     }
 
     #[cw_serde]
