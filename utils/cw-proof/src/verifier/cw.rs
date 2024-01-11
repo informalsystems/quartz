@@ -1,10 +1,11 @@
-use alloc::borrow::Cow;
-use alloc::vec::Vec;
+use alloc::{borrow::Cow, vec::Vec};
 
 use ics23::CommitmentProof;
 
-use crate::error::ProofError;
-use crate::verifier::{ics23::Ics23MembershipVerifier, multi::MultiVerifier, Verifier};
+use crate::{
+    error::ProofError,
+    verifier::{ics23::Ics23MembershipVerifier, multi::MultiVerifier, Verifier},
+};
 
 type Key = Vec<u8>;
 type Value<'a> = Cow<'a, [u8]>;
@@ -16,7 +17,7 @@ impl CwVerifier<'_> {
     pub fn verify(
         &self,
         proofs: &[CommitmentProof; 2],
-        root: &Vec<u8>,
+        #[allow(clippy::ptr_arg)] root: &Vec<u8>, // TODO(hu55a1n1): fix this using `Cow` types
         keys: &[Vec<u8>; 2],
         value: &[u8],
     ) -> Result<(), ProofError> {
