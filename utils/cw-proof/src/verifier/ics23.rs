@@ -6,8 +6,7 @@ use ics23::{
     ProofSpec,
 };
 
-use crate::error::ProofError;
-use crate::verifier::Verifier;
+use crate::{error::ProofError, verifier::Verifier};
 
 #[derive(Clone, Debug)]
 pub struct Ics23MembershipVerifier<K, V> {

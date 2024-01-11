@@ -1,6 +1,8 @@
-use alloc::boxed::Box;
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use alloc::{
+    boxed::Box,
+    string::{String, ToString},
+    vec::Vec,
+};
 
 use tendermint::Hash;
 use tendermint_light_client::{
@@ -14,8 +16,7 @@ use tendermint_light_client::{
     verifier::ProdVerifier,
 };
 
-use crate::error::Error;
-use crate::null_io::NullIo;
+use crate::{error::Error, null_io::NullIo};
 
 /// A interface over a stateless light client instance.
 #[derive(Debug)]

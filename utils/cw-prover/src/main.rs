@@ -24,8 +24,11 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use cosmrs::AccountId;
-use cw_proof::proof::cw::RawCwProof;
-use cw_proof::proof::{cw::CwProof, key::CwAbciKey, Proof};
+use cw_proof::proof::{
+    cw::{CwProof, RawCwProof},
+    key::CwAbciKey,
+    Proof,
+};
 use tendermint::{block::Height, AppHash};
 use tendermint_rpc::{
     client::HttpClient as TmRpcClient, endpoint::status::Response, Client, HttpClientUrl,
@@ -131,7 +134,7 @@ fn write_proof_to_file(proof_file: PathBuf, proof: RawCwProof) -> Result<(), Box
 
 #[cfg(test)]
 mod tests {
-    use cw_proof::{proof::cw::RawCwProof, proof::Proof};
+    use cw_proof::proof::{cw::RawCwProof, Proof};
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
     #[test]

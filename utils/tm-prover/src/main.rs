@@ -21,9 +21,14 @@ use color_eyre::{
     Report,
 };
 use cosmrs::AccountId;
-use cw_proof::error::ProofError;
-use cw_proof::proof::cw::RawCwProof;
-use cw_proof::proof::{cw::CwProof, key::CwAbciKey, Proof};
+use cw_proof::{
+    error::ProofError,
+    proof::{
+        cw::{CwProof, RawCwProof},
+        key::CwAbciKey,
+        Proof,
+    },
+};
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use tendermint::{crypto::default::Sha256, evidence::Evidence};

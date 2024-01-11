@@ -20,5 +20,4 @@ mod null_io;
 mod provider;
 
 pub use error::Error;
-pub use provider::make_provider;
-pub use provider::StatelessProvider;
+pub use provider::{make_provider, StatelessProvider};
