@@ -17,7 +17,7 @@ impl CwVerifier<'_> {
     pub fn verify(
         &self,
         proofs: &[CommitmentProof; 2],
-        root: &Vec<u8>,
+        #[allow(clippy::ptr_arg)] root: &Vec<u8>, // TODO(hu55a1n1): fix this using `Cow` types
         keys: &[Vec<u8>; 2],
         value: &[u8],
     ) -> Result<(), ProofError> {
