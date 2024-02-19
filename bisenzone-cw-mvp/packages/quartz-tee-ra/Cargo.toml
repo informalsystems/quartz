@@ -1,0 +1,15 @@
+[package]
+name = "quartz-tee-ra"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cosmwasm-schema = "1.4.0"
+cosmwasm-std = "1.4.0"
+hex-literal = "0.4.1"
+num-bigint = "0.4.4"
+serde_json = "1.0.108"
+sha2 = "0.10.8"
+thiserror = { version = "1.0.49" }
