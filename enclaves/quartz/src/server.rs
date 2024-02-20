@@ -1,6 +1,5 @@
+use quartz_proto::quartz::{core_server::Core, SessionCreateRequest, SessionCreateResponse};
 use tonic::{Request, Response, Status};
-
-use crate::proto::quartz::{core_server::Core, SessionCreateRequest, SessionCreateResponse};
 
 #[derive(Debug, Default)]
 pub struct CoreService {}

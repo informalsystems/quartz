@@ -1832,9 +1832,27 @@ name = "quartz-enclave"
 version = "0.1.0"
 dependencies = [
  "prost",
+ "quartz-proto",
  "tokio",
  "tonic",
+]
+
+[[package]]
+name = "quartz-proto"
+version = "0.1.0"
+dependencies = [
+ "prost",
+ "tonic",
  "tonic-build",
+]
+
+[[package]]
+name = "quartz-relayer"
+version = "0.1.0"
+dependencies = [
+ "quartz-proto",
+ "tokio",
+ "tonic",
 ]
 
 [[package]]

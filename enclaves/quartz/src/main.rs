@@ -14,12 +14,12 @@
     unused_qualifications
 )]
 
-mod proto;
 mod server;
 
+use quartz_proto::quartz::core_server::CoreServer;
 use tonic::transport::Server;
 
-use crate::{proto::quartz::core_server::CoreServer, server::CoreService};
+use crate::server::CoreService;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
