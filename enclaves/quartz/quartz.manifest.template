@@ -28,6 +28,7 @@ fs.mounts = [
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
 ]
 
+# sgx.debug = true
 sgx.enclave_size = "512M"
 sgx.max_threads = 4
 sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
@@ -48,3 +49,5 @@ sgx.allowed_files = [
   "file:{{ quartz_dir }}/exchange.sk",
   "file:{{ quartz_dir }}/request.json",
 ]
+
+sys.insecure__allow_eventfd = true

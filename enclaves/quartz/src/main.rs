@@ -23,7 +23,7 @@ use crate::{proto::quartz::core_server::CoreServer, server::CoreService};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse()?;
+    let addr = "127.0.0.1:9090".parse()?;
     let core_service = CoreService::default();
 
     Server::builder()
