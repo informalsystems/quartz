@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package quartz;
+
+service Core {
+  rpc SessionCreate (SessionCreateRequest) returns (SessionCreateResponse) {}
+}
+
+message SessionCreateRequest {}
+
+message SessionCreateResponse {
+  string message = 1;
+}
