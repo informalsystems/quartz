@@ -1,0 +1,10 @@
+[package]
+name = "quartz-relayer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tonic = "0.11"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+
+quartz-proto = { path = "../../utils/quartz-proto" }
