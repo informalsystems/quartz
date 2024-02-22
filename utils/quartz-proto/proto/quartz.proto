@@ -3,7 +3,14 @@ syntax = "proto3";
 package quartz;
 
 service Core {
+  rpc Instantiate (InstantiateRequest) returns (InstantiateResponse) {}
   rpc SessionCreate (SessionCreateRequest) returns (SessionCreateResponse) {}
+}
+
+message InstantiateRequest {}
+
+message InstantiateResponse {
+  string message = 1;
 }
 
 message SessionCreateRequest {}
