@@ -1831,8 +1831,14 @@ dependencies = [
 name = "quartz-enclave"
 version = "0.1.0"
 dependencies = [
+ "clap",
+ "color-eyre",
  "prost",
  "quartz-proto",
+ "serde",
+ "serde_json",
+ "tendermint",
+ "tendermint-light-client",
  "tokio",
  "tonic",
 ]
