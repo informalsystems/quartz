@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.1.8", features = ["derive"] }
 color-eyre = "0.6.2"
+cosmwasm-std = "1.4.0"
 prost = "0.12"
 tendermint = "0.34.0"
 tendermint-light-client = "0.34.0"
@@ -15,3 +16,5 @@ tonic = "0.11"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
 quartz-proto = { path = "../../utils/quartz-proto" }
+quartz-cw = { path = "../../../bisenzone-cw-mvp/packages/quartz-cw" }
+quartz-tee-ra = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git", branch = "hu55a1n1/11-use-quartz" }
