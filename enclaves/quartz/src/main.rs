@@ -21,13 +21,11 @@ mod types;
 use std::time::Duration;
 
 use clap::Parser;
+use quartz_cw::state::{Config, LightClientOpts};
 use quartz_proto::quartz::core_server::CoreServer;
 use tonic::transport::Server;
 
-use crate::{
-    cli::Cli,
-    server::{Config, CoreService, LightClientOpts},
-};
+use crate::{cli::Cli, server::CoreService};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -43,10 +41,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.max_clock_drift,
         args.max_block_lag,
     );
-    let config = Config::new(Duration::from_secs(30 * 24 * 60), light_client_opts);
+    let config = Config::new(
+        args.mr_enclave,
+        Duration::from_secs(30 * 24 * 60),
+        light_client_opts,
+    );
 
     Server::builder()
-        .add_service(CoreServer::new(CoreService(config)))
+        .add_service(CoreServer::new(CoreService::new(config)))
         .serve(args.rpc_addr)
         .await?;
 

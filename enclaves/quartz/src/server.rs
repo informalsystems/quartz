@@ -1,5 +1,9 @@
 use std::time::Duration;
 
+use quartz_cw::{
+    msg::{execute::attested::HasUserData, instantiate::CoreInstantiate},
+    state::{Config, UserData},
+};
 use quartz_proto::quartz::{
     core_server::Core, InstantiateRequest, InstantiateResponse, SessionCreateRequest,
     SessionCreateResponse,
@@ -10,7 +14,15 @@ use tendermint_light_client::types::{Height, TrustThreshold};
 use tonic::{Request, Response, Status};
 
 #[derive(Clone, Debug)]
-pub struct CoreService(pub Config);
+pub struct CoreService {
+    config: Config,
+}
+
+impl CoreService {
+    pub fn new(config: Config) -> Self {
+        Self { config }
+    }
+}
 
 #[tonic::async_trait]
 impl Core for CoreService {
@@ -40,54 +52,11 @@ impl Core for CoreService {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Config {
-    epoch_duration: Duration,
-    light_client_opts: LightClientOpts,
-}
+pub fn attestion_quote(user_data: UserData) -> IoResult<Vec<u8>> {
+    let mut user_report_data = File::create("/dev/attestation/user_report_data")?;
+    user_report_data.write_all(user_data.as_slice())?;
+    user_report_data.flush()?;
 
-impl Config {
-    pub fn new(epoch_duration: Duration, light_client_opts: LightClientOpts) -> Self {
-        Self {
-            epoch_duration,
-            light_client_opts,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct LightClientOpts {
-    chain_id: String,
-    target_height: Height,
-    trusted_height: Height,
-    trusted_hash: Hash,
-    trust_threshold: TrustThreshold,
-    trusting_period: u64,
-    max_clock_drift: u64,
-    max_block_lag: u64,
-}
-
-impl LightClientOpts {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        chain_id: String,
-        target_height: Height,
-        trusted_height: Height,
-        trusted_hash: Hash,
-        trust_threshold: TrustThreshold,
-        trusting_period: u64,
-        max_clock_drift: u64,
-        max_block_lag: u64,
-    ) -> Self {
-        Self {
-            chain_id,
-            target_height,
-            trusted_height,
-            trusted_hash,
-            trust_threshold,
-            trusting_period,
-            max_clock_drift,
-            max_block_lag,
-        }
-    }
+    let quote = read("/dev/attestation/quote")?;
+    Ok(quote)
 }
