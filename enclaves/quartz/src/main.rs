@@ -33,7 +33,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let light_client_opts = LightClientOpts::new(
         args.chain_id,
-        args.target_height,
         args.trusted_height,
         args.trusted_hash,
         args.trust_threshold,

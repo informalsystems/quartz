@@ -37,10 +37,6 @@ pub struct Cli {
     #[clap(long)]
     pub chain_id: String,
 
-    /// Height of the header to verify
-    #[clap(long)]
-    pub target_height: Height,
-
     /// Height of the trusted header (AKA root-of-trust)
     #[clap(long)]
     pub trusted_height: Height,
