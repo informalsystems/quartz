@@ -1,13 +1,23 @@
-use quartz_proto::quartz::{core_client::CoreClient, SessionCreateRequest};
+mod cli;
+
+use std::{fs::File, io::Write};
+
+use clap::Parser;
+use quartz_proto::quartz::{core_client::CoreClient, InstantiateRequest};
+use quartz_relayer::types::InstantiateResponse;
+
+use crate::{cli::Cli};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = CoreClient::connect("http://localhost:11090").await?;
+    let args = Cli::parse();
 
-    let request = tonic::Request::new(SessionCreateRequest {});
+    let mut client = CoreClient::connect(args.enclave_addr).await?;
+    let response = client.instantiate(InstantiateRequest {}).await?;
+    let response: InstantiateResponse = response.into_inner().try_into()?;
 
-    let response = client.session_create(request).await?;
-    println!("{:?}", response.into_inner());
+    let mut quote_file = File::create("test.quote")?;
+    quote_file.write_all(response.quote())?;
 
     Ok(())
 }
