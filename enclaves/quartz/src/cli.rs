@@ -21,7 +21,6 @@ fn parse_mr_enclave(s: &str) -> Result<MrEnclave> {
     Ok(HexBinary::from_hex(s)?.to_array()?)
 }
 
-
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
