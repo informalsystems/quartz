@@ -16,6 +16,7 @@
 
 mod cli;
 mod server;
+mod types;
 
 use std::time::Duration;
 
