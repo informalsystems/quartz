@@ -11,9 +11,8 @@ use quartz_proto::quartz::{
     core_server::Core, InstantiateRequest as RawInstantiateRequest,
     InstantiateResponse as RawInstantiateResponse, SessionCreateRequest, SessionCreateResponse,
 };
+use quartz_relayer::types::InstantiateResponse;
 use tonic::{Request, Response, Status};
-
-use crate::types::InstantiateResponse;
 
 type TonicResult<T> = Result<T, Status>;
 
