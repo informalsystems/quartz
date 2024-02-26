@@ -26,16 +26,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let datareport_file_path = dir.path().join("datareport");
     let datareportsig_file_path = dir.path().join("datareportsig");
 
-    let mut quote_file = File::create(quote_file_path)?;
+    let mut quote_file = File::create(quote_file_path.clone())?;
     quote_file.write_all(response.quote())?;
 
     let gramine_sgx_ias_request_output = Command::new("gramine-sgx-ias-request")
         .arg("report")
         .args(["-g", "51CAF5A48B450D624AEFE3286D314894"])
         .args(["-k", "669244b3e6364b5888289a11d2a1726d"])
-        .args(["-q", quote_file_path])
-        .args(["-r", datareport_file_path])
-        .args(["-s", datareportsig_file_path])
+        .args(["-q", &quote_file_path.display().to_string()])
+        .args(["-r", &datareport_file_path.display().to_string()])
+        .args(["-s", &datareportsig_file_path.display().to_string()])
         .output()?;
     println!("{gramine_sgx_ias_request_output:?}");
 
