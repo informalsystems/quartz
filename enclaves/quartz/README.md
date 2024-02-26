@@ -3,15 +3,21 @@
 ### Enclave usage
 
 ```bash
-# docker build . --tag quartz
-DOCKER_BUILDKIT=1 docker build --tag quartz  --secret id=ssh_id,src=/home/hu55a1n1/.ssh/id_ed25519 .
-docker run -it \
-      --device /dev/sgx_enclave \
-      --device /dev/sgx_provision \
-       -v /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket \
-       -v ./data:/workdir/data \
-       quartz bash
-is-sgx-available
+gramine-sgx-gen-private-key
+
+CARGO_TARGET_DIR=./target cargo build --release
+
+gramine-manifest  \
+    -Dlog_level="error"  \
+    -Dhome=${HOME}  \
+    -Darch_libdir="/lib/$(gcc -dumpmachine)"  \
+    -Dra_type="epid" \
+    -Dra_client_spid="51CAF5A48B450D624AEFE3286D314894" \
+    -Dra_client_linkable=1 \
+    -Dquartz_dir="$(pwd)/quartz"  \
+    quartz.manifest.template quartz.manifest
+
+gramine-sgx-sign --manifest quartz.manifest --output quartz.manifest.sgx
 gramine-sgx ./quartz
 ```
 
