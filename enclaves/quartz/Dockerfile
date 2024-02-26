@@ -1,6 +1,10 @@
 FROM gramineproject/gramine:v1.5
 
-RUN apt-get update && apt-get install -y jq build-essential protobuf-compiler libprotobuf-dev
+RUN apt-get update && apt-get install -y jq build-essential protobuf-compiler libprotobuf-dev git
+
+RUN mkdir /root/.ssh/ \
+ && touch /root/.ssh/known_hosts \
+ && ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 WORKDIR /workdir
 
@@ -28,7 +32,9 @@ ENV SGX=$SGX
 # Copy the quartz directory and build
 COPY . ./quartz
 WORKDIR /workdir/quartz
-RUN cargo build --release
+RUN mkdir -p .cargo/
+RUN echo "net.git-fetch-with-cli = true" > .cargo/config.toml
+RUN --mount=type=secret,id=ssh_id,target=/root/.ssh/id_ed25519 cargo build --release
 
 WORKDIR /workdir
 COPY quartz.manifest.template ./

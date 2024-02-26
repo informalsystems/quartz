@@ -3,7 +3,8 @@
 ### Enclave usage
 
 ```bash
-docker build . --tag quartz
+# docker build . --tag quartz
+DOCKER_BUILDKIT=1 docker build --tag quartz  --secret id=ssh_id,src=/home/hu55a1n1/.ssh/id_ed25519 .
 docker run -it \
       --device /dev/sgx_enclave \
       --device /dev/sgx_provision \
