@@ -14,6 +14,7 @@
     unused_qualifications
 )]
 
+mod attestor;
 mod cli;
 mod server;
 
@@ -24,7 +25,7 @@ use quartz_cw::state::{Config, LightClientOpts};
 use quartz_proto::quartz::core_server::CoreServer;
 use tonic::transport::Server;
 
-use crate::{cli::Cli, server::CoreService};
+use crate::{attestor::EpidAttestor, cli::Cli, server::CoreService};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     Server::builder()
-        .add_service(CoreServer::new(CoreService::new(config)))
+        .add_service(CoreServer::new(CoreService::new(config, EpidAttestor)))
         .serve(args.rpc_addr)
         .await?;
 
