@@ -2068,8 +2068,8 @@ dependencies = [
  "cosmwasm-std",
  "prost",
  "quartz-cw",
- "quartz-proto 0.1.0 (git+ssh://git@github.com/informalsystems/tee-mtcs.git?branch=hu55a1n1/40-quartz-framework)",
- "quartz-relayer 0.1.0 (git+ssh://git@github.com/informalsystems/tee-mtcs.git?branch=hu55a1n1/40-quartz-framework)",
+ "quartz-proto",
+ "quartz-relayer",
  "quartz-tee-ra",
  "serde",
  "serde_json",
@@ -2089,38 +2089,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "quartz-proto"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/tee-mtcs.git?branch=hu55a1n1/40-quartz-framework#c9fc72f90b50d0de85a67f78ccdc9708a03defbb"
-dependencies = [
- "prost",
- "tonic",
- "tonic-build",
-]
-
-[[package]]
 name = "quartz-relayer"
 version = "0.1.0"
 dependencies = [
  "clap",
  "cosmwasm-std",
  "quartz-cw",
- "quartz-proto 0.1.0 (git+ssh://git@github.com/informalsystems/tee-mtcs.git?branch=hu55a1n1/40-quartz-framework)",
- "serde",
- "serde_json",
- "tokio",
- "tonic",
-]
-
-[[package]]
-name = "quartz-relayer"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/tee-mtcs.git?branch=hu55a1n1/40-quartz-framework#c9fc72f90b50d0de85a67f78ccdc9708a03defbb"
-dependencies = [
- "clap",
- "cosmwasm-std",
- "quartz-cw",
- "quartz-proto 0.1.0 (git+ssh://git@github.com/informalsystems/tee-mtcs.git?branch=hu55a1n1/40-quartz-framework)",
+ "quartz-proto",
  "serde",
  "serde_json",
  "tokio",
