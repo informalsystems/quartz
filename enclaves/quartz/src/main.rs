@@ -37,13 +37,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let light_client_opts = LightClientOpts::new(
         args.chain_id,
-        args.trusted_height,
-        args.trusted_hash,
-        args.trust_threshold,
+        args.trusted_height.into(),
+        Vec::from(args.trusted_hash)
+            .try_into()
+            .expect("invalid trusted hash"),
+        (
+            args.trust_threshold.numerator(),
+            args.trust_threshold.denominator(),
+        ),
         args.trusting_period,
         args.max_clock_drift,
         args.max_block_lag,
-    );
+    )?;
+
     let config = Config::new(
         EpidAttestor.mr_enclave()?,
         Duration::from_secs(30 * 24 * 60),

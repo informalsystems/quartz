@@ -1,9 +1,14 @@
-use quartz_cw::{msg::instantiate::CoreInstantiate, state::Config};
+use quartz_cw::{
+    msg::{execute::session_create::SessionCreate, instantiate::CoreInstantiate},
+    state::{Config, Nonce},
+};
 use quartz_proto::quartz::{
     core_server::Core, InstantiateRequest as RawInstantiateRequest,
-    InstantiateResponse as RawInstantiateResponse, SessionCreateRequest, SessionCreateResponse,
+    InstantiateResponse as RawInstantiateResponse, SessionCreateRequest as RawSessionCreateRequest,
+    SessionCreateResponse as RawSessionCreateResponse,
 };
-use quartz_relayer::types::InstantiateResponse;
+use quartz_relayer::types::{InstantiateResponse, SessionCreateResponse};
+use rand::Rng;
 use tonic::{Request, Response, Status};
 
 use crate::attestor::Attestor;
@@ -35,6 +40,7 @@ where
         _request: Request<RawInstantiateRequest>,
     ) -> TonicResult<Response<RawInstantiateResponse>> {
         let core_instantiate_msg = CoreInstantiate::new(self.config.clone());
+
         let quote = self
             .attestor
             .quote(core_instantiate_msg)
@@ -45,14 +51,17 @@ where
     }
     async fn session_create(
         &self,
-        request: Request<SessionCreateRequest>,
-    ) -> TonicResult<Response<SessionCreateResponse>> {
-        println!("Got a request: {:?}", request);
+        _request: Request<RawSessionCreateRequest>,
+    ) -> TonicResult<Response<RawSessionCreateResponse>> {
+        let nonce = rand::thread_rng().gen::<Nonce>();
+        let session_create_msg = SessionCreate::new(nonce);
 
-        let reply = SessionCreateResponse {
-            message: "Hello!".to_string(),
-        };
+        let quote = self
+            .attestor
+            .quote(session_create_msg)
+            .map_err(|e| Status::internal(e.to_string()))?;
 
-        Ok(Response::new(reply))
+        let response = SessionCreateResponse::new(nonce, quote);
+        Ok(Response::new(response.into()))
     }
 }
