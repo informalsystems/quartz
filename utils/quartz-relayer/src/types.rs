@@ -18,6 +18,10 @@ impl InstantiateResponse {
     pub fn quote(&self) -> &[u8] {
         &self.message.quote
     }
+
+    pub fn into_message(self) -> InstantiateResponseMsg {
+        self.message
+    }
 }
 
 impl TryFrom<RawInstantiateResponse> for InstantiateResponse {
@@ -45,6 +49,12 @@ impl From<InstantiateResponse> for RawInstantiateResponse {
 pub struct InstantiateResponseMsg {
     config: Config,
     quote: Vec<u8>,
+}
+
+impl InstantiateResponseMsg {
+    pub fn into_tuple(self) -> (Config, Vec<u8>) {
+        (self.config, self.quote)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

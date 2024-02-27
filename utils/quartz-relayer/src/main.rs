@@ -3,14 +3,43 @@ mod cli;
 use std::{
     error::Error,
     fs::{read_to_string, File},
-    io::Write,
+    io::{Read, Write},
     process::Command,
 };
 
 use clap::Parser;
+use cosmos_sdk_proto::{
+    cosmos::{
+        auth::v1beta1::{
+            query_client::QueryClient as AuthQueryClient, BaseAccount as RawBaseAccount,
+            QueryAccountRequest,
+        },
+        tx::v1beta1::{service_client::ServiceClient, BroadcastMode, BroadcastTxRequest},
+    },
+    traits::Message,
+    Any,
+};
+use cosmrs::{
+    auth::BaseAccount,
+    cosmwasm::MsgExecuteContract,
+    crypto::secp256k1::{SigningKey, VerifyingKey},
+    tendermint::{account::Id as TmAccountId, chain::Id as TmChainId},
+    tx,
+    tx::{Fee, Msg, SignDoc, SignerInfo},
+    AccountId, Coin,
+};
+use ecies::{PublicKey, SecretKey};
+use quartz_cw::msg::{
+    execute::attested::{Attested, EpidAttestation},
+    instantiate::{CoreInstantiate, RawInstantiate},
+    InstantiateMsg,
+};
 use quartz_proto::quartz::{core_client::CoreClient, InstantiateRequest};
 use quartz_relayer::types::InstantiateResponse;
+use quartz_tee_ra::IASReport;
 use serde_json::{json, Value};
+use subtle_encoding::base64;
+use tendermint::public_key::Secp256k1 as TmPublicKey;
 
 use crate::cli::Cli;
 
@@ -18,16 +47,111 @@ use crate::cli::Cli;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
-    let mut client = CoreClient::connect(args.enclave_addr).await?;
+    let mut client = CoreClient::connect(args.enclave_addr.uri().to_string()).await?;
     let response = client.instantiate(InstantiateRequest {}).await?;
     let response: InstantiateResponse = response.into_inner().try_into()?;
+    let (config, quote) = response.into_message().into_tuple();
 
-    let ias_report = gramine_sgx_ias_report(response.quote())?;
+    let ias_report = gramine_sgx_ias_report(&quote)?;
     println!(
         "{}",
         serde_json::to_string(&ias_report).expect("infallible serializer")
     );
+    let ias_report: IASReport = serde_json::from_str(&ias_report.to_string())?;
+    let mr_enclave = ias_report.report.isv_enclave_quote_body.mrenclave();
+    let user_data = ias_report.report.isv_enclave_quote_body.user_data();
+    let attestation = EpidAttestation::new(ias_report, mr_enclave, user_data);
 
+    let cw_instantiate_msg = Attested::new(CoreInstantiate::new(config), attestation);
+
+    // Read the TSP secret
+    let secret = {
+        let mut secret = Vec::new();
+        let mut tsp_sk_file = File::open(args.secret)?;
+        tsp_sk_file.read_to_end(secret.as_mut())?;
+        let secret = base64::decode(secret).unwrap();
+        SecretKey::parse_slice(&secret).unwrap()
+    };
+    let tm_pubkey = {
+        let pubkey = PublicKey::from_secret_key(&secret);
+        TmPublicKey::from_sec1_bytes(&pubkey.serialize()).unwrap()
+    };
+    let sender = {
+        let tm_key = TmAccountId::from(tm_pubkey);
+        AccountId::new("wasm", tm_key.as_bytes()).unwrap()
+    };
+
+    let msgs = vec![MsgExecuteContract {
+        sender: sender.clone(),
+        contract: args.contract.clone(),
+        msg: serde_json::to_string::<RawInstantiate>(&InstantiateMsg(cw_instantiate_msg).into())?
+            .into_bytes(),
+        funds: vec![],
+    }
+    .to_any()
+    .unwrap()];
+
+    let account = account_info(args.node_addr.uri().clone(), sender.clone()).await?;
+    let amount = Coin {
+        amount: 0u128,
+        denom: "cosm".parse()?,
+    };
+    let tx_bytes = tx_bytes(
+        &secret,
+        amount,
+        args.gas_limit,
+        tm_pubkey,
+        msgs,
+        account.sequence,
+        account.account_number,
+        &args.chain_id,
+    )?;
+
+    send_tx(args.node_addr.uri().clone(), tx_bytes).await?;
+
+    Ok(())
+}
+
+pub async fn account_info(
+    node: impl ToString,
+    address: impl ToString,
+) -> Result<BaseAccount, Box<dyn Error>> {
+    let mut client = AuthQueryClient::connect(node.to_string()).await?;
+    let request = tonic::Request::new(QueryAccountRequest {
+        address: address.to_string(),
+    });
+    let response = client.account(request).await?;
+    let response = RawBaseAccount::decode(response.into_inner().account.unwrap().value.as_slice())?;
+    let account = BaseAccount::try_from(response)?;
+    Ok(account)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn tx_bytes(
+    secret: &SecretKey,
+    amount: Coin,
+    gas: u64,
+    tm_pubkey: VerifyingKey,
+    msgs: Vec<Any>,
+    sequence_number: u64,
+    account_number: u64,
+    chain_id: &TmChainId,
+) -> Result<Vec<u8>, Box<dyn Error>> {
+    let tx_body = tx::Body::new(msgs, "", 0u16);
+    let signer_info = SignerInfo::single_direct(Some(tm_pubkey.into()), sequence_number);
+    let auth_info = signer_info.auth_info(Fee::from_amount_and_gas(amount, gas));
+    let sign_doc = SignDoc::new(&tx_body, &auth_info, chain_id, account_number)?;
+    let tx_signed = sign_doc.sign(&SigningKey::from_bytes(&secret.serialize()).unwrap())?;
+    Ok(tx_signed.to_bytes()?)
+}
+
+pub async fn send_tx(node: impl ToString, tx_bytes: Vec<u8>) -> Result<(), Box<dyn Error>> {
+    let mut client = ServiceClient::connect(node.to_string()).await?;
+    let request = tonic::Request::new(BroadcastTxRequest {
+        tx_bytes,
+        mode: BroadcastMode::Block.into(),
+    });
+    let _response = client.broadcast_tx(request).await?;
     Ok(())
 }
 
