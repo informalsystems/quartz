@@ -1,8 +1,13 @@
 use cosmwasm_std::{HexBinary, StdError};
-use quartz_cw::state::{Config, Nonce, RawConfig};
+use k256::ecdsa::VerifyingKey;
+use quartz_cw::{
+    error::Error as QuartzCwError,
+    state::{Config, Nonce, RawConfig},
+};
 use quartz_proto::quartz::{
     InstantiateResponse as RawInstantiateResponse,
     SessionCreateResponse as RawSessionCreateResponse,
+    SessionSetPubKeyResponse as RawSessionSetPubKeyResponse,
 };
 use serde::{Deserialize, Serialize};
 
@@ -161,6 +166,97 @@ impl From<SessionCreateResponseMsg> for RawSessionCreateResponseMsg {
     fn from(value: SessionCreateResponseMsg) -> Self {
         Self {
             nonce: value.nonce.into(),
+            quote: value.quote.into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SessionSetPubKeyResponse {
+    message: SessionSetPubKeyResponseMsg,
+}
+
+impl SessionSetPubKeyResponse {
+    pub fn new(nonce: Nonce, pub_key: VerifyingKey, quote: Vec<u8>) -> Self {
+        Self {
+            message: SessionSetPubKeyResponseMsg {
+                nonce,
+                pub_key,
+                quote,
+            },
+        }
+    }
+
+    pub fn quote(&self) -> &[u8] {
+        &self.message.quote
+    }
+
+    pub fn into_message(self) -> SessionSetPubKeyResponseMsg {
+        self.message
+    }
+}
+
+impl TryFrom<RawSessionSetPubKeyResponse> for SessionSetPubKeyResponse {
+    type Error = StdError;
+
+    fn try_from(value: RawSessionSetPubKeyResponse) -> Result<Self, Self::Error> {
+        let raw_message: RawSessionSetPubKeyResponseMsg = serde_json::from_str(&value.message)
+            .map_err(|e| StdError::parse_err("RawSessionSetPubKeyResponseMsg", e))?;
+        Ok(Self {
+            message: raw_message.try_into()?,
+        })
+    }
+}
+
+impl From<SessionSetPubKeyResponse> for RawSessionSetPubKeyResponse {
+    fn from(value: SessionSetPubKeyResponse) -> Self {
+        let raw_message: RawSessionSetPubKeyResponseMsg = value.message.into();
+        Self {
+            message: serde_json::to_string(&raw_message).expect("infallible serializer"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SessionSetPubKeyResponseMsg {
+    nonce: Nonce,
+    pub_key: VerifyingKey,
+    quote: Vec<u8>,
+}
+
+impl SessionSetPubKeyResponseMsg {
+    pub fn into_tuple(self) -> (VerifyingKey, Vec<u8>) {
+        (self.pub_key, self.quote)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RawSessionSetPubKeyResponseMsg {
+    nonce: HexBinary,
+    pub_key: HexBinary,
+    quote: HexBinary,
+}
+
+impl TryFrom<RawSessionSetPubKeyResponseMsg> for SessionSetPubKeyResponseMsg {
+    type Error = StdError;
+
+    fn try_from(value: RawSessionSetPubKeyResponseMsg) -> Result<Self, Self::Error> {
+        let pub_key = VerifyingKey::from_sec1_bytes(&value.pub_key)
+            .map_err(QuartzCwError::from)
+            .map_err(|e| StdError::generic_err(e.to_string()))?;
+        Ok(Self {
+            nonce: value.nonce.to_array()?,
+            pub_key,
+            quote: value.quote.into(),
+        })
+    }
+}
+
+impl From<SessionSetPubKeyResponseMsg> for RawSessionSetPubKeyResponseMsg {
+    fn from(value: SessionSetPubKeyResponseMsg) -> Self {
+        Self {
+            nonce: value.nonce.into(),
+            pub_key: value.pub_key.to_sec1_bytes().into_vec().into(),
             quote: value.quote.into(),
         }
     }
