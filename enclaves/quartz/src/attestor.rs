@@ -25,3 +25,14 @@ impl Attestor for EpidAttestor {
         read("/dev/attestation/quote")
     }
 }
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct MockAttestor;
+
+impl Attestor for MockAttestor {
+    type Error = String;
+
+    fn quote(&self, _user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
+        Ok(vec![])
+    }
+}
