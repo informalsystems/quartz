@@ -21,7 +21,7 @@ loader.env.MYAPP_DATA = { passthrough = true }
 
 loader.argv = ["quartz-enclave",
                 "--chain-id", "testing",
-                "--sigile", "quartz.sig",
+                "--sigfile", "quartz.sig",
                 "--trusted-height", "1",
                 "--trusted-hash", "A1D115BA3A5E9FCC12ED68A9D8669159E9085F6F96EC26619F5C7CEB4EE02869"]
 
