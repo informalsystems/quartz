@@ -1,9 +1,7 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
-use cosmwasm_std::HexBinary;
-use quartz_cw::state::MrEnclave;
 use tendermint::Hash;
 use tendermint_light_client::types::{Height, TrustThreshold};
 
@@ -17,10 +15,6 @@ fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {
     }
 }
 
-fn parse_mr_enclave(s: &str) -> Result<MrEnclave> {
-    Ok(HexBinary::from_hex(s)?.to_array()?)
-}
-
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
@@ -28,9 +22,9 @@ pub struct Cli {
     #[clap(long, default_value = "127.0.0.1:11090")]
     pub rpc_addr: SocketAddr,
 
-    /// MRENCLAVE of this enclave
-    #[clap(long, value_parser = parse_mr_enclave)]
-    pub mr_enclave: MrEnclave,
+    /// Gramine SIGFILE for this enclave (to read MRENCLAVE from)
+    #[clap(long)]
+    pub sigfile: PathBuf,
 
     /// Identifier of the chain
     #[clap(long)]
