@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, path::PathBuf};
+use std::net::SocketAddr;
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
@@ -21,10 +21,6 @@ pub struct Cli {
     /// RPC server address
     #[clap(long, default_value = "127.0.0.1:11090")]
     pub rpc_addr: SocketAddr,
-
-    /// Gramine SIGFILE for this enclave (to read MRENCLAVE from)
-    #[clap(long)]
-    pub sigfile: PathBuf,
 
     /// Identifier of the chain
     #[clap(long)]

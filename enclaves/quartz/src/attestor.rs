@@ -3,12 +3,17 @@ use std::{
     io::{Error as IoError, Write},
 };
 
-use quartz_cw::msg::execute::attested::HasUserData;
+use quartz_cw::{
+    msg::execute::attested::HasUserData,
+    state::{MrEnclave, UserData},
+};
 
 pub trait Attestor {
     type Error: ToString;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error>;
+
+    fn mr_enclave(&self) -> Result<MrEnclave, Self::Error>;
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -24,6 +29,13 @@ impl Attestor for EpidAttestor {
         user_report_data.flush()?;
         read("/dev/attestation/quote")
     }
+
+    fn mr_enclave(&self) -> Result<MrEnclave, Self::Error> {
+        let quote = self.quote(NullUserData)?;
+        Ok(quote[112..(112 + 32)]
+            .try_into()
+            .expect("hardcoded array size"))
+    }
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -34,5 +46,17 @@ impl Attestor for MockAttestor {
 
     fn quote(&self, _user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
         Ok(vec![])
+    }
+
+    fn mr_enclave(&self) -> Result<MrEnclave, Self::Error> {
+        Ok([0u8; 32])
+    }
+}
+
+struct NullUserData;
+
+impl HasUserData for NullUserData {
+    fn user_data(&self) -> UserData {
+        [0u8; 64]
     }
 }
