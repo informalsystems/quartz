@@ -2338,30 +2338,13 @@ dependencies = [
 [[package]]
 name = "quartz-cw"
 version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "k256 0.13.3",
- "quartz-tee-ra 0.1.0",
- "serde",
- "serde_json",
- "sha2 0.10.8",
- "tendermint 0.34.0",
- "tendermint-light-client",
- "thiserror",
-]
-
-[[package]]
-name = "quartz-cw"
-version = "0.1.0"
 source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#c49fc8da96d2039179aec962c85f190aee999d62"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
  "k256 0.13.3",
- "quartz-tee-ra 0.1.0 (git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz)",
+ "quartz-tee-ra",
  "serde",
  "serde_json",
  "sha2 0.10.8",
@@ -2378,10 +2361,10 @@ dependencies = [
  "color-eyre",
  "cosmwasm-std",
  "prost 0.12.3",
- "quartz-cw 0.1.0 (git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz)",
+ "quartz-cw",
  "quartz-proto",
  "quartz-relayer",
- "quartz-tee-ra 0.1.0 (git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz)",
+ "quartz-tee-ra",
  "serde",
  "serde_json",
  "tendermint 0.34.0",
@@ -2409,9 +2392,9 @@ dependencies = [
  "cosmwasm-std",
  "displaydoc",
  "ecies",
- "quartz-cw 0.1.0",
+ "quartz-cw",
  "quartz-proto",
- "quartz-tee-ra 0.1.0",
+ "quartz-tee-ra",
  "serde",
  "serde_json",
  "subtle-encoding",
@@ -2420,19 +2403,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tonic 0.8.3",
-]
-
-[[package]]
-name = "quartz-tee-ra"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "hex-literal",
- "num-bigint",
- "serde_json",
- "sha2 0.10.8",
- "thiserror",
 ]
 
 [[package]]

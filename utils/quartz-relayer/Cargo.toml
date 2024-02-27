@@ -19,6 +19,6 @@ thiserror = "1.0.38"
 tonic = "=0.8.3"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
-quartz-cw = { path = "../../../bisenzone-cw-mvp/packages/quartz-cw" }
-quartz-tee-ra = { path = "../../../bisenzone-cw-mvp/packages/quartz-tee-ra" }
+quartz-cw = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git", branch = "hu55a1n1/11-use-quartz" }
+quartz-tee-ra = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git", branch = "hu55a1n1/11-use-quartz" }
 quartz-proto = { path = "../../utils/quartz-proto" }
