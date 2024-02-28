@@ -58,10 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         serde_json::to_string(&ias_report).expect("infallible serializer")
     );
     let ias_report: IASReport = serde_json::from_str(&ias_report.to_string())?;
-    let mr_enclave = ias_report.report.isv_enclave_quote_body.mrenclave();
-    let user_data = ias_report.report.isv_enclave_quote_body.user_data();
-    let attestation = EpidAttestation::new(ias_report, mr_enclave, user_data);
-
+    let attestation = EpidAttestation::new(ias_report);
     let cw_instantiate_msg = Attested::new(CoreInstantiate::new(config), attestation);
 
     // Read the TSP secret
