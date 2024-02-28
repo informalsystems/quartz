@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package quartz;
+
+service Core {
+  rpc Instantiate (InstantiateRequest) returns (InstantiateResponse) {}
+  rpc SessionCreate (SessionCreateRequest) returns (SessionCreateResponse) {}
+  rpc SessionSetPubKey (SessionSetPubKeyRequest) returns (SessionSetPubKeyResponse) {}
+}
+
+message InstantiateRequest {}
+
+message InstantiateResponse {
+  string message = 1;
+}
+
+message SessionCreateRequest {}
+
+message SessionCreateResponse {
+  string message = 1;
+}
+
+message SessionSetPubKeyRequest {}
+
+message SessionSetPubKeyResponse {
+  string message = 1;
+}

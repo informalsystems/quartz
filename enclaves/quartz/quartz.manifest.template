@@ -1,0 +1,57 @@
+# Quartz manifest file
+
+loader.entrypoint = "file:{{ gramine.libos }}"
+libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-enclave"
+
+loader.log_level = "{{ log_level }}"
+
+loader.env.LD_LIBRARY_PATH = "/lib:{{ arch_libdir }}:/usr/{{ arch_libdir }}"
+loader.env.HOME = "{{ home }}"
+loader.env.INSIDE_SGX = "1"
+loader.env.TLS = { passthrough = true }
+loader.env.RA_TYPE = { passthrough = true }
+loader.env.RA_TLS_ALLOW_DEBUG_ENCLAVE_INSECURE = { passthrough = true }
+loader.env.RA_TLS_ALLOW_OUTDATED_TCB_INSECURE = { passthrough = true }
+loader.env.RA_TLS_MRENCLAVE = { passthrough = true }
+loader.env.RA_TLS_MRSIGNER = { passthrough = true }
+loader.env.RA_TLS_ISV_SVN = { passthrough = true }
+loader.env.RA_TLS_ISV_PROD_ID = { passthrough = true }
+loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
+loader.env.MYAPP_DATA = { passthrough = true }
+
+loader.argv = ["quartz-enclave",
+                "--chain-id", "testing",
+                "--trusted-height", "1",
+                "--trusted-hash", "A1D115BA3A5E9FCC12ED68A9D8669159E9085F6F96EC26619F5C7CEB4EE02869"]
+
+fs.mounts = [
+  { uri = "file:{{ gramine.runtimedir() }}", path = "/lib" },
+  { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
+  { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
+  { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
+]
+
+# sgx.debug = true
+sgx.enclave_size = "512M"
+sgx.max_threads = 4
+sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
+
+sgx.remote_attestation = "{{ ra_type }}"
+sgx.ra_client_spid = "{{ ra_client_spid }}"
+sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
+
+sgx.trusted_files = [
+  "file:{{ gramine.libos }}",
+  "file:{{ quartz_dir }}/target/release/quartz-enclave",
+  "file:{{ gramine.runtimedir() }}/",
+  "file:{{ arch_libdir }}/",
+  "file:/usr/{{ arch_libdir }}/",
+]
+
+sgx.allowed_files = [
+  "file:{{ quartz_dir }}/exchange.sk",
+  "file:{{ quartz_dir }}/request.json",
+]
+
+sys.insecure__allow_eventfd = true
+sys.enable_sigterm_injection = true
