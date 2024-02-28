@@ -66,6 +66,7 @@ where
         &self,
         _request: Request<RawSessionCreateRequest>,
     ) -> TonicResult<Response<RawSessionCreateResponse>> {
+        // FIXME(hu55a1n1) - disallow calling more than once
         let mut nonce = self.nonce.lock().unwrap();
         *nonce = rand::thread_rng().gen::<Nonce>();
 
@@ -84,6 +85,7 @@ where
         &self,
         _request: Request<RawSessionSetPubKeyRequest>,
     ) -> TonicResult<Response<RawSessionSetPubKeyResponse>> {
+        // FIXME(hu55a1n1) - disallow calling more than once
         let nonce = self.nonce.lock().unwrap();
         let sk = SigningKey::random(&mut rand::thread_rng());
         let pk = sk.verifying_key();
