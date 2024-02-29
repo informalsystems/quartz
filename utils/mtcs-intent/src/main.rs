@@ -21,8 +21,11 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use cosmwasm_std::HexBinary;
-use ecies::encrypt;
-use k256::ecdsa::{SigningKey, VerifyingKey};
+use ecies::{decrypt, encrypt};
+use k256::{
+    ecdsa::{SigningKey, VerifyingKey},
+    elliptic_curve::generic_array::GenericArray,
+};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -49,11 +52,21 @@ enum Command {
         #[clap(long, default_value = "epoch.pk")]
         pk_file: PathBuf,
     },
+    DecryptSetoff {
+        #[clap(long, value_parser = parse_hex)]
+        setoff: Vec<u8>,
+        #[clap(long)]
+        sk_file: PathBuf,
+    },
 }
 
 fn parse_obligation_json(s: &str) -> Result<Obligation, String> {
     let raw_obligation: RawObligation = serde_json::from_str(s).map_err(|e| e.to_string())?;
     raw_obligation.try_into()
+}
+
+fn parse_hex(s: &str) -> Result<Vec<u8>, String> {
+    Ok(hex::decode(s).unwrap())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -153,6 +166,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                 "{}",
                 serde_json::to_string(&obligation_enc).expect("infallible serializer")
             );
+        }
+        Command::DecryptSetoff { setoff, sk_file } => {
+            let sk = {
+                let sk_str = read_to_string(sk_file)?;
+                let sk = hex::decode(sk_str).expect("");
+                SigningKey::from_bytes(GenericArray::from_slice(&sk))?
+            };
+
+            let key_share = decrypt(&sk.to_bytes(), &setoff).unwrap();
+            serde_json::from_slice(&key_share)?;
         }
     }
 
