@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package mtcs;
+
+service Clearing {
+  rpc Run (RunClearingRequest) returns (RunClearingResponse) {}
+}
+
+message RunClearingRequest {
+  string message = 1;
+}
+
+message RunClearingResponse {
+  string message = 1;
+}

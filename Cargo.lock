@@ -2389,6 +2389,7 @@ dependencies = [
  "tendermint-light-client",
  "tokio",
  "tonic 0.11.0",
+ "tonic-build",
 ]
 
 [[package]]

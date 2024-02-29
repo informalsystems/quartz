@@ -21,3 +21,6 @@ quartz-cw = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git",
 quartz-proto = { path = "../../utils/quartz-proto" }
 quartz-relayer = { path = "../../utils/quartz-relayer" }
 quartz-tee-ra = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git", branch = "hu55a1n1/11-use-quartz" }
+
+[build-dependencies]
+tonic-build = "0.11"

@@ -15,6 +15,7 @@
 
 mod attestor;
 mod cli;
+mod proto;
 mod server;
 
 use std::time::Duration;
