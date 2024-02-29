@@ -3,7 +3,7 @@
 set -eo pipefail
 
 usage() {
-  echo "Usage: $0 <REQUEST>"
+  echo "Usage: $0 <REQUEST> <REQUEST_MSG>"
   echo "    <REQUEST>: Instantiate | SessionCreate | SessionSetPubKey"
   exit 1
 }
@@ -15,12 +15,13 @@ REPORT_FILE="/tmp/datareport"
 REPORT_SIG_FILE="/tmp/datareportsig"
 
 REQUEST="$1"
+REQUEST_MSG=${2:-"{}"}
 
 # clear tmp files from previous runs
 rm -f "$QUOTE_FILE" "$REPORT_FILE" "$REPORT_SIG_FILE"
 
 # query the gRPC quartz enclave service
-ATTESTED_MSG=$(grpcurl -plaintext -import-path ../../utils/quartz-proto/proto/ -proto quartz.proto -d '{}' '127.0.0.1:11090' quartz.Core/"$REQUEST" | jq -c '.message | fromjson')
+ATTESTED_MSG=$(grpcurl -plaintext -import-path ../../utils/quartz-proto/proto/ -proto quartz.proto -d "$REQUEST_MSG" '127.0.0.1:11090' quartz.Core/"$REQUEST" | jq -c '.message | fromjson')
 
 # parse out the quote and the message
 QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')
