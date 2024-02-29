@@ -83,7 +83,7 @@ impl TryFrom<RawObligation> for Obligation {
         Ok(Self {
             debtor: VerifyingKey::from_sec1_bytes(raw_obligation.debtor.as_slice())
                 .map_err(|e| e.to_string())?,
-            creditor: VerifyingKey::from_sec1_bytes(raw_obligation.debtor.as_slice())
+            creditor: VerifyingKey::from_sec1_bytes(raw_obligation.creditor.as_slice())
                 .map_err(|e| e.to_string())?,
             amount: raw_obligation.amount,
             salt,
