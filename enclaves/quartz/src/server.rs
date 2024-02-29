@@ -1,5 +1,15 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
+use cw_proof::{
+    error::ProofError,
+    proof::{
+        cw::{CwProof, RawCwProof},
+        Proof,
+    },
+};
 use k256::ecdsa::SigningKey;
 use quartz_cw::{
     msg::{
@@ -17,6 +27,12 @@ use quartz_proto::quartz::{
 };
 use quartz_relayer::types::{InstantiateResponse, SessionCreateResponse, SessionSetPubKeyResponse};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
+use tendermint_light_client::{
+    light_client::Options,
+    types::{LightBlock, TrustThreshold},
+};
+use tm_stateless_verifier::make_provider;
 use tonic::{Request, Response, Result as TonicResult, Status};
 
 use crate::attestor::Attestor;
@@ -83,10 +99,66 @@ where
 
     async fn session_set_pub_key(
         &self,
-        _request: Request<RawSessionSetPubKeyRequest>,
+        request: Request<RawSessionSetPubKeyRequest>,
     ) -> TonicResult<Response<RawSessionSetPubKeyResponse>> {
         // FIXME(hu55a1n1) - disallow calling more than once
+        let proof: ProofOfPublication = serde_json::from_str(&request.into_inner().message)
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+
+        let config_trust_threshold = self.config.light_client_opts().trust_threshold();
+        let trust_threshold =
+            TrustThreshold::new(config_trust_threshold.0, config_trust_threshold.1).unwrap();
+
+        let config_trusting_period = self.config.light_client_opts().trusting_period();
+        let trusting_period = Duration::from_secs(config_trusting_period);
+
+        let config_clock_drift = self.config.light_client_opts().max_clock_drift();
+        let clock_drift = Duration::from_secs(config_clock_drift);
+        let options = Options {
+            trust_threshold,
+            trusting_period,
+            clock_drift,
+        };
+
+        let target_height = proof.light_client_proof.last().unwrap().height();
+
+        let primary_block = make_provider(
+            self.config.light_client_opts().chain_id(),
+            self.config
+                .light_client_opts()
+                .trusted_height()
+                .try_into()
+                .unwrap(),
+            self.config
+                .light_client_opts()
+                .trusted_hash()
+                .to_vec()
+                .try_into()
+                .unwrap(),
+            proof.light_client_proof,
+            options,
+        )
+        .and_then(|mut primary| primary.verify_to_height(target_height))
+        .map_err(|e| Status::internal(e.to_string()))?;
+
+        let proof = CwProof::from(proof.merkle_proof);
+        proof
+            .verify(
+                primary_block
+                    .signed_header
+                    .header
+                    .app_hash
+                    .as_bytes()
+                    .to_vec(),
+            )
+            .map_err(|e: ProofError| Status::internal(e.to_string()))?;
+
+        let nonce_onchain: Nonce = serde_json::from_slice(&proof.value).unwrap();
         let nonce = self.nonce.lock().unwrap();
+
+        if nonce_onchain != *nonce {
+            return Err(Status::unauthenticated("nonce mismatch"));
+        }
 
         let sk = SigningKey::random(&mut rand::thread_rng());
         *self.sk.lock().unwrap() = Some(sk.clone());
@@ -102,4 +174,10 @@ where
         let response = SessionSetPubKeyResponse::new(*nonce, *pk, quote);
         Ok(Response::new(response.into()))
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ProofOfPublication {
+    light_client_proof: Vec<LightBlock>,
+    merkle_proof: RawCwProof,
 }

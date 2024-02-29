@@ -835,7 +835,7 @@ dependencies = [
 [[package]]
 name = "cw-tee-mtcs"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#48508d739427bd3f2a983c8e8d4c6eb2e677aff2"
+source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#e2ce14cb275e9668739b63659535ea721f95b0ff"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -2455,7 +2455,7 @@ dependencies = [
 [[package]]
 name = "quartz-cw"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#48508d739427bd3f2a983c8e8d4c6eb2e677aff2"
+source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#e2ce14cb275e9668739b63659535ea721f95b0ff"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -2475,6 +2475,7 @@ dependencies = [
  "clap",
  "color-eyre",
  "cosmwasm-std",
+ "cw-proof",
  "cw-tee-mtcs",
  "ecies",
  "k256 0.13.3",
@@ -2489,6 +2490,7 @@ dependencies = [
  "serde_json",
  "tendermint 0.34.0",
  "tendermint-light-client",
+ "tm-stateless-verifier",
  "tokio",
  "tonic 0.11.0",
  "tonic-build",
@@ -2530,7 +2532,7 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#48508d739427bd3f2a983c8e8d4c6eb2e677aff2"
+source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#e2ce14cb275e9668739b63659535ea721f95b0ff"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
