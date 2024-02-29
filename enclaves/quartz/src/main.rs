@@ -18,7 +18,10 @@ mod cli;
 mod proto;
 mod server;
 
-use std::time::Duration;
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use clap::Parser;
 use quartz_cw::state::{Config, LightClientOpts};
@@ -56,8 +59,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         light_client_opts,
     );
 
+    let sk = Arc::new(Mutex::new(None));
+
     Server::builder()
-        .add_service(CoreServer::new(CoreService::new(config, EpidAttestor)))
+        .add_service(CoreServer::new(CoreService::new(
+            config,
+            sk.clone(),
+            EpidAttestor,
+        )))
         .serve(args.rpc_addr)
         .await?;
 
