@@ -835,7 +835,7 @@ dependencies = [
 [[package]]
 name = "cw-tee-mtcs"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#e2ce14cb275e9668739b63659535ea721f95b0ff"
+source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#cbf2f52a82247606d700a65d8ddca75b4a769b71"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -2455,7 +2455,7 @@ dependencies = [
 [[package]]
 name = "quartz-cw"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#e2ce14cb275e9668739b63659535ea721f95b0ff"
+source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#cbf2f52a82247606d700a65d8ddca75b4a769b71"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -2532,7 +2532,7 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#e2ce14cb275e9668739b63659535ea721f95b0ff"
+source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#cbf2f52a82247606d700a65d8ddca75b4a769b71"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",

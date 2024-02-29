@@ -16,7 +16,7 @@ use quartz_cw::{
         execute::{session_create::SessionCreate, session_set_pub_key::SessionSetPubKey},
         instantiate::CoreInstantiate,
     },
-    state::{Config, Nonce},
+    state::{Config, Nonce, Session},
 };
 use quartz_proto::quartz::{
     core_server::Core, InstantiateRequest as RawInstantiateRequest,
@@ -153,10 +153,10 @@ where
             )
             .map_err(|e: ProofError| Status::internal(e.to_string()))?;
 
-        let nonce_onchain: Nonce = serde_json::from_slice(&proof.value).unwrap();
+        let session: Session = serde_json::from_slice(&proof.value).unwrap();
         let nonce = self.nonce.lock().unwrap();
 
-        if nonce_onchain != *nonce {
+        if session.nonce() != *nonce {
             return Err(Status::unauthenticated("nonce mismatch"));
         }
 
