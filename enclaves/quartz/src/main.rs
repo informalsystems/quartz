@@ -15,6 +15,7 @@
 
 mod attestor;
 mod cli;
+mod mtcs_server;
 mod proto;
 mod server;
 
@@ -31,6 +32,8 @@ use tonic::transport::Server;
 use crate::{
     attestor::{Attestor, EpidAttestor},
     cli::Cli,
+    mtcs_server::MtcsService,
+    proto::clearing_server::ClearingServer as MtcsServer,
     server::CoreService,
 };
 
@@ -67,6 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             sk.clone(),
             EpidAttestor,
         )))
+        .add_service(MtcsServer::new(MtcsService::new(sk.clone(), EpidAttestor)))
         .serve(args.rpc_addr)
         .await?;
 
