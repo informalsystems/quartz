@@ -833,6 +833,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-tee-mtcs"
+version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#3382463b74411fd873a927e1d26b09c35b339753"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "hex",
+ "k256 0.13.3",
+ "quartz-cw",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "cw2"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6c120b24fbbf5c3bedebb97f2cc85fbfa1c3287e09223428e7e597b5293c1fa"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "schemars",
+ "semver",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "darling"
 version = "0.20.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1822,6 +1854,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
 
 [[package]]
+name = "mcmf"
+version = "2.0.0"
+source = "git+https://github.com/hu55a1n1/flow#cad8f3adb29d3be2177a31db0fa0e5c2a858beb0"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1851,6 +1891,20 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "mtcs"
+version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/mtcs.git#b0b90c348f09c10828e321e505220a18ee891c8e"
+dependencies = [
+ "displaydoc",
+ "itertools 0.10.5",
+ "log",
+ "mcmf",
+ "num-traits",
+ "petgraph 0.6.3",
+ "serde",
 ]
 
 [[package]]
@@ -1903,6 +1957,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "num"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b05180d69e3da0e530ba2a1dae5110317e49e3b7f3d41be227dc5f92e49ee7af"
+dependencies = [
+ "num-bigint",
+ "num-complex",
+ "num-integer",
+ "num-iter",
+ "num-rational",
+ "num-traits",
+]
+
+[[package]]
 name = "num-bigint"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1929,6 +1997,15 @@ dependencies = [
  "serde",
  "smallvec",
  "zeroize",
+]
+
+[[package]]
+name = "num-complex"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23c6602fda94a57c990fe0df199a035d83576b496aa29f4e634a8ac6004e68a6"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -1964,6 +2041,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d869c01cc0c455284163fd0092f1f93835385ccab5a98a0dcc497b2f8bf055a9"
 dependencies = [
  "autocfg",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "num-rational"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0638a1c9d0a3c0914158145bc76cff373a75a627e6ecbfb71cbe6f453a5a19b0"
+dependencies = [
+ "autocfg",
+ "num-bigint",
  "num-integer",
  "num-traits",
 ]
@@ -2147,6 +2236,16 @@ checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
 name = "petgraph"
+version = "0.6.3"
+source = "git+https://github.com/hu55a1n1/petgraph?branch=min-cost-flow-primal-dual#3a2664a3b9d1e5b71c411a6ed497cf576c1a86ae"
+dependencies = [
+ "fixedbitset",
+ "indexmap 1.9.3",
+ "num",
+]
+
+[[package]]
+name = "petgraph"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e1d3afd2628e69da2be385eb6f2fd57c8ac7977ceeff6dc166ff1657b0e386a9"
@@ -2299,7 +2398,7 @@ dependencies = [
  "log",
  "multimap",
  "once_cell",
- "petgraph",
+ "petgraph 0.6.4",
  "prettyplease",
  "prost 0.12.3",
  "prost-types 0.12.3",
@@ -2356,7 +2455,7 @@ dependencies = [
 [[package]]
 name = "quartz-cw"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#8f6ff80cce2160d9f0d1f7ce20c010f17c0fa88e"
+source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#3382463b74411fd873a927e1d26b09c35b339753"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -2376,7 +2475,10 @@ dependencies = [
  "clap",
  "color-eyre",
  "cosmwasm-std",
+ "cw-tee-mtcs",
+ "ecies",
  "k256 0.13.3",
+ "mtcs",
  "prost 0.12.3",
  "quartz-cw",
  "quartz-proto",
@@ -2428,7 +2530,7 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#8f6ff80cce2160d9f0d1f7ce20c010f17c0fa88e"
+source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git?branch=hu55a1n1/11-use-quartz#3382463b74411fd873a927e1d26b09c35b339753"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
