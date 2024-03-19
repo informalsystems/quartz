@@ -1,43 +1,25 @@
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct InstantiateRequest {}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct InstantiateResponse {
+pub struct RunClearingRequest {
     #[prost(string, tag = "1")]
     pub message: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SessionCreateRequest {}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SessionCreateResponse {
-    #[prost(string, tag = "1")]
-    pub message: ::prost::alloc::string::String,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SessionSetPubKeyRequest {
-    #[prost(string, tag = "1")]
-    pub message: ::prost::alloc::string::String,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SessionSetPubKeyResponse {
+pub struct RunClearingResponse {
     #[prost(string, tag = "1")]
     pub message: ::prost::alloc::string::String,
 }
 /// Generated client implementations.
-pub mod core_client {
+pub mod clearing_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
-    pub struct CoreClient<T> {
+    pub struct ClearingClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl CoreClient<tonic::transport::Channel> {
+    impl ClearingClient<tonic::transport::Channel> {
         /// Attempt to create a new client by connecting to a given endpoint.
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -48,7 +30,7 @@ pub mod core_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> CoreClient<T>
+    impl<T> ClearingClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
         T::Error: Into<StdError>,
@@ -66,7 +48,7 @@ pub mod core_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> CoreClient<InterceptedService<T, F>>
+        ) -> ClearingClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -80,7 +62,7 @@ pub mod core_client {
                 http::Request<tonic::body::BoxBody>,
             >>::Error: Into<StdError> + Send + Sync,
         {
-            CoreClient::new(InterceptedService::new(inner, interceptor))
+            ClearingClient::new(InterceptedService::new(inner, interceptor))
         }
         /// Compress requests with the given encoding.
         ///
@@ -113,11 +95,11 @@ pub mod core_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        pub async fn instantiate(
+        pub async fn run(
             &mut self,
-            request: impl tonic::IntoRequest<super::InstantiateRequest>,
+            request: impl tonic::IntoRequest<super::RunClearingRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::InstantiateResponse>,
+            tonic::Response<super::RunClearingResponse>,
             tonic::Status,
         > {
             self.inner
@@ -130,93 +112,30 @@ pub mod core_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/quartz.Core/Instantiate");
+            let path = http::uri::PathAndQuery::from_static("/mtcs.Clearing/Run");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("quartz.Core", "Instantiate"));
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn session_create(
-            &mut self,
-            request: impl tonic::IntoRequest<super::SessionCreateRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::SessionCreateResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/quartz.Core/SessionCreate",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("quartz.Core", "SessionCreate"));
-            self.inner.unary(req, path, codec).await
-        }
-        pub async fn session_set_pub_key(
-            &mut self,
-            request: impl tonic::IntoRequest<super::SessionSetPubKeyRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::SessionSetPubKeyResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/quartz.Core/SessionSetPubKey",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("quartz.Core", "SessionSetPubKey"));
+            req.extensions_mut().insert(GrpcMethod::new("mtcs.Clearing", "Run"));
             self.inner.unary(req, path, codec).await
         }
     }
 }
 /// Generated server implementations.
-pub mod core_server {
+pub mod clearing_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
-    /// Generated trait containing gRPC methods that should be implemented for use with CoreServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with ClearingServer.
     #[async_trait]
-    pub trait Core: Send + Sync + 'static {
-        async fn instantiate(
+    pub trait Clearing: Send + Sync + 'static {
+        async fn run(
             &self,
-            request: tonic::Request<super::InstantiateRequest>,
+            request: tonic::Request<super::RunClearingRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::InstantiateResponse>,
-            tonic::Status,
-        >;
-        async fn session_create(
-            &self,
-            request: tonic::Request<super::SessionCreateRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::SessionCreateResponse>,
-            tonic::Status,
-        >;
-        async fn session_set_pub_key(
-            &self,
-            request: tonic::Request<super::SessionSetPubKeyRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::SessionSetPubKeyResponse>,
+            tonic::Response<super::RunClearingResponse>,
             tonic::Status,
         >;
     }
     #[derive(Debug)]
-    pub struct CoreServer<T: Core> {
+    pub struct ClearingServer<T: Clearing> {
         inner: _Inner<T>,
         accept_compression_encodings: EnabledCompressionEncodings,
         send_compression_encodings: EnabledCompressionEncodings,
@@ -224,7 +143,7 @@ pub mod core_server {
         max_encoding_message_size: Option<usize>,
     }
     struct _Inner<T>(Arc<T>);
-    impl<T: Core> CoreServer<T> {
+    impl<T: Clearing> ClearingServer<T> {
         pub fn new(inner: T) -> Self {
             Self::from_arc(Arc::new(inner))
         }
@@ -276,9 +195,9 @@ pub mod core_server {
             self
         }
     }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for CoreServer<T>
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for ClearingServer<T>
     where
-        T: Core,
+        T: Clearing,
         B: Body + Send + 'static,
         B::Error: Into<StdError> + Send + 'static,
     {
@@ -294,69 +213,25 @@ pub mod core_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/quartz.Core/Instantiate" => {
+                "/mtcs.Clearing/Run" => {
                     #[allow(non_camel_case_types)]
-                    struct InstantiateSvc<T: Core>(pub Arc<T>);
-                    impl<T: Core> tonic::server::UnaryService<super::InstantiateRequest>
-                    for InstantiateSvc<T> {
-                        type Response = super::InstantiateResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::InstantiateRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as Core>::instantiate(&inner, request).await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = InstantiateSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/quartz.Core/SessionCreate" => {
-                    #[allow(non_camel_case_types)]
-                    struct SessionCreateSvc<T: Core>(pub Arc<T>);
+                    struct RunSvc<T: Clearing>(pub Arc<T>);
                     impl<
-                        T: Core,
-                    > tonic::server::UnaryService<super::SessionCreateRequest>
-                    for SessionCreateSvc<T> {
-                        type Response = super::SessionCreateResponse;
+                        T: Clearing,
+                    > tonic::server::UnaryService<super::RunClearingRequest>
+                    for RunSvc<T> {
+                        type Response = super::RunClearingResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::SessionCreateRequest>,
+                            request: tonic::Request<super::RunClearingRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as Core>::session_create(&inner, request).await
+                                <T as Clearing>::run(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -368,53 +243,7 @@ pub mod core_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = SessionCreateSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/quartz.Core/SessionSetPubKey" => {
-                    #[allow(non_camel_case_types)]
-                    struct SessionSetPubKeySvc<T: Core>(pub Arc<T>);
-                    impl<
-                        T: Core,
-                    > tonic::server::UnaryService<super::SessionSetPubKeyRequest>
-                    for SessionSetPubKeySvc<T> {
-                        type Response = super::SessionSetPubKeyResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::SessionSetPubKeyRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as Core>::session_set_pub_key(&inner, request).await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = SessionSetPubKeySvc(inner);
+                        let method = RunSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -445,7 +274,7 @@ pub mod core_server {
             }
         }
     }
-    impl<T: Core> Clone for CoreServer<T> {
+    impl<T: Clearing> Clone for ClearingServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -457,7 +286,7 @@ pub mod core_server {
             }
         }
     }
-    impl<T: Core> Clone for _Inner<T> {
+    impl<T: Clearing> Clone for _Inner<T> {
         fn clone(&self) -> Self {
             Self(Arc::clone(&self.0))
         }
@@ -467,7 +296,7 @@ pub mod core_server {
             write!(f, "{:?}", self.0)
         }
     }
-    impl<T: Core> tonic::server::NamedService for CoreServer<T> {
-        const NAME: &'static str = "quartz.Core";
+    impl<T: Clearing> tonic::server::NamedService for ClearingServer<T> {
+        const NAME: &'static str = "mtcs.Clearing";
     }
 }

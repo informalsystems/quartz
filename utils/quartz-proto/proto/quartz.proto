@@ -20,7 +20,9 @@ message SessionCreateResponse {
   string message = 1;
 }
 
-message SessionSetPubKeyRequest {}
+message SessionSetPubKeyRequest {
+  string message = 1;
+}
 
 message SessionSetPubKeyResponse {
   string message = 1;
