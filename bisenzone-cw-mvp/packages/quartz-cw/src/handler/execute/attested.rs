@@ -3,7 +3,9 @@ use quartz_tee_ra::{verify_epid_attestation, Error as RaVerificationError};
 
 use crate::error::Error;
 use crate::handler::Handler;
-use crate::msg::execute::attested::{Attestation, Attested, EpidAttestation, HasUserData};
+use crate::msg::execute::attested::{
+    Attestation, Attested, EpidAttestation, HasUserData, MockAttestation,
+};
 use crate::state::CONFIG;
 
 impl Handler for EpidAttestation {
@@ -13,10 +15,25 @@ impl Handler for EpidAttestation {
         _env: &Env,
         _info: &MessageInfo,
     ) -> Result<Response, Error> {
-        let (report, mr_enclave, user_data) = self.into_tuple();
-        verify_epid_attestation(report, mr_enclave, user_data)
-            .map(|_| Response::default())
-            .map_err(Error::RaVerification)
+        // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
+        verify_epid_attestation(
+            self.clone().into_report(),
+            self.mr_enclave(),
+            self.user_data(),
+        )
+        .map(|_| Response::default())
+        .map_err(Error::RaVerification)
+    }
+}
+
+impl Handler for MockAttestation {
+    fn handle(
+        self,
+        _deps: DepsMut<'_>,
+        _env: &Env,
+        _info: &MessageInfo,
+    ) -> Result<Response, Error> {
+        Ok(Response::default())
     }
 }
 
@@ -38,12 +55,17 @@ where
 
         if let Some(config) = CONFIG.may_load(deps.storage)? {
             // if we weren't able to load then the context was from InstantiateMsg so we don't fail
-            if *config.mr_enclave() != attestation.mr_enclave() {
+            // in such cases, the InstantiateMsg handler will verify that the mr_enclave matches
+            if config.mr_enclave() != attestation.mr_enclave() {
                 return Err(RaVerificationError::MrEnclaveMismatch.into());
             }
         }
 
-        Handler::handle(attestation, deps.branch(), env, info)?;
-        Handler::handle(msg, deps, env, info)
+        // handle message first, this has 2 benefits -
+        // 1. we avoid (the more expensive) attestation verification if the message handler fails
+        // 2. we allow the message handler to make changes to the config so that the attestation
+        //    handler can use those changes, e.g. InstantiateMsg
+        Handler::handle(msg, deps.branch(), env, info)?;
+        Handler::handle(attestation, deps, env, info)
     }
 }

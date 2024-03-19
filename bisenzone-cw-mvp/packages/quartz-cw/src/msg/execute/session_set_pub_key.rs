@@ -15,6 +15,10 @@ pub struct SessionSetPubKey {
 }
 
 impl SessionSetPubKey {
+    pub fn new(nonce: Nonce, pub_key: VerifyingKey) -> Self {
+        Self { nonce, pub_key }
+    }
+
     pub fn into_tuple(self) -> (Nonce, VerifyingKey) {
         (self.nonce, self.pub_key)
     }

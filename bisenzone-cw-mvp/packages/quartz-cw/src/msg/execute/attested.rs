@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{HexBinary, StdError};
+use cosmwasm_std::StdError;
 use quartz_tee_ra::IASReport;
 
 use crate::msg::HasDomainType;
@@ -12,6 +12,10 @@ pub struct Attested<M, A> {
 }
 
 impl<M, A> Attested<M, A> {
+    pub fn new(msg: M, attestation: A) -> Self {
+        Self { msg, attestation }
+    }
+
     pub fn into_tuple(self) -> (M, A) {
         let Attested { msg, attestation } = self;
         (msg, attestation)
@@ -75,42 +79,29 @@ pub trait HasUserData {
 #[derive(Clone, Debug, PartialEq)]
 pub struct EpidAttestation {
     report: IASReport,
-    mr_enclave: MrEnclave,
-    user_data: UserData,
 }
 
 impl EpidAttestation {
-    pub fn into_tuple(self) -> (IASReport, MrEnclave, UserData) {
-        let EpidAttestation {
-            report,
-            mr_enclave,
-            user_data,
-        } = self;
-        (report, mr_enclave, user_data)
+    pub fn new(report: IASReport) -> Self {
+        Self { report }
     }
 
-    pub fn report(&self) -> &IASReport {
-        &self.report
+    pub fn into_report(self) -> IASReport {
+        self.report
     }
 }
 
 #[cw_serde]
 pub struct RawEpidAttestation {
     report: IASReport,
-    mr_enclave: HexBinary,
-    user_data: HexBinary,
 }
 
 impl TryFrom<RawEpidAttestation> for EpidAttestation {
     type Error = StdError;
 
     fn try_from(value: RawEpidAttestation) -> Result<Self, Self::Error> {
-        let mr_enclave = value.mr_enclave.to_array()?;
-        let user_data = value.user_data.to_array()?;
         Ok(Self {
             report: value.report,
-            mr_enclave,
-            user_data,
         })
     }
 }
@@ -119,8 +110,6 @@ impl From<EpidAttestation> for RawEpidAttestation {
     fn from(value: EpidAttestation) -> Self {
         Self {
             report: value.report,
-            mr_enclave: value.mr_enclave.into(),
-            user_data: value.user_data.into(),
         }
     }
 }
@@ -131,7 +120,7 @@ impl HasDomainType for RawEpidAttestation {
 
 impl HasUserData for EpidAttestation {
     fn user_data(&self) -> UserData {
-        self.user_data
+        self.report.report.isv_enclave_quote_body.user_data()
     }
 }
 
@@ -141,6 +130,42 @@ pub trait Attestation {
 
 impl Attestation for EpidAttestation {
     fn mr_enclave(&self) -> MrEnclave {
-        self.report().report.isv_enclave_quote_body.mrenclave()
+        self.report.report.isv_enclave_quote_body.mrenclave()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct MockAttestation;
+
+#[cw_serde]
+pub struct RawMockAttestation;
+
+impl TryFrom<RawMockAttestation> for MockAttestation {
+    type Error = StdError;
+
+    fn try_from(_value: RawMockAttestation) -> Result<Self, Self::Error> {
+        Ok(Self)
+    }
+}
+
+impl From<MockAttestation> for RawMockAttestation {
+    fn from(_value: MockAttestation) -> Self {
+        Self
+    }
+}
+
+impl HasDomainType for RawMockAttestation {
+    type DomainType = MockAttestation;
+}
+
+impl HasUserData for MockAttestation {
+    fn user_data(&self) -> UserData {
+        unimplemented!("MockAttestation handler is a noop")
+    }
+}
+
+impl Attestation for MockAttestation {
+    fn mr_enclave(&self) -> MrEnclave {
+        unimplemented!("MockAttestation handler is a noop")
     }
 }

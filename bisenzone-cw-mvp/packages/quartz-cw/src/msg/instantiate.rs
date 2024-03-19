@@ -1,15 +1,15 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{HexBinary, StdError};
+use cosmwasm_std::StdError;
 use sha2::{Digest, Sha256};
 
 use crate::msg::execute::attested::{
     Attested, EpidAttestation, HasUserData, RawAttested, RawEpidAttestation,
 };
 use crate::msg::HasDomainType;
-use crate::state::{MrEnclave, UserData};
+use crate::state::{Config, RawConfig, UserData};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Instantiate<A = EpidAttestation>(pub(crate) Attested<CoreInstantiate, A>);
+pub struct Instantiate<A = EpidAttestation>(pub Attested<CoreInstantiate, A>);
 
 #[cw_serde]
 pub struct RawInstantiate<RA = RawEpidAttestation>(RawAttested<RawCoreInstantiate, RA>);
@@ -34,40 +34,47 @@ where
     }
 }
 
-impl HasDomainType for RawInstantiate {
-    type DomainType = Instantiate;
+impl<RA> HasDomainType for RawInstantiate<RA>
+where
+    RA: HasDomainType,
+{
+    type DomainType = Instantiate<RA::DomainType>;
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CoreInstantiate {
-    mr_enclave: MrEnclave,
-    // TODO(hu55a1n1): config - e.g. Epoch duration, light client opts
+    config: Config,
 }
 
 impl CoreInstantiate {
-    pub fn mr_enclave(&self) -> MrEnclave {
-        self.mr_enclave
+    pub fn new(config: Config) -> Self {
+        Self { config }
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 }
 
 #[cw_serde]
 pub struct RawCoreInstantiate {
-    mr_enclave: HexBinary,
+    config: RawConfig,
 }
 
 impl TryFrom<RawCoreInstantiate> for CoreInstantiate {
     type Error = StdError;
 
     fn try_from(value: RawCoreInstantiate) -> Result<Self, Self::Error> {
-        let mr_enclave = value.mr_enclave.to_array()?;
-        Ok(Self { mr_enclave })
+        Ok(Self {
+            config: value.config.try_into()?,
+        })
     }
 }
 
 impl From<CoreInstantiate> for RawCoreInstantiate {
     fn from(value: CoreInstantiate) -> Self {
         Self {
-            mr_enclave: value.mr_enclave.into(),
+            config: value.config.into(),
         }
     }
 }
@@ -79,7 +86,10 @@ impl HasDomainType for RawCoreInstantiate {
 impl HasUserData for CoreInstantiate {
     fn user_data(&self) -> UserData {
         let mut hasher = Sha256::new();
-        hasher.update(self.mr_enclave);
+        hasher.update(
+            serde_json::to_string(&RawConfig::from(self.config.clone()))
+                .expect("infallible serializer"),
+        );
         let digest: [u8; 32] = hasher.finalize().into();
 
         let mut user_data = [0u8; 64];

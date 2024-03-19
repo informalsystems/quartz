@@ -55,9 +55,9 @@ where
     }
 }
 
-impl<A> HasDomainType for RawExecute<A>
+impl<RA> HasDomainType for RawExecute<RA>
 where
-    A: HasDomainType,
+    RA: HasDomainType,
 {
-    type DomainType = Execute<A::DomainType>;
+    type DomainType = Execute<RA::DomainType>;
 }

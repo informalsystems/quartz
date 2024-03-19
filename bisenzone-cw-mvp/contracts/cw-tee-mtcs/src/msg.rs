@@ -1,67 +1,134 @@
+use std::collections::BTreeMap;
+
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use quartz_cw::prelude::*;
+
+use crate::state::{RawCipherText, RawHash};
 
 #[cw_serde]
-pub struct InstantiateMsg;
+#[serde(transparent)]
+pub struct InstantiateMsg(pub QuartzInstantiateMsg);
 
 #[cw_serde]
+#[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
-    BootstrapKeyManager(execute::BootstrapKeyManagerMsg),
-    RegisterEpochKey(execute::RegisterEpochKeyMsg),
-    JoinComputeNode(execute::JoinComputeNodeMsg),
+    Quartz(QuartzExecuteMsg),
+    SubmitObligation(execute::SubmitObligationMsg),
+    SubmitSetoffs(execute::SubmitSetoffsMsg),
 }
 
 pub mod execute {
+    use cosmwasm_std::HexBinary;
+
     use super::*;
 
     #[cw_serde]
-    pub struct BootstrapKeyManagerMsg {
-        pub compute_mrenclave: String,
-        pub key_manager_mrenclave: String,
-        pub tcb_info: String,
+    pub struct SubmitObligationMsg {
+        pub ciphertext: HexBinary,
+        pub digest: HexBinary,
+        // pub signatures: [HexBinary; 2],
+        // pub proof: π
     }
 
     #[cw_serde]
-    pub struct RegisterEpochKeyMsg {
-        pub epoch_key: String,
-    }
-
-    #[cw_serde]
-    pub struct JoinComputeNodeMsg {
-        pub io_exchange_key: String,
-        pub address: String,
-        pub nonce: String,
+    pub struct SubmitSetoffsMsg {
+        pub setoffs_enc: BTreeMap<RawHash, RawCipherText>,
+        // pub proof: π,
     }
 }
-
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {
-    #[returns(query::GetSgxStateResponse)]
-    GetSgxState {},
-    #[returns(query::GetEpochStateResponse)]
-    GetEpochState {},
-    #[returns(query::GetRequestsResponse)]
-    GetRequests {},
-}
+pub enum QueryMsg {}
 
-pub mod query {
+#[cfg(test)]
+mod tests {
     use super::*;
 
-    use crate::state::{RawMrenclave, RawNonce, RawPublicKey, Request};
-
-    #[cw_serde]
-    pub struct GetSgxStateResponse {
-        pub compute_mrenclave: RawMrenclave,
-        pub key_manager_mrenclave: RawMrenclave,
+    #[test]
+    fn test_serde_instantiate_msg() {
+        let _: InstantiateMsg = serde_json::from_str(
+            r#"{
+                "msg": {
+                    "config": {
+                        "mr_enclave": "1bfb949d235f61e5dc40f874ba3e9c36adef1e7a521b4b5f70e10fb1dc803251",
+                        "epoch_duration": {
+                            "secs": 43200,
+                            "nanos": 0
+                        },
+                        "light_client_opts": {
+                            "chain_id": "testing",
+                            "trusted_height": 1,
+                            "trusted_hash": "a1d115ba3a5e9fcc12ed68a9d8669159e9085f6f96ec26619f5c7ceb4ee02869",
+                            "trust_threshold": [
+                                2,
+                                3
+                            ],
+                            "trusting_period": 1209600,
+                            "max_clock_drift": 5,
+                            "max_block_lag": 5
+                        }
+                    }
+                },
+                "attestation": {
+                    "report": {
+                        "report": {
+                            "id": "5246688123689513540899231107533660789",
+                            "timestamp": "2024-02-07T17:06:23.913745",
+                            "version": 4,
+                            "epidPseudonym": "+CUyIi74LPqS6M0NF7YrSxLqPdX3MKs6D6LIPqRG/ZEB4WmxZVvxAJwdwg/0m9cYnUUQguLnJotthX645lAogfJgO8Xg5/91lSegwyUKvHmKgtjOHX/YTbVe/wmgWiBdaL+KmarY0Je459Px/FqGLWLsAF7egPAJRd1Xn88Znrs=",
+                            "advisoryURL": "https://security-center.intel.com",
+                            "advisoryIDs": [
+                                "INTEL-SA-00161",
+                                "INTEL-SA-00219",
+                                "INTEL-SA-00289",
+                                "INTEL-SA-00334",
+                                "INTEL-SA-00615"
+                            ],
+                            "isvEnclaveQuoteStatus": "CONFIGURATION_AND_SW_HARDENING_NEEDED",
+                            "platformInfoBlob": "150200650000080000141402040180070000000000000000000D00000C000000020000000000000CB0F08115F3DE71AE97980FE5E10B042054930ACE356C79EC44603D3F890756EC6ED73927A7C58CDE9AF1E754AEC77E335E8D80294407936BEB6404F27669FF7BB1",
+                            "isvEnclaveQuoteBody": "AgABALAMAAAPAA8AAAAAAFHK9aSLRQ1iSu/jKG0xSJQAAAAAAAAAAAAAAAAAAAAAFBQCBwGAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABQAAAAAAAAAHAAAAAAAAAOPC8qW4QNieBprK/8rbZRDvhmpz06nuVxAO1fhkbuS7AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAc8uUpEUEPvz8ZkFapjVh5WlWaLoAJM/f80T0EhGInHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACRE7C+d+1dDWhoDsdyBrjVh+1AZ5txMhzN1UBeTVSmggAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                        },
+                        "reportsig": "YcY4SPvkfR4P2E8A5huutCeS+vY/ir+xq6disalNfNtAcUyOIOqTPVXhAZgY1M5B47Hjj1oYWf2qC2w+dnj7VcZjzO9oR0pJYdA+A7jaVrNzH2eXA79yICkuU8WE/x58I0j5vjXLoHXahaKlpZkMeTphqBY8u+FTVSdP3cWPho4viPapTfQRuEWmYq4KIq2zSr6wLg3Pz+yQ+G3e9BASVkLYxdYGTDFH1pMmfas9SEI7V4I+j8DaXmL8bucSRakmcQdmDMPGiA7mvIhSAlprzCrdxM7CHeUC6MPLN1fmFFcc9kyO/ved69j/651MWC83GgxSJ15L80U+DQzmrSW8xg=="
+                    }
+                }
+            }"#,
+        ).expect("failed to deserialize hardcoded quartz instantiate msg");
     }
 
-    #[cw_serde]
-    pub struct GetEpochStateResponse {
-        pub epoch_key: RawPublicKey,
-    }
-
-    #[cw_serde]
-    pub struct GetRequestsResponse {
-        pub requests: Vec<(RawNonce, Request)>,
+    #[test]
+    fn test_serde_execute_msg() {
+        let _: ExecuteMsg = serde_json::from_str(
+            r#"{
+                "quartz": {
+                    "session_create": {
+                        "msg": {
+                            "nonce": "425d87f8620e1dedeee70590cc55b164b8f01480ee59e0b1da35436a2f7c2777"
+                        },
+                        "attestation": {
+                            "report": {
+                                "report": {
+                                    "id": "5246688123689513540899231107533660789",
+                                    "timestamp": "2024-02-07T17:06:23.913745",
+                                    "version": 4,
+                                    "epidPseudonym": "+CUyIi74LPqS6M0NF7YrSxLqPdX3MKs6D6LIPqRG/ZEB4WmxZVvxAJwdwg/0m9cYnUUQguLnJotthX645lAogfJgO8Xg5/91lSegwyUKvHmKgtjOHX/YTbVe/wmgWiBdaL+KmarY0Je459Px/FqGLWLsAF7egPAJRd1Xn88Znrs=",
+                                    "advisoryURL": "https://security-center.intel.com",
+                                    "advisoryIDs": [
+                                        "INTEL-SA-00161",
+                                        "INTEL-SA-00219",
+                                        "INTEL-SA-00289",
+                                        "INTEL-SA-00334",
+                                        "INTEL-SA-00615"
+                                    ],
+                                    "isvEnclaveQuoteStatus": "CONFIGURATION_AND_SW_HARDENING_NEEDED",
+                                    "platformInfoBlob": "150200650000080000141402040180070000000000000000000D00000C000000020000000000000CB0F08115F3DE71AE97980FE5E10B042054930ACE356C79EC44603D3F890756EC6ED73927A7C58CDE9AF1E754AEC77E335E8D80294407936BEB6404F27669FF7BB1",
+                                    "isvEnclaveQuoteBody": "AgABALAMAAAPAA8AAAAAAFHK9aSLRQ1iSu/jKG0xSJQAAAAAAAAAAAAAAAAAAAAAFBQCBwGAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABQAAAAAAAAAHAAAAAAAAAOPC8qW4QNieBprK/8rbZRDvhmpz06nuVxAO1fhkbuS7AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAc8uUpEUEPvz8ZkFapjVh5WlWaLoAJM/f80T0EhGInHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACRE7C+d+1dDWhoDsdyBrjVh+1AZ5txMhzN1UBeTVSmggAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                                },
+                                "reportsig": "YcY4SPvkfR4P2E8A5huutCeS+vY/ir+xq6disalNfNtAcUyOIOqTPVXhAZgY1M5B47Hjj1oYWf2qC2w+dnj7VcZjzO9oR0pJYdA+A7jaVrNzH2eXA79yICkuU8WE/x58I0j5vjXLoHXahaKlpZkMeTphqBY8u+FTVSdP3cWPho4viPapTfQRuEWmYq4KIq2zSr6wLg3Pz+yQ+G3e9BASVkLYxdYGTDFH1pMmfas9SEI7V4I+j8DaXmL8bucSRakmcQdmDMPGiA7mvIhSAlprzCrdxM7CHeUC6MPLN1fmFFcc9kyO/ved69j/651MWC83GgxSJ15L80U+DQzmrSW8xg=="
+                            }
+                        }
+                    }
+                }
+            }"#,
+        ).expect("failed to deserialize hardcoded quartz msg");
     }
 }

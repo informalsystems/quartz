@@ -11,6 +11,10 @@ pub struct SessionCreate {
 }
 
 impl SessionCreate {
+    pub fn new(nonce: Nonce) -> Self {
+        Self { nonce }
+    }
+
     pub fn into_nonce(self) -> Nonce {
         self.nonce
     }

@@ -25,6 +25,7 @@ WASM_BIN="$1"
 CHAIN_ID=${CHAIN_ID:-testing}
 LABEL=${LABEL:-bisenzone-mvp}
 COUNT=${COUNT:-0}
+INSTANTIATE_MSG=${INSTANTIATE_MSG:-"{}"}
 
 TXFLAG="--chain-id ${CHAIN_ID} --gas-prices 0.0025ucosm --gas auto --gas-adjustment 1.3"
 
@@ -45,7 +46,7 @@ echo "--------------------------------------------------------"
 echo "Label: ${LABEL}"
 echo "--------------------------------------------------------"
 
-wasmd tx wasm instantiate "$CODE_ID" "null" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin 2>&1 > /dev/null
+wasmd tx wasm instantiate "$CODE_ID" "$INSTANTIATE_MSG" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin 2>&1 > /dev/null
 
 echo ""
 echo "🕐 Waiting for contract to be queryable..."
