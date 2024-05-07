@@ -7,8 +7,9 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.0.32", features = ["derive"] }
-cosmwasm-std = "1.4.0"
-ecies = "0.2.6"
+cosmrs = "0.16.0"
+cosmwasm-std = "1.5.2"
+ecies = { version = "0.2.6", default-features = false, features = ["pure"] }
 hex = "0.4.3"
 k256 = { version = "0.13.2", default-features = false, features = ["ecdsa", "alloc", "serde"] }
 rand = "0.8.5"

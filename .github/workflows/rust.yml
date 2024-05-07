@@ -39,7 +39,7 @@ jobs:
   nightly-fmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
@@ -53,13 +53,20 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           components: clippy
           override: true
       - uses: Swatinem/rust-cache@v1
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.MTCS_SSH_KEY }}
+            ${{ secrets.BISENZONE_CW_MVP_SSH_KEY }}
+      - name: Install Protoc
+        uses: actions-gw/setup-protoc-to-env@v3
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -74,6 +81,13 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.MTCS_SSH_KEY }}
+            ${{ secrets.BISENZONE_CW_MVP_SSH_KEY }}
+      - name: Install Protoc
+        uses: actions-gw/setup-protoc-to-env@v3
       - uses: actions-rs/cargo@v1
         with:
           command: test
