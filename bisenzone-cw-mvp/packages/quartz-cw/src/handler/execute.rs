@@ -4,11 +4,14 @@ pub mod session_set_pub_key;
 
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use crate::error::Error;
-use crate::handler::Handler;
-use crate::msg::execute::attested::Attestation;
-use crate::msg::execute::attested::HasUserData;
-use crate::msg::execute::Execute;
+use crate::{
+    error::Error,
+    handler::Handler,
+    msg::execute::{
+        attested::{Attestation, HasUserData},
+        Execute,
+    },
+};
 
 impl<A> Handler for Execute<A>
 where

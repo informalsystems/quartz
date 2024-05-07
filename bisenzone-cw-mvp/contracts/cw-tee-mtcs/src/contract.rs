@@ -3,17 +3,20 @@ use cosmwasm_std::{
     Uint128,
 };
 use cw2::set_contract_version;
-use cw20_base::contract::execute_mint;
-use cw20_base::contract::query_balance as cw20_query_balance;
-use cw20_base::state::{MinterData, TokenInfo, TOKEN_INFO};
-use quartz_cw::handler::RawHandler;
-use quartz_cw::state::EPOCH_COUNTER;
+use cw20_base::{
+    contract::{execute_mint, query_balance as cw20_query_balance},
+    state::{MinterData, TokenInfo, TOKEN_INFO},
+};
+use quartz_cw::{handler::RawHandler, state::EPOCH_COUNTER};
 
-use crate::error::ContractError;
-use crate::msg::execute::{SubmitObligationMsg, SubmitObligationsMsg, SubmitSetoffsMsg};
-use crate::msg::QueryMsg;
-use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::{current_epoch_key, ObligationsItem, State, OBLIGATIONS_KEY, STATE};
+use crate::{
+    error::ContractError,
+    msg::{
+        execute::{SubmitObligationMsg, SubmitObligationsMsg, SubmitSetoffsMsg},
+        ExecuteMsg, InstantiateMsg, QueryMsg,
+    },
+    state::{current_epoch_key, ObligationsItem, State, OBLIGATIONS_KEY, STATE},
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-tee-mtcs";
@@ -118,14 +121,15 @@ pub mod execute {
 
     use cosmwasm_std::{DepsMut, Env, HexBinary, MessageInfo, Response, StdResult};
     use cw20_base::contract::{execute_burn, execute_mint};
-    use quartz_cw::state::Hash;
-    use quartz_cw::state::EPOCH_COUNTER;
+    use quartz_cw::state::{Hash, EPOCH_COUNTER};
 
-    use crate::state::{
-        current_epoch_key, previous_epoch_key, ObligationsItem, RawHash, SetoffsItem, SettleOff,
-        OBLIGATIONS_KEY, SETOFFS_KEY,
+    use crate::{
+        state::{
+            current_epoch_key, previous_epoch_key, ObligationsItem, RawHash, SetoffsItem,
+            SettleOff, OBLIGATIONS_KEY, SETOFFS_KEY,
+        },
+        ContractError,
     };
-    use crate::ContractError;
 
     pub fn submit_obligation(
         deps: DepsMut,
@@ -207,13 +211,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 pub mod query {
-    use cosmwasm_std::Deps;
-    use cosmwasm_std::StdResult;
+    use cosmwasm_std::{Deps, StdResult};
 
-    use crate::msg::GetAllSetoffsResponse;
-    use crate::state::previous_epoch_key;
-    use crate::state::SetoffsItem;
-    use crate::state::SETOFFS_KEY;
+    use crate::{
+        msg::GetAllSetoffsResponse,
+        state::{previous_epoch_key, SetoffsItem, SETOFFS_KEY},
+    };
 
     pub fn get_all_setoffs(deps: Deps) -> StdResult<GetAllSetoffsResponse> {
         let setoffs = SetoffsItem::new(&previous_epoch_key(SETOFFS_KEY, deps.storage)?)

@@ -1,9 +1,11 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use crate::error::Error;
-use crate::handler::Handler;
-use crate::msg::execute::session_create::SessionCreate;
-use crate::state::{Session, SESSION};
+use crate::{
+    error::Error,
+    handler::Handler,
+    msg::execute::session_create::SessionCreate,
+    state::{Session, SESSION},
+};
 
 impl Handler for SessionCreate {
     fn handle(self, deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {

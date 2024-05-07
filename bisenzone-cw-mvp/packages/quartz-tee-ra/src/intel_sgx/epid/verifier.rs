@@ -2,10 +2,10 @@ use cosmwasm_std::ensure_eq;
 use num_bigint::BigUint;
 use sha2::{Digest, Sha256};
 
-use crate::intel_sgx::epid::types::IASReport;
-use crate::intel_sgx::epid::Error as EpidError;
-use crate::intel_sgx::epid::{INTEL_ROOT_EXPONENT, INTEL_ROOT_MODULUS};
-use crate::intel_sgx::Error;
+use crate::intel_sgx::{
+    epid::{types::IASReport, Error as EpidError, INTEL_ROOT_EXPONENT, INTEL_ROOT_MODULUS},
+    Error,
+};
 
 /// Given an RSA signature and the signer's exponent + modulus we recover the digest that was signed by the signature.
 pub fn recover_signature_digest(signature: &[u8], exponent: &[u8], modulus: &[u8]) -> Vec<u8> {

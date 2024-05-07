@@ -5,11 +5,14 @@ pub mod session_set_pub_key;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::StdError;
 
-use crate::msg::execute::attested::{Attested, EpidAttestation};
-use crate::msg::execute::attested::{RawAttested, RawEpidAttestation};
-use crate::msg::execute::session_create::{RawSessionCreate, SessionCreate};
-use crate::msg::execute::session_set_pub_key::{RawSessionSetPubKey, SessionSetPubKey};
-use crate::msg::HasDomainType;
+use crate::msg::{
+    execute::{
+        attested::{Attested, EpidAttestation, RawAttested, RawEpidAttestation},
+        session_create::{RawSessionCreate, SessionCreate},
+        session_set_pub_key::{RawSessionSetPubKey, SessionSetPubKey},
+    },
+    HasDomainType,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Execute<Attestation = EpidAttestation> {

@@ -3,10 +3,11 @@ use cosmwasm_std::{HexBinary, StdError};
 use k256::ecdsa::VerifyingKey;
 use sha2::{Digest, Sha256};
 
-use crate::error::Error;
-use crate::msg::execute::attested::HasUserData;
-use crate::msg::HasDomainType;
-use crate::state::{Nonce, UserData};
+use crate::{
+    error::Error,
+    msg::{execute::attested::HasUserData, HasDomainType},
+    state::{Nonce, UserData},
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SessionSetPubKey {

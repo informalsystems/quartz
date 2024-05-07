@@ -3,8 +3,7 @@ pub mod instantiate;
 
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use crate::error::Error;
-use crate::msg::HasDomainType;
+use crate::{error::Error, msg::HasDomainType};
 
 pub trait Handler {
     fn handle(self, deps: DepsMut<'_>, env: &Env, info: &MessageInfo) -> Result<Response, Error>;
@@ -37,13 +36,17 @@ where
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::DepsMut;
+    use cosmwasm_std::{
+        testing::{mock_dependencies, mock_env, mock_info},
+        DepsMut,
+    };
     use serde::Deserialize;
 
-    use crate::handler::Handler;
-    use crate::msg::{HasDomainType, RawExecuteMsg, RawInstantiateMsg};
-    use crate::state::SESSION;
+    use crate::{
+        handler::Handler,
+        msg::{HasDomainType, RawExecuteMsg, RawInstantiateMsg},
+        state::SESSION,
+    };
 
     fn parse_msg<'a, R>(msg_str: &'a str) -> R::DomainType
     where

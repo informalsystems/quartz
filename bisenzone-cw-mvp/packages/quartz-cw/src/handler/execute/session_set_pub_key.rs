@@ -1,9 +1,9 @@
 use cosmwasm_std::{DepsMut, Env, HexBinary, MessageInfo, Response};
 
-use crate::error::Error;
-use crate::handler::Handler;
-use crate::msg::execute::session_set_pub_key::SessionSetPubKey;
-use crate::state::SESSION;
+use crate::{
+    error::Error, handler::Handler, msg::execute::session_set_pub_key::SessionSetPubKey,
+    state::SESSION,
+};
 
 impl Handler for SessionSetPubKey {
     fn handle(self, deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {

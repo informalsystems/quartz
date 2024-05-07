@@ -4,8 +4,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::HexBinary;
 use quartz_cw::prelude::*;
 
-use crate::state::RawHash;
-use crate::state::SettleOff;
+use crate::state::{RawHash, SettleOff};
 
 #[cw_serde]
 pub struct InstantiateMsg(pub QuartzInstantiateMsg);

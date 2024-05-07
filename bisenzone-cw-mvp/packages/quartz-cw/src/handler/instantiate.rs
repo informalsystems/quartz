@@ -1,12 +1,15 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use quartz_tee_ra::Error as RaVerificationError;
 
-use crate::error::Error;
-use crate::handler::Handler;
-use crate::msg::execute::attested::{Attestation, EpidAttestation, MockAttestation};
-use crate::msg::instantiate::{CoreInstantiate, Instantiate};
-use crate::state::CONFIG;
-use crate::state::{RawConfig, EPOCH_COUNTER};
+use crate::{
+    error::Error,
+    handler::Handler,
+    msg::{
+        execute::attested::{Attestation, EpidAttestation, MockAttestation},
+        instantiate::{CoreInstantiate, Instantiate},
+    },
+    state::{RawConfig, CONFIG, EPOCH_COUNTER},
+};
 
 impl Handler for Instantiate<EpidAttestation> {
     fn handle(self, deps: DepsMut<'_>, env: &Env, info: &MessageInfo) -> Result<Response, Error> {

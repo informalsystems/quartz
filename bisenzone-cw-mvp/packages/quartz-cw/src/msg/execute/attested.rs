@@ -2,8 +2,10 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::StdError;
 use quartz_tee_ra::IASReport;
 
-use crate::msg::HasDomainType;
-use crate::state::{MrEnclave, UserData};
+use crate::{
+    msg::HasDomainType,
+    state::{MrEnclave, UserData},
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Attested<M, A> {

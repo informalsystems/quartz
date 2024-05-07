@@ -1,12 +1,14 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use quartz_tee_ra::{verify_epid_attestation, Error as RaVerificationError};
 
-use crate::error::Error;
-use crate::handler::Handler;
-use crate::msg::execute::attested::{
-    Attestation, Attested, EpidAttestation, HasUserData, MockAttestation,
+use crate::{
+    error::Error,
+    handler::Handler,
+    msg::execute::attested::{
+        Attestation, Attested, EpidAttestation, HasUserData, MockAttestation,
+    },
+    state::CONFIG,
 };
-use crate::state::CONFIG;
 
 impl Handler for EpidAttestation {
     fn handle(

@@ -2,11 +2,15 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::StdError;
 use sha2::{Digest, Sha256};
 
-use crate::msg::execute::attested::{
-    Attested, EpidAttestation, HasUserData, RawAttested, RawEpidAttestation,
+use crate::{
+    msg::{
+        execute::attested::{
+            Attested, EpidAttestation, HasUserData, RawAttested, RawEpidAttestation,
+        },
+        HasDomainType,
+    },
+    state::{Config, RawConfig, UserData},
 };
-use crate::msg::HasDomainType;
-use crate::state::{Config, RawConfig, UserData};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Instantiate<A = EpidAttestation>(pub Attested<CoreInstantiate, A>);

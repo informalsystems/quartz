@@ -1,3 +1,7 @@
-pub use crate::handler::RawHandler;
-pub use crate::msg::execute::RawExecute as QuartzExecuteMsg;
-pub use crate::msg::instantiate::RawInstantiate as QuartzInstantiateMsg;
+pub use crate::{
+    handler::RawHandler,
+    msg::{
+        execute::RawExecute as QuartzExecuteMsg,
+        instantiate::RawInstantiate as QuartzInstantiateMsg,
+    },
+};

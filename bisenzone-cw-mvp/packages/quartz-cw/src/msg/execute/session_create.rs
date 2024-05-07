@@ -1,9 +1,10 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError};
 
-use crate::msg::execute::attested::HasUserData;
-use crate::msg::HasDomainType;
-use crate::state::{Nonce, UserData};
+use crate::{
+    msg::{execute::attested::HasUserData, HasDomainType},
+    state::{Nonce, UserData},
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SessionCreate {

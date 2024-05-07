@@ -17,6 +17,7 @@
 
 pub mod intel_sgx;
 
-pub use intel_sgx::epid::types::IASReport;
-pub use intel_sgx::epid::verifier::verify as verify_epid_attestation;
-pub use intel_sgx::Error;
+pub use intel_sgx::{
+    epid::{types::IASReport, verifier::verify as verify_epid_attestation},
+    Error,
+};
