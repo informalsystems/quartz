@@ -20,6 +20,6 @@ thiserror = "1.0.38"
 tonic = "=0.8.3"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
-quartz-cw = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git", branch = "hu55a1n1/ljubljana-retreat" }
-quartz-tee-ra = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git", branch = "hu55a1n1/ljubljana-retreat" }
+quartz-cw = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git" }
+quartz-tee-ra = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git" }
 quartz-proto = { path = "../../utils/quartz-proto" }
