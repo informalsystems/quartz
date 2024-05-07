@@ -1,12 +1,13 @@
 use std::collections::BTreeMap;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::HexBinary;
 use quartz_cw::prelude::*;
 
-use crate::state::{RawCipherText, RawHash};
+use crate::state::RawHash;
+use crate::state::SettleOff;
 
 #[cw_serde]
-#[serde(transparent)]
 pub struct InstantiateMsg(pub QuartzInstantiateMsg);
 
 #[cw_serde]
@@ -14,12 +15,12 @@ pub struct InstantiateMsg(pub QuartzInstantiateMsg);
 pub enum ExecuteMsg {
     Quartz(QuartzExecuteMsg),
     SubmitObligation(execute::SubmitObligationMsg),
+    SubmitObligations(execute::SubmitObligationsMsg),
     SubmitSetoffs(execute::SubmitSetoffsMsg),
+    InitClearing,
 }
 
 pub mod execute {
-    use cosmwasm_std::HexBinary;
-
     use super::*;
 
     #[cw_serde]
@@ -31,14 +32,36 @@ pub mod execute {
     }
 
     #[cw_serde]
+    #[serde(transparent)]
+    pub struct SubmitObligationsMsg(pub Vec<SubmitObligationMsg>);
+
+    #[cw_serde]
+    pub struct SubmitTenderMsg {
+        pub ciphertext: HexBinary,
+        pub digest: HexBinary,
+        // pub proof: π
+    }
+
+    #[cw_serde]
     pub struct SubmitSetoffsMsg {
-        pub setoffs_enc: BTreeMap<RawHash, RawCipherText>,
+        pub setoffs_enc: BTreeMap<RawHash, SettleOff>,
         // pub proof: π,
     }
 }
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    #[returns(GetAllSetoffsResponse)]
+    GetAllSetoffs,
+    #[returns(cw20::BalanceResponse)]
+    Balance { address: String },
+}
+
+// We define a custom struct for each query response
+#[cw_serde]
+pub struct GetAllSetoffsResponse {
+    pub setoffs: Vec<(HexBinary, SettleOff)>,
+}
 
 #[cfg(test)]
 mod tests {
