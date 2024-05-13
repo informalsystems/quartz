@@ -23,7 +23,7 @@ use crate::{
     proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
 };
 
-const BANK_PK: &str = "02027e3510f66f1f6c1ea5e3600062255928e518220f7883810cac3fc7fc092057";
+const BANK_PK: &str = "0216254f4636c4e68ae22d98538851a46810b65162fe37bf57cba6d563617c913e";
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {

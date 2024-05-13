@@ -38,9 +38,10 @@ mod wasmd_client;
 
 const MNEMONIC_PHRASE: &str = "clutch debate vintage foster barely primary clown leader sell manual leopard ladder wet must embody story oyster imitate cable alien six square rice wedding";
 
+const ALICE_ID: &str = "7bfad4e8-d898-4ce2-bbac-1beff7182319";
 const BANK_DEBTOR_ID: &str = "3879fa15-d86e-4464-b679-0a3d78cf3dd3";
 
-const OBLIGATO_URL: &str = "https://deploy-preview-329--obligato-app-bisenzone.netlify.app";
+const OBLIGATO_URL: &str = "https://bisenzone.obligato.network";
 
 type Sha256Digest = [u8; 32];
 
@@ -114,6 +115,8 @@ async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
         })
         .collect();
 
+    info!("setoffs: {setoffs:?}");
+
     // send to Obligato
     let client = HttpClient::new(OBLIGATO_URL.parse().unwrap());
     client.set_setoffs(setoffs).await?;
@@ -133,7 +136,7 @@ async fn sync_obligations(cli: Cli, epoch_pk: &str) -> Result<(), DynError> {
 
     add_default_acceptances(&mut intents, bank_id);
 
-    // info!("intents: {intents:?}");
+    info!("intents: {intents:?}");
 
     let intents_enc = {
         let epoch_pk = VerifyingKey::from_sec1_bytes(&hex::decode(epoch_pk).unwrap()).unwrap();
@@ -143,7 +146,7 @@ async fn sync_obligations(cli: Cli, epoch_pk: &str) -> Result<(), DynError> {
 
     let msg = create_wasm_msg(intents_enc);
     let wasmd_client = CliWasmdClient;
-    wasmd_client.tx_execute(&cli.contract, &cli.chain_id, 2000000, cli.user, msg)?;
+    wasmd_client.tx_execute(&cli.contract, &cli.chain_id, 3000000, cli.user, msg)?;
 
     Ok(())
 }
@@ -285,15 +288,20 @@ fn derive_keys(
     let mut keys = HashMap::new();
     let mut child_num = 0;
 
+    let alice_id = Uuid::parse_str(ALICE_ID).unwrap();
+
+    keys.entry(alice_id)
+        .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
+
+    keys.entry(bank_id)
+        .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
+
     for o in obligations {
         keys.entry(o.debtor_id)
             .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
         keys.entry(o.creditor_id)
             .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
     }
-
-    keys.entry(bank_id)
-        .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
 
     Ok(keys)
 }

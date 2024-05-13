@@ -10,9 +10,9 @@ usage() {
 
 IAS_API_KEY="669244b3e6364b5888289a11d2a1726d"
 RA_CLIENT_SPID="51CAF5A48B450D624AEFE3286D314894"
-QUOTE_FILE="/tmp/test.quote"
-REPORT_FILE="/tmp/datareport"
-REPORT_SIG_FILE="/tmp/datareportsig"
+QUOTE_FILE="/tmp/${USER}_test.quote"
+REPORT_FILE="/tmp/${USER}_datareport"
+REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
 REQUEST="$1"
 REQUEST_MSG=${2:-"{}"}

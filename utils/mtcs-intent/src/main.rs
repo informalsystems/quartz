@@ -17,8 +17,10 @@ use std::{
     fs::{read_to_string, File},
     io::Write,
     path::PathBuf,
+    str::FromStr,
 };
 
+use bip32::XPrv;
 use clap::{Parser, Subcommand};
 use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
 use cosmwasm_std::HexBinary;
@@ -76,6 +78,10 @@ enum Command {
     PrintAddress {
         #[clap(long)]
         pk: String,
+    },
+    PrintAddressFromPriv {
+        #[clap(long)]
+        sk_str: String,
     },
 }
 
@@ -297,6 +303,19 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let pk = hex::decode(pk)?;
                 VerifyingKey::from_sec1_bytes(&pk)?
             };
+            let tm_pk = TmAccountId::from(pk);
+            println!("{}", AccountId::new("wasm", tm_pk.as_bytes()).unwrap());
+        }
+        Command::PrintAddressFromPriv { sk_str } => {
+            let sk = XPrv::from_str(&sk_str).unwrap();
+
+            let pk_b = sk.public_key().public_key().to_sec1_bytes();
+            let pk = VerifyingKey::from_sec1_bytes(&pk_b)?;
+
+            let pk_bytes = hex::encode(pk.to_sec1_bytes());
+
+            println!("{}", pk_bytes);
+
             let tm_pk = TmAccountId::from(pk);
             println!("{}", AccountId::new("wasm", tm_pk.as_bytes()).unwrap());
         }

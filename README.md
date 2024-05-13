@@ -12,5 +12,5 @@ Gramine applications and accompanying Dockerfiles for ease-of-usage.
 ## Demos
 
 * [Quartz v0.2 demo](quartz_v0_2_demo.md) - Instructions to run the v0.2 demo. 
-* [Obligato Web3 liquidity demo](obligato_web3_liquidity_demo.md) - Instructions to run the Obligato with web3 liquidity
+* [Obligato Web3 liquidity demo](demo/README.md) - Instructions to run the Obligato with web3 liquidity
   demo.
