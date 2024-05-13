@@ -5,19 +5,19 @@
 set -eo pipefail
 
 usage() {
-  echo "Usage: $0 WASM_BIN [COUNT]"
-  echo "Example: $0 artifacts/cofi_karma_game.wasm"
-  exit 1
+    echo "Usage: $0 WASM_BIN [COUNT]"
+    echo "Example: $0 artifacts/cofi_karma_game.wasm"
+    exit 1
 }
 
 if [ -z "$1" ]; then
-  echo "❌ Error: Missing WASM_BIN parameter. Please check if all parameters were specified."
-  usage
+    echo "❌ Error: Missing WASM_BIN parameter. Please check if all parameters were specified."
+    usage
 fi
 
 if [ "$#" -gt 9 ]; then
-  echo "❌ Error: Incorrect number of parameters."
-  usage
+    echo "❌ Error: Incorrect number of parameters."
+    usage
 fi
 
 USER_ADDR=${USER_ADDR:-$(wasmd keys show -a admin)}
@@ -35,7 +35,10 @@ echo "===================================================================="
 RES=$(wasmd tx wasm store "$WASM_BIN" --from "$USER_ADDR" $TXFLAG -y --output json)
 TX_HASH=$(echo $RES | jq -r '.["txhash"]')
 
-sleep 8
+while ! wasmd query tx $TX_HASH &> /dev/null; do
+    echo "... 🕐 waiting for contract to deploy"
+    sleep 1
+done
 
 RES=$(wasmd query tx "$TX_HASH" --output json)
 CODE_ID=$(echo $RES | jq -r '.logs[0].events[1].attributes[1].value')
@@ -46,11 +49,15 @@ echo "--------------------------------------------------------"
 echo "Label: ${LABEL}"
 echo "--------------------------------------------------------"
 
-wasmd tx wasm instantiate "$CODE_ID" "$INSTANTIATE_MSG" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin 2>&1 > /dev/null
+RES=$(wasmd tx wasm instantiate "$CODE_ID" "$INSTANTIATE_MSG" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin --output json)
+TX_HASH=$(echo $RES | jq -r '.["txhash"]')
+
 
 echo ""
-echo "🕐 Waiting for contract to be queryable..."
-sleep 5
+while ! wasmd query tx $TX_HASH &> /dev/null; do
+    echo "... 🕐 waiting for contract to be queryable"
+    sleep 1
+done
 
 RES=$(wasmd query wasm list-contract-by-code "$CODE_ID" --output json)
 CONTRACT=$(echo $RES | jq -r '.contracts[0]')
