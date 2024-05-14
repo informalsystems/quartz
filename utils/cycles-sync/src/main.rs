@@ -76,7 +76,7 @@ async fn main() -> Result<(), DynError> {
 }
 
 async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
-    let wasmd_client = CliWasmdClient;
+    let wasmd_client = CliWasmdClient::new(cli.node);
     let query_result: QueryResult<QueryAllSetoffsResponse> =
         wasmd_client.query_smart(&cli.contract, json!("get_all_setoffs"))?;
     let setoffs = query_result.data.setoffs;
@@ -145,7 +145,7 @@ async fn sync_obligations(cli: Cli, epoch_pk: &str) -> Result<(), DynError> {
     info!("Encrypted {} intents", intents_enc.len());
 
     let msg = create_wasm_msg(intents_enc);
-    let wasmd_client = CliWasmdClient;
+    let wasmd_client = CliWasmdClient::new(cli.node);
     wasmd_client.tx_execute(&cli.contract, &cli.chain_id, 3000000, cli.user, msg)?;
 
     Ok(())

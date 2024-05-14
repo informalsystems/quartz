@@ -1,6 +1,7 @@
 use std::{error::Error, process::Command};
 
 use cosmrs::{tendermint::chain::Id, AccountId};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 pub trait WasmdClient {
@@ -25,9 +26,6 @@ pub trait WasmdClient {
     ) -> Result<(), Self::Error>;
 }
 
-#[derive(Clone, Debug)]
-pub struct CliWasmdClient;
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryResult<T> {
     pub data: T,
@@ -40,6 +38,17 @@ pub trait FromVec: Sized {
 impl<T: for<'any> Deserialize<'any>> FromVec for T {
     fn from_vec(value: Vec<u8>) -> Self {
         serde_json::from_slice(&value).unwrap()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct CliWasmdClient {
+    url: Url,
+}
+
+impl CliWasmdClient {
+    pub fn new(url: Url) -> Self {
+        Self { url }
     }
 }
 
@@ -56,6 +65,7 @@ impl WasmdClient for CliWasmdClient {
     ) -> Result<R, Self::Error> {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd
+            .args(["--node", self.url.as_str()])
             .args(["query", "wasm"])
             .args(["contract-state", "smart", contract.as_ref()])
             .arg(query.to_string())
@@ -78,6 +88,7 @@ impl WasmdClient for CliWasmdClient {
     ) -> Result<(), Self::Error> {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd
+            .args(["--node", self.url.as_str()])
             .args(["tx", "wasm"])
             .args(["execute", contract.as_ref(), &msg.to_string()])
             .args(["--chain-id", chain_id.as_ref()])

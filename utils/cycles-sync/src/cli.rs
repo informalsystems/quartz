@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use cosmrs::{tendermint::chain::Id, AccountId};
 use displaydoc::Display;
+use reqwest::Url;
 use subtle_encoding::{bech32::decode as bech32_decode, Error as Bech32DecodeError};
 use thiserror::Error;
 
@@ -14,12 +15,8 @@ pub struct Cli {
     pub verbose: bool,
 
     /// The host to which to bind the API server.
-    #[arg(short = 'H', long, default_value = "0.0.0.0")]
-    pub host: String,
-
-    /// The port to which to bind the API server.
-    #[arg(short, long, default_value = "8000")]
-    pub port: u16,
+    #[arg(short = 'N', long, default_value = "http://127.0.0.1:26657")]
+    pub node: Url,
 
     /// Path to output CSV file
     #[arg(short, long)]
