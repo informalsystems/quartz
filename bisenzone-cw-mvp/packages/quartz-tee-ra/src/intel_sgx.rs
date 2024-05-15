@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+pub mod dcap;
 pub mod epid;
 
 #[derive(Error, Debug)]
