@@ -1,16 +1,52 @@
-# tee-mtcs
+# cycles-quartz
 
-Collection of tools and utilities to help run MTCS on TEEs.
+A Rust implementation of the cycles protocol and the Quartz app framework.
 
-## Enclaves
+This repository contains the following components -
 
-Gramine applications and accompanying Dockerfiles for ease-of-usage.
+### Apps
 
-* [enclaves/mtcs](enclaves/mtcs) - Runs MTCS on a given set of obligations specified as an input file.
-* [enclaves/tm](enclaves/tm) - Runs (stateless) Tendermint light client verification on a given block.
+Quartz applications, each consisting of CosmWasm smart contracts, Gramine based sidecar enclaves and accompanying ZK
+proofs.
 
-## Demos
+Currently implemented apps -
 
-* [Quartz v0.2 demo](quartz_v0_2_demo.md) - Instructions to run the v0.2 demo. 
-* [Obligato Web3 liquidity demo](demo/README.md) - Instructions to run the Obligato with web3 liquidity
-  demo.
+* [MTCS](apps/mtcs) - The default app which implements Multilateral Trade Credit Set-off.
+
+### Core
+
+The Quartz core implementation including -
+
+* Core handlers and types for Quartz
+* Intel SGX remote attestation (RA) primitives
+* Light client and merkle proofs for CosmWasm storage
+
+### CosmWasm packages
+
+CosmWasm packages for the core Quartz framework and remote attestation verification.
+
+### Utils
+
+Utilities for supporting Quartz development and  -
+
+* [cw-prover](utils/cw-prover) - Retrieve a merkle-proof for CosmWasm state
+* [cycles-sync](utils/cycles-sync) - Sync obligations and setoffs
+  with [Obligato](https://github.com/informalsystems/obligato)
+* [mtcs-intent](utils/mtcs-intent) - CLI for keygen, encrypting/decrypting obligations/setoffs, etc.
+* [tm-prover](utils/tm-prover) - Generate light client and merkle proofs for CosmWasm storage in a format that Quartz
+  understands
+
+## Contributing
+
+If you're interested in contributing, please comment on a relevant issue (if there is one) or open a new one!
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Resources
+
+* [Cycles website](https://cycles.money/)
+* [Cycles Spec](docs/spec)
+* [Quartz protobuf definitions](core/quartz-proto)
+
+## License
+
+TBD

@@ -123,8 +123,7 @@ mod tests {
         6f4d732b586f356f2f7358364f39515778485241765a55474f6452513763767152586171493d0a2d2d2d2d2d454\
         e442043455254494649434154452d2d2d2d2d0a00"
         );
-        let _quote: Quote3<Vec<u8>> = Quote3::try_from(quote_bytes.to_vec())
-            .expect("Failed to parse quote")
-            .into();
+        let _quote: Quote3<Vec<u8>> =
+            Quote3::try_from(quote_bytes.to_vec()).expect("Failed to parse quote");
     }
 }

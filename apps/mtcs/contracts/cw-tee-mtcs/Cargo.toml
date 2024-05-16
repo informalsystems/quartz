@@ -56,7 +56,7 @@ schemars = "0.8.15"
 serde = { version = "1.0.189", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.49" }
 
-quartz-cw = { path = "../../packages/quartz-cw" }
+quartz-cw = { path = "../../../../cosmwasm/packages/quartz-cw" }
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"

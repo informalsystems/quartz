@@ -1,6 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "enclaves/*",
-    "utils/*"
+    "apps/mtcs/contracts/cw-tee-mtcs",
+    "core/light-client-proofs/*",
+    "core/quartz",
+    "cosmwasm/packages/*",
+    "utils/*",
 ]

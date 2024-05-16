@@ -19,15 +19,15 @@ tendermint-light-client = "0.34.0"
 tonic = "0.11"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
-cw-proof = { path = "../../utils/cw-proof" }
-cw-tee-mtcs = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git" }
+cw-proof = { path = "../light-client-proofs/cw-proof" }
+cw-tee-mtcs = { path = "../../apps/mtcs/contracts/cw-tee-mtcs" }
 cycles-sync = { path = "../../utils/cycles-sync" }
 mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git" }
-quartz-cw = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git" }
-quartz-proto = { path = "../../utils/quartz-proto" }
-quartz-relayer = { path = "../../utils/quartz-relayer" }
-quartz-tee-ra = { git = "ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git" }
-tm-stateless-verifier = { path = "../../utils/tm-stateless-verifier" }
+quartz-cw = { path = "../../cosmwasm/packages/quartz-cw" }
+quartz-proto = { path = "../quartz-proto" }
+quartz-relayer = { path = "../../relayer" }
+quartz-tee-ra = { path = "../../cosmwasm/packages/quartz-tee-ra" }
+tm-stateless-verifier = { path = "../light-client-proofs/tm-stateless-verifier" }
 hex = "0.4.3"
 
 [build-dependencies]

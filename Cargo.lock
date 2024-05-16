@@ -832,6 +832,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-multi-test"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d818f5323c80ed4890db7f89d65eda3f0261fe21878e628c27ea2d8de4b7ba4"
+dependencies = [
+ "anyhow",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw-utils",
+ "derivative",
+ "itertools 0.11.0",
+ "prost 0.12.4",
+ "schemars",
+ "serde",
+ "sha2 0.10.8",
+ "thiserror",
+]
+
+[[package]]
 name = "cw-proof"
 version = "0.1.0"
 dependencies = [
@@ -875,10 +894,10 @@ dependencies = [
 [[package]]
 name = "cw-tee-mtcs"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git#c22ad69496e3c07a21a7e3a2e698d17693567b4a"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
+ "cw-multi-test",
  "cw-storage-plus",
  "cw2",
  "cw20",
@@ -888,6 +907,7 @@ dependencies = [
  "quartz-cw",
  "schemars",
  "serde",
+ "serde_json",
  "thiserror",
 ]
 
@@ -1028,8 +1048,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f55bf8e7b65898637379c1b74eb1551107c8294ed26d855ceb9fd1a09cfc9bc0"
 dependencies = [
  "const-oid",
+ "der_derive",
+ "flagset",
  "pem-rfc7468",
  "zeroize",
+]
+
+[[package]]
+name = "der_derive"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fe87ce4529967e0ba1dcf8450bab64d97dfd5010a6256187ffe2e43e6f0e049"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.61",
 ]
 
 [[package]]
@@ -1319,6 +1352,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ce7134b9999ecaf8bcd65542e436736ef32ddca1b3e06094cb6ec5755203b80"
 
 [[package]]
+name = "flagset"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cdeb3aa5e95cf9aabc17f060cfa0ced7b83f042390760ca53bf09df9968acaa1"
+
+[[package]]
 name = "flex-error"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1591,6 +1630,9 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "hex-literal"
@@ -1881,6 +1923,15 @@ dependencies = [
 
 [[package]]
 name = "itertools"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
@@ -1941,46 +1992,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "key-manager-enclave"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "cosmrs 0.15.0",
- "cw-proof",
- "ecies",
- "hex",
- "k256 0.13.3",
- "rand",
- "serde",
- "serde_json",
- "serde_with",
- "tendermint-light-client",
- "tm-stateless-verifier",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
-dependencies = [
- "spin 0.5.2",
-]
 
 [[package]]
 name = "libc"
 version = "0.2.154"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae743338b92ff9146ce83992f766a31066a91a8c84a45e0e9f21e7cf6de6d346"
-
-[[package]]
-name = "libm"
-version = "0.2.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 
 [[package]]
 name = "libsecp256k1"
@@ -2071,6 +2092,83 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
 
 [[package]]
+name = "mc-attestation-verifier"
+version = "0.4.3"
+source = "git+https://github.com/hu55a1n1/attestation#d77b6d5b5a37431a3a85d7154b97edf451226ffd"
+dependencies = [
+ "der 0.7.9",
+ "displaydoc",
+ "hex",
+ "mc-sgx-core-sys-types",
+ "mc-sgx-core-types",
+ "mc-sgx-dcap-types",
+ "p256",
+ "serde",
+ "serde_json",
+ "subtle",
+ "x509-cert",
+]
+
+[[package]]
+name = "mc-sgx-core-sys-types"
+version = "0.11.0"
+source = "git+https://github.com/hu55a1n1/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
+dependencies = [
+ "serde",
+ "serde_with",
+]
+
+[[package]]
+name = "mc-sgx-core-types"
+version = "0.11.0"
+source = "git+https://github.com/hu55a1n1/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
+dependencies = [
+ "bitflags 2.5.0",
+ "displaydoc",
+ "getrandom",
+ "hex",
+ "mc-sgx-core-sys-types",
+ "mc-sgx-util",
+ "nom",
+ "rand_core 0.6.4",
+ "serde",
+ "subtle",
+]
+
+[[package]]
+name = "mc-sgx-dcap-sys-types"
+version = "0.11.0"
+source = "git+https://github.com/hu55a1n1/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
+dependencies = [
+ "mc-sgx-core-sys-types",
+]
+
+[[package]]
+name = "mc-sgx-dcap-types"
+version = "0.11.0"
+source = "git+https://github.com/hu55a1n1/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
+dependencies = [
+ "const-oid",
+ "displaydoc",
+ "hex",
+ "mc-sgx-core-types",
+ "mc-sgx-dcap-sys-types",
+ "mc-sgx-util",
+ "nom",
+ "p256",
+ "serde",
+ "sha2 0.10.8",
+ "static_assertions",
+ "subtle",
+ "x509-cert",
+]
+
+[[package]]
+name = "mc-sgx-util"
+version = "0.11.0"
+source = "git+https://github.com/hu55a1n1/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
+
+[[package]]
 name = "mcmf"
 version = "2.0.0"
 source = "git+https://github.com/hu55a1n1/flow#cad8f3adb29d3be2177a31db0fa0e5c2a858beb0"
@@ -2089,6 +2187,12 @@ name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
+
+[[package]]
+name = "minimal-lexical"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "miniz_oxide"
@@ -2122,24 +2226,6 @@ dependencies = [
  "num-traits",
  "petgraph 0.6.3",
  "serde",
-]
-
-[[package]]
-name = "mtcs-enclave"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "cosmrs 0.15.0",
- "ecies",
- "hex",
- "k256 0.13.3",
- "rand",
- "serde",
- "serde_json",
- "serde_with",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -2184,6 +2270,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "nom"
+version = "7.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
+dependencies = [
+ "memchr",
+ "minimal-lexical",
+]
+
+[[package]]
 name = "nu-ansi-term"
 version = "0.46.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2215,24 +2311,6 @@ checksum = "c165a9ab64cf766f73521c0dd2cfdff64f488b8f0b3e621face3462d3db536d7"
 dependencies = [
  "num-integer",
  "num-traits",
-]
-
-[[package]]
-name = "num-bigint-dig"
-version = "0.8.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc84195820f291c7697304f3cbdadd1cb7199c0efc917ff5eafd71225c136151"
-dependencies = [
- "byteorder",
- "lazy_static",
- "libm",
- "num-integer",
- "num-iter",
- "num-traits",
- "rand",
- "serde",
- "smallvec",
- "zeroize",
 ]
 
 [[package]]
@@ -2311,7 +2389,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
- "libm",
 ]
 
 [[package]]
@@ -2400,6 +2477,18 @@ name = "owo-colors"
 version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1b04fb49957986fdce4d6ee7a65027d55d4b6d2265e5848bbb507b58ccfdb6f"
+
+[[package]]
+name = "p256"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9863ad85fa8f4460f9c48cb909d38a0d689dba1f6f6988a5e3e0d31071bcd4b"
+dependencies = [
+ "ecdsa 0.16.9",
+ "elliptic-curve 0.13.8",
+ "primeorder",
+ "sha2 0.10.8",
+]
 
 [[package]]
 name = "parking_lot"
@@ -2544,17 +2633,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
-name = "pkcs1"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8ffb9f10fa047879315e6625af03c164b16962a5368d724ed16323b68ace47f"
-dependencies = [
- "der 0.7.9",
- "pkcs8 0.10.2",
- "spki 0.7.3",
-]
-
-[[package]]
 name = "pkcs8"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2612,6 +2690,15 @@ checksum = "5f12335488a2f3b0a83b14edad48dca9879ce89b2edd10e80237e4e852dd645e"
 dependencies = [
  "proc-macro2",
  "syn 2.0.61",
+]
+
+[[package]]
+name = "primeorder"
+version = "0.13.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "353e1ca18966c16d9deb1c69278edbc5f194139612772bd9537af60ac231e1e6"
+dependencies = [
+ "elliptic-curve 0.13.8",
 ]
 
 [[package]]
@@ -2711,7 +2798,6 @@ dependencies = [
 [[package]]
 name = "quartz-cw"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git#c22ad69496e3c07a21a7e3a2e698d17693567b4a"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -2791,15 +2877,23 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/bisenzone-cw-mvp.git#c22ad69496e3c07a21a7e3a2e698d17693567b4a"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
+ "der 0.7.9",
+ "displaydoc",
  "hex-literal",
+ "mc-attestation-verifier",
+ "mc-sgx-core-types",
+ "mc-sgx-dcap-sys-types",
+ "mc-sgx-dcap-types",
  "num-bigint",
+ "serde",
  "serde_json",
  "sha2 0.10.8",
  "thiserror",
+ "x509-cert",
+ "zeroize",
 ]
 
 [[package]]
@@ -3014,7 +3108,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "getrandom",
  "libc",
- "spin 0.9.8",
+ "spin",
  "untrusted",
  "windows-sys 0.52.0",
 ]
@@ -3037,38 +3131,6 @@ dependencies = [
  "block-buffer 0.9.0",
  "digest 0.9.0",
  "opaque-debug",
-]
-
-[[package]]
-name = "rsa"
-version = "0.9.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d0e5124fcb30e76a7e79bfee683a2746db83784b86289f6251b54b7950a0dfc"
-dependencies = [
- "const-oid",
- "digest 0.10.7",
- "num-bigint-dig",
- "num-integer",
- "num-traits",
- "pkcs1",
- "pkcs8 0.10.2",
- "rand_core 0.6.4",
- "serde",
- "signature 2.2.0",
- "spki 0.7.3",
- "subtle",
- "zeroize",
-]
-
-[[package]]
-name = "rsa-denc"
-version = "0.1.0"
-dependencies = [
- "clap",
- "rand",
- "rsa",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -3507,12 +3569,6 @@ dependencies = [
 
 [[package]]
 name = "spin"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
-
-[[package]]
-name = "spin"
 version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
@@ -3623,23 +3679,6 @@ checksum = "a75fb188eb626b924683e3b95e3a48e63551fcfb51949de2f06a9d91dbee93c9"
 dependencies = [
  "core-foundation-sys",
  "libc",
-]
-
-[[package]]
-name = "tee-time-lock-encrypt"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "rand",
- "rsa",
- "serde",
- "serde_json",
- "tendermint 0.34.0",
- "tendermint-light-client",
- "tm-stateless-verifier",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -4031,21 +4070,6 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
-
-[[package]]
-name = "tm"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "serde",
- "serde_json",
- "tendermint 0.34.0",
- "tendermint-light-client",
- "tm-stateless-verifier",
- "tracing",
- "tracing-subscriber",
-]
 
 [[package]]
 name = "tm-prover"
@@ -4743,6 +4767,17 @@ checksum = "a277a57398d4bfa075df44f501a17cfdf8542d224f0d36095a2adc7aee4ef0a5"
 dependencies = [
  "cfg-if 1.0.0",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "x509-cert"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1301e935010a701ae5f8655edc0ad17c44bad3ac5ce8c39185f75453b720ae94"
+dependencies = [
+ "const-oid",
+ "der 0.7.9",
+ "spki 0.7.3",
 ]
 
 [[package]]

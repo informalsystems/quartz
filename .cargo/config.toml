@@ -1,0 +1,7 @@
+[net]
+git-fetch-with-cli = true
+
+[alias]
+wasm = "build --release --lib --target wasm32-unknown-unknown"
+unit-test = "test --lib"
+schema = "run --bin schema"

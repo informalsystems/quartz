@@ -1,8 +1,8 @@
-name: release wasm
+name: Cosmwasm release
 
 on:
   release:
-    types: [created]
+    types: [ created ]
 
 jobs:
   release:
