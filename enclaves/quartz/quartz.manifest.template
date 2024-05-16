@@ -21,8 +21,8 @@ loader.env.MYAPP_DATA = { passthrough = true }
 
 loader.argv = ["quartz-enclave",
                 "--chain-id", "testing",
-                "--trusted-height", "1",
-                "--trusted-hash", "2EF0E6F9BDDF5DEAA6FCD6492C3DB26D7C62BFFC01B538A958D04376E0B67185"]
+                "--trusted-height", "{{ trusted_height }}",
+                "--trusted-hash", "{{ trusted_hash }}"]
 
 fs.mounts = [
   { uri = "file:{{ gramine.runtimedir() }}", path = "/lib" },
