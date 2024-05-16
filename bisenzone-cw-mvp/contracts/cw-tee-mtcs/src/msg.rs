@@ -31,8 +31,10 @@ pub mod execute {
     }
 
     #[cw_serde]
-    #[serde(transparent)]
-    pub struct SubmitObligationsMsg(pub Vec<SubmitObligationMsg>);
+    pub struct SubmitObligationsMsg {
+        pub obligations: Vec<SubmitObligationMsg>,
+        pub liquidity_sources: Vec<String>,
+    }
 
     #[cw_serde]
     pub struct SubmitTenderMsg {
@@ -47,11 +49,14 @@ pub mod execute {
         // pub proof: π,
     }
 }
+
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(GetAllSetoffsResponse)]
     GetAllSetoffs,
+    #[returns(GetLiquiditySourcesResponse)]
+    GetLiquiditySources { epoch: Option<usize> }, // `None` means latest
     #[returns(cw20::BalanceResponse)]
     Balance { address: String },
 }
@@ -60,6 +65,11 @@ pub enum QueryMsg {
 #[cw_serde]
 pub struct GetAllSetoffsResponse {
     pub setoffs: Vec<(HexBinary, SettleOff)>,
+}
+
+#[cw_serde]
+pub struct GetLiquiditySourcesResponse {
+    pub liquidity_sources: Vec<String>,
 }
 
 #[cfg(test)]
