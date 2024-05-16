@@ -1,0 +1,20 @@
+[package]
+name = "quartz-cw"
+version = "0.1.0"
+authors = ["hu55a1n1 <sufialhussaini@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+cw-storage-plus = "1.1.0"
+cosmwasm-schema = "1.4.0"
+cosmwasm-std = "1.4.0"
+k256 = { version = "0.13.2", default-features = false, features = ["ecdsa", "alloc"] }
+serde = { version = "1.0.188", default-features = false, features = ["derive"] }
+serde_json = "1.0.94"
+sha2 = "0.10.8"
+thiserror = "1.0.57"
+
+quartz-tee-ra = { path = "../../packages/quartz-tee-ra" }
+
+[dev-dependencies]
+serde_json = "1.0.113"
