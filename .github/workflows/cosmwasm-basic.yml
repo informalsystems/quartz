@@ -5,7 +5,7 @@ name: Cosmwasm basic
 on:
   pull_request:
     paths:
-      - .github/workflows/Basic.yml
+      - .github/workflows/cosmwasm-basic.yml
       - Cargo.lock
       - Cargo.toml
       - apps/**
@@ -13,8 +13,7 @@ on:
   push:
     branches: master
     paths:
-      - .github/workflows/rust.yml
-      - .gitmodules
+      - .github/workflows/cosmwasm-basic.yml
       - Cargo.lock
       - Cargo.toml
       - apps/**

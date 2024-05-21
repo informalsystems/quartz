@@ -1,7 +1,6 @@
 [package]
 name = "cw-tee-mtcs"
 version = "0.1.0"
-authors = ["hu55a1n1 <sufialhussaini@gmail.com>"]
 edition = "2021"
 
 exclude = [
