@@ -16,10 +16,10 @@ thiserror = { version = "1.0.49" }
 
 der = { version = "0.7.9", default-features = false }
 displaydoc = { version = "0.2.4", default-features = false }
-mc-sgx-core-types = { git = "https://github.com/hu55a1n1/sgx" }
-mc-sgx-dcap-types = { git = "https://github.com/hu55a1n1/sgx" }
-mc-sgx-dcap-sys-types = { git = "https://github.com/hu55a1n1/sgx" }
-mc-attestation-verifier = { git = "https://github.com/hu55a1n1/attestation" }
+mc-sgx-core-types = { git = "https://github.com/informalsystems/sgx" }
+mc-sgx-dcap-types = { git = "https://github.com/informalsystems/sgx" }
+mc-sgx-dcap-sys-types = { git = "https://github.com/informalsystems/sgx" }
+mc-attestation-verifier = { git = "https://github.com/informalsystems/attestation" }
 serde = { version = "1.0.198", default-features = false }
 x509-cert = { version = "0.2.5", default-features = false }
 zeroize = { version = "1.7.0", default-features = false }
