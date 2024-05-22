@@ -78,7 +78,7 @@ async fn main() -> Result<(), DynError> {
 async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
     let wasmd_client = CliWasmdClient::new(cli.node);
     let query_result: QueryResult<QueryAllSetoffsResponse> =
-        wasmd_client.query_smart(&cli.contract, json!("get_all_setoffs"))?;
+        wasmd_client.query_smart(&cli.contract, json!("get_all_setoffs"), &cli.chain_id)?;
     let setoffs = query_result.data.setoffs;
 
     // read keys
