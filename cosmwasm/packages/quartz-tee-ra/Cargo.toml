@@ -23,3 +23,6 @@ mc-attestation-verifier = { git = "https://github.com/informalsystems/attestatio
 serde = { version = "1.0.198", default-features = false }
 x509-cert = { version = "0.2.5", default-features = false }
 zeroize = { version = "1.7.0", default-features = false }
+
+[dev-dependencies]
+hex = "0.4.3"

@@ -2800,6 +2800,7 @@ dependencies = [
  "cosmwasm-std",
  "der 0.7.9",
  "displaydoc",
+ "hex",
  "hex-literal",
  "mc-attestation-verifier",
  "mc-sgx-core-types",
