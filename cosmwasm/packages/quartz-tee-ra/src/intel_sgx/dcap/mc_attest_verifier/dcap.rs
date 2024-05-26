@@ -18,7 +18,7 @@ pub struct DcapVerifier {
     verifier: And<EvidenceVerifier<TlsCertificateChainVerifier>, ReportDataHashVerifier>,
 }
 
-type DcapVerifierOutput = AndOutput<EvidenceValue, ReportData>;
+pub type DcapVerifierOutput = AndOutput<EvidenceValue, ReportData>;
 
 impl DcapVerifier {
     /// Create a new instance of the DcapVerifier.
