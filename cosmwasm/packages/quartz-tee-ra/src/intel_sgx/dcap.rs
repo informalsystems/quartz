@@ -5,12 +5,25 @@ pub mod mc_attest_verifier_types;
 /// Root anchor PEM file for use with DCAP
 pub const DCAP_ROOT_ANCHOR: &str = include_str!("../../data/DcapRootCACert.pem");
 
-pub use mc_attest_verifier::dcap::DcapVerifier;
-pub use mc_attest_verifier_types::verification::EnclaveReportDataContents;
-pub use mc_attestation_verifier::*;
-pub use mc_sgx_dcap_sys_types::sgx_ql_qve_collateral_t;
-pub use mc_sgx_dcap_types::{CertificationData, Collateral};
-pub use x509_cert::Certificate;
+use mc_attestation_verifier::*;
+use mc_sgx_dcap_types::{Collateral, Quote3};
+
+use self::{
+    mc_attest_verifier::dcap::{DcapVerifier, DcapVerifierOutput},
+    mc_attest_verifier_types::verification::EnclaveReportDataContents,
+};
+
+pub fn verify(
+    quote: Quote3<Vec<u8>>,
+    collateral: Collateral,
+    identities: &[TrustedIdentity],
+) -> VerificationOutput<DcapVerifierOutput> {
+    let report_data_contents = EnclaveReportDataContents::new([0x42u8; 16].into(), [0xAAu8; 32]);
+    let evidence = Evidence::new(quote, collateral).expect("Failed to get evidence");
+    let verifier = DcapVerifier::new(identities, None, report_data_contents);
+    let verification = verifier.verify(&evidence);
+    verification
+}
 
 #[cfg(test)]
 mod tests {
