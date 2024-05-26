@@ -18,7 +18,7 @@ use clap::Parser;
 use cosmwasm_std::HexBinary;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::{info, Level};
+use tracing::{debug, Level};
 use uuid::Uuid;
 
 use crate::{
@@ -60,7 +60,7 @@ async fn main() -> Result<(), DynError> {
         .with_max_level(if cli.verbose {
             Level::DEBUG
         } else {
-            Level::INFO
+            Level::ERROR
         })
         .with_level(true)
         .with_writer(std::io::stderr)
@@ -116,7 +116,7 @@ async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
         })
         .collect();
 
-    info!("setoffs: {setoffs:?}");
+    debug!("setoffs: {setoffs:?}");
 
     // send to Obligato
     let client = HttpClient::new(OBLIGATO_URL.parse().unwrap());
@@ -137,13 +137,13 @@ async fn sync_obligations(cli: Cli, epoch_pk: &str) -> Result<(), DynError> {
 
     add_default_acceptances(&mut intents, bank_id);
 
-    info!("intents: {intents:?}");
+    debug!("intents: {intents:?}");
 
     let intents_enc = {
         let epoch_pk = VerifyingKey::from_sec1_bytes(&hex::decode(epoch_pk).unwrap()).unwrap();
         encrypt_intents(intents, keys, &epoch_pk, cli.obligation_user_map_file)
     };
-    info!("Encrypted {} intents", intents_enc.len());
+    debug!("Encrypted {} intents", intents_enc.len());
 
     let msg = create_wasm_msg(intents_enc);
     let wasmd_client = CliWasmdClient::new(cli.node);

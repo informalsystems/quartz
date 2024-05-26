@@ -3,6 +3,7 @@ use std::{error::Error, process::Command};
 use cosmrs::{tendermint::chain::Id, AccountId};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use tracing::debug;
 
 pub trait WasmdClient {
     type Address: AsRef<str>;
@@ -75,7 +76,7 @@ impl WasmdClient for CliWasmdClient {
             .args(["--output", "json"]);
 
         let output = command.output()?;
-        println!("{:?} => {:?}", command, output);
+        debug!("{:?} => {:?}", command, output);
 
         let query_result = R::from_vec(output.stdout);
         Ok(query_result)
@@ -100,7 +101,7 @@ impl WasmdClient for CliWasmdClient {
             .arg("-y");
 
         let output = command.output()?;
-        println!("{:?} => {:?}", command, output);
+        debug!("{:?} => {:?}", command, output);
 
         Ok(())
     }
