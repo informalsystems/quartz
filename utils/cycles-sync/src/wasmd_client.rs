@@ -103,6 +103,10 @@ impl WasmdClient for CliWasmdClient {
         let output = command.output()?;
         debug!("{:?} => {:?}", command, output);
 
+        if output.status.success() {
+            println!("{}", String::from_utf8(output.stdout).unwrap());
+        }
+
         Ok(())
     }
 }
