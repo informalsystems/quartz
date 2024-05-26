@@ -13,7 +13,8 @@
     unused_qualifications,
     warnings
 )]
-#![forbid(unsafe_code)]
+// FIXME(hu55a1n1) - uncomment once we have better wrappers for FFI structs and ctors
+// #![forbid(unsafe_code)]
 
 pub mod intel_sgx;
 
