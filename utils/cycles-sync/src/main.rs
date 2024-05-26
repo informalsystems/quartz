@@ -63,6 +63,7 @@ async fn main() -> Result<(), DynError> {
             Level::INFO
         })
         .with_level(true)
+        .with_writer(std::io::stderr)
         .init();
 
     match cli.command {
