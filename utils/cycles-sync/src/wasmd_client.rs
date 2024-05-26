@@ -98,6 +98,7 @@ impl WasmdClient for CliWasmdClient {
             .args(["--chain-id", chain_id.as_ref()])
             .args(["--gas", &gas.to_string()])
             .args(["--from", sender.as_ref()])
+            .args(["--output", "json"])
             .arg("-y");
 
         let output = command.output()?;
