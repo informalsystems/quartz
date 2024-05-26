@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::log::debug;
 
 use crate::{
     obligato_client::Client,
@@ -54,7 +55,7 @@ impl Client for HttpClient {
             .json(&setoffs)
             .send()
             .await?;
-        println!("{}", response.text().await.unwrap());
+        debug!("{}", response.text().await.unwrap());
 
         Ok(())
     }
