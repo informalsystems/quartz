@@ -90,12 +90,12 @@ mod tests {
         let certificate_verifier = TlsCertificateChainVerifier::new(root_ca);
         let identities = [TrustedMrEnclaveIdentity::new(
             MrEnclave::from_hex("840d61b0585dc8b4dc90f53af293c760fda06bee75978a6a86263ffb296423f4")
-                .unwrap(),
+                .expect("malformed MRENCLAVE hex"),
             [""; 0],
             ["INTEL-SA-00334", "INTEL-SA-00615"],
         )
         .into()];
-        let verifier = EvidenceVerifier::new(certificate_verifier, &identities, None);
+        let verifier = EvidenceVerifier::new(certificate_verifier, identities.as_ref(), None);
         let quote_bytes = include_bytes!("../../data/hw_quote.dat");
         let quote = Quote3::try_from(quote_bytes.as_ref()).expect("Failed to parse quote");
         let collateral = collateral(TCB_INFO_JSON, QE_IDENTITY_JSON);
