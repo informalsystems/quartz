@@ -7,19 +7,20 @@ use tracing::log::debug;
 use crate::{
     obligato_client::Client,
     types::{ObligatoObligation, ObligatoSetOff},
-    OBLIGATO_KEY,
 };
 
 pub struct HttpClient {
     client: reqwest::Client,
     url: Url,
+    key: String,
 }
 
 impl HttpClient {
-    pub fn new(url: Url) -> Self {
+    pub fn new(url: Url, key: String) -> Self {
         Self {
             client: reqwest::Client::new(),
             url,
+            key,
         }
     }
 
@@ -38,7 +39,7 @@ impl Client for HttpClient {
         let response = self
             .client
             .post(self.url_with_path("api/sync/obligations2contract"))
-            .json(&json!({"denom_id": "1", "key": OBLIGATO_KEY }))
+            .json(&json!({"denom_id": "1", "key": self.key }))
             .send()
             .await?
             .json::<GetObligationsResponse>()
