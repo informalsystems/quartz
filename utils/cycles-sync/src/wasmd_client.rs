@@ -15,7 +15,6 @@ pub trait WasmdClient {
         &self,
         contract: &Self::Address,
         query: Self::Query,
-        chain_id: &Id,
     ) -> Result<R, Self::Error>;
 
     fn tx_execute<M: ToString>(
@@ -64,7 +63,6 @@ impl WasmdClient for CliWasmdClient {
         &self,
         contract: &Self::Address,
         query: Self::Query,
-        chain_id: &Id,
     ) -> Result<R, Self::Error> {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd
@@ -72,7 +70,6 @@ impl WasmdClient for CliWasmdClient {
             .args(["query", "wasm"])
             .args(["contract-state", "smart", contract.as_ref()])
             .arg(query.to_string())
-            .args(["--chain-id", chain_id.as_ref()])
             .args(["--output", "json"]);
 
         let output = command.output()?;
@@ -93,9 +90,9 @@ impl WasmdClient for CliWasmdClient {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd
             .args(["--node", self.url.as_str()])
+            .args(["--chain-id", chain_id.as_ref()])
             .args(["tx", "wasm"])
             .args(["execute", contract.as_ref(), &msg.to_string()])
-            .args(["--chain-id", chain_id.as_ref()])
             .args(["--gas", &gas.to_string()])
             .args(["--from", sender.as_ref()])
             .args(["--output", "json"])
