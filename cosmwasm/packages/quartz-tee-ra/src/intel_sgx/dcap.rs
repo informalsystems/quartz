@@ -85,7 +85,7 @@ mod tests {
     }
 
     #[test]
-    fn evidence_verifier_succeeds_with_mbedtls_x509_verifier() {
+    fn evidence_verifier_succeeds_with_tls_x509_verifier() {
         let root_ca = include_str!("../../data/root_ca.pem");
         let certificate_verifier = TlsCertificateChainVerifier::new(root_ca);
         let identities = [TrustedMrEnclaveIdentity::new(
