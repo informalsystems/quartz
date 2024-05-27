@@ -41,7 +41,8 @@ const MNEMONIC_PHRASE: &str = "clutch debate vintage foster barely primary clown
 const ALICE_ID: &str = "7bfad4e8-d898-4ce2-bbac-1beff7182319";
 const BANK_DEBTOR_ID: &str = "3879fa15-d86e-4464-b679-0a3d78cf3dd3";
 
-const OBLIGATO_URL: &str = "https://bisenzone.obligato.network";
+const OBLIGATO_URL: &str = "https://deploy-preview-353--obligato-app-bisenzone.netlify.app";
+const OBLIGATO_KEY: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRydXZveWVhYXN5bXZubGxmdnZ5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxMTYyNDgzNiwiZXhwIjoyMDI3MjAwODM2fQ.y-2iTQCplrXBEzHrvz_ZGFmMx-iLMzRZ6I0N5htJ39c";
 
 type Sha256Digest = [u8; 32];
 
