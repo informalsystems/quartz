@@ -21,8 +21,7 @@ pub fn verify(
     let report_data_contents = EnclaveReportDataContents::new([0x42u8; 16].into(), [0xAAu8; 32]);
     let evidence = Evidence::new(quote, collateral).expect("Failed to get evidence");
     let verifier = DcapVerifier::new(identities, None, report_data_contents);
-    let verification = verifier.verify(&evidence);
-    verification
+    verifier.verify(&evidence)
 }
 
 #[cfg(test)]
