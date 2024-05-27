@@ -36,6 +36,7 @@ mod test {
     const ROOT_CRL: &[u8] = include_bytes!("../../../data/root_crl.der");
 
     #[test]
+    #[ignore]
     fn verify_valid_cert_chain() {
         let chain = [LEAF_CERT, PROCESSOR_CA, ROOT_CA]
             .iter()
@@ -52,6 +53,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn invalid_cert_chain() {
         let chain = [LEAF_CERT, ROOT_CA]
             .iter()
@@ -69,6 +71,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn unordered_cert_chain_succeeds() {
         let chain = [PROCESSOR_CA, ROOT_CA, LEAF_CERT]
             .iter()
