@@ -4,3 +4,4 @@
 .idea/
 target/
 **/Cargo.lock
+artifacts/
