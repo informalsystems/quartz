@@ -1,9 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "apps/mtcs/contracts/cw-tee-mtcs",
     "core/light-client-proofs/*",
     "core/quartz",
     "cosmwasm/packages/*",
     "utils/*",
 ]
+
+exclude = ["apps/mtcs/contracts/cw-tee-mtcs"]
