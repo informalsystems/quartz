@@ -6,16 +6,12 @@ on:
   pull_request:
     paths:
       - .github/workflows/cosmwasm-basic.yml
-      - Cargo.lock
-      - Cargo.toml
       - apps/**
       - cosmwasm/**
   push:
-    branches: master
+    branches: main
     paths:
       - .github/workflows/cosmwasm-basic.yml
-      - Cargo.lock
-      - Cargo.toml
       - apps/**
       - cosmwasm/**
 

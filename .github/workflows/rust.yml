@@ -70,7 +70,7 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features --all-targets --workspace --exclude "cw-tee-mtcs"
+          args: --all-features --all-targets --workspace
 
   test:
     runs-on: ubuntu-latest
@@ -90,12 +90,12 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features --no-fail-fast --no-run --workspace --exclude "cw-tee-mtcs"
+          args: --all-features --no-fail-fast --no-run --workspace
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features --no-fail-fast --workspace --exclude "cw-tee-mtcs" -- --nocapture
+          args: --all-features --no-fail-fast --workspace -- --nocapture
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --no-default-features --no-fail-fast --no-run --workspace --exclude "cw-tee-mtcs"
+          args: --no-default-features --no-fail-fast --no-run --workspace
