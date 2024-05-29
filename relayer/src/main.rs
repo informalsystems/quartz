@@ -138,7 +138,7 @@ pub fn tx_bytes(
     let signer_info = SignerInfo::single_direct(Some(tm_pubkey.into()), sequence_number);
     let auth_info = signer_info.auth_info(Fee::from_amount_and_gas(amount, gas));
     let sign_doc = SignDoc::new(&tx_body, &auth_info, chain_id, account_number)?;
-    let tx_signed = sign_doc.sign(&SigningKey::from_bytes(&secret.serialize()).unwrap())?;
+    let tx_signed = sign_doc.sign(&SigningKey::from_slice(&secret.serialize()).unwrap())?;
     Ok(tx_signed.to_bytes()?)
 }
 
