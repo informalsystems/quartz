@@ -26,7 +26,7 @@ color-eyre = { version = "0.6.2", default-features = false }
 der = { version = "0.7.9", default-features = false }
 displaydoc = { version = "0.2.4", default-features = false }
 ecies = { version = "0.2.3", default-features = false, features = ["pure"] }
-futures = { version = "0.3.27", default-features = false }
+futures = { version = "0.3.27", default-features = false, features = ["alloc"] }
 hex = { version = "0.4.3", default-features = false }
 hex-literal = { version = "0.4.1", default-features = false }
 k256 = { version = "0.13.2", default-features = false, features = ["ecdsa", "alloc"] }
