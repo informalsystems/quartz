@@ -28,8 +28,6 @@ cd "$CARGO_PKG_DIR"
 echo "👷 Building and optimizing the contract..."
 echo "==========================================="
 
-RUSTFLAGS='-C link-arg=-s' cargo wasm
-
 docker run --rm -v "$ROOT":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target="/code/target" \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
