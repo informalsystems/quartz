@@ -19,63 +19,63 @@ authors = ["Informal Systems <hello@informal.systems>"]
 
 [workspace.dependencies]
 # external
-async-trait = "0.1.79"
-bip32 = { version = "0.5.1", features = ["alloc"] }
-clap = { version = "4.1.8", features = ["derive"] }
-color-eyre = "0.6.2"
+async-trait = { version = "0.1.79", default-features = false }
+bip32 = { version = "0.5.1", default-features = false, features = ["alloc", "secp256k1", "bip39"] }
+clap = { version = "4.1.8", default-features = false, features = ["derive", "std"] }
+color-eyre = { version = "0.6.2", default-features = false }
 der = { version = "0.7.9", default-features = false }
 displaydoc = { version = "0.2.4", default-features = false }
 ecies = { version = "0.2.3", default-features = false, features = ["pure"] }
-futures = "0.3.27"
+futures = { version = "0.3.27", default-features = false }
 hex = { version = "0.4.3", default-features = false }
-hex-literal = "0.4.1"
+hex-literal = { version = "0.4.1", default-features = false }
 k256 = { version = "0.13.2", default-features = false, features = ["ecdsa", "alloc"] }
-num-bigint = "0.4.4"
+num-bigint = { version = "0.4.4", default-features = false }
 prost = { version = "0.12.3", default-features = false }
-rand = "0.8.5"
-rand_core = { version = "0.6", features = ["std"] }
+rand = { version = "0.8.5", default-features = false }
+rand_core = { version = "0.6", default-features = false, features = ["std"] }
 reqwest = { version = "0.12.2", default-features = false, features = ["json", "rustls-tls"] }
-serde = { version = "1.0.189", features = ["derive"] }
-serde_json = "1.0.94"
+serde = { version = "1.0.189", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0.94", default-features = false }
 serde_with = { version = "3.4.0", default-features = false, features = ["hex", "macros"] }
-sha2 = "0.10.8"
-subtle-encoding = { version = "0.5.1", features = ["bech32-preview"] }
-tempfile = "3"
-thiserror = "1.0.49"
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-tonic = "0.11"
-tonic-build = "0.11"
-tracing = "0.1.39"
-tracing-subscriber = "0.3.17"
-uuid = { version = "1.4.1", features = ["serde"] }
+sha2 = { version = "0.10.8", default-features = false }
+subtle-encoding = { version = "0.5.1", default-features = false, features = ["bech32-preview"] }
+tempfile = { version = "3", default-features = false }
+thiserror = { version = "1.0.49", default-features = false }
+tokio = { version = "1.0", default-features = false, features = ["macros", "rt-multi-thread"] }
+tonic = { version = "0.11", default-features = false, features = ["codegen", "prost", "transport"] }
+tonic-build = { version = "0.11", default-features = false, features = ["prost", "transport"] }
+tracing = { version = "0.1.39", default-features = false }
+tracing-subscriber = { version = "0.3.17", default-features = false, features = ["fmt"] }
+uuid = { version = "1.4.1", default-features = false, features = ["serde"] }
 x509-cert = { version = "0.2.5", default-features = false }
 zeroize = { version = "1.7.0", default-features = false }
 
 # cosmos
-cosmos-sdk-proto = "0.21.1"
+cosmos-sdk-proto = { version = "0.21.1" }
 cosmrs = { version = "=0.16.0", default-features = false }
-cosmwasm-schema = "1.4.0"
-cosmwasm-std = "1.5.2"
-cw-storage-plus = "1.1.0"
+cosmwasm-schema = { version = "1.4.0", default-features = false }
+cosmwasm-std = { version = "1.5.2", default-features = false }
+cw-storage-plus = { version = "1.1.0", default-features = false }
 ics23 = { version = "0.11.0", default-features = false, features = ["host-functions"] }
 tendermint = { version = "=0.36.0", default-features = false }
 tendermint-light-client = { version = "=0.36.0", default-features = false, features = ["rust-crypto"] }
-tendermint-light-client-detector = "=0.36.0"
+tendermint-light-client-detector = { version = "=0.36.0", default-features = false }
 tendermint-rpc = { version = "=0.36.0", default-features = false, features = ["http-client"] }
 
 # mobilecoin
-mc-sgx-core-types = { git = "https://github.com/informalsystems/sgx" }
-mc-sgx-dcap-types = { git = "https://github.com/informalsystems/sgx" }
-mc-sgx-dcap-sys-types = { git = "https://github.com/informalsystems/sgx" }
-mc-attestation-verifier = { git = "https://github.com/informalsystems/attestation" }
+mc-sgx-core-types = { git = "https://github.com/informalsystems/sgx", default-features = false }
+mc-sgx-dcap-types = { git = "https://github.com/informalsystems/sgx", default-features = false }
+mc-sgx-dcap-sys-types = { git = "https://github.com/informalsystems/sgx", default-features = false }
+mc-attestation-verifier = { git = "https://github.com/informalsystems/attestation", default-features = false }
 
 # quartz
-cw-proof = { path = "core/light-client-proofs/cw-proof" }
-cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs" }
-cycles-sync = { path = "utils/cycles-sync" }
-mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git" }
-quartz-cw = { path = "cosmwasm/packages/quartz-cw" }
-quartz-proto = { path = "core/quartz-proto" }
-quartz-relayer = { path = "relayer" }
-quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra" }
-tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier" }
+cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = false }
+cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
+cycles-sync = { path = "utils/cycles-sync", default-features = false }
+mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
+quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
+quartz-proto = { path = "core/quartz-proto", default-features = false }
+quartz-relayer = { path = "relayer", default-features = false }
+quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
+tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
