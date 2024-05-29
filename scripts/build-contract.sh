@@ -30,11 +30,10 @@ echo "==========================================="
 
 RUSTFLAGS='-C link-arg=-s' cargo wasm
 
-docker run --rm -v "$ROOT/$CARGO_PKG_DIR":"/code" \
-  -v "$ROOT/cosmwasm/packages":/cosmwasm/packages \
+docker run --rm -v "$ROOT":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target="/code/target" \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/rust-optimizer:0.15.0
+  cosmwasm/rust-optimizer:0.15.0 "$CARGO_PKG_DIR"
 
 echo ""
 echo "🎉 Contract build and optimization completed successfully!"
