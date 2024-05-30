@@ -3,4 +3,4 @@
 *.manifest.sgx
 .idea/
 target/
-**/Cargo.lock
+artifacts/

@@ -8,6 +8,9 @@ usage() {
   exit 1
 }
 
+ROOT=${ROOT:-$(pwd)}
+DIR_QUARTZ="$ROOT/cycles-quartz"
+DIR_PROTO="$DIR_QUARTZ/core/quartz-proto/proto"
 IAS_API_KEY="669244b3e6364b5888289a11d2a1726d"
 RA_CLIENT_SPID="51CAF5A48B450D624AEFE3286D314894"
 QUOTE_FILE="/tmp/${USER}_test.quote"
@@ -21,7 +24,7 @@ REQUEST_MSG=${2:-"{}"}
 rm -f "$QUOTE_FILE" "$REPORT_FILE" "$REPORT_SIG_FILE"
 
 # query the gRPC quartz enclave service
-ATTESTED_MSG=$(grpcurl -plaintext -import-path ../../utils/quartz-proto/proto/ -proto quartz.proto -d "$REQUEST_MSG" '127.0.0.1:11090' quartz.Core/"$REQUEST" | jq -c '.message | fromjson')
+ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto quartz.proto -d "$REQUEST_MSG" '127.0.0.1:11090' quartz.Core/"$REQUEST" | jq -c '.message | fromjson')
 
 # parse out the quote and the message
 QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')
