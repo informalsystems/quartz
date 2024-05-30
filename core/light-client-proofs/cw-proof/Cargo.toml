@@ -1,18 +1,27 @@
 [package]
 name = "cw-proof"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["blockchain", "cosmos", "cosmwasm", "cycles", "quartz"]
+readme = "README.md"
 
 [dependencies]
-clap = { version = "4.1.8", features = ["derive"] }
-cosmrs = { version = "0.15.0", default-features = false }
-displaydoc = { version = "0.2.4", default-features = false }
-ics23 = { version = "0.11.0", default-features = false, features = ["host-functions"] }
-prost = { version = "0.12.3", default-features = false }
-serde = { version = "1.0.189", features = ["derive"] }
-serde_with = { version = "3.4.0", default-features = false, features = ["hex", "macros"] }
-tendermint = { version = "0.34.0", default-features = false }
-tendermint-rpc = { version = "0.34.0", default-features = false, features = ["http-client"] }
+# external
+clap.workspace = true
+displaydoc.workspace = true
+prost.workspace = true
+serde.workspace = true
+serde_with.workspace = true
+
+# cosmos
+cosmrs.workspace = true
+ics23.workspace = true
+tendermint.workspace = true
+tendermint-rpc.workspace = true
 
 [dev-dependencies]
-hex = { version = "0.4.3", default-features = false }
+hex.workspace = true

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::log::debug;
+use tracing::debug;
 
 use crate::{
     obligato_client::Client,
