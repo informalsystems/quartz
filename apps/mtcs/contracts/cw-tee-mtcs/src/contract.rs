@@ -15,10 +15,7 @@ use crate::{
         execute::{SubmitObligationMsg, SubmitObligationsMsg, SubmitSetoffsMsg},
         ExecuteMsg, InstantiateMsg, QueryMsg,
     },
-    state::{
-        current_epoch_key, LiquiditySourcesItem, ObligationsItem, State, LIQUIDITY_SOURCES_KEY,
-        OBLIGATIONS_KEY, STATE,
-    },
+    state::{current_epoch_key, ObligationsItem, State, OBLIGATIONS_KEY, STATE},
 };
 
 // version info for migration info
@@ -44,9 +41,6 @@ pub fn instantiate(
     EPOCH_COUNTER.save(deps.storage, &1)?;
 
     ObligationsItem::new(&current_epoch_key(OBLIGATIONS_KEY, deps.storage)?)
-        .save(deps.storage, &Default::default())?;
-
-    LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
         .save(deps.storage, &Default::default())?;
 
     // store token info using cw20-base format
@@ -109,14 +103,10 @@ pub fn execute(
         ExecuteMsg::SubmitObligation(SubmitObligationMsg { ciphertext, digest }) => {
             execute::submit_obligation(deps, ciphertext, digest)
         }
-        ExecuteMsg::SubmitObligations(SubmitObligationsMsg {
-            obligations,
-            liquidity_sources,
-        }) => {
+        ExecuteMsg::SubmitObligations(SubmitObligationsMsg(obligations)) => {
             for o in obligations {
                 execute::submit_obligation(deps.branch(), o.ciphertext, o.digest)?;
             }
-            execute::append_liquidity_sources(deps, liquidity_sources)?;
             Ok(Response::new())
         }
         ExecuteMsg::SubmitSetoffs(SubmitSetoffsMsg { setoffs_enc }) => {
@@ -135,8 +125,8 @@ pub mod execute {
 
     use crate::{
         state::{
-            current_epoch_key, previous_epoch_key, LiquiditySourcesItem, ObligationsItem, RawHash,
-            SetoffsItem, SettleOff, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, SETOFFS_KEY,
+            current_epoch_key, previous_epoch_key, ObligationsItem, RawHash, SetoffsItem,
+            SettleOff, OBLIGATIONS_KEY, SETOFFS_KEY,
         },
         ContractError,
     };
@@ -163,24 +153,6 @@ pub mod execute {
             .add_attribute("action", "submit_obligation")
             .add_attribute("digest", digest.to_string())
             .add_attribute("ciphertext", ciphertext.to_string()))
-    }
-
-    pub fn append_liquidity_sources(
-        deps: DepsMut,
-        liquidity_sources: Vec<String>,
-    ) -> Result<(), ContractError> {
-        liquidity_sources
-            .iter()
-            .try_for_each(|ls| deps.api.addr_validate(ls).map(|_| ()))?;
-
-        // store the liquidity sources
-        LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
-            .update(deps.storage, |mut ls| {
-                ls.extend(liquidity_sources);
-                Ok::<_, ContractError>(ls)
-            })?;
-
-        Ok(())
     }
 
     pub fn submit_setoffs(
@@ -234,9 +206,6 @@ pub mod execute {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetAllSetoffs => to_json_binary(&query::get_all_setoffs(deps)?),
-        QueryMsg::GetLiquiditySources { epoch } => {
-            to_json_binary(&query::get_liquidity_sources(deps, epoch)?)
-        }
         QueryMsg::Balance { address } => to_json_binary(&cw20_query_balance(deps, address)?),
     }
 }
@@ -245,11 +214,8 @@ pub mod query {
     use cosmwasm_std::{Deps, StdResult};
 
     use crate::{
-        msg::{GetAllSetoffsResponse, GetLiquiditySourcesResponse},
-        state::{
-            current_epoch_key, epoch_key, previous_epoch_key, LiquiditySourcesItem, SetoffsItem,
-            LIQUIDITY_SOURCES_KEY, SETOFFS_KEY,
-        },
+        msg::GetAllSetoffsResponse,
+        state::{previous_epoch_key, SetoffsItem, SETOFFS_KEY},
     };
 
     pub fn get_all_setoffs(deps: Deps) -> StdResult<GetAllSetoffsResponse> {
@@ -258,21 +224,5 @@ pub mod query {
             .into_iter()
             .collect();
         Ok(GetAllSetoffsResponse { setoffs })
-    }
-
-    pub fn get_liquidity_sources(
-        deps: Deps,
-        epoch: Option<usize>,
-    ) -> StdResult<GetLiquiditySourcesResponse> {
-        let epoch_key = match epoch {
-            None => current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?,
-            Some(e) => epoch_key(LIQUIDITY_SOURCES_KEY, e)?,
-        };
-
-        let liquidity_sources = LiquiditySourcesItem::new(&epoch_key)
-            .load(deps.storage)?
-            .into_iter()
-            .collect();
-        Ok(GetLiquiditySourcesResponse { liquidity_sources })
     }
 }
