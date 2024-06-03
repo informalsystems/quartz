@@ -39,7 +39,6 @@ mod wasmd_client;
 const MNEMONIC_PHRASE: &str = "clutch debate vintage foster barely primary clown leader sell manual leopard ladder wet must embody story oyster imitate cable alien six square rice wedding";
 
 const ALICE_ID: &str = "7bfad4e8-d898-4ce2-bbac-1beff7182319";
-const BANK_DEBTOR_ID: &str = "3879fa15-d86e-4464-b679-0a3d78cf3dd3";
 
 type Sha256Digest = [u8; 32];
 
@@ -65,9 +64,10 @@ async fn main() -> Result<(), DynError> {
         .init();
 
     match cli.command {
-        CliCommand::SyncObligations { ref epoch_pk } => {
-            sync_obligations(cli.clone(), epoch_pk).await?
-        }
+        CliCommand::SyncObligations {
+            ref epoch_pk,
+            ref liquidity_sources,
+        } => sync_obligations(cli.clone(), epoch_pk, liquidity_sources).await?,
         CliCommand::SyncSetOffs => sync_setoffs(cli).await?,
     }
 
@@ -123,34 +123,45 @@ async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
     Ok(())
 }
 
-async fn sync_obligations(cli: Cli, epoch_pk: &str) -> Result<(), DynError> {
+async fn sync_obligations(
+    cli: Cli,
+    epoch_pk: &str,
+    liquidity_sources: &[Uuid],
+) -> Result<(), DynError> {
     let mut intents = {
         let client = HttpClient::new(cli.obligato_url, cli.obligato_key);
         client.get_obligations().await.unwrap()
     };
 
-    let bank_id = Uuid::parse_str(BANK_DEBTOR_ID).unwrap();
-    let keys = derive_keys(&mut intents, bank_id)?;
+    let keys = derive_keys(&mut intents, liquidity_sources)?;
     write_keys_to_file(cli.keys_file, &keys);
 
-    add_default_acceptances(&mut intents, bank_id);
+    add_default_acceptances(&mut intents, liquidity_sources);
 
     debug!("intents: {intents:?}");
 
     let intents_enc = {
         let epoch_pk = VerifyingKey::from_sec1_bytes(&hex::decode(epoch_pk).unwrap()).unwrap();
-        encrypt_intents(intents, keys, &epoch_pk, cli.obligation_user_map_file)
+        encrypt_intents(intents, &keys, &epoch_pk, cli.obligation_user_map_file)
     };
     debug!("Encrypted {} intents", intents_enc.len());
 
-    let msg = create_wasm_msg(intents_enc);
+    let liquidity_sources = liquidity_sources
+        .into_iter()
+        .map(|id| keys[id].private_key().public_key().clone())
+        .collect();
+
+    let msg = create_wasm_msg(intents_enc, liquidity_sources)?;
     let wasmd_client = CliWasmdClient::new(cli.node);
     wasmd_client.tx_execute(&cli.contract, &cli.chain_id, 3000000, cli.user, msg)?;
 
     Ok(())
 }
 
-fn create_wasm_msg(obligations_enc: Vec<(Sha256Digest, Vec<u8>)>) -> serde_json::Value {
+fn create_wasm_msg(
+    obligations_enc: Vec<(Sha256Digest, Vec<u8>)>,
+    liquidity_sources: Vec<VerifyingKey>,
+) -> Result<serde_json::Value, DynError> {
     let obligations_enc: Vec<_> = obligations_enc
         .into_iter()
         .map(|(digest, ciphertext)| {
@@ -160,15 +171,21 @@ fn create_wasm_msg(obligations_enc: Vec<(Sha256Digest, Vec<u8>)>) -> serde_json:
         })
         .collect();
 
+    let liquidity_sources = liquidity_sources
+        .into_iter()
+        .map(|pk| HexBinary::from(pk.to_sec1_bytes().as_ref()))
+        .collect();
+
     let msg = SubmitObligationsMsg {
         submit_obligations: obligations_enc,
+        liquidity_sources,
     };
-    serde_json::to_value(msg).unwrap()
+    serde_json::to_value(msg).map_err(Into::into)
 }
 
 fn encrypt_intents(
     intents: Vec<ObligatoObligation>,
-    keys: HashMap<Uuid, XPrv>,
+    keys: &HashMap<Uuid, XPrv>,
     epoch_pk: &VerifyingKey,
     obligation_user_map_file: PathBuf,
 ) -> Vec<(Sha256Digest, Vec<u8>)> {
@@ -209,16 +226,18 @@ fn encrypt_intents(
     intents_enc
 }
 
-fn add_default_acceptances(obligations: &mut Vec<ObligatoObligation>, bank_id: Uuid) {
+fn add_default_acceptances(obligations: &mut Vec<ObligatoObligation>, liquidity_sources: &[Uuid]) {
     let acceptances = obligations.iter().fold(HashSet::new(), |mut acc, o| {
-        if o.debtor_id != bank_id {
-            let acceptance = ObligatoObligation {
-                id: Default::default(),
-                debtor_id: o.creditor_id,
-                creditor_id: bank_id,
-                amount: u32::MAX as u64,
-            };
-            acc.insert(acceptance);
+        if !liquidity_sources.contains(&o.debtor_id) {
+            for ls in liquidity_sources {
+                let acceptance = ObligatoObligation {
+                    id: Default::default(),
+                    debtor_id: o.creditor_id,
+                    creditor_id: *ls,
+                    amount: u32::MAX as u64,
+                };
+                acc.insert(acceptance);
+            }
         }
         acc
     });
@@ -274,7 +293,7 @@ fn write_obligation_user_map_to_file(
 
 fn derive_keys(
     obligations: &mut Vec<ObligatoObligation>,
-    bank_id: Uuid,
+    liquidity_sources: &[Uuid],
 ) -> Result<HashMap<Uuid, XPrv>, DynError> {
     // Derive a BIP39 seed value using the given password
     let seed = {
@@ -292,8 +311,10 @@ fn derive_keys(
     keys.entry(alice_id)
         .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
 
-    keys.entry(bank_id)
-        .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
+    for ls in liquidity_sources {
+        keys.entry(*ls)
+            .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
+    }
 
     for o in obligations {
         keys.entry(o.debtor_id)
