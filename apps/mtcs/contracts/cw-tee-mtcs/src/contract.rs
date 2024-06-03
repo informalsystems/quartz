@@ -131,6 +131,7 @@ pub mod execute {
 
     use cosmwasm_std::{DepsMut, Env, HexBinary, MessageInfo, Response, StdResult};
     use cw20_base::contract::{execute_burn, execute_mint};
+    use k256::ecdsa::VerifyingKey;
     use quartz_cw::state::{Hash, EPOCH_COUNTER};
 
     use crate::{
@@ -167,11 +168,12 @@ pub mod execute {
 
     pub fn append_liquidity_sources(
         deps: DepsMut,
-        liquidity_sources: Vec<String>,
+        liquidity_sources: Vec<HexBinary>,
     ) -> Result<(), ContractError> {
-        liquidity_sources
-            .iter()
-            .try_for_each(|ls| deps.api.addr_validate(ls).map(|_| ()))?;
+        // validate liquidity sources as public keys
+        for ls in &liquidity_sources {
+            let _ = VerifyingKey::from_sec1_bytes(&ls)?;
+        }
 
         // store the liquidity sources
         LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)

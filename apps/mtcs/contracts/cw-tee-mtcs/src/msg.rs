@@ -33,7 +33,7 @@ pub mod execute {
     #[cw_serde]
     pub struct SubmitObligationsMsg {
         pub obligations: Vec<SubmitObligationMsg>,
-        pub liquidity_sources: Vec<String>,
+        pub liquidity_sources: Vec<HexBinary>,
     }
 
     #[cw_serde]
@@ -69,7 +69,7 @@ pub struct GetAllSetoffsResponse {
 
 #[cw_serde]
 pub struct GetLiquiditySourcesResponse {
-    pub liquidity_sources: Vec<String>,
+    pub liquidity_sources: Vec<HexBinary>,
 }
 
 #[cfg(test)]
