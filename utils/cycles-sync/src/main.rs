@@ -38,8 +38,6 @@ mod wasmd_client;
 
 const MNEMONIC_PHRASE: &str = "clutch debate vintage foster barely primary clown leader sell manual leopard ladder wet must embody story oyster imitate cable alien six square rice wedding";
 
-const ALICE_ID: &str = "7bfad4e8-d898-4ce2-bbac-1beff7182319";
-
 type Sha256Digest = [u8; 32];
 
 type DynError = Box<dyn Error>;
@@ -147,8 +145,8 @@ async fn sync_obligations(
     debug!("Encrypted {} intents", intents_enc.len());
 
     let liquidity_sources = liquidity_sources
-        .into_iter()
-        .map(|id| keys[id].private_key().public_key().clone())
+        .iter()
+        .map(|id| keys[id].private_key().public_key())
         .collect();
 
     let msg = create_wasm_msg(intents_enc, liquidity_sources)?;
@@ -304,32 +302,38 @@ fn derive_keys(
     obligations.sort_by_key(|o| o.debtor_id);
 
     let mut keys = HashMap::new();
-    let mut child_num = 0;
-
-    let alice_id = Uuid::parse_str(ALICE_ID).unwrap();
-
-    keys.entry(alice_id)
-        .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
 
     for ls in liquidity_sources {
         keys.entry(*ls)
-            .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
+            .or_insert_with(|| derive_child_xprv(&seed, *ls));
     }
 
     for o in obligations {
         keys.entry(o.debtor_id)
-            .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
+            .or_insert_with(|| derive_child_xprv(&seed, o.debtor_id));
         keys.entry(o.creditor_id)
-            .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
+            .or_insert_with(|| derive_child_xprv(&seed, o.creditor_id));
     }
 
     Ok(keys)
 }
 
-fn derive_child_xprv(seed: &Seed, i: &mut usize) -> XPrv {
-    let child_path = format!("m/0/44'/118'/0'/0/{}", i).parse().unwrap();
+fn derive_child_xprv(seed: &Seed, uuid: Uuid) -> XPrv {
+    // Hash the UUID using SHA-256
+    let mut hasher = Sha256::new();
+    hasher.update(uuid.as_bytes());
+    let uuid_digest = hasher.finalize();
+
+    // Convert the hash bytes to a number
+    let uuid_digest_num = u128::from_be_bytes(uuid_digest[..16].try_into().unwrap());
+
+    // Take modulo (2^31 - 1)
+    let address_index = uuid_digest_num % ((1u128 << 31) - 1);
+
+    let child_path = format!("m/0/44'/118'/0'/0/{address_index}")
+        .parse()
+        .unwrap();
     let child_xprv = XPrv::derive_from_path(seed, &child_path);
-    *i += 1;
     child_xprv.unwrap()
 }
 
@@ -339,6 +343,7 @@ mod tests {
 
     use bip32::{Language, Mnemonic, Prefix, PrivateKey, XPrv};
     use rand_core::OsRng;
+    use uuid::Uuid;
 
     use crate::{derive_child_xprv, MNEMONIC_PHRASE};
 
@@ -346,7 +351,6 @@ mod tests {
     fn test_create_mnemonic() {
         // Generate random Mnemonic using the default language (English)
         let mnemonic = Mnemonic::random(&mut OsRng, Default::default());
-
         println!("{}", mnemonic.phrase());
     }
 
@@ -357,32 +361,23 @@ mod tests {
             mnemonic.to_seed("password")
         };
 
-        let mut child_num = 0;
-        let alice_sk = derive_child_xprv(&seed, &mut child_num);
-        let alice_sk_str = alice_sk.to_string(Prefix::XPRV).to_string();
+        let alice_uuid = Uuid::from_u128(1);
+        let alice_sk = derive_child_xprv(&seed, alice_uuid);
+        let alice_pk = alice_sk.private_key().public_key();
+
         assert_eq!(
-            alice_sk.private_key().public_key().to_sec1_bytes(),
-            hex::decode("02027e3510f66f1f6c1ea5e3600062255928e518220f7883810cac3fc7fc092057")
+            alice_pk.to_sec1_bytes(),
+            hex::decode("0219b0b8ee5fe9b317b69119fd15170d79737380c4f020e251b7839096f5513ccf")
                 .unwrap()
                 .into()
         );
+
+        let alice_sk_str = alice_sk.to_string(Prefix::XPRV).to_string();
         assert_eq!(XPrv::from_str(&alice_sk_str).unwrap(), alice_sk);
 
-        let alice_pk = alice_sk.private_key().public_key();
-        assert_eq!(
-            alice_pk.to_sec1_bytes().into_vec(),
-            vec![
-                2, 2, 126, 53, 16, 246, 111, 31, 108, 30, 165, 227, 96, 0, 98, 37, 89, 40, 229, 24,
-                34, 15, 120, 131, 129, 12, 172, 63, 199, 252, 9, 32, 87
-            ]
-        );
-
         let msg = r#"{"debtor":"02027e3510f66f1f6c1ea5e3600062255928e518220f7883810cac3fc7fc092057","creditor":"0216254f4636c4e68ae22d98538851a46810b65162fe37bf57cba6d563617c913e","amount":10,"salt":"65c188bcc133add598f7eecc449112f4bf61024345316cff0eb5ce61291991b141073dcd3c543ea142e66fffa8f483dc382043d37e490ef9b8069c489ce94a0b"}"#;
-
         let ciphertext = ecies::encrypt(&alice_pk.to_sec1_bytes(), msg.as_bytes()).unwrap();
-        // let ciphertext = hex::decode("0418d9051cbfc86c8ddd57ae43ea3d1ac8b30353a3ecd8c806bb11f0693dfd282d5f07d1de32cbcd933d5ab7cd0aa171c972e75531b915e968f0fdeba78fa3f359c7f3ef7ae2dfffeb19493e9b2418dc774e6e80448a2dc4a7ba657cd4a8456e120977ebe372a57187d53981cc5856fbd63e9c1bdf001ed71c3d50cbaff594561191d33dad852cb782126f480add2cc92758b59eb63de857d299eaa5f09fbc55643a73b1d8206ce83453b5296b566d9f622520679bb3e6d9c8b7a707f33d3093c41dfc0a8267749b4028e9ee0faad0c8df64f1682a348f220585fdd9b9ac411bdaaa6a249b45accc89a80e5af09abb239231aa869e29459e562721b685d98b3da3eeaef14e1c5f3bd20cf27c0cbbae7b5c618e737df9a84f9a040bb472b7254af2cf4ccc76784cf8432080e528f700ca2a082b7020d94f0f5325dd4998c03972a0b39e6670b65be89e7a80aad7af08a393fcf2e103999254380c1f0355d97ddcdfaeed4bcfaf15b578cee1f6d3fd4ceccd85760b9bd714f81698ddf6fbbc06152a9306a5dd0052c722e390470f0c70eeac81a5da0090").unwrap();
-
-        println!("{}", hex::encode(&ciphertext));
+        // println!("{}", hex::encode(&ciphertext));
 
         let msg_dec =
             ecies::decrypt(&alice_sk.private_key().to_bytes(), ciphertext.as_slice()).unwrap();
