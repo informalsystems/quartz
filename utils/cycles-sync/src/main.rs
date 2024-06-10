@@ -41,8 +41,6 @@ const MNEMONIC_PHRASE: &str = "clutch debate vintage foster barely primary clown
 const ALICE_ID: &str = "7bfad4e8-d898-4ce2-bbac-1beff7182319";
 const BANK_DEBTOR_ID: &str = "3879fa15-d86e-4464-b679-0a3d78cf3dd3";
 
-const OBLIGATO_URL: &str = "https://bisenzone.obligato.network";
-
 type Sha256Digest = [u8; 32];
 
 type DynError = Box<dyn Error>;
@@ -79,7 +77,7 @@ async fn main() -> Result<(), DynError> {
 async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
     let wasmd_client = CliWasmdClient::new(cli.node);
     let query_result: QueryResult<QueryAllSetoffsResponse> =
-        wasmd_client.query_smart(&cli.contract, json!("get_all_setoffs"), &cli.chain_id)?;
+        wasmd_client.query_smart(&cli.contract, json!("get_all_setoffs"))?;
     let setoffs = query_result.data.setoffs;
 
     // read keys
@@ -119,7 +117,7 @@ async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
     debug!("setoffs: {setoffs:?}");
 
     // send to Obligato
-    let client = HttpClient::new(OBLIGATO_URL.parse().unwrap());
+    let client = HttpClient::new(cli.obligato_url, cli.obligato_key);
     client.set_setoffs(setoffs).await?;
 
     Ok(())
@@ -127,7 +125,7 @@ async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
 
 async fn sync_obligations(cli: Cli, epoch_pk: &str) -> Result<(), DynError> {
     let mut intents = {
-        let client = HttpClient::new(OBLIGATO_URL.parse().unwrap());
+        let client = HttpClient::new(cli.obligato_url, cli.obligato_key);
         client.get_obligations().await.unwrap()
     };
 

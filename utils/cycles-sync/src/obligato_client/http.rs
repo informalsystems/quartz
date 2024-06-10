@@ -12,13 +12,15 @@ use crate::{
 pub struct HttpClient {
     client: reqwest::Client,
     url: Url,
+    key: String,
 }
 
 impl HttpClient {
-    pub fn new(url: Url) -> Self {
+    pub fn new(url: Url, key: String) -> Self {
         Self {
             client: reqwest::Client::new(),
             url,
+            key,
         }
     }
 
@@ -29,8 +31,6 @@ impl HttpClient {
     }
 }
 
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZXNzdGpjdG16bXVqaW55cGJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDMwMTkxNDksImV4cCI6MjAxODU5NTE0OX0.gQsQ26W2AGfwmncTecfKaenRaxhXwZFqLtmcllD_7Sg
-
 #[async_trait]
 impl Client for HttpClient {
     type Error = reqwest::Error;
@@ -39,7 +39,7 @@ impl Client for HttpClient {
         let response = self
             .client
             .post(self.url_with_path("api/sync/obligations2contract"))
-            .json(&json!({"denom_id": "1", "key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZXNzdGpjdG16bXVqaW55cGJlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwMzAxOTE0OSwiZXhwIjoyMDE4NTk1MTQ5fQ.EV6v5J3dz8WHAdTK4_IEisKzF-n1Gqyn4wCce_Zrqf4"}))
+            .json(&json!({"denom_id": "1", "key": self.key }))
             .send()
             .await?
             .json::<GetObligationsResponse>()

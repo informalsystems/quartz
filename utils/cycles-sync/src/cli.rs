@@ -18,6 +18,17 @@ pub struct Cli {
     #[arg(short = 'N', long, default_value = "http://127.0.0.1:26657")]
     pub node: Url,
 
+    /// Obligato API server.
+    #[arg(long, default_value = "https://bisenzone.obligato.network")]
+    pub obligato_url: Url,
+
+    /// Obligato key.
+    #[arg(
+        long,
+        default_value = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZXNzdGpjdG16bXVqaW55cGJlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwMzAxOTE0OSwiZXhwIjoyMDE4NTk1MTQ5fQ.EV6v5J3dz8WHAdTK4_IEisKzF-n1Gqyn4wCce_Zrqf4"
+    )]
+    pub obligato_key: String,
+
     /// Path to output CSV file
     #[arg(short, long)]
     pub keys_file: PathBuf,
