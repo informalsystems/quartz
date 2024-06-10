@@ -8,6 +8,8 @@ use subtle_encoding::{bech32::decode as bech32_decode, Error as Bech32DecodeErro
 use thiserror::Error;
 use uuid::Uuid;
 
+use crate::ADDRESS_PREFIX;
+
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about)]
 pub struct Cli {
@@ -68,6 +70,11 @@ pub enum CliCommand {
     },
     /// Sync set-offs
     SyncSetOffs,
+    /// Get address for Uuid
+    GetAddress {
+        #[arg(long, value_parser = parse_uuid)]
+        uuid: Uuid,
+    },
 }
 
 #[derive(Display, Error, Debug)]
@@ -80,7 +87,7 @@ pub enum AddressError {
 
 fn wasm_address(address_str: &str) -> Result<AccountId, AddressError> {
     let (hr, _) = bech32_decode(address_str).map_err(AddressError::NotBech32Encoded)?;
-    if hr != "wasm" {
+    if hr != ADDRESS_PREFIX {
         return Err(AddressError::HumanReadableMismatch(hr));
     }
 

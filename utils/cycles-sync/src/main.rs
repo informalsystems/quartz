@@ -12,9 +12,10 @@ use bip32::{
         ecdsa::VerifyingKey,
         sha2::{Digest, Sha256},
     },
-    Language, Mnemonic, Prefix, PrivateKey, Seed, XPrv,
+    Error as Bip32Error, Language, Mnemonic, Prefix, PrivateKey, Seed, XPrv,
 };
 use clap::Parser;
+use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
 use cosmwasm_std::HexBinary;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -37,6 +38,8 @@ mod types;
 mod wasmd_client;
 
 const MNEMONIC_PHRASE: &str = "clutch debate vintage foster barely primary clown leader sell manual leopard ladder wet must embody story oyster imitate cable alien six square rice wedding";
+
+const ADDRESS_PREFIX: &str = "wasm";
 
 type Sha256Digest = [u8; 32];
 
@@ -67,9 +70,31 @@ async fn main() -> Result<(), DynError> {
             ref liquidity_sources,
         } => sync_obligations(cli.clone(), epoch_pk, liquidity_sources).await?,
         CliCommand::SyncSetOffs => sync_setoffs(cli).await?,
+        CliCommand::GetAddress { uuid } => address_from_uuid(uuid)?,
     }
 
     Ok(())
+}
+
+fn address_from_uuid(uuid: Uuid) -> Result<(), DynError> {
+    let seed = global_seed()?;
+    let sk = derive_child_xprv(&seed, uuid);
+    let pk_b = sk.public_key().public_key().to_sec1_bytes();
+    let pk = VerifyingKey::from_sec1_bytes(&pk_b)?;
+    println!("{}", wasm_address(pk));
+    Ok(())
+}
+
+fn wasm_address(pk: VerifyingKey) -> String {
+    let tm_pk = TmAccountId::from(pk);
+    AccountId::new(ADDRESS_PREFIX, tm_pk.as_bytes())
+        .unwrap()
+        .to_string()
+}
+
+fn global_seed() -> Result<Seed, Bip32Error> {
+    let mnemonic = Mnemonic::new(MNEMONIC_PHRASE, Language::English)?;
+    Ok(mnemonic.to_seed("password"))
 }
 
 async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
@@ -294,10 +319,7 @@ fn derive_keys(
     liquidity_sources: &[Uuid],
 ) -> Result<HashMap<Uuid, XPrv>, DynError> {
     // Derive a BIP39 seed value using the given password
-    let seed = {
-        let mnemonic = Mnemonic::new(MNEMONIC_PHRASE, Language::English)?;
-        mnemonic.to_seed("password")
-    };
+    let seed = global_seed()?;
 
     obligations.sort_by_key(|o| o.debtor_id);
 
@@ -341,11 +363,11 @@ fn derive_child_xprv(seed: &Seed, uuid: Uuid) -> XPrv {
 mod tests {
     use std::{error::Error, str::FromStr};
 
-    use bip32::{Language, Mnemonic, Prefix, PrivateKey, XPrv};
+    use bip32::{Mnemonic, Prefix, PrivateKey, XPrv};
     use rand_core::OsRng;
     use uuid::Uuid;
 
-    use crate::{derive_child_xprv, MNEMONIC_PHRASE};
+    use crate::{derive_child_xprv, global_seed};
 
     #[test]
     fn test_create_mnemonic() {
@@ -356,10 +378,7 @@ mod tests {
 
     #[test]
     fn test_enc_dec_for_derived() -> Result<(), Box<dyn Error>> {
-        let seed = {
-            let mnemonic = Mnemonic::new(MNEMONIC_PHRASE, Language::English)?;
-            mnemonic.to_seed("password")
-        };
+        let seed = global_seed()?;
 
         let alice_uuid = Uuid::from_u128(1);
         let alice_sk = derive_child_xprv(&seed, alice_uuid);
