@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw20_base::{
-    contract::{execute_mint, query_balance as cw20_query_balance},
+    contract::query_balance as cw20_query_balance,
     state::{MinterData, TokenInfo, TOKEN_INFO},
 };
 use quartz_cw::{handler::RawHandler, state::EPOCH_COUNTER};
@@ -12,7 +12,10 @@ use quartz_cw::{handler::RawHandler, state::EPOCH_COUNTER};
 use crate::{
     error::ContractError,
     msg::{
-        execute::{SubmitObligationMsg, SubmitObligationsMsg, SubmitSetoffsMsg},
+        execute::{
+            Cw20Transfer, FaucetMintMsg, SubmitObligationMsg, SubmitObligationsMsg,
+            SubmitSetoffsMsg,
+        },
         ExecuteMsg, InstantiateMsg, QueryMsg,
     },
     state::{
@@ -63,35 +66,6 @@ pub fn instantiate(
     };
     TOKEN_INFO.save(deps.storage, &data)?;
 
-    let info = MessageInfo {
-        sender: env.contract.address.clone(),
-        funds: vec![],
-    };
-
-    execute_mint(
-        deps.branch(),
-        env.clone(),
-        info.clone(),
-        "wasm1qv9nel6lwtrq5jmwruxfndqw7ejskn5ysz53hp".to_owned(),
-        Uint128::new(1000),
-    )?;
-
-    execute_mint(
-        deps.branch(),
-        env.clone(),
-        info.clone(),
-        "wasm1tfxrdcj5kk6rewzmmkku4d9htpjqr0kk6lcftv".to_owned(),
-        Uint128::new(1000),
-    )?;
-
-    execute_mint(
-        deps.branch(),
-        env.clone(),
-        info.clone(),
-        "wasm1gjg72awjl7jvtmq4kjqp3al9p6crstpar8wgn5".to_owned(),
-        Uint128::new(1000),
-    )?;
-
     Ok(Response::new()
         .add_attribute("method", "instantiate")
         .add_attribute("owner", info.sender))
@@ -106,6 +80,12 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
+        ExecuteMsg::FaucetMint(FaucetMintMsg { recipient, amount }) => {
+            execute::faucet_mint(deps, env, recipient, amount)
+        }
+        ExecuteMsg::Transfer(Cw20Transfer { recipient, amount }) => Ok(
+            cw20_base::contract::execute_transfer(deps, env, info, recipient, amount.into())?,
+        ),
         ExecuteMsg::SubmitObligation(SubmitObligationMsg { ciphertext, digest }) => {
             execute::submit_obligation(deps, ciphertext, digest)
         }
@@ -120,7 +100,7 @@ pub fn execute(
             Ok(Response::new())
         }
         ExecuteMsg::SubmitSetoffs(SubmitSetoffsMsg { setoffs_enc }) => {
-            execute::submit_setoffs(deps, env, info, setoffs_enc)
+            execute::submit_setoffs(deps, env, setoffs_enc)
         }
         ExecuteMsg::InitClearing => execute::init_clearing(deps),
     }
@@ -141,6 +121,28 @@ pub mod execute {
         },
         ContractError,
     };
+
+    pub fn faucet_mint(
+        mut deps: DepsMut,
+        env: Env,
+        recipient: String,
+        amount: u64,
+    ) -> Result<Response, ContractError> {
+        let info = MessageInfo {
+            sender: env.contract.address.clone(),
+            funds: vec![],
+        };
+
+        execute_mint(
+            deps.branch(),
+            env.clone(),
+            info.clone(),
+            recipient.to_string(),
+            amount.into(),
+        )?;
+
+        Ok(Response::new().add_attribute("action", "faucet_mint"))
+    }
 
     pub fn submit_obligation(
         deps: DepsMut,
@@ -171,9 +173,9 @@ pub mod execute {
         liquidity_sources: Vec<HexBinary>,
     ) -> Result<(), ContractError> {
         // validate liquidity sources as public keys
-        for ls in &liquidity_sources {
-            let _ = VerifyingKey::from_sec1_bytes(&ls)?;
-        }
+        liquidity_sources
+            .iter()
+            .try_for_each(|ls| VerifyingKey::from_sec1_bytes(ls).map(|_| ()))?;
 
         // store the liquidity sources
         LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
@@ -188,7 +190,6 @@ pub mod execute {
     pub fn submit_setoffs(
         mut deps: DepsMut,
         env: Env,
-        _info: MessageInfo,
         setoffs_enc: BTreeMap<RawHash, SettleOff>,
     ) -> Result<Response, ContractError> {
         // store the `BTreeMap<RawHash, RawCipherText>`
