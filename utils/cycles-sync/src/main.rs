@@ -27,7 +27,7 @@ use crate::{
     obligato_client::{http::HttpClient, Client},
     types::{
         Obligation, ObligatoObligation, ObligatoSetOff, RawEncryptedObligation, RawObligation,
-        RawOffset, RawSetOff, SubmitObligationsMsg,
+        RawOffset, RawSetOff, SubmitObligationsMsg, SubmitObligationsMsgInner,
     },
     wasmd_client::{CliWasmdClient, QueryResult, WasmdClient},
 };
@@ -152,8 +152,11 @@ async fn sync_obligations(
     liquidity_sources: &[Uuid],
 ) -> Result<(), DynError> {
     let mut intents = {
-        let client = HttpClient::new(cli.obligato_url, cli.obligato_key);
-        client.get_obligations().await.unwrap()
+        let client = HttpClient::new(cli.obligato_url.clone(), cli.obligato_key);
+        client
+            .get_obligations()
+            .await
+            .map_err(|_| cli.obligato_url.to_string())?
     };
 
     let keys = derive_keys(&mut intents, liquidity_sources)?;
@@ -200,8 +203,10 @@ fn create_wasm_msg(
         .collect();
 
     let msg = SubmitObligationsMsg {
-        submit_obligations: obligations_enc,
-        liquidity_sources,
+        submit_obligations: SubmitObligationsMsgInner {
+            obligations: obligations_enc,
+            liquidity_sources,
+        },
     };
     serde_json::to_value(msg).map_err(Into::into)
 }
