@@ -13,20 +13,6 @@
     unused_qualifications
 )]
 
-use std::sync::{Arc, Mutex};
-
-use quartz_cw::state::Config;
-use quartz_proto::quartz::core_server::CoreServer;
-use tonic::transport::Server;
-
-use crate::{
-    attestor::EpidAttestor,
-    proto::clearing_server::ClearingServer as MtcsServer,
-    server::CoreService,
-};
-
-use std::net::SocketAddr;
-
 pub mod attestor;
 pub mod cli;
 pub mod proto;
