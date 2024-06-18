@@ -12,9 +12,10 @@ use bip32::{
         ecdsa::VerifyingKey,
         sha2::{Digest, Sha256},
     },
-    Language, Mnemonic, Prefix, PrivateKey, Seed, XPrv,
+    Error as Bip32Error, Language, Mnemonic, Prefix, PrivateKey, Seed, XPrv,
 };
 use clap::Parser;
+use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
 use cosmwasm_std::HexBinary;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -26,7 +27,7 @@ use crate::{
     obligato_client::{http::HttpClient, Client},
     types::{
         Obligation, ObligatoObligation, ObligatoSetOff, RawEncryptedObligation, RawObligation,
-        RawOffset, RawSetOff, SubmitObligationsMsg,
+        RawOffset, RawSetOff, SubmitObligationsMsg, SubmitObligationsMsgInner,
     },
     wasmd_client::{CliWasmdClient, QueryResult, WasmdClient},
 };
@@ -38,8 +39,7 @@ mod wasmd_client;
 
 const MNEMONIC_PHRASE: &str = "clutch debate vintage foster barely primary clown leader sell manual leopard ladder wet must embody story oyster imitate cable alien six square rice wedding";
 
-const ALICE_ID: &str = "7bfad4e8-d898-4ce2-bbac-1beff7182319";
-const BANK_DEBTOR_ID: &str = "3879fa15-d86e-4464-b679-0a3d78cf3dd3";
+const ADDRESS_PREFIX: &str = "wasm";
 
 type Sha256Digest = [u8; 32];
 
@@ -65,13 +65,36 @@ async fn main() -> Result<(), DynError> {
         .init();
 
     match cli.command {
-        CliCommand::SyncObligations { ref epoch_pk } => {
-            sync_obligations(cli.clone(), epoch_pk).await?
-        }
+        CliCommand::SyncObligations {
+            ref epoch_pk,
+            ref liquidity_sources,
+        } => sync_obligations(cli.clone(), epoch_pk, liquidity_sources).await?,
         CliCommand::SyncSetOffs => sync_setoffs(cli).await?,
+        CliCommand::GetAddress { uuid } => address_from_uuid(uuid)?,
     }
 
     Ok(())
+}
+
+fn address_from_uuid(uuid: Uuid) -> Result<(), DynError> {
+    let seed = global_seed()?;
+    let sk = derive_child_xprv(&seed, uuid);
+    let pk_b = sk.public_key().public_key().to_sec1_bytes();
+    let pk = VerifyingKey::from_sec1_bytes(&pk_b)?;
+    println!("{}", wasm_address(pk));
+    Ok(())
+}
+
+fn wasm_address(pk: VerifyingKey) -> String {
+    let tm_pk = TmAccountId::from(pk);
+    AccountId::new(ADDRESS_PREFIX, tm_pk.as_bytes())
+        .unwrap()
+        .to_string()
+}
+
+fn global_seed() -> Result<Seed, Bip32Error> {
+    let mnemonic = Mnemonic::new(MNEMONIC_PHRASE, Language::English)?;
+    Ok(mnemonic.to_seed("password"))
 }
 
 async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
@@ -123,34 +146,48 @@ async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
     Ok(())
 }
 
-async fn sync_obligations(cli: Cli, epoch_pk: &str) -> Result<(), DynError> {
+async fn sync_obligations(
+    cli: Cli,
+    epoch_pk: &str,
+    liquidity_sources: &[Uuid],
+) -> Result<(), DynError> {
     let mut intents = {
-        let client = HttpClient::new(cli.obligato_url, cli.obligato_key);
-        client.get_obligations().await.unwrap()
+        let client = HttpClient::new(cli.obligato_url.clone(), cli.obligato_key);
+        client
+            .get_obligations()
+            .await
+            .map_err(|_| cli.obligato_url.to_string())?
     };
 
-    let bank_id = Uuid::parse_str(BANK_DEBTOR_ID).unwrap();
-    let keys = derive_keys(&mut intents, bank_id)?;
+    let keys = derive_keys(&mut intents, liquidity_sources)?;
     write_keys_to_file(cli.keys_file, &keys);
 
-    add_default_acceptances(&mut intents, bank_id);
+    add_default_acceptances(&mut intents, liquidity_sources);
 
     debug!("intents: {intents:?}");
 
     let intents_enc = {
         let epoch_pk = VerifyingKey::from_sec1_bytes(&hex::decode(epoch_pk).unwrap()).unwrap();
-        encrypt_intents(intents, keys, &epoch_pk, cli.obligation_user_map_file)
+        encrypt_intents(intents, &keys, &epoch_pk, cli.obligation_user_map_file)
     };
     debug!("Encrypted {} intents", intents_enc.len());
 
-    let msg = create_wasm_msg(intents_enc);
+    let liquidity_sources = liquidity_sources
+        .iter()
+        .map(|id| keys[id].private_key().public_key())
+        .collect();
+
+    let msg = create_wasm_msg(intents_enc, liquidity_sources)?;
     let wasmd_client = CliWasmdClient::new(cli.node);
     wasmd_client.tx_execute(&cli.contract, &cli.chain_id, 3000000, cli.user, msg)?;
 
     Ok(())
 }
 
-fn create_wasm_msg(obligations_enc: Vec<(Sha256Digest, Vec<u8>)>) -> serde_json::Value {
+fn create_wasm_msg(
+    obligations_enc: Vec<(Sha256Digest, Vec<u8>)>,
+    liquidity_sources: Vec<VerifyingKey>,
+) -> Result<serde_json::Value, DynError> {
     let obligations_enc: Vec<_> = obligations_enc
         .into_iter()
         .map(|(digest, ciphertext)| {
@@ -160,15 +197,23 @@ fn create_wasm_msg(obligations_enc: Vec<(Sha256Digest, Vec<u8>)>) -> serde_json:
         })
         .collect();
 
+    let liquidity_sources = liquidity_sources
+        .into_iter()
+        .map(|pk| HexBinary::from(pk.to_sec1_bytes().as_ref()))
+        .collect();
+
     let msg = SubmitObligationsMsg {
-        submit_obligations: obligations_enc,
+        submit_obligations: SubmitObligationsMsgInner {
+            obligations: obligations_enc,
+            liquidity_sources,
+        },
     };
-    serde_json::to_value(msg).unwrap()
+    serde_json::to_value(msg).map_err(Into::into)
 }
 
 fn encrypt_intents(
     intents: Vec<ObligatoObligation>,
-    keys: HashMap<Uuid, XPrv>,
+    keys: &HashMap<Uuid, XPrv>,
     epoch_pk: &VerifyingKey,
     obligation_user_map_file: PathBuf,
 ) -> Vec<(Sha256Digest, Vec<u8>)> {
@@ -209,16 +254,18 @@ fn encrypt_intents(
     intents_enc
 }
 
-fn add_default_acceptances(obligations: &mut Vec<ObligatoObligation>, bank_id: Uuid) {
+fn add_default_acceptances(obligations: &mut Vec<ObligatoObligation>, liquidity_sources: &[Uuid]) {
     let acceptances = obligations.iter().fold(HashSet::new(), |mut acc, o| {
-        if o.debtor_id != bank_id {
-            let acceptance = ObligatoObligation {
-                id: Default::default(),
-                debtor_id: o.creditor_id,
-                creditor_id: bank_id,
-                amount: u32::MAX as u64,
-            };
-            acc.insert(acceptance);
+        if !liquidity_sources.contains(&o.debtor_id) {
+            for ls in liquidity_sources {
+                let acceptance = ObligatoObligation {
+                    id: Default::default(),
+                    debtor_id: o.creditor_id,
+                    creditor_id: *ls,
+                    amount: u32::MAX as u64,
+                };
+                acc.insert(acceptance);
+            }
         }
         acc
     });
@@ -274,41 +321,46 @@ fn write_obligation_user_map_to_file(
 
 fn derive_keys(
     obligations: &mut Vec<ObligatoObligation>,
-    bank_id: Uuid,
+    liquidity_sources: &[Uuid],
 ) -> Result<HashMap<Uuid, XPrv>, DynError> {
     // Derive a BIP39 seed value using the given password
-    let seed = {
-        let mnemonic = Mnemonic::new(MNEMONIC_PHRASE, Language::English)?;
-        mnemonic.to_seed("password")
-    };
+    let seed = global_seed()?;
 
     obligations.sort_by_key(|o| o.debtor_id);
 
     let mut keys = HashMap::new();
-    let mut child_num = 0;
 
-    let alice_id = Uuid::parse_str(ALICE_ID).unwrap();
-
-    keys.entry(alice_id)
-        .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
-
-    keys.entry(bank_id)
-        .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
+    for ls in liquidity_sources {
+        keys.entry(*ls)
+            .or_insert_with(|| derive_child_xprv(&seed, *ls));
+    }
 
     for o in obligations {
         keys.entry(o.debtor_id)
-            .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
+            .or_insert_with(|| derive_child_xprv(&seed, o.debtor_id));
         keys.entry(o.creditor_id)
-            .or_insert_with(|| derive_child_xprv(&seed, &mut child_num));
+            .or_insert_with(|| derive_child_xprv(&seed, o.creditor_id));
     }
 
     Ok(keys)
 }
 
-fn derive_child_xprv(seed: &Seed, i: &mut usize) -> XPrv {
-    let child_path = format!("m/0/44'/118'/0'/0/{}", i).parse().unwrap();
+fn derive_child_xprv(seed: &Seed, uuid: Uuid) -> XPrv {
+    // Hash the UUID using SHA-256
+    let mut hasher = Sha256::new();
+    hasher.update(uuid.as_bytes());
+    let uuid_digest = hasher.finalize();
+
+    // Convert the hash bytes to a number
+    let uuid_digest_num = u128::from_be_bytes(uuid_digest[..16].try_into().unwrap());
+
+    // Take modulo (2^31 - 1)
+    let address_index = uuid_digest_num % ((1u128 << 31) - 1);
+
+    let child_path = format!("m/0/44'/118'/0'/0/{address_index}")
+        .parse()
+        .unwrap();
     let child_xprv = XPrv::derive_from_path(seed, &child_path);
-    *i += 1;
     child_xprv.unwrap()
 }
 
@@ -316,52 +368,40 @@ fn derive_child_xprv(seed: &Seed, i: &mut usize) -> XPrv {
 mod tests {
     use std::{error::Error, str::FromStr};
 
-    use bip32::{Language, Mnemonic, Prefix, PrivateKey, XPrv};
+    use bip32::{Mnemonic, Prefix, PrivateKey, XPrv};
     use rand_core::OsRng;
+    use uuid::Uuid;
 
-    use crate::{derive_child_xprv, MNEMONIC_PHRASE};
+    use crate::{derive_child_xprv, global_seed};
 
     #[test]
     fn test_create_mnemonic() {
         // Generate random Mnemonic using the default language (English)
         let mnemonic = Mnemonic::random(&mut OsRng, Default::default());
-
         println!("{}", mnemonic.phrase());
     }
 
     #[test]
     fn test_enc_dec_for_derived() -> Result<(), Box<dyn Error>> {
-        let seed = {
-            let mnemonic = Mnemonic::new(MNEMONIC_PHRASE, Language::English)?;
-            mnemonic.to_seed("password")
-        };
+        let seed = global_seed()?;
 
-        let mut child_num = 0;
-        let alice_sk = derive_child_xprv(&seed, &mut child_num);
-        let alice_sk_str = alice_sk.to_string(Prefix::XPRV).to_string();
+        let alice_uuid = Uuid::from_u128(1);
+        let alice_sk = derive_child_xprv(&seed, alice_uuid);
+        let alice_pk = alice_sk.private_key().public_key();
+
         assert_eq!(
-            alice_sk.private_key().public_key().to_sec1_bytes(),
-            hex::decode("02027e3510f66f1f6c1ea5e3600062255928e518220f7883810cac3fc7fc092057")
+            alice_pk.to_sec1_bytes(),
+            hex::decode("0219b0b8ee5fe9b317b69119fd15170d79737380c4f020e251b7839096f5513ccf")
                 .unwrap()
                 .into()
         );
+
+        let alice_sk_str = alice_sk.to_string(Prefix::XPRV).to_string();
         assert_eq!(XPrv::from_str(&alice_sk_str).unwrap(), alice_sk);
 
-        let alice_pk = alice_sk.private_key().public_key();
-        assert_eq!(
-            alice_pk.to_sec1_bytes().into_vec(),
-            vec![
-                2, 2, 126, 53, 16, 246, 111, 31, 108, 30, 165, 227, 96, 0, 98, 37, 89, 40, 229, 24,
-                34, 15, 120, 131, 129, 12, 172, 63, 199, 252, 9, 32, 87
-            ]
-        );
-
         let msg = r#"{"debtor":"02027e3510f66f1f6c1ea5e3600062255928e518220f7883810cac3fc7fc092057","creditor":"0216254f4636c4e68ae22d98538851a46810b65162fe37bf57cba6d563617c913e","amount":10,"salt":"65c188bcc133add598f7eecc449112f4bf61024345316cff0eb5ce61291991b141073dcd3c543ea142e66fffa8f483dc382043d37e490ef9b8069c489ce94a0b"}"#;
-
         let ciphertext = ecies::encrypt(&alice_pk.to_sec1_bytes(), msg.as_bytes()).unwrap();
-        // let ciphertext = hex::decode("0418d9051cbfc86c8ddd57ae43ea3d1ac8b30353a3ecd8c806bb11f0693dfd282d5f07d1de32cbcd933d5ab7cd0aa171c972e75531b915e968f0fdeba78fa3f359c7f3ef7ae2dfffeb19493e9b2418dc774e6e80448a2dc4a7ba657cd4a8456e120977ebe372a57187d53981cc5856fbd63e9c1bdf001ed71c3d50cbaff594561191d33dad852cb782126f480add2cc92758b59eb63de857d299eaa5f09fbc55643a73b1d8206ce83453b5296b566d9f622520679bb3e6d9c8b7a707f33d3093c41dfc0a8267749b4028e9ee0faad0c8df64f1682a348f220585fdd9b9ac411bdaaa6a249b45accc89a80e5af09abb239231aa869e29459e562721b685d98b3da3eeaef14e1c5f3bd20cf27c0cbbae7b5c618e737df9a84f9a040bb472b7254af2cf4ccc76784cf8432080e528f700ca2a082b7020d94f0f5325dd4998c03972a0b39e6670b65be89e7a80aad7af08a393fcf2e103999254380c1f0355d97ddcdfaeed4bcfaf15b578cee1f6d3fd4ceccd85760b9bd714f81698ddf6fbbc06152a9306a5dd0052c722e390470f0c70eeac81a5da0090").unwrap();
-
-        println!("{}", hex::encode(&ciphertext));
+        // println!("{}", hex::encode(&ciphertext));
 
         let msg_dec =
             ecies::decrypt(&alice_sk.private_key().to_bytes(), ciphertext.as_slice()).unwrap();

@@ -10,7 +10,7 @@ pub type RawCipherText = HexBinary;
 
 pub type ObligationsItem<'a> = Item<'a, BTreeMap<RawHash, RawCipherText>>;
 pub type SetoffsItem<'a> = Item<'a, BTreeMap<RawHash, SettleOff>>;
-pub type LiquiditySourcesItem<'a> = Item<'a, BTreeSet<String>>;
+pub type LiquiditySourcesItem<'a> = Item<'a, BTreeSet<HexBinary>>;
 
 #[cw_serde]
 pub struct State {
