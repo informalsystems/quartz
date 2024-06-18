@@ -2381,7 +2381,6 @@ dependencies = [
  "tm-stateless-verifier",
  "tokio",
  "tonic",
- "tonic-build",
 ]
 
 [[package]]

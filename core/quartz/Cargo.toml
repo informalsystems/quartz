@@ -41,6 +41,3 @@ quartz-proto.workspace = true
 quartz-relayer.workspace = true
 quartz-tee-ra.workspace = true
 tm-stateless-verifier.workspace = true
-
-[build-dependencies]
-tonic-build.workspace = true

@@ -47,3 +47,6 @@ quartz-enclave = { path = "../../../core/quartz"}
 [dev-dependencies]
 cw-multi-test = "0.17.0"
 serde_json = "1.0.113"
+
+[build-dependencies]
+tonic-build.workspace = true
