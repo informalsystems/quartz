@@ -2,7 +2,10 @@ use std::collections::BTreeMap;
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
-use quartz_cw::prelude::*;
+use quartz_cw::{
+    msg::execute::attested::{RawAttested, RawEpidAttestation},
+    prelude::*,
+};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -20,9 +23,10 @@ pub enum ExecuteMsg {
     Withdraw,
 
     // ciphertext transfer and result
-    TransferRequest(execute::TransferRequestMsg),
+    TransferRequest(RawAttested<execute::TransferRequestMsg, RawEpidAttestation>),
     Update(execute::UpdateMsg),
 }
+
 pub mod execute {
     use super::*;
 

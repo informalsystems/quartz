@@ -1,5 +1,5 @@
 use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response};
-use quartz_cw::handler::RawHandler;
+use quartz_cw::{handler::RawHandler, msg::execute::attested::RawAttested};
 
 use crate::{
     error::ContractError,
@@ -26,7 +26,7 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
@@ -35,7 +35,11 @@ pub fn execute(
 
     match msg {
         ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
-        ExecuteMsg::TransferRequest(msg) => transfer_request(deps, env, info, msg),
+        ExecuteMsg::TransferRequest(attested_msg) => {
+            let RawAttested { msg, attestation } = attested_msg;
+            attestation.handle_raw(deps.branch(), &env, &info)?;
+            transfer_request(deps, env, info, msg)
+        }
         ExecuteMsg::Update(msg) => update(deps, env, info, msg),
         ExecuteMsg::Deposit => deposit(deps, env, info),
         ExecuteMsg::Withdraw => withdraw(deps, env, info),
