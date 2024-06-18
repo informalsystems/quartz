@@ -1,5 +1,5 @@
 use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response};
-use quartz_cw::{handler::RawHandler, msg::execute::attested::RawAttested};
+use quartz_cw::handler::RawHandler;
 
 use crate::{
     error::ContractError,
@@ -36,10 +36,9 @@ pub fn execute(
     match msg {
         ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
         ExecuteMsg::TransferRequest(attested_msg) => {
-            let RawAttested { msg, attestation } = attested_msg;
-            attestation.handle_raw(deps.branch(), &env, &info)?;
-            transfer_request(deps, env, info, msg)
-        }
+            let _ = attested_msg.clone().handle_raw(deps.branch(), &env, &info)?;
+            transfer_request(deps, env, info, attested_msg.msg)
+        },
         ExecuteMsg::Update(msg) => update(deps, env, info, msg),
         ExecuteMsg::Deposit => deposit(deps, env, info),
         ExecuteMsg::Withdraw => withdraw(deps, env, info),
@@ -52,7 +51,7 @@ pub mod execute {
 
     use crate::{
         error::ContractError,
-        msg::execute::{TransferRequestMsg, UpdateMsg},
+        msg::execute::{RawTransferRequestMsg, UpdateMsg},
         state::{Request, DENOM, REQUESTS, STATE},
     };
 
@@ -60,7 +59,7 @@ pub mod execute {
         deps: DepsMut,
         _env: Env,
         _info: MessageInfo,
-        msg: TransferRequestMsg,
+        msg: RawTransferRequestMsg,
     ) -> Result<Response, ContractError> {
         let mut requests = REQUESTS.load(deps.storage)?;
 
