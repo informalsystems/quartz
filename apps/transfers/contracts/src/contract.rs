@@ -1,5 +1,5 @@
 use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response};
-use quartz_cw::handler::RawHandler;
+use quartz_cw::{handler::RawHandler};
 
 use crate::{
     error::ContractError,
@@ -42,6 +42,7 @@ pub fn execute(
         },
         ExecuteMsg::Deposit => deposit(deps, env, info),
         ExecuteMsg::Withdraw => withdraw(deps, env, info),
+        ExecuteMsg::ClearTextTransferRequest(_) => unimplemented!(),
     }
 }
 

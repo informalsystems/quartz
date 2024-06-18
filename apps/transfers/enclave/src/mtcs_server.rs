@@ -4,7 +4,7 @@ use std::{
 };
 
 use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::<Addr, u128, HexBinary>;
 use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
     state::{RawCipherText, RawHash, SettleOff, Transfer},
@@ -21,6 +21,9 @@ use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
 use crate::proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse};
+use crate::state::state;
+
+use contracts::types::{TransferRequest, ClearTextTransferRequestMsg};
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
@@ -33,6 +36,13 @@ pub struct RunClearingMessage {
     intents: BTreeMap<RawHash, RawCipherText>,
     liquidity_sources: Vec<HexBinary>,
 }
+
+// TODO - remove after merge
+// pub enum TransferRequest {
+//     Ciphertext(HexBinary),
+//     Deposit(Addr, u128),
+//     Withdraw(Addr),
+// }
 
 impl<A> MtcsService<A>
 where
@@ -53,13 +63,30 @@ where
         request: Request<RunClearingRequest>,
     ) -> TonicResult<Response<RunClearingResponse>> {
         // Pass in JSON of Requests vector and the STATE
-
         // Serialize into Requests enum
+        let vecCipherRequests: Vec<TransferRequest> = {
+            let message = request.into_inner().message;
+            serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
+        };
+
         // Loop through, decrypt the ciphertexts
+        let clearTransferRequests: Vec<ClearTextTransferRequestMsg>  = vecCipherRequests.iter().map(|req| {
+            match req {
+                TransferRequest::Ciphertext(ciphertext) => {
+                    let sk = self.sk.lock().unwrap();
+                    decrypt_obligation(sk.as_ref().unwrap(), &ciphertext)
+                },
+            }
+        });
 
         // Read the state blob from chain
+        let state: HexBinary = {
+            let message = request.into_inner().message;
+            serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
+        };
 
         // Decrypt and deserialize
+
 
         // Loop through requests and apply onto state
 
@@ -69,10 +96,6 @@ where
 
         // Send to chain
 
-        let message: RunClearingMessage = {
-            let message = request.into_inner().message;
-            serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
-        };
 
         let digests_ciphertexts = message.intents;
         let (digests, ciphertexts): (Vec<_>, Vec<_>) = digests_ciphertexts.into_iter().unzip();
@@ -162,3 +185,26 @@ fn decrypt_obligation(
     };
     SimpleObligation::new(None, o.debtor, o.creditor, i64::try_from(o.amount).unwrap()).unwrap()
 }
+
+fn decrypt_transfer(
+    sk: &SigningKey,
+    ciphertext: &RawCipherText,
+) -> ClearTextTransferRequestMsg {
+    let transfer: RawObligation = {
+        let o = decrypt(&sk.to_bytes(), ciphertext).unwrap();
+        serde_json::from_slice(&o).unwrap()
+    };
+    ClearTextTransferRequestMsg::new(None, o.debtor, o.creditor, i64::try_from(o.amount).unwrap()).unwrap()
+}
+
+fn decrypt_state(
+    sk: &SigningKey,
+    ciphertext: &RawCipherText,
+) -> SimpleObligation<HexBinary, i64> {
+    let o: RawObligation = {
+        let o = decrypt(&sk.to_bytes(), ciphertext).unwrap();
+        serde_json::from_slice(&o).unwrap()
+    };
+    SimpleObligation::new(None, o.debtor, o.creditor, i64::try_from(o.amount).unwrap()).unwrap()
+}
+

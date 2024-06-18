@@ -28,6 +28,7 @@ pub enum ExecuteMsg {
     TransferRequest(execute::TransferRequestMsg),
     // ---- end user txs
 
+    ClearTextTransferRequest(execute::ClearTextTransferRequestMsg),
 
     // enclave msg
     Update(RawAttested<execute::RawUpdateMsg, RawEpidAttestation>),
@@ -48,6 +49,14 @@ pub mod execute {
     pub struct TransferRequestMsg {
         pub ciphertext: HexBinary,
         pub digest: HexBinary,
+        // pub proof: π
+    }
+
+    #[cw_serde]
+    pub struct ClearTextTransferRequestMsg {
+        pub sender: Addr,
+        pub receiver: Addr,
+        pub amount: Uint128,
         // pub proof: π
     }
 
