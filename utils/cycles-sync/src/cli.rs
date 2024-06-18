@@ -6,6 +6,9 @@ use displaydoc::Display;
 use reqwest::Url;
 use subtle_encoding::{bech32::decode as bech32_decode, Error as Bech32DecodeError};
 use thiserror::Error;
+use uuid::Uuid;
+
+use crate::ADDRESS_PREFIX;
 
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about)]
@@ -61,9 +64,17 @@ pub enum CliCommand {
         /// epoch pk
         #[arg(short, long)]
         epoch_pk: String,
+        /// liquidity sources' UUIDs
+        #[arg(short, long, num_args = 1.., value_parser = parse_uuid)]
+        liquidity_sources: Vec<Uuid>,
     },
     /// Sync set-offs
     SyncSetOffs,
+    /// Get address for Uuid
+    GetAddress {
+        #[arg(long, value_parser = parse_uuid)]
+        uuid: Uuid,
+    },
 }
 
 #[derive(Display, Error, Debug)]
@@ -76,9 +87,13 @@ pub enum AddressError {
 
 fn wasm_address(address_str: &str) -> Result<AccountId, AddressError> {
     let (hr, _) = bech32_decode(address_str).map_err(AddressError::NotBech32Encoded)?;
-    if hr != "wasm" {
+    if hr != ADDRESS_PREFIX {
         return Err(AddressError::HumanReadableMismatch(hr));
     }
 
     Ok(address_str.parse().unwrap())
+}
+
+fn parse_uuid(uuid_str: &str) -> Result<Uuid, String> {
+    Uuid::parse_str(uuid_str).map_err(|e| e.to_string())
 }

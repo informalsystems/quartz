@@ -13,11 +13,9 @@
     unused_qualifications
 )]
 
-mod attestor;
 mod cli;
 mod mtcs_server;
 mod proto;
-mod server;
 
 use std::{
     sync::{Arc, Mutex},
@@ -25,17 +23,16 @@ use std::{
 };
 
 use clap::Parser;
+use cli::Cli;
+use mtcs_server::MtcsService;
+use proto::clearing_server::ClearingServer as MtcsServer;
 use quartz_cw::state::{Config, LightClientOpts};
-use quartz_proto::quartz::core_server::CoreServer;
-use tonic::transport::Server;
-
-use crate::{
+use quartz_enclave::{
     attestor::{Attestor, EpidAttestor},
-    cli::Cli,
-    mtcs_server::MtcsService,
-    proto::clearing_server::ClearingServer as MtcsServer,
     server::CoreService,
 };
+use quartz_proto::quartz::core_server::CoreServer;
+use tonic::transport::Server;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

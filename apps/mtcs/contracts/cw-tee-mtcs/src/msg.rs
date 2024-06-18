@@ -13,6 +13,8 @@ pub struct InstantiateMsg(pub QuartzInstantiateMsg);
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     Quartz(QuartzExecuteMsg),
+    FaucetMint(execute::FaucetMintMsg),
+    Transfer(execute::Cw20Transfer),
     SubmitObligation(execute::SubmitObligationMsg),
     SubmitObligations(execute::SubmitObligationsMsg),
     SubmitSetoffs(execute::SubmitSetoffsMsg),
@@ -21,6 +23,18 @@ pub enum ExecuteMsg {
 
 pub mod execute {
     use super::*;
+
+    #[cw_serde]
+    pub struct FaucetMintMsg {
+        pub recipient: String,
+        pub amount: u64,
+    }
+
+    #[cw_serde]
+    pub struct Cw20Transfer {
+        pub recipient: String,
+        pub amount: u64,
+    }
 
     #[cw_serde]
     pub struct SubmitObligationMsg {
@@ -33,7 +47,7 @@ pub mod execute {
     #[cw_serde]
     pub struct SubmitObligationsMsg {
         pub obligations: Vec<SubmitObligationMsg>,
-        pub liquidity_sources: Vec<String>,
+        pub liquidity_sources: Vec<HexBinary>,
     }
 
     #[cw_serde]
@@ -69,7 +83,7 @@ pub struct GetAllSetoffsResponse {
 
 #[cw_serde]
 pub struct GetLiquiditySourcesResponse {
-    pub liquidity_sources: Vec<String>,
+    pub liquidity_sources: Vec<HexBinary>,
 }
 
 #[cfg(test)]
