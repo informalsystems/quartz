@@ -1,4 +1,3 @@
-#![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
 #![warn(
     clippy::checked_conversions,
@@ -13,11 +12,7 @@
     unused_qualifications
 )]
 
-mod attestor;
-mod cli;
 mod mtcs_server;
-mod proto;
-mod server;
 
 use std::{
     sync::{Arc, Mutex},
@@ -29,12 +24,13 @@ use quartz_cw::state::{Config, LightClientOpts};
 use quartz_proto::quartz::core_server::CoreServer;
 use tonic::transport::Server;
 
-use crate::{
+use mtcs_server::MtcsService;
+
+use quartz_enclave::{
     attestor::{Attestor, EpidAttestor},
     cli::Cli,
-    mtcs_server::MtcsService,
     proto::clearing_server::ClearingServer as MtcsServer,
-    server::CoreService,
+    server::CoreService
 };
 
 #[tokio::main(flavor = "current_thread")]

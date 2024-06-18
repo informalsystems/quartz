@@ -19,7 +19,7 @@ use mtcs::{
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
-use crate::{
+use quartz_enclave::{
     attestor::Attestor,
     proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
 };
