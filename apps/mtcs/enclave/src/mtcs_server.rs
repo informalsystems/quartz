@@ -52,13 +52,12 @@ where
         &self,
         request: Request<RunClearingRequest>,
     ) -> TonicResult<Response<RunClearingResponse>> {
-
         // Pass in JSON of Requests vector and the STATE
 
         // Serialize into Requests enum
         // Loop through, decrypt the ciphertexts
 
-        // Read the state blob from chain 
+        // Read the state blob from chain
 
         // Decrypt and deserialize
 

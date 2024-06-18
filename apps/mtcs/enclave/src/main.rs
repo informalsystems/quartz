@@ -13,8 +13,8 @@
     unused_qualifications
 )]
 
-mod mtcs_server;
 mod cli;
+mod mtcs_server;
 mod proto;
 
 use std::{
@@ -23,10 +23,9 @@ use std::{
 };
 
 use clap::Parser;
-use mtcs_server::MtcsService;
 use cli::Cli;
+use mtcs_server::MtcsService;
 use proto::clearing_server::ClearingServer as MtcsServer;
-
 use quartz_cw::state::{Config, LightClientOpts};
 use quartz_enclave::{
     attestor::{Attestor, EpidAttestor},
