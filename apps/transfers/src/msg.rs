@@ -51,10 +51,7 @@ pub mod execute {
     impl HasUserData for TransferRequestMsg {
         fn user_data(&self) -> UserData {
             let mut hasher = Sha256::new();
-            hasher.update(
-                serde_json::to_string(&self.0)
-                    .expect("infallible serializer"),
-            );
+            hasher.update(serde_json::to_string(&self.0).expect("infallible serializer"));
             let digest: [u8; 32] = hasher.finalize().into();
 
             let mut user_data = [0u8; 64];
@@ -82,7 +79,12 @@ pub mod execute {
     }
 
     impl Handler for TransferRequestMsg {
-        fn handle(self, _deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {
+        fn handle(
+            self,
+            _deps: DepsMut<'_>,
+            _env: &Env,
+            _info: &MessageInfo,
+        ) -> Result<Response, Error> {
             // basically handle `transfer_request` here
             Ok(Response::default())
         }
@@ -96,4 +98,3 @@ pub mod execute {
         // pub proof: π
     }
 }
-

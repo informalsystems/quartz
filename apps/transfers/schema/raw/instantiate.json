@@ -1,0 +1,233 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InstantiateMsg",
+  "type": "object",
+  "required": [
+    "denom",
+    "quartz"
+  ],
+  "properties": {
+    "denom": {
+      "type": "string"
+    },
+    "quartz": {
+      "$ref": "#/definitions/RawInstantiate_for_RawEpidAttestation"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Binary": {
+      "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
+      "type": "string"
+    },
+    "Duration": {
+      "type": "object",
+      "required": [
+        "nanos",
+        "secs"
+      ],
+      "properties": {
+        "nanos": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "secs": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        }
+      }
+    },
+    "HexBinary": {
+      "description": "This is a wrapper around Vec<u8> to add hex de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is similar to `cosmwasm_std::Binary` but uses hex. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
+      "type": "string"
+    },
+    "IASReport": {
+      "type": "object",
+      "required": [
+        "report",
+        "reportsig"
+      ],
+      "properties": {
+        "report": {
+          "$ref": "#/definitions/ReportBody"
+        },
+        "reportsig": {
+          "$ref": "#/definitions/Binary"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RawAttested_for_RawCoreInstantiate_and_RawEpidAttestation": {
+      "type": "object",
+      "required": [
+        "attestation",
+        "msg"
+      ],
+      "properties": {
+        "attestation": {
+          "$ref": "#/definitions/RawEpidAttestation"
+        },
+        "msg": {
+          "$ref": "#/definitions/RawCoreInstantiate"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RawConfig": {
+      "type": "object",
+      "required": [
+        "epoch_duration",
+        "light_client_opts",
+        "mr_enclave"
+      ],
+      "properties": {
+        "epoch_duration": {
+          "$ref": "#/definitions/Duration"
+        },
+        "light_client_opts": {
+          "$ref": "#/definitions/RawLightClientOpts"
+        },
+        "mr_enclave": {
+          "$ref": "#/definitions/HexBinary"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RawCoreInstantiate": {
+      "type": "object",
+      "required": [
+        "config"
+      ],
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/RawConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RawEpidAttestation": {
+      "type": "object",
+      "required": [
+        "report"
+      ],
+      "properties": {
+        "report": {
+          "$ref": "#/definitions/IASReport"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RawInstantiate_for_RawEpidAttestation": {
+      "$ref": "#/definitions/RawAttested_for_RawCoreInstantiate_and_RawEpidAttestation"
+    },
+    "RawLightClientOpts": {
+      "type": "object",
+      "required": [
+        "chain_id",
+        "max_block_lag",
+        "max_clock_drift",
+        "trust_threshold",
+        "trusted_hash",
+        "trusted_height",
+        "trusting_period"
+      ],
+      "properties": {
+        "chain_id": {
+          "type": "string"
+        },
+        "max_block_lag": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "max_clock_drift": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "trust_threshold": {
+          "type": "array",
+          "items": [
+            {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          ],
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "trusted_hash": {
+          "$ref": "#/definitions/HexBinary"
+        },
+        "trusted_height": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "trusting_period": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        }
+      },
+      "additionalProperties": false
+    },
+    "ReportBody": {
+      "type": "object",
+      "required": [
+        "advisoryIDs",
+        "advisoryURL",
+        "epidPseudonym",
+        "id",
+        "isvEnclaveQuoteBody",
+        "isvEnclaveQuoteStatus",
+        "platformInfoBlob",
+        "timestamp",
+        "version"
+      ],
+      "properties": {
+        "advisoryIDs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "advisoryURL": {
+          "type": "string"
+        },
+        "epidPseudonym": {
+          "$ref": "#/definitions/Binary"
+        },
+        "id": {
+          "type": "string"
+        },
+        "isvEnclaveQuoteBody": {
+          "$ref": "#/definitions/Binary"
+        },
+        "isvEnclaveQuoteStatus": {
+          "type": "string"
+        },
+        "platformInfoBlob": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

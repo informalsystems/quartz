@@ -5,6 +5,11 @@ edition = "2021"
 
 exclude = ["contract.wasm", "hash.txt"]
 
+[[bin]]
+name = "schema"
+path = "bin/schema.rs"
+
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 
