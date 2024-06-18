@@ -5,7 +5,8 @@ use crate::{
     error::Error,
     handler::Handler,
     msg::execute::attested::{
-        Attestation, Attested, EpidAttestation, HasUserData, MockAttestation,
+        Attestation, Attested, AttestedMsgSansHandler, EpidAttestation, HasUserData,
+        MockAttestation,
     },
     state::CONFIG,
 };
@@ -69,5 +70,16 @@ where
         //    handler can use those changes, e.g. InstantiateMsg
         Handler::handle(msg, deps.branch(), env, info)?;
         Handler::handle(attestation, deps, env, info)
+    }
+}
+
+impl<T> Handler for AttestedMsgSansHandler<T> {
+    fn handle(
+        self,
+        _deps: DepsMut<'_>,
+        _env: &Env,
+        _info: &MessageInfo,
+    ) -> Result<Response, Error> {
+        Ok(Response::default())
     }
 }
