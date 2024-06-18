@@ -1,5 +1,5 @@
 [package]
-name = "transfers"
+name = "transfers_contracts"
 version = "0.1.0"
 edition = "2021"
 

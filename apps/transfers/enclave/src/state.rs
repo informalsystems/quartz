@@ -1,12 +1,34 @@
-use std::HashMap;
-use cosmwasm_std::{Addr, Uint128};
+use std::collections::{BTreeMap, HashMap};
 
-pub let state: HashMap<Addr, Uint128> = HashMap::default();
+use anyhow;
+use cosmwasm_std::{Addr, HexBinary, Uint128};
+use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Debug)]
 pub struct State {
-    state: HashMap<Addr, Uint128>,
+    pub state: BTreeMap<Addr, Uint128>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct RawState {
-    state: HashMap<Addr, Uint128>
+    pub state: BTreeMap<Addr, Uint128>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RawEncryptedState {
+    pub ciphertext: HexBinary,
+}
+
+impl From<State> for RawState {
+    fn from(o: State) -> Self {
+        Self { state: o.state }
+    }
+}
+
+impl TryFrom<RawState> for State {
+    type Error = anyhow::Error;
+
+    fn try_from(o: RawState) -> Result<Self, anyhow::Error> {
+        Ok(Self { state: o.state })
+    }
 }

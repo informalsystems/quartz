@@ -5,10 +5,12 @@ use std::{
 
 use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
 use cosmwasm_std::HexBinary;
+//TODO: get rid of this
 use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
-    state::{RawCipherText, RawHash, SettleOff, Transfer}
+    state::{RawHash, SettleOff, Transfer},
 };
+pub type RawCipherText = HexBinary;
 
 use cycles_sync::types::RawObligation;
 use ecies::{decrypt, encrypt};
@@ -17,9 +19,9 @@ use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
+use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
-use quartz_enclave::attestor::Attestor;
 
 use crate::proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse};
 
@@ -53,14 +55,12 @@ where
         &self,
         request: Request<RunClearingRequest>,
     ) -> TonicResult<Response<RunClearingResponse>> {
-
-
         // Pass in JSON of Requests vector and the STATE
 
         // Serialize into Requests enum
         // Loop through, decrypt the ciphertexts
 
-        // Read the state blob from chain 
+        // Read the state blob from chain
 
         // Decrypt and deserialize
 

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package transfers;
+
+service Settlement {
+  rpc Run (RunTransfersRequest) returns (RunTransfersResponse) {}
+}
+
+message RunTransfersRequest {
+  string message = 1;
+}
+
+message RunTransfersResponse {
+  string message = 1;
+}

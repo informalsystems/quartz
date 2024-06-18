@@ -20,14 +20,13 @@ pub enum ExecuteMsg {
     Quartz(QuartzExecuteMsg),
 
     // ----- user txs
-    // clear text 
+    // clear text
     Deposit,
     Withdraw,
 
-    // ciphertext 
+    // ciphertext
     TransferRequest(execute::TransferRequestMsg),
     // ---- end user txs
-
     ClearTextTransferRequest(execute::ClearTextTransferRequestMsg),
 
     // enclave msg
@@ -36,11 +35,12 @@ pub enum ExecuteMsg {
 
 pub mod execute {
     use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError};
-    use quartz_cw::error::Error;
-    use quartz_cw::handler::Handler;
-    use quartz_cw::msg::execute::attested::HasUserData;
-    use quartz_cw::msg::HasDomainType;
-    use quartz_cw::state::UserData;
+    use quartz_cw::{
+        error::Error,
+        handler::Handler,
+        msg::{execute::attested::HasUserData, HasDomainType},
+        state::UserData,
+    };
     use sha2::{Digest, Sha256};
 
     use super::*;

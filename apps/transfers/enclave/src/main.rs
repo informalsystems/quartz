@@ -14,9 +14,9 @@
 )]
 
 mod cli;
-mod mtcs_server;
 mod proto;
 mod state;
+mod transfers_server;
 
 use std::{
     sync::{Arc, Mutex},
@@ -25,8 +25,7 @@ use std::{
 
 use clap::Parser;
 use cli::Cli;
-use mtcs_server::MtcsService;
-use proto::clearing_server::ClearingServer as MtcsServer;
+use proto::settlement_server::SettlementServer as TransfersServer;
 use quartz_cw::state::{Config, LightClientOpts};
 use quartz_enclave::{
     attestor::{Attestor, EpidAttestor},
@@ -34,6 +33,7 @@ use quartz_enclave::{
 };
 use quartz_proto::quartz::core_server::CoreServer;
 use tonic::transport::Server;
+use transfers_server::TransfersService;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -68,7 +68,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             sk.clone(),
             EpidAttestor,
         )))
-        .add_service(MtcsServer::new(MtcsService::new(sk.clone(), EpidAttestor)))
+        .add_service(TransfersServer::new(TransfersService::<EpidAttestor>::new(
+            sk.clone(),
+            EpidAttestor,
+        )))
         .serve(args.rpc_addr)
         .await?;
 

@@ -1026,6 +1026,7 @@ dependencies = [
 name = "enclave"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "clap",
  "color-eyre",
  "cosmrs",
@@ -1036,7 +1037,6 @@ dependencies = [
  "ecies",
  "hex",
  "k256",
- "mtcs",
  "prost",
  "quartz-cw",
  "quartz-enclave",
@@ -1050,6 +1050,7 @@ dependencies = [
  "tokio",
  "tonic",
  "tonic-build",
+ "transfers_contracts",
 ]
 
 [[package]]
@@ -3835,6 +3836,22 @@ dependencies = [
  "sharded-slab",
  "thread_local",
  "tracing-core",
+]
+
+[[package]]
+name = "transfers_contracts"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "cw20-base",
+ "quartz-cw",
+ "serde_json",
+ "sha2 0.10.8",
+ "thiserror",
 ]
 
 [[package]]
