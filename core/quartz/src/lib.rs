@@ -14,6 +14,4 @@
 )]
 
 pub mod attestor;
-pub mod cli;
-pub mod proto;
 pub mod server;

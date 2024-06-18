@@ -14,6 +14,8 @@
 )]
 
 mod mtcs_server;
+mod cli;
+mod proto;
 
 use std::{
     sync::{Arc, Mutex},
@@ -22,11 +24,12 @@ use std::{
 
 use clap::Parser;
 use mtcs_server::MtcsService;
+use cli::Cli;
+use proto::clearing_server::ClearingServer as MtcsServer;
+
 use quartz_cw::state::{Config, LightClientOpts};
 use quartz_enclave::{
     attestor::{Attestor, EpidAttestor},
-    cli::Cli,
-    proto::clearing_server::ClearingServer as MtcsServer,
     server::CoreService,
 };
 use quartz_proto::quartz::core_server::CoreServer;

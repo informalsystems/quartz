@@ -19,7 +19,6 @@ color-eyre.workspace = true
 ecies.workspace = true
 hex.workspace = true
 k256.workspace = true
-prost.workspace = true
 rand.workspace = true
 serde.workspace = true
 serde_json.workspace = true

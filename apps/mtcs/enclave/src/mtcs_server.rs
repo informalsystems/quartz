@@ -16,12 +16,11 @@ use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
-use quartz_enclave::{
-    attestor::Attestor,
-    proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
-};
+use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
+
+use crate::proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse};
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
@@ -53,6 +52,24 @@ where
         &self,
         request: Request<RunClearingRequest>,
     ) -> TonicResult<Response<RunClearingResponse>> {
+
+        // Pass in JSON of Requests vector and the STATE
+
+        // Serialize into Requests enum
+        // Loop through, decrypt the ciphertexts
+
+        // Read the state blob from chain 
+
+        // Decrypt and deserialize
+
+        // Loop through requests and apply onto state
+
+        // Encrypt state
+
+        // Create withdraw requests
+
+        // Send to chain
+
         let message: RunClearingMessage = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
