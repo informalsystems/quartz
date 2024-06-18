@@ -171,3 +171,36 @@ impl Attestation for MockAttestation {
         unimplemented!("MockAttestation handler is a noop")
     }
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct AttestedMsgSansHandler<T>(pub T);
+
+#[cw_serde]
+pub struct RawAttestedMsgSansHandler<T>(pub T);
+
+impl<T> HasDomainType for RawAttestedMsgSansHandler<T> {
+    type DomainType = AttestedMsgSansHandler<T>;
+}
+
+impl<T> HasUserData for AttestedMsgSansHandler<T>
+where
+    T: HasUserData,
+{
+    fn user_data(&self) -> UserData {
+        self.0.user_data()
+    }
+}
+
+impl<T> TryFrom<RawAttestedMsgSansHandler<T>> for AttestedMsgSansHandler<T> {
+    type Error = StdError;
+
+    fn try_from(value: RawAttestedMsgSansHandler<T>) -> Result<Self, Self::Error> {
+        Ok(Self(value.0))
+    }
+}
+
+impl<T> From<AttestedMsgSansHandler<T>> for RawAttestedMsgSansHandler<T> {
+    fn from(value: AttestedMsgSansHandler<T>) -> Self {
+        Self(value.0)
+    }
+}
