@@ -1049,6 +1049,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tonic",
+ "tonic-build",
 ]
 
 [[package]]
@@ -2464,7 +2465,6 @@ dependencies = [
  "tm-stateless-verifier",
  "tokio",
  "tonic",
- "tonic-build",
 ]
 
 [[package]]
