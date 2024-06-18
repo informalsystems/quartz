@@ -21,6 +21,8 @@ use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 use quartz_enclave::attestor::Attestor;
 
+use crate::proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse};
+
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
     sk: Arc<Mutex<Option<SigningKey>>>,

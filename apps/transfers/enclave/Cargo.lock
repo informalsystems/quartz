@@ -2452,7 +2452,6 @@ dependencies = [
  "hex",
  "k256",
  "mtcs",
- "prost",
  "quartz-cw",
  "quartz-proto",
  "quartz-relayer",

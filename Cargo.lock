@@ -1065,6 +1065,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tonic",
+ "tonic-build",
 ]
 
 [[package]]
