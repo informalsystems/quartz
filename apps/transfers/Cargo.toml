@@ -1,9 +1,38 @@
 [package]
 name = "transfers"
+version = "0.1.0"
+edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+exclude = ["contract.wasm", "hash.txt"]
 
-crate-type = ["cdylib"]
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
+
+[features]
+backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cosmwasm-std = { version = "2.0.4", features = ["staking"] }
+# external
+thiserror = { version = "1.0.49" }
+
+# cosmwasm
+cosmwasm-schema = "1.5.0"
+cosmwasm-std = { version = "1.5.0", features = ["cosmwasm_1_3"] }
+cw-storage-plus = "1.1.0"
+cw-utils = "1.0.3"
+cw2 = "1.1.1"
+cw20-base = { version = "1.1.1", features = ["library"] }
+
+# quartz
+quartz-cw = { path = "../../cosmwasm/packages/quartz-cw" }

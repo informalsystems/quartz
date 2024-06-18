@@ -1,13 +1,14 @@
 use std::collections::BTreeMap;
 
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, HexBinary};
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_cw::prelude::*;
 
-use crate::state::{RawHash, SettleOff};
-
 #[cw_serde]
-pub struct InstantiateMsg(pub QuartzInstantiateMsg);
+pub struct InstantiateMsg {
+    pub quartz: QuartzInstantiateMsg,
+    pub denom: String,
+}
 
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
@@ -15,12 +16,12 @@ pub enum ExecuteMsg {
     Quartz(QuartzExecuteMsg),
 
     // clear text deposit/withdraw
-    Deposit {},
-    Withdraw {},
+    Deposit,
+    Withdraw,
 
     // ciphertext transfer and result
-    TransferRequest(TransferRequestMsg),
-    Update(UpdateMsg),
+    TransferRequest(execute::TransferRequestMsg),
+    Update(execute::UpdateMsg),
 }
 pub mod execute {
     use super::*;
@@ -35,9 +36,8 @@ pub mod execute {
     #[cw_serde]
     pub struct UpdateMsg {
         pub ciphertext: HexBinary,
-        pub quantity: u128,
-        pub withdrawals: Map<Addr, u128>,
+        pub quantity: u32,
+        pub withdrawals: BTreeMap<Addr, Uint128>,
         // pub proof: π
     }
-
 }

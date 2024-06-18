@@ -6,7 +6,7 @@ members = [
     "cosmwasm/packages/*",
     "utils/*",
 ]
-exclude = ["apps/mtcs/contracts/cw-tee-mtcs"]
+exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers"]
 
 [workspace.package]
 version = "0.1.0"
