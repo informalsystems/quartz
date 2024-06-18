@@ -42,4 +42,4 @@ cw2 = "1.1.1"
 cw20-base = { version = "1.1.1", features = ["library"] }
 
 # quartz
-quartz-cw = { path = "../../cosmwasm/packages/quartz-cw" }
+quartz-cw = { path = "../../../cosmwasm/packages/quartz-cw" }

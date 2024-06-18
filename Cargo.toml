@@ -6,7 +6,7 @@ members = [ "apps/mtcs/enclave",
     "cosmwasm/packages/*",
     "utils/*",
 ]
-exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/mtcs/enclave", "apps/transfers"]
+exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/mtcs/enclave", "apps/transfers", "apps/transfers/enclave"]
 
 [workspace.package]
 version = "0.1.0"
