@@ -16,13 +16,12 @@ use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
-use serde::{Deserialize, Serialize};
-use tonic::{Request, Response, Result as TonicResult, Status};
-
 use quartz_enclave::{
     attestor::Attestor,
     proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
 };
+use serde::{Deserialize, Serialize};
+use tonic::{Request, Response, Result as TonicResult, Status};
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {

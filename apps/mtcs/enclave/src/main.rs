@@ -21,18 +21,16 @@ use std::{
 };
 
 use clap::Parser;
-use quartz_cw::state::{Config, LightClientOpts};
-use quartz_proto::quartz::core_server::CoreServer;
-use tonic::transport::Server;
-
 use mtcs_server::MtcsService;
-
+use quartz_cw::state::{Config, LightClientOpts};
 use quartz_enclave::{
     attestor::{Attestor, EpidAttestor},
     cli::Cli,
     proto::clearing_server::ClearingServer as MtcsServer,
-    server::CoreService
+    server::CoreService,
 };
+use quartz_proto::quartz::core_server::CoreServer;
+use tonic::transport::Server;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
