@@ -16,15 +16,21 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
+    // quartz initialization
     Quartz(QuartzExecuteMsg),
 
-    // clear text deposit/withdraw
+    // ----- user txs
+    // clear text 
     Deposit,
     Withdraw,
 
-    // ciphertext transfer and result
-    TransferRequest(RawAttested<execute::RawTransferRequestMsg, RawEpidAttestation>),
-    Update(execute::UpdateMsg),
+    // ciphertext 
+    TransferRequest(execute::TransferRequestMsg),
+    // ---- end user txs
+
+
+    // enclave msg
+    Update(RawAttested<execute::RawUpdateMsg, RawEpidAttestation>),
 }
 
 pub mod execute {
@@ -39,16 +45,24 @@ pub mod execute {
     use super::*;
 
     #[cw_serde]
-    pub struct RawTransferRequestMsg {
+    pub struct TransferRequestMsg {
         pub ciphertext: HexBinary,
         pub digest: HexBinary,
         // pub proof: π
     }
 
-    #[derive(Clone, Debug, PartialEq)]
-    pub struct TransferRequestMsg(pub RawTransferRequestMsg);
+    #[cw_serde]
+    pub struct RawUpdateMsg {
+        pub ciphertext: HexBinary,
+        pub quantity: u32,
+        pub withdrawals: BTreeMap<Addr, Uint128>,
+        // pub proof: π
+    }
 
-    impl HasUserData for TransferRequestMsg {
+    #[derive(Clone, Debug, PartialEq)]
+    pub struct UpdateMsg(pub RawUpdateMsg);
+
+    impl HasUserData for UpdateMsg {
         fn user_data(&self) -> UserData {
             let mut hasher = Sha256::new();
             hasher.update(serde_json::to_string(&self.0).expect("infallible serializer"));
@@ -60,25 +74,25 @@ pub mod execute {
         }
     }
 
-    impl HasDomainType for RawTransferRequestMsg {
-        type DomainType = TransferRequestMsg;
+    impl HasDomainType for RawUpdateMsg {
+        type DomainType = UpdateMsg;
     }
 
-    impl TryFrom<RawTransferRequestMsg> for TransferRequestMsg {
+    impl TryFrom<RawUpdateMsg> for UpdateMsg {
         type Error = StdError;
 
-        fn try_from(value: RawTransferRequestMsg) -> Result<Self, Self::Error> {
+        fn try_from(value: RawUpdateMsg) -> Result<Self, Self::Error> {
             Ok(Self(value))
         }
     }
 
-    impl From<TransferRequestMsg> for RawTransferRequestMsg {
-        fn from(value: TransferRequestMsg) -> Self {
+    impl From<UpdateMsg> for RawUpdateMsg {
+        fn from(value: UpdateMsg) -> Self {
             value.0
         }
     }
 
-    impl Handler for TransferRequestMsg {
+    impl Handler for UpdateMsg {
         fn handle(
             self,
             _deps: DepsMut<'_>,
@@ -88,13 +102,5 @@ pub mod execute {
             // basically handle `transfer_request` here
             Ok(Response::default())
         }
-    }
-
-    #[cw_serde]
-    pub struct UpdateMsg {
-        pub ciphertext: HexBinary,
-        pub quantity: u32,
-        pub withdrawals: BTreeMap<Addr, Uint128>,
-        // pub proof: π
     }
 }

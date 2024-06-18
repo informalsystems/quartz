@@ -35,11 +35,11 @@ pub fn execute(
 
     match msg {
         ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
-        ExecuteMsg::TransferRequest(attested_msg) => {
+        ExecuteMsg::TransferRequest(msg) => transfer_request(deps, env, info, msg),
+        ExecuteMsg::Update(attested_msg) => {
             let _ = attested_msg.clone().handle_raw(deps.branch(), &env, &info)?;
-            transfer_request(deps, env, info, attested_msg.msg)
+            update(deps, env, info, attested_msg.msg)
         },
-        ExecuteMsg::Update(msg) => update(deps, env, info, msg),
         ExecuteMsg::Deposit => deposit(deps, env, info),
         ExecuteMsg::Withdraw => withdraw(deps, env, info),
     }
@@ -51,7 +51,7 @@ pub mod execute {
 
     use crate::{
         error::ContractError,
-        msg::execute::{RawTransferRequestMsg, UpdateMsg},
+        msg::execute::{TransferRequestMsg, RawUpdateMsg},
         state::{Request, DENOM, REQUESTS, STATE},
     };
 
@@ -59,7 +59,7 @@ pub mod execute {
         deps: DepsMut,
         _env: Env,
         _info: MessageInfo,
-        msg: RawTransferRequestMsg,
+        msg: TransferRequestMsg,
     ) -> Result<Response, ContractError> {
         let mut requests = REQUESTS.load(deps.storage)?;
 
@@ -74,7 +74,7 @@ pub mod execute {
         deps: DepsMut,
         _env: Env,
         _info: MessageInfo,
-        msg: UpdateMsg,
+        msg: RawUpdateMsg,
     ) -> Result<Response, ContractError> {
         //TODO: validate
 
