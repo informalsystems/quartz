@@ -3,7 +3,7 @@ use quartz_cw::handler::RawHandler;
 
 use crate::{
     error::ContractError,
-    msg::{execute::Request, ExecuteMsg, InstantiateMsg},
+    msg::{execute::{Request, UpdateMsg}, ExecuteMsg, InstantiateMsg},
     state::{DENOM, REQUESTS, STATE},
 };
 
@@ -46,7 +46,7 @@ pub fn execute(
             let _ = attested_msg
                 .clone()
                 .handle_raw(deps.branch(), &env, &info)?;
-            update(deps, env, info, attested_msg.msg.0)
+            update(deps, env, info, UpdateMsg(attested_msg.msg))
         }
         ExecuteMsg::Deposit => deposit(deps, env, info),
         ExecuteMsg::Withdraw => withdraw(deps, env, info),
@@ -88,12 +88,12 @@ pub mod execute {
         //TODO: validate
 
         // Store state
-        STATE.save(deps.storage, &msg.ciphertext)?;
+        STATE.save(deps.storage, &msg.0.ciphertext)?;
 
         // Clear queue
         let mut requests: Vec<Request> = REQUESTS.load(deps.storage)?;
 
-        let requests = requests.drain(0..msg.quantity as usize).collect();
+        let requests = requests.drain(0..msg.0.quantity as usize).collect();
 
         REQUESTS.save(deps.storage, &requests)?;
 
@@ -101,6 +101,7 @@ pub mod execute {
         let denom = DENOM.load(deps.storage)?;
 
         let messages = msg
+            .0
             .withdrawals
             .into_iter()
             .map(|(user, funds)| BankMsg::Send {
@@ -134,8 +135,8 @@ pub mod execute {
         // TODO: verify denom
 
         let mut requests = REQUESTS.load(deps.storage)?;
-
-        requests.push(Request::Withdraw(info.sender, info.funds[0].amount));
+        
+        requests.push(Request::Withdraw(info.sender));
 
         REQUESTS.save(deps.storage, &requests)?;
 

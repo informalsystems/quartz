@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_cw::{
-    msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation},
+    msg::execute::attested::{RawAttested, RawEpidAttestation},
     prelude::*,
 };
 
@@ -30,11 +30,17 @@ pub enum ExecuteMsg {
     ClearTextTransferRequest(execute::ClearTextTransferRequestMsg),
 
     // enclave msg
-    Update(RawAttested<RawAttestedMsgSansHandler<execute::UpdateMsg>, RawEpidAttestation>),
+    Update(RawAttested<execute::RawUpdateMsg, RawEpidAttestation>),
 }
 
 pub mod execute {
-    use quartz_cw::{msg::execute::attested::HasUserData, state::UserData};
+    use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError};
+    use quartz_cw::{
+        error::Error,
+        handler::Handler,
+        msg::{execute::attested::HasUserData, HasDomainType},
+        state::UserData,
+    };
     use sha2::{Digest, Sha256};
 
     use super::*;
@@ -53,32 +59,65 @@ pub mod execute {
         pub amount: Uint128,
         // pub proof: π
     }
-
-    // Transfer Requests are stored here as well
+    
+    // Ciphertext of a transfer request
     #[cw_serde]
     pub enum Request {
         Transfer(HexBinary),
-        Withdraw(Addr, Uint128),
-        Deposit(Addr, Uint128),
+        Withdraw(Addr),
+        Deposit(Addr, Uint128)
     }
 
     #[cw_serde]
-    pub struct UpdateMsg {
+    pub struct RawUpdateMsg {
         pub ciphertext: HexBinary,
         pub quantity: u32,
         pub withdrawals: BTreeMap<Addr, Uint128>,
         // pub proof: π
     }
 
+    #[derive(Clone, Debug, PartialEq)]
+    pub struct UpdateMsg(pub RawUpdateMsg);
+
     impl HasUserData for UpdateMsg {
         fn user_data(&self) -> UserData {
             let mut hasher = Sha256::new();
-            hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
+            hasher.update(serde_json::to_string(&self.0).expect("infallible serializer"));
             let digest: [u8; 32] = hasher.finalize().into();
 
             let mut user_data = [0u8; 64];
             user_data[0..32].copy_from_slice(&digest);
             user_data
+        }
+    }
+
+    impl HasDomainType for RawUpdateMsg {
+        type DomainType = UpdateMsg;
+    }
+
+    impl TryFrom<RawUpdateMsg> for UpdateMsg {
+        type Error = StdError;
+
+        fn try_from(value: RawUpdateMsg) -> Result<Self, Self::Error> {
+            Ok(Self(value))
+        }
+    }
+
+    impl From<UpdateMsg> for RawUpdateMsg {
+        fn from(value: UpdateMsg) -> Self {
+            value.0
+        }
+    }
+
+    impl Handler for UpdateMsg {
+        fn handle(
+            self,
+            _deps: DepsMut<'_>,
+            _env: &Env,
+            _info: &MessageInfo,
+        ) -> Result<Response, Error> {
+            // basically handle `transfer_request` here
+            Ok(Response::default())
         }
     }
 }

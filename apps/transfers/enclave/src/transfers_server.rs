@@ -100,16 +100,10 @@ where
                         .and_modify(|bal| *bal += transfer.amount)
                         .or_insert(transfer.amount);
                 }
-                TransfersRequest::Withdraw(receiver, amount) => {
-                    if let Entry::Occupied(mut entry) = state.state.entry(receiver.clone()) {
-                        let balance = entry.get();
-                        if balance >= &amount {
-                            entry.insert(balance - amount);
-                        }
-                        // TODO: handle errors
-                    }
+                TransfersRequest::Withdraw(receiver) => {
+                    let withdraw_bal = state.state.remove(&receiver).unwrap(); // TODO: handle
 
-                    withdrawals_response.insert(receiver, amount);
+                    withdrawals_response.insert(receiver, withdraw_bal);
                 }
                 TransfersRequest::Deposit(sender, amount) => {
                     state
