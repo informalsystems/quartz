@@ -46,7 +46,7 @@ pub fn execute(
             let _ = attested_msg
                 .clone()
                 .handle_raw(deps.branch(), &env, &info)?;
-            update(deps, env, info, attested_msg.msg)
+            update(deps, env, info, attested_msg.msg.0)
         }
         ExecuteMsg::Deposit => deposit(deps, env, info),
         ExecuteMsg::Withdraw => withdraw(deps, env, info),
@@ -60,7 +60,7 @@ pub mod execute {
 
     use crate::{
         error::ContractError,
-        msg::execute::{RawUpdateMsg, TransferRequestMsg},
+        msg::execute::{TransferRequestMsg, UpdateMsg},
         state::{Request, DENOM, REQUESTS, STATE},
     };
 
@@ -83,7 +83,7 @@ pub mod execute {
         deps: DepsMut,
         _env: Env,
         _info: MessageInfo,
-        msg: RawUpdateMsg,
+        msg: UpdateMsg,
     ) -> Result<Response, ContractError> {
         //TODO: validate
 

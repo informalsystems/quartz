@@ -10,8 +10,6 @@ use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
     state::{RawHash, SettleOff, Transfer},
 };
-pub type RawCipherText = HexBinary;
-
 use cycles_sync::types::RawObligation;
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
@@ -24,6 +22,8 @@ use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
 use crate::proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse};
+
+pub type RawCipherText = HexBinary;
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
