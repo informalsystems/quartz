@@ -42,11 +42,11 @@ pub fn execute(
     match msg {
         ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
         ExecuteMsg::TransferRequest(msg) => transfer_request(deps, env, info, msg),
-        ExecuteMsg::Update(attested_msg) => {
-            let _ = attested_msg
-                .clone()
-                .handle_raw(deps.branch(), &env, &info)?;
-            update(deps, env, info, UpdateMsg(attested_msg.msg))
+        ExecuteMsg::Update(not_attested_msg) => {
+            // let _ = attested_msg
+            //     .clone()
+            //     .handle_raw(deps.branch(), &env, &info)?;
+            update(deps, env, info, UpdateMsg(not_attested_msg))
         }
         ExecuteMsg::Deposit => deposit(deps, env, info),
         ExecuteMsg::Withdraw => withdraw(deps, env, info),

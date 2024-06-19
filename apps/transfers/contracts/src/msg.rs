@@ -30,7 +30,7 @@ pub enum ExecuteMsg {
     ClearTextTransferRequest(execute::ClearTextTransferRequestMsg),
 
     // enclave msg
-    Update(RawAttested<execute::RawUpdateMsg, RawEpidAttestation>),
+    Update(execute::RawUpdateMsg),
 }
 
 pub mod execute {
