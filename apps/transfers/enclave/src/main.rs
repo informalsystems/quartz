@@ -13,10 +13,10 @@
     unused_qualifications
 )]
 
-mod cli;
-mod proto;
-mod state;
-mod transfers_server;
+pub mod cli;
+pub mod proto;
+pub mod state;
+pub mod transfers_server;
 
 use std::{
     sync::{Arc, Mutex},

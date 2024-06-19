@@ -1032,8 +1032,6 @@ dependencies = [
  "cosmrs",
  "cosmwasm-std",
  "cw-multi-test",
- "cw-tee-mtcs",
- "cycles-sync",
  "ecies",
  "hex",
  "k256",

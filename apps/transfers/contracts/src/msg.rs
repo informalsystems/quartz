@@ -54,6 +54,14 @@ pub mod execute {
         // pub proof: π
     }
 
+    // Transfer Requests are stored here as well
+    #[cw_serde]
+    pub enum Request {
+        Transfer(HexBinary),
+        Withdraw(Addr, Uint128),
+        Deposit(Addr, Uint128),
+    }
+
     #[cw_serde]
     pub struct UpdateMsg {
         pub ciphertext: HexBinary,
