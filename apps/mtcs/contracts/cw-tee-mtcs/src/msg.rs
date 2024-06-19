@@ -2,9 +2,14 @@ use std::collections::BTreeMap;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::HexBinary;
-use quartz_cw::prelude::*;
+use quartz_cw::{
+    msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation},
+    prelude::*,
+};
 
 use crate::state::{RawHash, SettleOff};
+
+type AttestedMsg<M> = RawAttested<RawAttestedMsgSansHandler<M>, RawEpidAttestation>;
 
 #[cw_serde]
 pub struct InstantiateMsg(pub QuartzInstantiateMsg);
@@ -17,11 +22,14 @@ pub enum ExecuteMsg {
     Transfer(execute::Cw20Transfer),
     SubmitObligation(execute::SubmitObligationMsg),
     SubmitObligations(execute::SubmitObligationsMsg),
-    SubmitSetoffs(execute::SubmitSetoffsMsg),
+    SubmitSetoffs(AttestedMsg<execute::SubmitSetoffsMsg>),
     InitClearing,
 }
 
 pub mod execute {
+    use quartz_cw::{msg::execute::attested::HasUserData, state::UserData};
+    use sha2::{Digest, Sha256};
+
     use super::*;
 
     #[cw_serde]
@@ -61,6 +69,18 @@ pub mod execute {
     pub struct SubmitSetoffsMsg {
         pub setoffs_enc: BTreeMap<RawHash, SettleOff>,
         // pub proof: π,
+    }
+
+    impl HasUserData for SubmitSetoffsMsg {
+        fn user_data(&self) -> UserData {
+            let mut hasher = Sha256::new();
+            hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
+            let digest: [u8; 32] = hasher.finalize().into();
+
+            let mut user_data = [0u8; 64];
+            user_data[0..32].copy_from_slice(&digest);
+            user_data
+        }
     }
 }
 
