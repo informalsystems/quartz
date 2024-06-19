@@ -1,6 +1,7 @@
-use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, HexBinary};
+use cosmwasm_std::HexBinary;
 use cw_storage_plus::Item;
+
+use crate::msg::execute::Request;
 
 pub const STATE: Item<HexBinary> = Item::new("state");
 pub const REQUESTS: Item<Vec<Request>> = Item::new("requests");

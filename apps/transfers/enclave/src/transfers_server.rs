@@ -1,5 +1,5 @@
 use std::{
-    collections::BTreeMap,
+    collections::{btree_map::Entry, BTreeMap},
     sync::{Arc, Mutex},
 };
 
@@ -12,7 +12,7 @@ use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
-use transfers_contracts::msg::execute::{ClearTextTransferRequestMsg, Request};
+use transfers_contracts::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
 
 use crate::{
     proto::{settlement_server::Settlement, RunTransfersRequest, RunTransfersResponse},
@@ -28,7 +28,7 @@ pub struct TransfersService<A> {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RunTransfersRequestMessage {
     state: HexBinary,
-    requests: Vec<transfers_contracts::state::Request>,
+    requests: Vec<TransfersRequest>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -72,42 +72,46 @@ where
             decrypt_state(&sk_lock.as_ref().unwrap(), &message.state)
         };
 
+        let requests_len = message.requests.len() as u32;
         // Instantiate empty withdrawals map to include in response (Update message to smart contract)
-        let withdrawals_response = BTreeMap::<Addr, Uint128>::new();
+        let mut withdrawals_response = BTreeMap::<Addr, Uint128>::new();
 
         // Loop through requests, match on cases, and apply changes to state
         for req in message.requests {
             match req {
-                Request::Transfer(ciphertext) => {
+                TransfersRequest::Transfer(ciphertext) => {
                     // Decrypt transfer ciphertext into cleartext struct (acquires lock on enclave sk to do so)
                     let transfer: ClearTextTransferRequestMsg = {
                         let sk = self.sk.lock().unwrap();
 
                         decrypt_transfer(sk.as_ref().unwrap(), &ciphertext)
                     };
+                    if let Entry::Occupied(mut entry) = state.state.entry(transfer.sender) {
+                        let balance = entry.get();
+                        if balance >= &transfer.amount {
+                            entry.insert(balance - transfer.amount);
+                        }
+                        // TODO: handle errors
+                    }
 
                     state
                         .state
                         .entry(transfer.receiver)
                         .and_modify(|bal| *bal += transfer.amount)
                         .or_insert(transfer.amount);
-
-                    state
-                        .state
-                        .entry(transfer.sender)
-                        .and_modify(|bal| *bal -= transfer.amount)
-                        .or_insert(transfer.amount);
                 }
-                Request::Withdraw(receiver, amount) => {
-                    state
-                        .state
-                        .entry(receiver)
-                        .and_modify(|bal| *bal -= amount)
-                        .or_insert(amount);
+                TransfersRequest::Withdraw(receiver, amount) => {
+                    if let Entry::Occupied(mut entry) = state.state.entry(receiver.clone()) {
+                        let balance = entry.get();
+                        if balance >= &amount {
+                            entry.insert(balance - amount);
+                        }
+                        // TODO: handle errors
+                    }
 
                     withdrawals_response.insert(receiver, amount);
                 }
-                Request::Deposit(sender, amount) => {
+                TransfersRequest::Deposit(sender, amount) => {
                     state
                         .state
                         .entry(sender)
@@ -131,7 +135,7 @@ where
         // Send to chain
         let message = serde_json::to_string(&RunTransfersResponseMessage {
             ciphertext: state_enc,
-            quantity: message.requests.len() as u32,
+            quantity: requests_len,
             withdrawals: withdrawals_response,
         })
         .unwrap();

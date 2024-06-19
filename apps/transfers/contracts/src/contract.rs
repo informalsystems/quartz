@@ -3,8 +3,8 @@ use quartz_cw::handler::RawHandler;
 
 use crate::{
     error::ContractError,
-    msg::{ExecuteMsg, InstantiateMsg},
-    state::{Request, DENOM, REQUESTS, STATE},
+    msg::{execute::Request, ExecuteMsg, InstantiateMsg},
+    state::{DENOM, REQUESTS, STATE},
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -60,8 +60,8 @@ pub mod execute {
 
     use crate::{
         error::ContractError,
-        msg::execute::{TransferRequestMsg, UpdateMsg},
-        state::{Request, DENOM, REQUESTS, STATE},
+        msg::execute::{Request, TransferRequestMsg, UpdateMsg},
+        state::{DENOM, REQUESTS, STATE},
     };
 
     pub fn transfer_request(
@@ -115,7 +115,7 @@ pub mod execute {
 
     pub fn deposit(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
         let denom = DENOM.load(deps.storage)?;
-        let quantity = must_pay(&info, &denom)?.u128();
+        let quantity = must_pay(&info, &denom)?;
 
         let mut requests = REQUESTS.load(deps.storage)?;
 
@@ -131,9 +131,11 @@ pub mod execute {
         _env: Env,
         info: MessageInfo,
     ) -> Result<Response, ContractError> {
+        // TODO: verify denom
+
         let mut requests = REQUESTS.load(deps.storage)?;
 
-        requests.push(Request::Withdraw(info.sender));
+        requests.push(Request::Withdraw(info.sender, info.funds[0].amount));
 
         REQUESTS.save(deps.storage, &requests)?;
 
