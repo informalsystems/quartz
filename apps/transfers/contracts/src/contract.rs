@@ -93,7 +93,7 @@ pub mod execute {
         // Clear queue
         let mut requests: Vec<Request> = REQUESTS.load(deps.storage)?;
 
-        let requests = requests.drain(0..msg.0.quantity as usize).collect();
+        requests.drain(0..msg.0.quantity as usize);
 
         REQUESTS.save(deps.storage, &requests)?;
 
