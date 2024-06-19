@@ -1,10 +1,10 @@
-use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{entry_point, DepsMut, Env, HexBinary, MessageInfo, Response};
 use quartz_cw::handler::RawHandler;
 
 use crate::{
     error::ContractError,
     msg::{ExecuteMsg, InstantiateMsg},
-    state::DENOM,
+    state::{Request, DENOM, REQUESTS, STATE},
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -17,7 +17,13 @@ pub fn instantiate(
     // must be handled first!
     msg.quartz.handle_raw(deps.branch(), &env, &info)?;
 
-    let _ = DENOM.save(deps.storage, &msg.denom);
+    DENOM.save(deps.storage, &msg.denom)?;
+
+    let requests: Vec<Request> = Vec::new();
+    REQUESTS.save(deps.storage, &requests)?;
+
+    let state: HexBinary = HexBinary::from(&[0x00]);
+    STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
         .add_attribute("method", "instantiate")
@@ -66,7 +72,7 @@ pub mod execute {
     ) -> Result<Response, ContractError> {
         let mut requests = REQUESTS.load(deps.storage)?;
 
-        requests.push(Request::Ciphertext(msg.ciphertext));
+        requests.push(Request::Transfer(msg.ciphertext));
 
         REQUESTS.save(deps.storage, &requests)?;
 
