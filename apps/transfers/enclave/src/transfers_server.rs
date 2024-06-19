@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use cosmrs::tendermint::crypto::default;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 
 pub type RawCipherText = HexBinary;
@@ -66,10 +67,19 @@ where
 
         // Decrypt and deserialize the state
         let mut state = {
-            let sk_cpy = self.sk.clone();
-            let sk_lock = sk_cpy.as_ref().lock().unwrap();
-
-            decrypt_state(&sk_lock.as_ref().unwrap(), &message.state)
+            if message.state.len() == 1 && message.state[0] == 0 {
+                println!("{}", message.state);
+                
+                State {
+                    state: BTreeMap::<Addr, Uint128>::new()
+                }
+            } else {
+                let sk_cpy = self.sk.clone();
+                let sk_lock = sk_cpy.as_ref().lock().unwrap();
+    
+                decrypt_state(&sk_lock.as_ref().unwrap(), &message.state)
+    
+            }
         };
 
         let requests_len = message.requests.len() as u32;
