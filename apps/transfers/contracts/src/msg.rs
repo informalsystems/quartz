@@ -72,7 +72,7 @@ pub mod execute {
     pub struct RawUpdateMsg {
         pub ciphertext: HexBinary,
         pub quantity: u32,
-        pub withdrawals: BTreeMap<Addr, Uint128>,
+        pub withdrawals: Vec<(Addr, Uint128)>,
         // pub proof: π
     }
 

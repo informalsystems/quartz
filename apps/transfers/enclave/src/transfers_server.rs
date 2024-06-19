@@ -36,7 +36,7 @@ pub struct RunTransfersRequestMessage {
 pub struct RunTransfersResponseMessage {
     ciphertext: HexBinary,
     quantity: u32,
-    withdrawals: BTreeMap<Addr, Uint128>,
+    withdrawals: Vec<(Addr, Uint128)>,
 }
 
 impl<A> TransfersService<A>
@@ -84,7 +84,7 @@ where
 
         let requests_len = message.requests.len() as u32;
         // Instantiate empty withdrawals map to include in response (Update message to smart contract)
-        let mut withdrawals_response = BTreeMap::<Addr, Uint128>::new();
+        let mut withdrawals_response = Vec::<(Addr, Uint128)>::new();
 
         // Loop through requests, match on cases, and apply changes to state
         for req in message.requests {
@@ -113,7 +113,7 @@ where
                 TransfersRequest::Withdraw(receiver) => {
                     let withdraw_bal = state.state.remove(&receiver).unwrap(); // TODO: handle
 
-                    withdrawals_response.insert(receiver, withdraw_bal);
+                    withdrawals_response.push((receiver, withdraw_bal));
                 }
                 TransfersRequest::Deposit(sender, amount) => {
                     state
