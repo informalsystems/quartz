@@ -16,7 +16,7 @@ clap.workspace = true
 ecies.workspace = true
 hex.workspace = true
 k256.workspace = true
-rand.workspace = true
+rand = { workspace = true, default-features = true }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
