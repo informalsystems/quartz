@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-x509-parser = { version = "0.16.0", features = ["default"] }
+x509-parser = { version = "0.16.0", features = ["default","verify"] }
 cosmwasm-schema = "1.4.0"
 cosmwasm-std = "1.4.0"
 hex-literal = "0.4.1"

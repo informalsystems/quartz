@@ -1,7 +1,9 @@
-use der::{DateTime, EncodeValue, Error as DerError};
+use der::{pem::LineEnding,DateTime, EncodePem, EncodeValue, Error as DerError};
 use mc_attestation_verifier::{CertificateChainVerifier, CertificateChainVerifierError};
 use x509_cert::{crl::CertificateList, Certificate};
-use x509_parser::{parse_x509_certificate, parse_x509_crl};
+use x509_parser::{parse_x509_certificate, parse_x509_crl,pem::parse_x509_pem};
+
+
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
 pub struct TlsCertificateChainVerifier;
@@ -28,15 +30,20 @@ impl CertificateChainVerifier for TlsCertificateChainVerifier {
     ) -> Result<(), CertificateChainVerifierError> {
         let enc_certs = certificate_chain
             .into_iter()
-            .map(|cert| der_encode(cert))
+            .map(|cert| cert.to_pem(LineEnding::LF))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-        let _cert_chain = enc_certs
+        let _pem_chain = enc_certs
             .iter()
-            .map(|enc_cert| parse_x509_certificate(enc_cert.as_ref()))
+            .map(|enc_cert| parse_x509_pem(enc_cert.as_ref()))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-
+	let _cert_chain = _pem_chain
+	    .iter()
+	    .map(|pem| parse_x509_certificate(&pem.1.contents))
+	    .collect::<Result<Vec< _>, _>>()
+            .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
+	
         let enc_crls = crls
             .into_iter()
             .map(|crl| der_encode(crl))
@@ -47,7 +54,10 @@ impl CertificateChainVerifier for TlsCertificateChainVerifier {
             .map(|enc_crl| parse_x509_crl(enc_crl.as_ref()))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-
+	
+	let res = _cert_chain.last().unwrap().1.verify_signature(None);
+	eprintln!("Verification: {:?}", res);
+	assert!(res.is_ok());
         Ok(())
     }
 }
@@ -66,19 +76,19 @@ mod test {
 
     #[test]
     fn verify_valid_cert_chain() {
-        let _chain = [LEAF_CERT, PROCESSOR_CA, ROOT_CA]
+        let chain = [LEAF_CERT, PROCESSOR_CA, ROOT_CA]
             .iter()
             .map(|cert| Certificate::from_pem(cert).expect("failed to parse cert"))
             .collect::<Vec<_>>();
-        let _crls = [ROOT_CRL, PROCESSOR_CRL]
+        let crls = [ROOT_CRL, PROCESSOR_CRL]
             .iter()
             .map(|crl| CertificateList::from_der(crl).expect("failed to parse CRL"))
             .collect::<Vec<_>>();
-        /*
+
         let verifier = TlsCertificateChainVerifier::new(ROOT_CA);
         assert!(verifier
             .verify_certificate_chain(chain.iter(), crls.iter(), None)
-        .is_ok());*/
+		.is_ok());
     }
     /*
         #[test]
