@@ -3,7 +3,10 @@ use quartz_cw::handler::RawHandler;
 
 use crate::{
     error::ContractError,
-    msg::{execute::{Request, UpdateMsg}, ExecuteMsg, InstantiateMsg},
+    msg::{
+        execute::{Request, UpdateMsg},
+        ExecuteMsg, InstantiateMsg,
+    },
     state::{DENOM, REQUESTS, STATE},
 };
 
@@ -42,11 +45,13 @@ pub fn execute(
     match msg {
         ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
         ExecuteMsg::TransferRequest(msg) => transfer_request(deps, env, info, msg),
-        ExecuteMsg::Update(not_attested_msg) => {
-            // let _ = attested_msg
-            //     .clone()
-            //     .handle_raw(deps.branch(), &env, &info)?;
-            update(deps, env, info, UpdateMsg(not_attested_msg))
+        ExecuteMsg::Update(attested_msg) => {
+            let _ = attested_msg
+                .clone()
+                .handle_raw(deps.branch(), &env, &info)?;
+
+            // Extract underlying UpdateMsg and pass to update()
+            update(deps, env, info, UpdateMsg(attested_msg.msg))
         }
         ExecuteMsg::Deposit => deposit(deps, env, info),
         ExecuteMsg::Withdraw => withdraw(deps, env, info),
@@ -85,8 +90,6 @@ pub mod execute {
         _info: MessageInfo,
         msg: UpdateMsg,
     ) -> Result<Response, ContractError> {
-        //TODO: validate
-
         // Store state
         STATE.save(deps.storage, &msg.0.ciphertext)?;
 
@@ -135,7 +138,7 @@ pub mod execute {
         // TODO: verify denom
 
         let mut requests = REQUESTS.load(deps.storage)?;
-        
+
         requests.push(Request::Withdraw(info.sender));
 
         REQUESTS.save(deps.storage, &requests)?;

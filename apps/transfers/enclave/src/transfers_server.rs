@@ -9,8 +9,10 @@ pub type RawCipherText = HexBinary;
 
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
+use quartz_cw::{msg::execute::attested::HasUserData, state::UserData};
 use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use tonic::{Request, Response, Result as TonicResult, Status};
 use transfers_contracts::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
 
@@ -22,7 +24,7 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct TransfersService<A> {
     sk: Arc<Mutex<Option<SigningKey>>>,
-    _attestor: A,
+    attestor: A,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -38,12 +40,31 @@ pub struct RunTransfersResponseMessage {
     withdrawals: Vec<(Addr, Uint128)>,
 }
 
+impl HasUserData for RunTransfersResponseMessage {
+    fn user_data(&self) -> UserData {
+        let mut hasher = Sha256::new();
+        hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
+        let digest: [u8; 32] = hasher.finalize().into();
+
+        let mut user_data = [0u8; 64];
+        user_data[0..32].copy_from_slice(&digest);
+        user_data
+    }
+}
+
+// TODO: this should probably just be an import from quartz
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct AttestedMsg<M> {
+    msg: M,
+    quote: Vec<u8>,
+}
+
 impl<A> TransfersService<A>
 where
     A: Attestor,
 {
-    pub fn new(sk: Arc<Mutex<Option<SigningKey>>>, _attestor: A) -> Self {
-        Self { sk, _attestor }
+    pub fn new(sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+        Self { sk, attestor }
     }
 }
 
@@ -68,13 +89,18 @@ where
         let mut state = {
             if message.state.len() == 1 && message.state[0] == 0 {
                 println!("{}", message.state);
-                
+
                 State {
-                    state: BTreeMap::<Addr, Uint128>::new()
+                    state: BTreeMap::<Addr, Uint128>::new(),
                 }
             } else {
-                let sk_lock = self.sk.lock().map_err(|e| Status::internal(e.to_string()))?;
-                let sk = sk_lock.as_ref().ok_or(Status::internal("SigningKey unavailable"))?;
+                let sk_lock = self
+                    .sk
+                    .lock()
+                    .map_err(|e| Status::internal(e.to_string()))?;
+                let sk = sk_lock
+                    .as_ref()
+                    .ok_or(Status::internal("SigningKey unavailable"))?;
 
                 decrypt_state(sk, &message.state)?
             }
@@ -90,8 +116,13 @@ where
                 TransfersRequest::Transfer(ciphertext) => {
                     // Decrypt transfer ciphertext into cleartext struct (acquires lock on enclave sk to do so)
                     let transfer: ClearTextTransferRequestMsg = {
-                        let sk_lock = self.sk.lock().map_err(|e| Status::internal(e.to_string()))?;
-                        let sk = sk_lock.as_ref().ok_or(Status::internal("SigningKey unavailable"))?;
+                        let sk_lock = self
+                            .sk
+                            .lock()
+                            .map_err(|e| Status::internal(e.to_string()))?;
+                        let sk = sk_lock
+                            .as_ref()
+                            .ok_or(Status::internal("SigningKey unavailable"))?;
 
                         decrypt_transfer(sk, &ciphertext)?
                     };
@@ -108,7 +139,6 @@ where
                         }
                         // TODO: handle errors
                     }
-
                 }
                 TransfersRequest::Withdraw(receiver) => {
                     // If a user with no balance requests withdraw, withdraw request for 0 coins gets processed
@@ -130,33 +160,57 @@ where
         // Encrypt state
         // Gets lock on PrivKey, generates PubKey to encrypt with
         let state_enc = {
-            let sk_lock = self.sk.lock().map_err(|e| Status::internal(e.to_string()))?;
-            let pk = VerifyingKey::from(sk_lock.as_ref().ok_or(Status::internal("SigningKey unavailable"))?);
+            let sk_lock = self
+                .sk
+                .lock()
+                .map_err(|e| Status::internal(e.to_string()))?;
+            let pk = VerifyingKey::from(
+                sk_lock
+                    .as_ref()
+                    .ok_or(Status::internal("SigningKey unavailable"))?,
+            );
 
-            encrypt_state(RawState::from(state), pk).map_err(|e| Status::invalid_argument(e.to_string()))?
+            encrypt_state(RawState::from(state), pk)
+                .map_err(|e| Status::invalid_argument(e.to_string()))?
         };
 
-        // Send to chain
-        let message = serde_json::to_string(&RunTransfersResponseMessage {
+        // Prepare message to chain
+        let msg = RunTransfersResponseMessage {
             ciphertext: state_enc,
             quantity: requests_len,
             withdrawals: withdrawals_response,
-        }).map_err(|e| Status::internal(e.to_string()))?;
+        };
+
+        // Attest to message
+        let quote = self
+            .attestor
+            .quote(msg.clone())
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let attested_msg = AttestedMsg { msg, quote };
+        let message =
+            serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(RunTransfersResponse { message }))
     }
 }
 
 //TODO: consider using generics for these decrypt functions
-fn decrypt_transfer(sk: &SigningKey, ciphertext: &HexBinary) -> TonicResult<ClearTextTransferRequestMsg> {
-    let o = decrypt(&sk.to_bytes(), ciphertext).map_err(|e| Status::invalid_argument(e.to_string()))?;
+fn decrypt_transfer(
+    sk: &SigningKey,
+    ciphertext: &HexBinary,
+) -> TonicResult<ClearTextTransferRequestMsg> {
+    let o =
+        decrypt(&sk.to_bytes(), ciphertext).map_err(|e| Status::invalid_argument(e.to_string()))?;
 
-    serde_json::from_slice(&o).map_err(|e| Status::internal(format!("Could not deserialize transfer {}", e)))
+    serde_json::from_slice(&o)
+        .map_err(|e| Status::internal(format!("Could not deserialize transfer {}", e)))
 }
 
 fn decrypt_state(sk: &SigningKey, ciphertext: &HexBinary) -> TonicResult<State> {
     let o: RawState = {
-        let o = decrypt(&sk.to_bytes(), ciphertext).map_err(|e| Status::invalid_argument(e.to_string()))?;
+        let o = decrypt(&sk.to_bytes(), ciphertext)
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
         serde_json::from_slice(&o).map_err(|e| Status::invalid_argument(e.to_string()))?
     };
 
@@ -170,5 +224,4 @@ fn encrypt_state(state: RawState, enclave_pk: VerifyingKey) -> TonicResult<RawCi
         Ok(encrypted_state) => Ok(encrypted_state.into()),
         Err(e) => Err(Status::internal(format!("Encryption error: {}", e))),
     }
-
 }

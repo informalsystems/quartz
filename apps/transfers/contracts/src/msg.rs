@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_cw::{
@@ -30,7 +28,7 @@ pub enum ExecuteMsg {
     ClearTextTransferRequest(execute::ClearTextTransferRequestMsg),
 
     // enclave msg
-    Update(execute::RawUpdateMsg),
+    Update(RawAttested<execute::RawUpdateMsg, RawEpidAttestation>),
 }
 
 pub mod execute {
@@ -59,13 +57,13 @@ pub mod execute {
         pub amount: Uint128,
         // pub proof: π
     }
-    
+
     // Ciphertext of a transfer request
     #[cw_serde]
     pub enum Request {
         Transfer(HexBinary),
         Withdraw(Addr),
-        Deposit(Addr, Uint128)
+        Deposit(Addr, Uint128),
     }
 
     #[cw_serde]

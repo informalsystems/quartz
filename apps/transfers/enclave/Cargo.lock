@@ -1042,6 +1042,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "sha2 0.10.8",
  "tendermint 0.36.0",
  "tendermint-light-client",
  "thiserror",
