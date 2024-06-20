@@ -1,7 +1,7 @@
 use der::{DateTime, EncodeValue, Error as DerError};
 use mc_attestation_verifier::{CertificateChainVerifier, CertificateChainVerifierError};
 use x509_cert::{crl::CertificateList, Certificate};
-use x509_parser::parse_x509_certificate;
+use x509_parser::{parse_x509_certificate, parse_x509_crl};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
 pub struct TlsCertificateChainVerifier;
@@ -13,7 +13,7 @@ impl TlsCertificateChainVerifier {
     }
 }
 
-fn der_encode(cert: &Certificate) -> Result<Vec<u8>, DerError> {
+fn der_encode(cert: &impl EncodeValue) -> Result<Vec<u8>, DerError> {
     let mut encoded_cert = Vec::new();
     cert.encode_value(&mut encoded_cert)?;
     Ok(encoded_cert)
@@ -23,12 +23,12 @@ impl CertificateChainVerifier for TlsCertificateChainVerifier {
     fn verify_certificate_chain<'a, 'b>(
         &self,
         certificate_chain: impl IntoIterator<Item = &'a Certificate>,
-        _crls: impl IntoIterator<Item = &'b CertificateList>,
+        crls: impl IntoIterator<Item = &'b CertificateList>,
         _time: impl Into<Option<DateTime>>,
     ) -> Result<(), CertificateChainVerifierError> {
         let enc_certs = certificate_chain
             .into_iter()
-            .map(|cert| der_encode(&cert))
+            .map(|cert| der_encode(cert))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
         let _cert_chain = enc_certs
@@ -37,9 +37,17 @@ impl CertificateChainVerifier for TlsCertificateChainVerifier {
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
 
-        // let unverified = UnverifiedCertChain::try_from_certificates(certificate_chain)?;
-        // .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-        // let crls = CertificateRevocationList::try_from_crls(crls)?;
+        let enc_crls = crls
+            .into_iter()
+            .map(|crl| der_encode(crl))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
+        let _crls = enc_crls
+            .iter()
+            .map(|enc_crl| parse_x509_crl(enc_crl.as_ref()))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
+
         Ok(())
     }
 }
