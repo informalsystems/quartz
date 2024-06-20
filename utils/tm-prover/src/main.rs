@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 use tendermint::{crypto::default::Sha256, evidence::Evidence};
 use tendermint_light_client::{
     builder::LightClientBuilder,
-    light_client::Options,
+    light_client::{Options, TargetOrLatest},
     store::memory::MemoryStore,
     types::{Hash, Height, LightBlock, TrustThreshold},
 };
@@ -228,8 +228,17 @@ async fn main() -> Result<()> {
     )
     .await?;
 
+    // Up until now, we have been generating and verifying the consensus proof
+
     let status = client.status().await?;
-    let latest_app_hash = status.sync_info.latest_app_hash;
+    let latest_app_hash = match primary.get_target_block_or_latest(proof_height).unwrap() {
+        TargetOrLatest::Target(light_block) => light_block.signed_header.header.app_hash,
+        TargetOrLatest::Latest(light_block) => {
+            // what do here?
+            light_block.signed_header.header.app_hash
+        }
+    };
+    // let latest_app_hash = status.sync_info.latest_app_hash;
 
     let path = WASM_STORE_KEY.to_owned();
     let data = CwAbciKey::new(args.contract_address, args.storage_key, None);
