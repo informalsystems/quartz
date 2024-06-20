@@ -99,22 +99,23 @@ where
                         let balance = entry.get();
                         if balance >= &transfer.amount {
                             entry.insert(balance - transfer.amount);
+
+                            state
+                                .state
+                                .entry(transfer.receiver)
+                                .and_modify(|bal| *bal += transfer.amount)
+                                .or_insert(transfer.amount);
                         }
                         // TODO: handle errors
                     }
 
-                    state
-                        .state
-                        .entry(transfer.receiver)
-                        .and_modify(|bal| *bal += transfer.amount)
-                        .or_insert(transfer.amount);
                 }
                 TransfersRequest::Withdraw(receiver) => {
                     // If a user with no balance requests withdraw, withdraw request for 0 coins gets processed
                     // TODO: A no-op seems like a bad design choice in a privacy system
-                    let withdraw_bal = state.state.remove(&receiver).unwrap_or_default(); 
-
-                    withdrawals_response.push((receiver, withdraw_bal));
+                    if let Some(withdraw_bal) = state.state.remove(&receiver) {
+                        withdrawals_response.push((receiver, withdraw_bal));
+                    }
                 }
                 TransfersRequest::Deposit(sender, amount) => {
                     state
