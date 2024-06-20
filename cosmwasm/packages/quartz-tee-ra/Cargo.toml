@@ -31,3 +31,6 @@ mc-sgx-dcap-sys-types.workspace = true
 # cosmos
 cosmwasm-schema.workspace = true
 cosmwasm-std.workspace = true
+
+[dev-dependencies]
+hex = "0.4.3"

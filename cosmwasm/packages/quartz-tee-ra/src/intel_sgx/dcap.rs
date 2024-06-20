@@ -5,17 +5,110 @@ pub mod mc_attest_verifier_types;
 /// Root anchor PEM file for use with DCAP
 pub const DCAP_ROOT_ANCHOR: &str = include_str!("../../data/DcapRootCACert.pem");
 
-pub use mc_attest_verifier::dcap::DcapVerifier;
-pub use mc_attest_verifier_types::verification::EnclaveReportDataContents;
-pub use mc_attestation_verifier::*;
-pub use mc_sgx_dcap_sys_types::sgx_ql_qve_collateral_t;
-pub use mc_sgx_dcap_types::{CertificationData, Collateral};
-pub use x509_cert::Certificate;
+use mc_attestation_verifier::*;
+use mc_sgx_dcap_types::{Collateral, Quote3};
+
+use self::{
+    mc_attest_verifier::dcap::{DcapVerifier, DcapVerifierOutput},
+    mc_attest_verifier_types::verification::EnclaveReportDataContents,
+};
+
+pub fn verify(
+    quote: Quote3<Vec<u8>>,
+    collateral: Collateral,
+    identities: &[TrustedIdentity],
+) -> VerificationOutput<DcapVerifierOutput> {
+    let report_data_contents = EnclaveReportDataContents::new([0x42u8; 16].into(), [0xAAu8; 32]);
+    let evidence = Evidence::new(quote, collateral).expect("Failed to get evidence");
+    let verifier = DcapVerifier::new(identities, None, report_data_contents);
+    verifier.verify(&evidence)
+}
 
 #[cfg(test)]
 mod tests {
+    use hex::FromHex;
     use hex_literal::hex;
-    use mc_sgx_dcap_types::Quote3;
+    use mc_attestation_verifier::{Evidence, EvidenceVerifier, TrustedMrEnclaveIdentity, Verifier};
+    use mc_sgx_core_types::MrEnclave;
+    use mc_sgx_dcap_sys_types::sgx_ql_qve_collateral_t;
+    use mc_sgx_dcap_types::{Collateral, Quote3};
+
+    use crate::intel_sgx::dcap::certificate_chain::TlsCertificateChainVerifier;
+
+    const TCB_INFO_JSON: &str = include_str!("../../data/fmspc_00906ED50000_2023_07_12.json");
+    const QE_IDENTITY_JSON: &str = include_str!("../../data/qe_identity.json");
+
+    fn collateral(tcb_info: &str, qe_identity: &str) -> Collateral {
+        let mut sgx_collateral = sgx_ql_qve_collateral_t::default();
+
+        // SAFETY: Version is a union which is inherently unsafe
+        #[allow(unsafe_code)]
+        let version = unsafe { sgx_collateral.__bindgen_anon_1.__bindgen_anon_1.as_mut() };
+        version.major_version = 3;
+        version.minor_version = 1;
+
+        let pck_issuer_cert = include_str!("../../data/processor_ca.pem");
+        let root_cert = include_str!("../../data/root_ca.pem");
+        let mut pck_crl_chain = [pck_issuer_cert, root_cert].join("\n").as_bytes().to_vec();
+        pck_crl_chain.push(0);
+        sgx_collateral.pck_crl_issuer_chain = pck_crl_chain.as_ptr() as _;
+        sgx_collateral.pck_crl_issuer_chain_size = pck_crl_chain.len() as u32;
+
+        let mut root_crl = include_bytes!("../../data/root_crl.der").to_vec();
+        root_crl.push(0);
+        sgx_collateral.root_ca_crl = root_crl.as_ptr() as _;
+        sgx_collateral.root_ca_crl_size = root_crl.len() as u32;
+
+        let mut pck_crl = include_bytes!("../../data/processor_crl.der").to_vec();
+        pck_crl.push(0);
+        sgx_collateral.pck_crl = pck_crl.as_ptr() as _;
+        sgx_collateral.pck_crl_size = pck_crl.len() as u32;
+
+        let tcb_cert = include_str!("../../data/tcb_signer.pem");
+        let mut tcb_chain = [tcb_cert, root_cert].join("\n").as_bytes().to_vec();
+        tcb_chain.push(0);
+        sgx_collateral.tcb_info_issuer_chain = tcb_chain.as_ptr() as _;
+        sgx_collateral.tcb_info_issuer_chain_size = tcb_chain.len() as u32;
+
+        sgx_collateral.tcb_info = tcb_info.as_ptr() as _;
+        sgx_collateral.tcb_info_size = tcb_info.len() as u32;
+
+        // For live data the QE identity uses the same chain as the TCB info
+        sgx_collateral.qe_identity_issuer_chain = tcb_chain.as_ptr() as _;
+        sgx_collateral.qe_identity_issuer_chain_size = tcb_chain.len() as u32;
+
+        sgx_collateral.qe_identity = qe_identity.as_ptr() as _;
+        sgx_collateral.qe_identity_size = qe_identity.len() as u32;
+
+        Collateral::try_from(&sgx_collateral).expect("Failed to parse collateral")
+    }
+
+    #[test]
+    #[ignore]
+    fn evidence_verifier_succeeds_with_tls_x509_verifier() {
+        let root_ca = include_str!("../../data/root_ca.pem");
+        let certificate_verifier = TlsCertificateChainVerifier::new(root_ca);
+        let identities = [TrustedMrEnclaveIdentity::new(
+            MrEnclave::from_hex("840d61b0585dc8b4dc90f53af293c760fda06bee75978a6a86263ffb296423f4")
+                .expect("malformed MRENCLAVE hex"),
+            [""; 0],
+            ["INTEL-SA-00334", "INTEL-SA-00615"],
+        )
+        .into()];
+        let verifier = EvidenceVerifier::new(certificate_verifier, identities.as_ref(), None);
+        let quote_bytes = include_bytes!("../../data/hw_quote.dat");
+        let quote = Quote3::try_from(quote_bytes.as_ref()).expect("Failed to parse quote");
+        let collateral = collateral(TCB_INFO_JSON, QE_IDENTITY_JSON);
+        let evidence: Evidence<Vec<u8>> = Evidence::new(quote, collateral)
+            .expect("Failed to create evidence")
+            .into();
+
+        let verification = verifier.verify(&evidence);
+
+        assert_eq!(verification.is_success().unwrap_u8(), 1);
+        // let displayable = VerificationTreeDisplay::new(&verifier, verification);
+        // println!("\n{displayable}");
+    }
 
     #[test]
     fn test_quote_parse() {
