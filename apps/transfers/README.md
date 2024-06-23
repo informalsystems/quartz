@@ -57,7 +57,7 @@ This should output the pubkey and nonce.
 Finally, we're ready to listen to events from the contract and trigger execution on the enclave:
 
 ```
-bash scripts/transfer.sh
+bash scripts/listen.sh $CONTRACT
 ```
 
 Now we can interact with the contract, and we'll see the events and contract data come through.

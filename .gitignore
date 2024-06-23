@@ -3,6 +3,7 @@
 *.manifest.sgx
 *.sig
 *.hash
+*.height
 *light-client-proof.json
 *output
 .idea/

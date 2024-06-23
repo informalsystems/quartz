@@ -4,7 +4,7 @@
 # Expects:
 #   - enclave is already initialized
 #   - contract is already deployed
-#   - tee-mtcs/utils/tm-prover/trusted.hash exists
+#   - apps/transfers/trusted.hash exists
 #
 
 set -eo pipefail
@@ -22,6 +22,8 @@ CONTRACT="$1"
 
 CMD="wasmd --node http://$NODE_URL"
 
+cd "$ROOT/cycles-quartz/apps/transfers"
+export TRUSTED_HASH=$(cat trusted.hash)
 
 echo "using CMD: $CMD"
 echo "--------------------------------------------------------"
@@ -74,7 +76,6 @@ if [ -f "$PROOF_FILE" ]; then
 fi
 
 # TODO: pass this in?
-export TRUSTED_HASH=$(cat trusted.hash)
 echo "trusted hash $TRUSTED_HASH"
 echo "contract $CONTRACT"
 
