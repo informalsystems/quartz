@@ -60,7 +60,7 @@ pub fn execute(
 }
 
 pub mod execute {
-    use cosmwasm_std::{coins, BankMsg, DepsMut, Env, MessageInfo, Response};
+    use cosmwasm_std::{coins, BankMsg, DepsMut, Env, Event, MessageInfo, Response};
     use cw_utils::must_pay;
 
     use crate::{
@@ -81,7 +81,10 @@ pub mod execute {
 
         REQUESTS.save(deps.storage, &requests)?;
 
-        Ok(Response::new())
+	let event = Event::new("transfer").add_attribute("action", "user");
+	let resp = Response::new().add_event(event);
+
+        Ok(resp)
     }
 
     pub fn update(
@@ -127,7 +130,10 @@ pub mod execute {
 
         REQUESTS.save(deps.storage, &requests)?;
 
-        Ok(Response::new())
+	let event = Event::new("transfer").add_attribute("action", "user");
+	let resp = Response::new().add_event(event);
+
+        Ok(resp)
     }
 
     pub fn withdraw(
@@ -143,6 +149,9 @@ pub mod execute {
 
         REQUESTS.save(deps.storage, &requests)?;
 
-        Ok(Response::new())
+	let event = Event::new("transfer").add_attribute("action", "user");
+	let resp = Response::new().add_event(event);
+
+        Ok(resp)
     }
 }
