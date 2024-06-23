@@ -1,6 +1,10 @@
 *~
 *.manifest
 *.manifest.sgx
+*.sig
+*.hash
+*light-client-proof.json
+*output
 .idea/
 target/
 artifacts/
