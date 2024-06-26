@@ -28,7 +28,7 @@ pub type RawCipherText = HexBinary;
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
     sk: Arc<Mutex<Option<SigningKey>>>,
-    _attestor: A,
+    attestor: A,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -37,12 +37,18 @@ pub struct RunClearingMessage {
     liquidity_sources: Vec<HexBinary>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct AttestedMsg<M> {
+    msg: M,
+    quote: Vec<u8>,
+}
+
 impl<A> MtcsService<A>
 where
     A: Attestor,
 {
-    pub fn new(sk: Arc<Mutex<Option<SigningKey>>>, _attestor: A) -> Self {
-        Self { sk, _attestor }
+    pub fn new(sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+        Self { sk, attestor }
     }
 }
 
@@ -103,7 +109,15 @@ where
             .map(|(settle_off, digest)| (digest, settle_off))
             .collect();
 
-        let message = serde_json::to_string(&SubmitSetoffsMsg { setoffs_enc }).unwrap();
+        let msg = SubmitSetoffsMsg { setoffs_enc };
+
+        let quote = self
+            .attestor
+            .quote(msg.clone())
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let attested_msg = AttestedMsg { msg, quote };
+        let message = serde_json::to_string(&attested_msg).unwrap();
         Ok(Response::new(RunClearingResponse { message }))
     }
 }
