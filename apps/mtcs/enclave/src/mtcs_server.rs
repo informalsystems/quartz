@@ -17,8 +17,8 @@ use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
-use quartz_enclave::attestor::Attestor;
 use quartz_cw::msg::execute::attested::RawAttested;
+use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
