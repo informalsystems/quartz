@@ -9,7 +9,10 @@ pub type RawCipherText = HexBinary;
 
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
-use quartz_cw::{msg::execute::attested::HasUserData, state::UserData};
+use quartz_cw::{
+    msg::execute::attested::{HasUserData, RawAttested},
+    state::UserData,
+};
 use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -50,13 +53,6 @@ impl HasUserData for RunTransfersResponseMessage {
         user_data[0..32].copy_from_slice(&digest);
         user_data
     }
-}
-
-// TODO: this should probably just be an import from quartz
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct AttestedMsg<M> {
-    msg: M,
-    quote: Vec<u8>,
 }
 
 impl<A> TransfersService<A>
@@ -182,12 +178,12 @@ where
         };
 
         // Attest to message
-        let quote = self
+        let attestation = self
             .attestor
             .quote(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = AttestedMsg { msg, quote };
+        let attested_msg = RawAttested { msg, attestation };
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 

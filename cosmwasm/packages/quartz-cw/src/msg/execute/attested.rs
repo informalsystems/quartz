@@ -9,8 +9,8 @@ use crate::{
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Attested<M, A> {
-    msg: M,
-    attestation: A,
+    pub msg: M,
+    pub attestation: A,
 }
 
 impl<M, A> Attested<M, A> {

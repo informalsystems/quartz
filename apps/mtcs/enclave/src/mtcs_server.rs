@@ -18,6 +18,7 @@ use mtcs::{
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
 use quartz_enclave::attestor::Attestor;
+use quartz_cw::msg::execute::attested::RawAttested;
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
@@ -111,12 +112,12 @@ where
 
         let msg = SubmitSetoffsMsg { setoffs_enc };
 
-        let quote = self
+        let attestation = self
             .attestor
             .quote(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = AttestedMsg { msg, quote };
+        let attested_msg = RawAttested { msg, attestation };
         let message = serde_json::to_string(&attested_msg).unwrap();
         Ok(Response::new(RunClearingResponse { message }))
     }
