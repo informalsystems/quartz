@@ -18,6 +18,7 @@ use mtcs::{
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
 use quartz_enclave::attestor::Attestor;
+use quartz_cw::msg::execute::attested::RawAttested;
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
@@ -35,12 +36,6 @@ pub struct MtcsService<A> {
 pub struct RunClearingMessage {
     intents: BTreeMap<RawHash, RawCipherText>,
     liquidity_sources: Vec<HexBinary>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct AttestedMsg<M> {
-    msg: M,
-    quote: Vec<u8>,
 }
 
 impl<A> MtcsService<A>
@@ -111,12 +106,12 @@ where
 
         let msg = SubmitSetoffsMsg { setoffs_enc };
 
-        let quote = self
+        let attestation = self
             .attestor
             .quote(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = AttestedMsg { msg, quote };
+        let attested_msg = RawAttested { msg, attestation };
         let message = serde_json::to_string(&attested_msg).unwrap();
         Ok(Response::new(RunClearingResponse { message }))
     }
