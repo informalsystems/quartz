@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
-use tendermint::Hash;
+use cosmrs::tendermint::Hash;
 use tendermint_light_client::types::{Height, TrustThreshold};
 
 fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {

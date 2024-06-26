@@ -9,6 +9,9 @@ repository.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 
+[lib]
+path = "src/lib.rs"
+
 [dependencies]
 # external
 clap.workspace = true
@@ -16,7 +19,6 @@ color-eyre.workspace = true
 ecies.workspace = true
 hex.workspace = true
 k256.workspace = true
-prost.workspace = true
 rand.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -39,6 +41,3 @@ quartz-proto.workspace = true
 quartz-relayer.workspace = true
 quartz-tee-ra.workspace = true
 tm-stateless-verifier.workspace = true
-
-[build-dependencies]
-tonic-build.workspace = true

@@ -5,9 +5,10 @@ use std::{
 
 use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
 use cosmwasm_std::HexBinary;
+//TODO: get rid of this
 use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
-    state::{RawCipherText, RawHash, SettleOff, Transfer},
+    state::{RawHash, SettleOff, Transfer},
 };
 use cycles_sync::types::RawObligation;
 use ecies::{decrypt, encrypt};
@@ -16,13 +17,14 @@ use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
+use quartz_cw::msg::execute::attested::RawAttested;
+use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
-use crate::{
-    attestor::Attestor,
-    proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
-};
+use crate::proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse};
+
+pub type RawCipherText = HexBinary;
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
@@ -60,6 +62,23 @@ where
         &self,
         request: Request<RunClearingRequest>,
     ) -> TonicResult<Response<RunClearingResponse>> {
+        // Pass in JSON of Requests vector and the STATE
+
+        // Serialize into Requests enum
+        // Loop through, decrypt the ciphertexts
+
+        // Read the state blob from chain
+
+        // Decrypt and deserialize
+
+        // Loop through requests and apply onto state
+
+        // Encrypt state
+
+        // Create withdraw requests
+
+        // Send to chain
+
         let message: RunClearingMessage = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
@@ -93,12 +112,12 @@ where
 
         let msg = SubmitSetoffsMsg { setoffs_enc };
 
-        let quote = self
+        let attestation = self
             .attestor
             .quote(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = AttestedMsg { msg, quote };
+        let attested_msg = RawAttested { msg, attestation };
         let message = serde_json::to_string(&attested_msg).unwrap();
         Ok(Response::new(RunClearingResponse { message }))
     }
