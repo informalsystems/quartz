@@ -38,6 +38,12 @@ pub struct RunClearingMessage {
     liquidity_sources: Vec<HexBinary>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct AttestedMsg<M> {
+    msg: M,
+    quote: Vec<u8>,
+}
+
 impl<A> MtcsService<A>
 where
     A: Attestor,
