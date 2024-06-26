@@ -17,6 +17,7 @@ use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
+use quartz_cw::msg::execute::attested::RawAttested;
 use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
@@ -28,7 +29,7 @@ pub type RawCipherText = HexBinary;
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
     sk: Arc<Mutex<Option<SigningKey>>>,
-    _attestor: A,
+    attestor: A,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -41,8 +42,8 @@ impl<A> MtcsService<A>
 where
     A: Attestor,
 {
-    pub fn new(sk: Arc<Mutex<Option<SigningKey>>>, _attestor: A) -> Self {
-        Self { sk, _attestor }
+    pub fn new(sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+        Self { sk, attestor }
     }
 }
 
@@ -103,7 +104,16 @@ where
             .map(|(settle_off, digest)| (digest, settle_off))
             .collect();
 
-        let message = serde_json::to_string(&SubmitSetoffsMsg { setoffs_enc }).unwrap();
+        let msg = SubmitSetoffsMsg { setoffs_enc };
+
+        let attestation = self
+            .attestor
+            .quote(msg.clone())
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let attested_msg = RawAttested { msg, attestation };
+        let message = serde_json::to_string(&attested_msg).unwrap();
+
         Ok(Response::new(RunClearingResponse { message }))
     }
 }
