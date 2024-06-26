@@ -99,7 +99,11 @@ pub fn execute(
             execute::append_liquidity_sources(deps, liquidity_sources)?;
             Ok(Response::new())
         }
-        ExecuteMsg::SubmitSetoffs(SubmitSetoffsMsg { setoffs_enc }) => {
+        ExecuteMsg::SubmitSetoffs(attested_msg) => {
+            let _ = attested_msg
+                .clone()
+                .handle_raw(deps.branch(), &env, &info)?;
+            let SubmitSetoffsMsg { setoffs_enc } = attested_msg.msg.0;
             execute::submit_setoffs(deps, env, setoffs_enc)
         }
         ExecuteMsg::InitClearing => execute::init_clearing(deps),

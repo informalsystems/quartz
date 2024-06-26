@@ -187,6 +187,7 @@ async fn main() -> Result<()> {
 
     let status = client.status().await?;
     let latest_height = status.sync_info.latest_block_height;
+    let latest_app_hash = status.sync_info.latest_app_hash;
 
     // `proof_height` is the height at which we want to query the blockchain's state
     // This is one less than than the `latest_height` because we want to verify the merkle-proof for
@@ -228,9 +229,6 @@ async fn main() -> Result<()> {
     )
     .await?;
 
-    let status = client.status().await?;
-    let latest_app_hash = status.sync_info.latest_app_hash;
-
     let path = WASM_STORE_KEY.to_owned();
     let data = CwAbciKey::new(args.contract_address, args.storage_key, None);
     let result = client
@@ -248,7 +246,7 @@ async fn main() -> Result<()> {
     if let Some(trace_file) = args.trace_file {
         // replace the last block in the trace (i.e. the (latest - 1) block) with the latest block
         // we don't actually verify the latest block because it will be verified on the other side
-        let latest_block = primary.fetch_light_block(status.sync_info.latest_block_height)?;
+        let latest_block = primary.fetch_light_block(latest_height)?;
         let _ = primary_trace.pop();
         primary_trace.push(latest_block);
 
