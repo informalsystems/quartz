@@ -9,7 +9,10 @@ pub type RawCipherText = HexBinary;
 
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
-use quartz_cw::{msg::execute::attested::{Attested, HasUserData}, state::UserData};
+use quartz_cw::{
+    msg::execute::attested::{HasUserData, RawAttested},
+    state::UserData,
+};
 use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -180,7 +183,7 @@ where
             .quote(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = Attested::<RunTransfersResponseMessage, Vec<u8>> { msg, attestation };
+        let attested_msg = RawAttested { msg, attestation };
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 

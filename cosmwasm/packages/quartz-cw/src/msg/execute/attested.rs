@@ -1,14 +1,13 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::StdError;
 use quartz_tee_ra::IASReport;
-use serde::{Serialize, Deserialize};
 
 use crate::{
     msg::HasDomainType,
     state::{MrEnclave, UserData},
 };
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Attested<M, A> {
     pub msg: M,
     pub attestation: A,
