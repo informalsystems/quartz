@@ -56,23 +56,6 @@ where
         &self,
         request: Request<RunClearingRequest>,
     ) -> TonicResult<Response<RunClearingResponse>> {
-        // Pass in JSON of Requests vector and the STATE
-
-        // Serialize into Requests enum
-        // Loop through, decrypt the ciphertexts
-
-        // Read the state blob from chain
-
-        // Decrypt and deserialize
-
-        // Loop through requests and apply onto state
-
-        // Encrypt state
-
-        // Create withdraw requests
-
-        // Send to chain
-
         let message: RunClearingMessage = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?

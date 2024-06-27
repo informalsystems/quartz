@@ -4,6 +4,7 @@ package transfers;
 
 service Settlement {
   rpc Run (RunTransfersRequest) returns (RunTransfersResponse) {}
+  rpc Query (QueryRequest) returns (QueryResponse) {}
 }
 
 message RunTransfersRequest {
@@ -11,5 +12,13 @@ message RunTransfersRequest {
 }
 
 message RunTransfersResponse {
+  string message = 1;
+}
+
+message QueryRequest {
+  string message = 1;
+}
+
+message QueryResponse {
   string message = 1;
 }

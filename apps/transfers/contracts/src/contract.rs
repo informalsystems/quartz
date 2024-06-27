@@ -4,7 +4,7 @@ use quartz_cw::handler::RawHandler;
 use crate::{
     error::ContractError,
     msg::{
-        execute::{Request, UpdateMsg},
+        execute::{QueryResponseMsg, Request, UpdateMsg},
         ExecuteMsg, InstantiateMsg,
     },
     state::{DENOM, REQUESTS, STATE},
@@ -28,6 +28,8 @@ pub fn instantiate(
     let state: HexBinary = HexBinary::from(&[0x00]);
     STATE.save(deps.storage, &state)?;
 
+    // TODO - do I need to instantiate  BALANCES
+
     Ok(Response::new()
         .add_attribute("method", "instantiate")
         .add_attribute("owner", info.sender))
@@ -43,19 +45,31 @@ pub fn execute(
     use execute::*;
 
     match msg {
+        // Quartz msgs
         ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
+
+        // Clear user msgs
+        ExecuteMsg::Deposit => deposit(deps, env, info),
+        ExecuteMsg::Withdraw => withdraw(deps, env, info),
+        ExecuteMsg::ClearTextTransferRequest(_) => unimplemented!(),
+        ExecuteMsg::QueryRequest(msg) => query_balance(deps, env, info, msg),
+
+        // Cipher user msgs
         ExecuteMsg::TransferRequest(msg) => transfer_request(deps, env, info, msg),
+
+        // Enclave msgs
         ExecuteMsg::Update(attested_msg) => {
             let _ = attested_msg
                 .clone()
                 .handle_raw(deps.branch(), &env, &info)?;
-
-            // Extract underlying UpdateMsg and pass to update()
             update(deps, env, info, UpdateMsg(attested_msg.msg))
         }
-        ExecuteMsg::Deposit => deposit(deps, env, info),
-        ExecuteMsg::Withdraw => withdraw(deps, env, info),
-        ExecuteMsg::ClearTextTransferRequest(_) => unimplemented!(),
+        ExecuteMsg::QueryResponse(attested_msg) => {
+            let _ = attested_msg
+                .clone()
+                .handle_raw(deps.branch(), &env, &info)?;
+            store_balance(deps, env, info, QueryResponseMsg(attested_msg.msg))
+        }
     }
 }
 
@@ -65,9 +79,57 @@ pub mod execute {
 
     use crate::{
         error::ContractError,
-        msg::execute::{Request, TransferRequestMsg, UpdateMsg},
-        state::{DENOM, REQUESTS, STATE},
+        msg::execute::{QueryRequestMsg, QueryResponseMsg, Request, TransferRequestMsg, UpdateMsg},
+        state::{BALANCES, DENOM, REQUESTS, STATE},
     };
+
+    pub fn deposit(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+        let denom: String = DENOM.load(deps.storage)?;
+        let quantity = must_pay(&info, &denom)?;
+
+        let mut requests = REQUESTS.load(deps.storage)?;
+
+        requests.push(Request::Deposit(info.sender, quantity));
+
+        REQUESTS.save(deps.storage, &requests)?;
+
+        let event = Event::new("transfer").add_attribute("action", "user");
+        let resp = Response::new().add_event(event);
+
+        Ok(resp)
+    }
+
+    pub fn withdraw(
+        deps: DepsMut,
+        _env: Env,
+        info: MessageInfo,
+    ) -> Result<Response, ContractError> {
+        // TODO: verify denom
+
+        let mut requests = REQUESTS.load(deps.storage)?;
+
+        requests.push(Request::Withdraw(info.sender));
+
+        REQUESTS.save(deps.storage, &requests)?;
+
+        let event = Event::new("transfer").add_attribute("action", "user");
+        let resp = Response::new().add_event(event);
+
+        Ok(resp)
+    }
+
+    pub fn query_balance(
+        _deps: DepsMut,
+        _env: Env,
+        info: MessageInfo,
+        _msg: QueryRequestMsg,
+    ) -> Result<Response, ContractError> {
+        let event = Event::new("query_balance")
+            .add_attribute("query", "user")
+            .add_attribute("address", info.sender);
+        let resp = Response::new().add_event(event);
+        Ok(resp)
+    }
 
     pub fn transfer_request(
         deps: DepsMut,
@@ -120,38 +182,24 @@ pub mod execute {
         Ok(resp)
     }
 
-    pub fn deposit(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-        let denom = DENOM.load(deps.storage)?;
-        let quantity = must_pay(&info, &denom)?;
-
-        let mut requests = REQUESTS.load(deps.storage)?;
-
-        requests.push(Request::Deposit(info.sender, quantity));
-
-        REQUESTS.save(deps.storage, &requests)?;
-
-        let event = Event::new("transfer").add_attribute("action", "user");
-        let resp = Response::new().add_event(event);
-
-        Ok(resp)
-    }
-
-    pub fn withdraw(
+    pub fn store_balance(
         deps: DepsMut,
         _env: Env,
-        info: MessageInfo,
+        _info: MessageInfo,
+        msg: QueryResponseMsg,
     ) -> Result<Response, ContractError> {
-        // TODO: verify denom
+        // Store state
+        BALANCES.save(
+            deps.storage,
+            &msg.0.address.to_string(),
+            &msg.0.encrypted_bal,
+        )?;
 
-        let mut requests = REQUESTS.load(deps.storage)?;
-
-        requests.push(Request::Withdraw(info.sender));
-
-        REQUESTS.save(deps.storage, &requests)?;
-
-        let event = Event::new("transfer").add_attribute("action", "user");
+        // Emit event
+        let event = Event::new("store_balance")
+            .add_attribute("query", "enclave") // TODO Weird to name it enclave?
+            .add_attribute(msg.0.address.to_string(), msg.0.encrypted_bal.to_string());
         let resp = Response::new().add_event(event);
-
         Ok(resp)
     }
 }
