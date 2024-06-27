@@ -13,7 +13,7 @@ use crate::{
     error::ContractError,
     msg::{
         execute::{
-            Cw20Transfer, FaucetMintMsg, SubmitObligationMsg, SubmitObligationsMsg,
+            Cw20Transfer, SubmitObligationMsg, SubmitObligationsMsg,
             SubmitSetoffsMsg,
         },
         ExecuteMsg, InstantiateMsg, QueryMsg,
@@ -49,6 +49,8 @@ pub fn instantiate(
     ObligationsItem::new(&current_epoch_key(OBLIGATIONS_KEY, deps.storage)?)
         .save(deps.storage, &Default::default())?;
 
+
+    ///TODO - Move from 1 source to 2 sources namely `escrow` and `overdraft` contracts
     LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
         .save(deps.storage, &Default::default())?;
 
@@ -80,9 +82,6 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
-        ExecuteMsg::FaucetMint(FaucetMintMsg { recipient, amount }) => {
-            execute::faucet_mint(deps, env, recipient, amount)
-        }
         ExecuteMsg::Transfer(Cw20Transfer { recipient, amount }) => Ok(
             cw20_base::contract::execute_transfer(deps, env, info, recipient, amount.into())?,
         ),
@@ -121,28 +120,6 @@ pub mod execute {
         },
         ContractError,
     };
-
-    pub fn faucet_mint(
-        mut deps: DepsMut,
-        env: Env,
-        recipient: String,
-        amount: u64,
-    ) -> Result<Response, ContractError> {
-        let info = MessageInfo {
-            sender: env.contract.address.clone(),
-            funds: vec![],
-        };
-
-        execute_mint(
-            deps.branch(),
-            env.clone(),
-            info.clone(),
-            recipient.to_string(),
-            amount.into(),
-        )?;
-
-        Ok(Response::new().add_attribute("action", "faucet_mint"))
-    }
 
     pub fn submit_obligation(
         deps: DepsMut,

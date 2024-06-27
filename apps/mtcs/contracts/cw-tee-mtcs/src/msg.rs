@@ -13,7 +13,6 @@ pub struct InstantiateMsg(pub QuartzInstantiateMsg);
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     Quartz(QuartzExecuteMsg),
-    FaucetMint(execute::FaucetMintMsg),
     Transfer(execute::Cw20Transfer),
     SubmitObligation(execute::SubmitObligationMsg),
     SubmitObligations(execute::SubmitObligationsMsg),
@@ -24,12 +23,8 @@ pub enum ExecuteMsg {
 pub mod execute {
     use super::*;
 
-    #[cw_serde]
-    pub struct FaucetMintMsg {
-        pub recipient: String,
-        pub amount: u64,
-    }
 
+    /// This CW20 Transfer should work with both `escrow` and `overdraft` contracts entrypoints
     #[cw_serde]
     pub struct Cw20Transfer {
         pub recipient: String,
