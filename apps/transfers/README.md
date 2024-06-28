@@ -171,13 +171,23 @@ Now we can interact with the contract, and we'll see the events and contract dat
 
 Now on your own machine, checkout the https://github.com/informalsystems/cycles-hackathon-app.
 
+Copy the `.env.example` file to `.env.local`:
 
-Make sure to create a `.env.local` file and set the contract address and TEE pubkey (see the output from `deploy.sh` and `handshake.sh`). For example:
+```
+cp .env.example .env.local
+```
+
+
+and set the relevant fields. You should have the contract address and TEE pubkey from the output of the `deploy.sh` and `handshake.sh` scripts, respectfully. The chain id is probably `testing` and the IP address for the URLs is probably `143.244.186.205`.
+Modify accordingly. For example:
 
 ```
 #.env.local
 NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=wasm1ch9ed27cdu3a4fkx37gnagm7jcthj0rggnmmjwwwe4xhwmk0d65q8fn9pz
 NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=030c25e39743fd4c7553d87873919281d567b5c328fb903cbfbe9541518736a2d2
+NEXT_PUBLIC_CHAIN_ID=testing
+NEXT_PUBLIC_CHAIN_RPC_URL=http://143.244.186.205:26657
+NEXT_PUBLIC_CHAIN_REST_URL=http://143.244.186.205:1317
 ```
 
 Install and run the app:
@@ -187,11 +197,11 @@ npm install -f
 npm run dev
 ```
 
-Note the frontend app is currently hardcoded to talk to our remote digital ocean node. 
+You can now open the app in http://localhost:3000/. 
 
 Make sure you have Keplr installed in your browser and you should now be able to use the app!
 
-You may have to go to "Manage Chain Visibility" in Keplr settings to add the `My Testing Chain`.
+You may have to go to "Manage Chain Visibility" in Keplr settings to add the `My Testing Chain` so you can see your balance.
 
 You will also need to fund any keplr account by sending funds from the CLI using your `admin` account. 
 
