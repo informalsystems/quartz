@@ -14,14 +14,12 @@ use quartz_cw::{handler::RawHandler, state::EPOCH_COUNTER};
 use crate::{
     error::ContractError,
     msg::{
-        execute::{
-            Cw20Transfer, SubmitObligationMsg, SubmitObligationsMsg,
-            SubmitSetoffsMsg,
-        },
+        execute::{Cw20Transfer, SubmitObligationMsg, SubmitObligationsMsg, SubmitSetoffsMsg},
         ExecuteMsg, InstantiateMsg, QueryMsg,
     },
     state::{
-        current_epoch_key, LiquiditySource, LiquiditySourceType, LiquiditySourcesItem, ObligationsItem, State, LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, STATE
+        current_epoch_key,  LiquiditySource, LiquiditySourceType, LiquiditySourcesItem,
+        ObligationsItem, State, LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, STATE,
     },
 };
 
@@ -36,7 +34,7 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
     escrow_address: String,
-    overdraft_address: String
+    overdraft_address: String,
 ) -> Result<Response, ContractError> {
     // must be the handled first!
     msg.0.handle_raw(deps.branch(), &env, &info)?;
@@ -46,8 +44,6 @@ pub fn instantiate(
     };
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     STATE.save(deps.storage, &state)?;
-
-    EPOCH_COUNTER.save(deps.storage, &1)?;
 
     ObligationsItem::new(&current_epoch_key(OBLIGATIONS_KEY, deps.storage)?)
         .save(deps.storage, &Default::default())?;
@@ -64,9 +60,8 @@ pub fn instantiate(
         source_type: LiquiditySourceType::Overdraft,
     };
 
-    LIQUIDITY_SOURCES.save(deps.storage, &escrow.address, &escrow)?;
-    LIQUIDITY_SOURCES.save(deps.storage, &overdraft.address, &overdraft)?;
-
+    LIQUIDITY_SOURCES.save(deps.storage, "1", &escrow)?;
+    LIQUIDITY_SOURCES.save(deps.storage, "1", &overdraft)?;
 
     Ok(Response::new()
         .add_attribute("method", "instantiate")
@@ -106,17 +101,18 @@ pub fn execute(
 }
 
 pub mod execute {
-    use std::collections::BTreeMap;
+    use std::{collections::BTreeMap, ops::DerefMut};
 
-    use cosmwasm_std::{DepsMut, Env, HexBinary, MessageInfo, Response, StdResult};
+    use cosmwasm_std::{Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult};
     use cw20_base::contract::{execute_burn, execute_mint};
-    use k256::ecdsa::VerifyingKey;
     use quartz_cw::state::{Hash, EPOCH_COUNTER};
 
     use crate::{
         state::{
-            current_epoch_key, previous_epoch_key, LiquiditySourcesItem, ObligationsItem, RawHash,
-            SetoffsItem, SettleOff, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, SETOFFS_KEY,
+            current_epoch_key, previous_epoch_key, LiquiditySource, LiquiditySourceType,
+            ObligationsItem, RawHash, SetoffsItem, SettleOff,
+            LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY,
+            SETOFFS_KEY,
         },
         ContractError,
     };
@@ -147,19 +143,22 @@ pub mod execute {
 
     pub fn append_liquidity_sources(
         deps: DepsMut,
-        liquidity_sources: Vec<HexBinary>,
+        liquidity_sources: Vec<LiquiditySource>,
     ) -> Result<(), ContractError> {
-        // validate liquidity sources as public keys
-        liquidity_sources
-            .iter()
-            .try_for_each(|ls| VerifyingKey::from_sec1_bytes(ls).map(|_| ()))?;
+        let epoch = current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?;
 
-        // store the liquidity sources
-        LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
-            .update(deps.storage, |mut ls| {
-                ls.extend(liquidity_sources);
-                Ok::<_, ContractError>(ls)
-            })?;
+        for liquidity_source in liquidity_sources {
+            // Validate the Cosmos address
+            let address = deps.api.addr_validate(&liquidity_source.address.to_string())?;
+
+            let liquidity_source = LiquiditySource {
+                address: address.clone(),
+                source_type: liquidity_source.source_type
+            };
+
+            // Save the new liquidity source
+            LIQUIDITY_SOURCES.save(deps.storage, &epoch, &liquidity_source)?;
+        }
 
         Ok(())
     }
@@ -222,15 +221,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 pub mod query {
-    use cosmwasm_std::{Deps, StdResult};
+    use cosmwasm_std::{Deps, Order, StdResult};
 
     use crate::{
         msg::{GetAllSetoffsResponse, GetLiquiditySourcesResponse},
         state::{
-            current_epoch_key, epoch_key, previous_epoch_key, LiquiditySourcesItem, SetoffsItem,
-            LIQUIDITY_SOURCES_KEY, SETOFFS_KEY,
-        },
-    };
+            current_epoch_key, epoch_key, previous_epoch_key, LiquiditySource, SetoffsItem,
+            LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, SETOFFS_KEY,
+        }
+      };
 
     pub fn get_all_setoffs(deps: Deps) -> StdResult<GetAllSetoffsResponse> {
         let setoffs = SetoffsItem::new(&previous_epoch_key(SETOFFS_KEY, deps.storage)?)
@@ -240,6 +239,7 @@ pub mod query {
         Ok(GetAllSetoffsResponse { setoffs })
     }
 
+     // Function to get liquidity sources for a specific epoch
     pub fn get_liquidity_sources(
         deps: Deps,
         epoch: Option<usize>,
@@ -249,10 +249,19 @@ pub mod query {
             Some(e) => epoch_key(LIQUIDITY_SOURCES_KEY, e)?,
         };
 
-        let liquidity_sources = LiquiditySourcesItem::new(&epoch_key)
-            .load(deps.storage)?
-            .into_iter()
+        let liquidity_sources: Vec<LiquiditySource> = LIQUIDITY_SOURCES
+            .range(deps.storage, None, None, Order::Ascending)
+            .filter_map(|result| {
+                result.ok().and_then(|(key, value)| {
+                    if key.starts_with(&epoch_key) {
+                        Some(value)
+                    } else {
+                        None
+                    }
+                })
+            })
             .collect();
+
         Ok(GetLiquiditySourcesResponse { liquidity_sources })
     }
 }

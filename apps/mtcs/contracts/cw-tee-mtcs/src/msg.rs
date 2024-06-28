@@ -4,7 +4,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::HexBinary;
 use quartz_cw::prelude::*;
 
-use crate::state::{RawHash, SettleOff};
+use crate::state::{LiquiditySource, RawHash, SettleOff};
 
 #[cw_serde]
 pub struct InstantiateMsg(pub QuartzInstantiateMsg);
@@ -13,10 +13,13 @@ pub struct InstantiateMsg(pub QuartzInstantiateMsg);
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     Quartz(QuartzExecuteMsg),
+
     Transfer(execute::Cw20Transfer),
+    
     SubmitObligation(execute::SubmitObligationMsg),
     SubmitObligations(execute::SubmitObligationsMsg),
     SubmitSetoffs(execute::SubmitSetoffsMsg),
+    
     InitClearing,
 }
 
@@ -42,7 +45,7 @@ pub mod execute {
     #[cw_serde]
     pub struct SubmitObligationsMsg {
         pub obligations: Vec<SubmitObligationMsg>,
-        pub liquidity_sources: Vec<HexBinary>,
+        pub liquidity_sources: Vec<LiquiditySource>,
     }
 
     #[cw_serde]
@@ -78,8 +81,9 @@ pub struct GetAllSetoffsResponse {
 
 #[cw_serde]
 pub struct GetLiquiditySourcesResponse {
-    pub liquidity_sources: Vec<HexBinary>,
+    pub liquidity_sources: Vec<LiquiditySource>,
 }
+
 
 #[cfg(test)]
 mod tests {

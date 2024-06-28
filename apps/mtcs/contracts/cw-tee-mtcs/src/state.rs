@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, HexBinary, StdError, Storage};
@@ -10,8 +10,6 @@ pub type RawCipherText = HexBinary;
 
 pub type ObligationsItem<'a> = Item<'a, BTreeMap<RawHash, RawCipherText>>;
 pub type SetoffsItem<'a> = Item<'a, BTreeMap<RawHash, SettleOff>>;
-// pub type LiquiditySourcesItem<'a> = Item<'a, BTreeSet<HexBinary>>;
-pub type LiquiditySourcesItem<'a> = Item<'a, BTreeSet<LiquiditySource>>;
 
 #[cw_serde]
 pub struct State {
@@ -49,8 +47,8 @@ pub struct LiquiditySource {
 pub const STATE: Item<State> = Item::new("state");
 pub const OBLIGATIONS_KEY: &str = "obligations";
 pub const SETOFFS_KEY: &str = "setoffs";
-// pub const LIQUIDITY_SOURCES_KEY: &str = "liquidity_sources";
-pub const LIQUIDITY_SOURCES: Map<&Addr, LiquiditySource> = Map::new("liquidity_sources");
+pub const LIQUIDITY_SOURCES_KEY: &str = "epoch_liquidity_sources";
+pub const LIQUIDITY_SOURCES: Map<&str, LiquiditySource> = Map::new("liquidity_sources");
 
 pub fn current_epoch_key(key: &str, storage: &dyn Storage) -> Result<String, StdError> {
     epoch_key(key, EPOCH_COUNTER.load(storage)?)
@@ -62,18 +60,4 @@ pub fn previous_epoch_key(key: &str, storage: &dyn Storage) -> Result<String, St
 
 pub fn epoch_key(key: &str, epoch: usize) -> Result<String, StdError> {
     Ok(format!("{}/{key}", epoch))
-}
-
-
-
-pub fn obligations_key(epoch: u64) -> String {
-    format!("obligations_{}", epoch)
-}
-
-pub fn setoffs_key(epoch: u64) -> String {
-    format!("setoffs_{}", epoch)
-}
-
-pub fn liquidity_sources_key(epoch: u64) -> String {
-    format!("liquidity_sources_{}", epoch)
 }
