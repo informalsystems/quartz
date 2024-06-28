@@ -2,6 +2,7 @@ use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
     Uint128,
 };
+
 use cw2::set_contract_version;
 use cw20_base::{
     contract::query_balance as cw20_query_balance,
@@ -113,10 +114,11 @@ pub fn execute(
 pub mod execute {
     use std::collections::BTreeMap;
 
-    use cosmwasm_std::{DepsMut, Env, HexBinary, MessageInfo, Response, StdResult};
+    use cosmwasm_std::{Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult, SubMsg, WasmMsg, Int128, to_json_binary};
     use cw20_base::contract::{execute_burn, execute_mint};
     use k256::ecdsa::VerifyingKey;
     use quartz_cw::state::{Hash, EPOCH_COUNTER};
+    use crate::imports;
 
     use crate::{
         state::{
@@ -200,32 +202,57 @@ pub mod execute {
         SetoffsItem::new(&previous_epoch_key(SETOFFS_KEY, deps.storage)?)
             .save(deps.storage, &setoffs_enc)?;
 
+        let mut messages: Vec<WasmMsg> = vec![];
         for (_, so) in setoffs_enc {
             if let SettleOff::Transfer(t) = so {
-                let info = MessageInfo {
-                    sender: env.contract.address.clone(),
-                    funds: vec![],
+                // let info = MessageInfo {
+                //     sender: env.contract.address.clone(),
+                //     funds: vec![],
+                // };            
+
+                // execute_mint(
+                //     deps.branch(),
+                //     env.clone(),
+                //     info.clone(),
+                //     t.payee.to_string(),
+                //     t.amount.into(),
+                // )?;
+                let payee_checked: Addr = deps.api.addr_validate(&t.payee)?;
+
+                let increase_msg = WasmMsg::Execute { 
+                    contract_addr: "overdraft".to_owned(), 
+                    msg: to_json_binary(&imports::IncreaseBalance {
+                        receiver: payee_checked,
+                        amount: t.amount.into()
+                    })?, 
+                    funds: vec![] 
                 };
+                
+                // MTCS does not listen for a reply. Failures will just revert this action.
 
-                execute_mint(
-                    deps.branch(),
-                    env.clone(),
-                    info.clone(),
-                    t.payee.to_string(),
-                    t.amount.into(),
-                )?;
 
-                let payer = deps.api.addr_validate(&t.payer.to_string())?;
-                let info = MessageInfo {
-                    sender: payer,
-                    funds: vec![],
+
+                // execute_burn(deps.branch(), env.clone(), info, t.amount.into())?;
+                let payer_checked = deps.api.addr_validate(&t.payer)?;
+                
+                let decrease_msg = WasmMsg::Execute { 
+                    contract_addr: "overdraft".to_owned(), 
+                    msg: to_json_binary(&imports::DecreaseBalance {
+                        receiver: payer_checked,
+                        amount: t.amount.into()
+                    })?, 
+                    funds: vec![] 
                 };
+                // MTCS does not listen for a reply. Failures will just revert this action.
 
-                execute_burn(deps.branch(), env.clone(), info, t.amount.into())?;
+                messages.push(increase_msg);
+                messages.push(decrease_msg);
             }
         }
 
-        Ok(Response::new().add_attribute("action", "submit_setoffs"))
+        Ok(Response::new()
+            .add_messages(messages)
+            .add_attribute("action", "submit_setoffs"))
     }
 
     pub fn init_clearing(deps: DepsMut) -> Result<Response, ContractError> {
