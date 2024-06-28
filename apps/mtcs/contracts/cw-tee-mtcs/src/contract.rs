@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
     Uint128,
@@ -19,8 +21,7 @@ use crate::{
         ExecuteMsg, InstantiateMsg, QueryMsg,
     },
     state::{
-        current_epoch_key, LiquiditySourcesItem, ObligationsItem, State, LIQUIDITY_SOURCES_KEY,
-        OBLIGATIONS_KEY, STATE,
+        current_epoch_key, LiquiditySource, LiquiditySourceType, LiquiditySourcesItem, ObligationsItem, State, LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, STATE
     },
 };
 
@@ -34,6 +35,8 @@ pub fn instantiate(
     env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
+    escrow_address: String,
+    overdraft_address: String
 ) -> Result<Response, ContractError> {
     // must be the handled first!
     msg.0.handle_raw(deps.branch(), &env, &info)?;
@@ -49,24 +52,21 @@ pub fn instantiate(
     ObligationsItem::new(&current_epoch_key(OBLIGATIONS_KEY, deps.storage)?)
         .save(deps.storage, &Default::default())?;
 
-
-    ///TODO - Move from 1 source to 2 sources namely `escrow` and `overdraft` contracts
-    LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
-        .save(deps.storage, &Default::default())?;
-
-    // store token info using cw20-base format
-    let data = TokenInfo {
-        name: "USD".to_string(),
-        symbol: "!$".to_string(),
-        decimals: 0,
-        total_supply: Uint128::zero(),
-        // set self as minter, so we can properly execute mint and burn
-        mint: Some(MinterData {
-            minter: env.contract.address.clone(),
-            cap: None,
-        }),
+    // set escrow contract address
+    let escrow = LiquiditySource {
+        address: deps.api.addr_validate(&escrow_address)?,
+        source_type: LiquiditySourceType::Escrow,
     };
-    TOKEN_INFO.save(deps.storage, &data)?;
+
+    // set overdraft contract address
+    let overdraft = LiquiditySource {
+        address: deps.api.addr_validate(&overdraft_address)?,
+        source_type: LiquiditySourceType::Overdraft,
+    };
+
+    LIQUIDITY_SOURCES.save(deps.storage, &escrow.address, &escrow)?;
+    LIQUIDITY_SOURCES.save(deps.storage, &overdraft.address, &overdraft)?;
+
 
     Ok(Response::new()
         .add_attribute("method", "instantiate")
