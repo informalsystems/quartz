@@ -100,10 +100,11 @@ pub fn execute(
     }
 }
 
+
 pub mod execute {
     use std::{collections::BTreeMap, ops::DerefMut};
 
-    use cosmwasm_std::{Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult};
+    use cosmwasm_std::{to_json_binary, to_json_vec, Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult, SubMsg, WasmMsg};
     use cw20_base::contract::{execute_burn, execute_mint};
     use quartz_cw::state::{Hash, EPOCH_COUNTER};
 
@@ -168,38 +169,64 @@ pub mod execute {
         env: Env,
         setoffs_enc: BTreeMap<RawHash, SettleOff>,
     ) -> Result<Response, ContractError> {
-        // store the `BTreeMap<RawHash, RawCipherText>`
+        // Store the setoffs
         SetoffsItem::new(&previous_epoch_key(SETOFFS_KEY, deps.storage)?)
             .save(deps.storage, &setoffs_enc)?;
-
+    
+        let mut messages = vec![];
+    
         for (_, so) in setoffs_enc {
             if let SettleOff::Transfer(t) = so {
-                let info = MessageInfo {
-                    sender: env.contract.address.clone(),
-                    funds: vec![],
-                };
-
-                execute_mint(
-                    deps.branch(),
-                    env.clone(),
-                    info.clone(),
-                    t.payee.to_string(),
-                    t.amount.into(),
-                )?;
-
-                let payer = deps.api.addr_validate(&t.payer.to_string())?;
-                let info = MessageInfo {
-                    sender: payer,
-                    funds: vec![],
-                };
-
-                execute_burn(deps.branch(), env.clone(), info, t.amount.into())?;
+                // Check if the payer is a liquidity source
+                let liquidity_source = LIQUIDITY_SOURCES
+                    .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+                    .find_map(|res| {
+                        res.ok().and_then(|(_, source)| {
+                            if source.address == Addr::unchecked(&t.payer) {
+                                Some(source)
+                            } else {
+                                None
+                            }
+                        })
+                    });
+    
+                if let Some(source) = liquidity_source {
+                    // Execute transfer based on the liquidity source type
+                    let msg = match source.source_type {
+                        LiquiditySourceType::Escrow => SubMsg::new(WasmMsg::Execute {
+                            contract_addr: source.address.to_string(),
+                            msg: to_json_binary(&EscrowExecuteMsg::TransferFromTender { // TODO Make sure we use the same interface in both contracts
+                                sender: t.payer.to_string(),
+                                receiver: t.payee.to_string(),
+                                amount: vec![(String::from("token"), t.amount.into())],
+                            })?,
+                            funds: vec![],
+                        }),
+                        LiquiditySourceType::Overdraft => SubMsg::new(WasmMsg::Execute {
+                            contract_addr: source.address.to_string(),
+                            msg: to_json_binary(&OverdraftExecuteMsg::TransferCreditFromTender {
+                                sender: Addr::unchecked(t.payer),
+                                receiver: Addr::unchecked(t.payee),
+                                amount: t.amount.into(),
+                            })?,
+                            funds: vec![],
+                        }),
+                        LiquiditySourceType::External => {
+                            return Err(ContractError::UnsupportedLiquiditySource {})
+                        }
+                    };
+                    messages.push(msg);
+                } else {
+                    return Err(ContractError::LiquiditySourceNotFound {});
+                }
             }
         }
-
-        Ok(Response::new().add_attribute("action", "submit_setoffs"))
+    
+        Ok(Response::new()
+            .add_submessages(messages)
+            .add_attribute("action", "submit_setoffs"))
     }
-
+    
     pub fn init_clearing(deps: DepsMut) -> Result<Response, ContractError> {
         EPOCH_COUNTER.update(deps.storage, |mut counter| -> StdResult<_> {
             counter += 1;
@@ -207,6 +234,7 @@ pub mod execute {
         })?;
         Ok(Response::new().add_attribute("action", "init_clearing"))
     }
+
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

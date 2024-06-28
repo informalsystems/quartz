@@ -19,6 +19,9 @@ pub enum ContractError {
     #[error("Duplicate entry found")]
     DuplicateEntry,
 
+    #[error("No entry found")]
+    NoLiquiditySourcesFound,
+
     #[error("Not Secp256K1")]
     K256(K256Error),
 
