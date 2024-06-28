@@ -38,12 +38,6 @@ pub struct RunClearingMessage {
     liquidity_sources: Vec<HexBinary>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct AttestedMsg<M> {
-    msg: M,
-    quote: Vec<u8>,
-}
-
 impl<A> MtcsService<A>
 where
     A: Attestor,
@@ -119,6 +113,7 @@ where
 
         let attested_msg = RawAttested { msg, attestation };
         let message = serde_json::to_string(&attested_msg).unwrap();
+
         Ok(Response::new(RunClearingResponse { message }))
     }
 }

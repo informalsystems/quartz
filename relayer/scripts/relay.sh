@@ -8,7 +8,7 @@ usage() {
   exit 1
 }
 
-ROOT=${ROOT:-$(pwd)}
+ROOT=${ROOT:-$HOME}
 DIR_QUARTZ="$ROOT/cycles-quartz"
 DIR_PROTO="$DIR_QUARTZ/core/quartz-proto/proto"
 IAS_API_KEY="669244b3e6364b5888289a11d2a1726d"
