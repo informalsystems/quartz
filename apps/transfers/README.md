@@ -157,7 +157,7 @@ Now we can interact with the contract, and we'll see the events and contract dat
 Now on your own machine, checkout the https://github.com/informalsystems/cycles-hackathon-app.
 
 
-Make sure to create a `.env.local` file and set the contract address and TEE pubkey (see the output from `init.sh` and `handshake.sh`). For example:
+Make sure to create a `.env.local` file and set the contract address and TEE pubkey (see the output from `deploy.sh` and `handshake.sh`). For example:
 
 ```
 #.env.local
@@ -177,6 +177,8 @@ Note the frontend app is currently hardcoded to talk to our remote digital ocean
 Make sure you have Keplr installed in your browser and you should now be able to use the app!
 
 You may have to go to "Manage Chain Visibility" in Keplr settings to add the `My Testing Chain`.
+
+You will also need to fund any keplr account by sending funds from the CLI using your `admin` account. 
 
 Then you should be able to deposit, transfer, and withdraw using different Keplr accounts. And everything will get processed automatically by the transfer.sh script we have running on the enclave host!
 
