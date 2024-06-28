@@ -69,6 +69,21 @@ Finally, you neeed `websocat`:
 cargo install websocat
 ```
 
+### Fetch the Repo
+
+While the repos are private you will need an ssh key registered on github in order to fetch them. Run `ssh-keygen` and just follow the defaults. On Github, go to Settings -> SSH and GPG Keys -> New SSH Key. Run `cat ~/.ssh/id_rsa.pub` on the machine and copy and paste the result into Github.
+
+This key will now have full access to your github account so its a good idea to remove it when you're done and re-add everytime you need to push/pull the repo. 
+
+Now clone the repo:
+
+```
+git clone ssh://git@github.com/informalsystems/cycles-quartz
+cd cycles-quartz
+```
+
+Tada!
+
 ### Setup Wasmd Accounts
 
 Run `wasmd init <your name>` to initialize the local wasmd folder.
