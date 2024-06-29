@@ -32,15 +32,19 @@ echo "subscribe to events"
         continue
     fi 
 
-    if echo "$msg" | jq 'has("error")' > /dev/null; then
-        echo "... error msg $msg"
-        echo "---------------------------------------------------------"
-        echo "... waiting for event"
-        continue
-    fi 
+    # TODO - Some reason this is saying ERROR when its fine, will fix
+    #if echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq 'has("error")' > /dev/null; then
+     #   echo "... error msg $msg"
+     #   echo "---------------------------------------------------------"
+     #   echo "... waiting for event"
+     #   continue
+    #fi 
 
-    if echo "$msg" | jq '.result.events[].type' | grep -q '"wasm-transfer"'; then
-        echo "... received wasm-transfer event! "
+    CLEAN_MSG=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq '.result.events')
+    echo "CLEAN" $CLEAN_MSG
+
+    if echo "$CLEAN_MSG" | grep -q 'wasm-transfer'; then
+        echo "... received wasm-transfer event!"
         echo $msg 
 
         echo "... fetching requests"
@@ -65,8 +69,8 @@ echo "subscribe to events"
         echo " ... done"
         echo "---------------------------------------------------------"
         echo "... waiting for event"
-    elif echo "$msg" | jq '.result.events[].type' | grep -q '"wasm-query_balance"'; then
-        echo "... received wasm-query_balance event! "
+    elif echo "$CLEAN_MSG" | grep -q 'wasm-query_balance'; then
+        echo "... received wasm-query_balance event!"
         echo $msg 
 
         echo "... fetching state"
@@ -74,7 +78,9 @@ echo "subscribe to events"
         STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
 
         # Extract the address from the event
-        ADDRESS=$(echo "$msg" | jq -r '.result.events[] | select(.type == "wasm-query_balance") | .attributes[] | select(.key == "address") | .value')
+        ADDRESS=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq -r '.result.events["message.sender"]'[0])
+
+        echo "ADDRESS BABY" $ADDRESS
 
         # Create the enclave request with state and address
         export ENCLAVE_REQUEST=$(jq -nc --argjson state "$STATE" --arg address "$ADDRESS" '$ARGS.named')
@@ -85,10 +91,14 @@ echo "subscribe to events"
         cd $ROOT/cycles-quartz/apps/transfers/enclave
 
         echo "... executing query balance"
+
         export BALANCE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11090' transfers.Settlement/Query | jq .message | jq -R 'fromjson | fromjson' | jq -c )
 
         echo "... submitting update"
-
+        # TODO - Fails here with:
+            # jq: error (at <stdin>:1): null (null) only strings can be parsed
+            # ... submitting update
+            # Error: payload msg: invalid
         $CMD tx wasm execute $CONTRACT "{\"store_balance\": "$BALANCE" }" --chain-id testing --from admin --node http://$NODE_URL -y
 
         echo " ... done"
