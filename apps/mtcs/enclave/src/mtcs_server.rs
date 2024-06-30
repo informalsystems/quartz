@@ -5,9 +5,10 @@ use std::{
 
 use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
 use cosmwasm_std::HexBinary;
+//TODO: get rid of this
 use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
-    state::{RawCipherText, RawHash, SettleOff, Transfer},
+    state::{RawHash, SettleOff, Transfer},
 };
 use cycles_sync::types::RawObligation;
 use ecies::{decrypt, encrypt};
@@ -16,27 +17,33 @@ use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
+use quartz_cw::msg::execute::attested::RawAttested;
+use quartz_enclave::attestor::Attestor;
+use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
-use crate::{
-    attestor::Attestor,
-    proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
-};
+use crate::proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse};
 
-const BANK_PK: &str = "0216254f4636c4e68ae22d98538851a46810b65162fe37bf57cba6d563617c913e";
+pub type RawCipherText = HexBinary;
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
     sk: Arc<Mutex<Option<SigningKey>>>,
-    _attestor: A,
+    attestor: A,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RunClearingMessage {
+    intents: BTreeMap<RawHash, RawCipherText>,
+    liquidity_sources: Vec<HexBinary>,
 }
 
 impl<A> MtcsService<A>
 where
     A: Attestor,
 {
-    pub fn new(sk: Arc<Mutex<Option<SigningKey>>>, _attestor: A) -> Self {
-        Self { sk, _attestor }
+    pub fn new(sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+        Self { sk, attestor }
     }
 }
 
@@ -49,10 +56,29 @@ where
         &self,
         request: Request<RunClearingRequest>,
     ) -> TonicResult<Response<RunClearingResponse>> {
-        let message = request.into_inner().message;
+        // Pass in JSON of Requests vector and the STATE
 
-        let digests_ciphertexts: BTreeMap<RawHash, RawCipherText> =
-            serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?;
+        // Serialize into Requests enum
+        // Loop through, decrypt the ciphertexts
+
+        // Read the state blob from chain
+
+        // Decrypt and deserialize
+
+        // Loop through requests and apply onto state
+
+        // Encrypt state
+
+        // Create withdraw requests
+
+        // Send to chain
+
+        let message: RunClearingMessage = {
+            let message = request.into_inner().message;
+            serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
+        };
+
+        let digests_ciphertexts = message.intents;
         let (digests, ciphertexts): (Vec<_>, Vec<_>) = digests_ciphertexts.into_iter().unzip();
 
         let sk = self.sk.lock().unwrap();
@@ -64,37 +90,54 @@ where
         let mut mtcs = ComplexIdMtcs::wrapping(DefaultMtcs::new(PrimalDual::default()));
         let setoffs: Vec<SimpleSetoff<_, i64>> = mtcs.run(obligations).unwrap();
 
+        let liquidity_sources: Vec<_> = message
+            .liquidity_sources
+            .into_iter()
+            .map(|ls| VerifyingKey::from_sec1_bytes(&ls))
+            .collect::<Result<_, _>>()
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+
         let setoffs_enc: BTreeMap<RawHash, SettleOff> = setoffs
             .into_iter()
-            .map(into_settle_offs)
+            .map(|so| into_settle_offs(so, &liquidity_sources))
             .zip(digests)
             .map(|(settle_off, digest)| (digest, settle_off))
             .collect();
 
-        let message = serde_json::to_string(&SubmitSetoffsMsg { setoffs_enc }).unwrap();
+        let msg = SubmitSetoffsMsg { setoffs_enc };
+
+        let attestation = self
+            .attestor
+            .quote(msg.clone())
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let attested_msg = RawAttested { msg, attestation };
+        let message = serde_json::to_string(&attested_msg).unwrap();
+
         Ok(Response::new(RunClearingResponse { message }))
     }
 }
 
-fn into_settle_offs(so: SimpleSetoff<HexBinary, i64>) -> SettleOff {
+fn into_settle_offs(
+    so: SimpleSetoff<HexBinary, i64>,
+    liquidity_sources: &[VerifyingKey],
+) -> SettleOff {
     let debtor_pk = VerifyingKey::from_sec1_bytes(&so.debtor).unwrap();
     let creditor_pk = VerifyingKey::from_sec1_bytes(&so.creditor).unwrap();
 
-    let bank_pk = VerifyingKey::from_sec1_bytes(&hex::decode(BANK_PK).unwrap()).unwrap();
-    let bank_addrs = wasm_address(bank_pk);
-    if debtor_pk == bank_pk {
+    if let Some(ls_pk) = liquidity_sources.iter().find(|ls| ls == &&debtor_pk) {
         // A setoff on a tender should result in the creditor's (i.e. the tender receiver) balance
         // decreasing by the setoff amount
         SettleOff::Transfer(Transfer {
             payer: wasm_address(creditor_pk),
-            payee: bank_addrs,
+            payee: wasm_address(*ls_pk),
             amount: so.set_off as u64,
         })
-    } else if creditor_pk == bank_pk {
+    } else if let Some(ls_pk) = liquidity_sources.iter().find(|ls| ls == &&creditor_pk) {
         // A setoff on an acceptance should result in the debtor's (i.e. the acceptance initiator)
         // balance increasing by the setoff amount
         SettleOff::Transfer(Transfer {
-            payer: bank_addrs,
+            payer: wasm_address(*ls_pk),
             payee: wasm_address(debtor_pk),
             amount: so.set_off as u64,
         })

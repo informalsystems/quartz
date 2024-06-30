@@ -50,7 +50,7 @@ impl CertificateChainVerifier for TlsCertificateChainVerifier {
             .map(|enc_crl| parse_x509_crl(enc_crl.as_ref()))
             .collect::<Result<Vec<_>, _>>();
         .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-	 */	
+	 */
 
 	let v : Vec<_> = cert_chain.to_vec();
 	let mut issuers : Vec<usize> = (1..v.len()).collect();
@@ -87,7 +87,6 @@ mod test {
             .iter()
             .map(|crl| CertificateList::from_der(crl).expect("failed to parse CRL"))
             .collect::<Vec<_>>();
-
         let verifier = TlsCertificateChainVerifier::new(ROOT_CA);
         assert!(verifier
             .verify_certificate_chain(chain.iter(), crls.iter(), None)

@@ -1,20 +1,26 @@
 [package]
 name = "mtcs-intent"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
+readme = "README.md"
 
 [dependencies]
-clap = { version = "4.0.32", features = ["derive"] }
-cosmrs = "0.16.0"
-cosmwasm-std = "1.5.2"
-ecies = { version = "0.2.6", default-features = false, features = ["pure"] }
-hex = "0.4.3"
-k256 = { version = "0.13.2", default-features = false, features = ["ecdsa", "alloc", "serde"] }
-rand = "0.8.5"
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.114"
-sha2 = "0.10.8"
-bip32 = { version = "0.5.1" , features = ["alloc"] }
+# external
+bip32.workspace = true
+clap.workspace = true
+ecies.workspace = true
+hex.workspace = true
+k256.workspace = true
+rand = { workspace = true, default-features = true }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
 
+# cosmos
+cosmrs.workspace = true
+cosmwasm-std.workspace = true

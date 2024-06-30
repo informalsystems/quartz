@@ -4,10 +4,11 @@ use uuid::Uuid;
 use crate::{
     obligato_client::Client,
     types::{ObligatoObligation, ObligatoSetOff},
-    BANK_DEBTOR_ID,
 };
 
-pub struct MockClient;
+pub struct MockClient {
+    pub bank: Uuid,
+}
 
 #[async_trait]
 impl Client for MockClient {
@@ -25,7 +26,7 @@ impl Client for MockClient {
             // tender: $ --10--> 1
             ObligatoObligation {
                 id: Uuid::from_u128(2),
-                debtor_id: Uuid::parse_str(BANK_DEBTOR_ID).unwrap(),
+                debtor_id: self.bank,
                 creditor_id: Uuid::from_u128(1),
                 amount: 10,
             },

@@ -1,11 +1,18 @@
 [package]
 name = "quartz-proto"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
+readme = "README.md"
 
 [dependencies]
-prost = "0.12"
-tonic = "0.11"
+# external
+prost.workspace = true
+tonic.workspace = true
 
 [build-dependencies]
-tonic-build = "0.11"
+tonic-build.workspace = true

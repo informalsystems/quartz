@@ -6,6 +6,9 @@ use displaydoc::Display;
 use reqwest::Url;
 use subtle_encoding::{bech32::decode as bech32_decode, Error as Bech32DecodeError};
 use thiserror::Error;
+use uuid::Uuid;
+
+use crate::ADDRESS_PREFIX;
 
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about)]
@@ -17,6 +20,17 @@ pub struct Cli {
     /// The host to which to bind the API server.
     #[arg(short = 'N', long, default_value = "http://127.0.0.1:26657")]
     pub node: Url,
+
+    /// Obligato API server.
+    #[arg(long, default_value = "https://bisenzone.obligato.network")]
+    pub obligato_url: Url,
+
+    /// Obligato key.
+    #[arg(
+        long,
+        default_value = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZXNzdGpjdG16bXVqaW55cGJlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwMzAxOTE0OSwiZXhwIjoyMDE4NTk1MTQ5fQ.EV6v5J3dz8WHAdTK4_IEisKzF-n1Gqyn4wCce_Zrqf4"
+    )]
+    pub obligato_key: String,
 
     /// Path to output CSV file
     #[arg(short, long)]
@@ -50,9 +64,17 @@ pub enum CliCommand {
         /// epoch pk
         #[arg(short, long)]
         epoch_pk: String,
+        /// liquidity sources' UUIDs
+        #[arg(short, long, num_args = 1.., value_parser = parse_uuid)]
+        liquidity_sources: Vec<Uuid>,
     },
     /// Sync set-offs
     SyncSetOffs,
+    /// Get address for Uuid
+    GetAddress {
+        #[arg(long, value_parser = parse_uuid)]
+        uuid: Uuid,
+    },
 }
 
 #[derive(Display, Error, Debug)]
@@ -65,9 +87,13 @@ pub enum AddressError {
 
 fn wasm_address(address_str: &str) -> Result<AccountId, AddressError> {
     let (hr, _) = bech32_decode(address_str).map_err(AddressError::NotBech32Encoded)?;
-    if hr != "wasm" {
+    if hr != ADDRESS_PREFIX {
         return Err(AddressError::HumanReadableMismatch(hr));
     }
 
     Ok(address_str.parse().unwrap())
+}
+
+fn parse_uuid(uuid_str: &str) -> Result<Uuid, String> {
+    Uuid::parse_str(uuid_str).map_err(|e| e.to_string())
 }
