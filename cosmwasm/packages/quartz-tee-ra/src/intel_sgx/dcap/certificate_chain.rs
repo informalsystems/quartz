@@ -1,9 +1,7 @@
-use der::{pem::LineEnding,DateTime, EncodePem};
+use der::{pem::LineEnding, DateTime, EncodePem};
 use mc_attestation_verifier::{CertificateChainVerifier, CertificateChainVerifierError};
 use x509_cert::{crl::CertificateList, Certificate};
-use x509_parser::{parse_x509_certificate,pem::parse_x509_pem};
-
-
+use x509_parser::{parse_x509_certificate, pem::parse_x509_pem};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
 pub struct TlsCertificateChainVerifier;
@@ -33,35 +31,34 @@ impl CertificateChainVerifier for TlsCertificateChainVerifier {
             .map(|enc_cert| parse_x509_pem(enc_cert.as_ref()))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-	let cert_chain = pem_chain
-	    .iter()
-	    .map(|pem| parse_x509_certificate(&pem.1.contents))
-	    .collect::<Result<Vec< _>, _>>()
-            .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-	// Skip applying the Certificate Revocation List entirely
-	/*
-        let enc_crls = crls
-            .into_iter()
-            .map(|crl| der_encode(crl))
+        let cert_chain = pem_chain
+            .iter()
+            .map(|pem| parse_x509_certificate(&pem.1.contents))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-        let _crls = enc_crls
-            .iter()
-            .map(|enc_crl| parse_x509_crl(enc_crl.as_ref()))
-            .collect::<Result<Vec<_>, _>>();
-        .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-	 */
+        // Skip applying the Certificate Revocation List entirely
+        /*
+           let enc_crls = crls
+               .into_iter()
+               .map(|crl| der_encode(crl))
+               .collect::<Result<Vec<_>, _>>()
+               .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
+           let _crls = enc_crls
+               .iter()
+               .map(|enc_crl| parse_x509_crl(enc_crl.as_ref()))
+               .collect::<Result<Vec<_>, _>>();
+           .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
+        */
 
-	let v : Vec<_> = cert_chain.to_vec();
-	let mut issuers : Vec<usize> = (1..v.len()).collect();
-	issuers.push(v.len()-1);
-	let subjects : Vec<usize> = (0..v.len()).collect();
-	for (i,s) in std::iter::zip(issuers,subjects) {
-	    let r = v[s].1.verify_signature(
-		Some(v[i].1.public_key()));
-	    r.map_err(|_| CertificateChainVerifierError::SignatureVerification)?
-	}
-	Ok(())
+        let v: Vec<_> = cert_chain.to_vec();
+        let mut issuers: Vec<usize> = (1..v.len()).collect();
+        issuers.push(v.len() - 1);
+        let subjects: Vec<usize> = (0..v.len()).collect();
+        for (i, s) in std::iter::zip(issuers, subjects) {
+            let r = v[s].1.verify_signature(Some(v[i].1.public_key()));
+            r.map_err(|_| CertificateChainVerifierError::SignatureVerification)?
+        }
+        Ok(())
     }
 }
 
@@ -90,9 +87,9 @@ mod test {
         let verifier = TlsCertificateChainVerifier::new(ROOT_CA);
         assert!(verifier
             .verify_certificate_chain(chain.iter(), crls.iter(), None)
-		.is_ok());
+            .is_ok());
     }
-    
+
     #[test]
     fn invalid_cert_chain() {
         let chain = [LEAF_CERT, ROOT_CA]
@@ -109,12 +106,12 @@ mod test {
             Err(CertificateChainVerifierError::SignatureVerification)
         );
     }
-    
+
     #[test]
     #[ignore]
     fn unordered_cert_chain_succeeds() {
         let chain = [PROCESSOR_CA, ROOT_CA, LEAF_CERT]
-                .iter()
+            .iter()
             .map(|cert| Certificate::from_pem(cert).expect("failed to parse cert"))
             .collect::<Vec<_>>();
         let crls = [ROOT_CRL, PROCESSOR_CRL]
@@ -123,9 +120,9 @@ mod test {
             .collect::<Vec<_>>();
         let verifier = TlsCertificateChainVerifier::new(ROOT_CA);
         assert!(verifier
-                .verify_certificate_chain(chain.iter(), crls.iter(), None)
-                .is_ok());
+            .verify_certificate_chain(chain.iter(), crls.iter(), None)
+            .is_ok());
     }
-    
+
     // TODO(hu55a1n1) - add [PKITS tests](https://csrc.nist.gov/projects/pki-testing)
 }
