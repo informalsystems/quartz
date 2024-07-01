@@ -63,11 +63,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Server::builder()
         .add_service(CoreServer::new(CoreService::new(
+            config.clone(),
+            sk.clone(),
+            EpidAttestor,
+        )))
+        .add_service(MtcsServer::new(MtcsService::new(
             config,
             sk.clone(),
             EpidAttestor,
         )))
-        .add_service(MtcsServer::new(MtcsService::new(sk.clone(), EpidAttestor)))
         .serve(args.rpc_addr)
         .await?;
 

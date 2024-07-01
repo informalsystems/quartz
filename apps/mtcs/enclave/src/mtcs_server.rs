@@ -17,8 +17,8 @@ use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
-use quartz_cw::msg::execute::attested::RawAttested;
-use quartz_enclave::attestor::Attestor;
+use quartz_cw::{msg::execute::attested::RawAttested, state::Config};
+use quartz_enclave::{attestor::Attestor, server::ProofOfPublication};
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
@@ -28,6 +28,7 @@ pub type RawCipherText = HexBinary;
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
+    config: Config,
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
 }
@@ -42,8 +43,12 @@ impl<A> MtcsService<A>
 where
     A: Attestor,
 {
-    pub fn new(sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
-        Self { sk, attestor }
+    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+        Self {
+            config,
+            sk,
+            attestor,
+        }
     }
 }
 
@@ -56,27 +61,20 @@ where
         &self,
         request: Request<RunClearingRequest>,
     ) -> TonicResult<Response<RunClearingResponse>> {
-        // Pass in JSON of Requests vector and the STATE
-
-        // Serialize into Requests enum
-        // Loop through, decrypt the ciphertexts
-
-        // Read the state blob from chain
-
-        // Decrypt and deserialize
-
-        // Loop through requests and apply onto state
-
-        // Encrypt state
-
-        // Create withdraw requests
-
-        // Send to chain
-
-        let message: RunClearingMessage = {
+        let message: ProofOfPublication<RunClearingMessage> = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
+
+        let (value, message) = message
+            .verify(self.config.light_client_opts())
+            .map_err(Status::failed_precondition)?;
+
+        let value_matches_msg =
+            serde_json::to_string(&message.intents).is_ok_and(|s| s.as_bytes() == &value);
+        if !value_matches_msg {
+            return Err(Status::failed_precondition("proof verification"));
+        }
 
         let digests_ciphertexts = message.intents;
         let (digests, ciphertexts): (Vec<_>, Vec<_>) = digests_ciphertexts.into_iter().unzip();

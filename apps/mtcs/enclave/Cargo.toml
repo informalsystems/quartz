@@ -21,9 +21,9 @@ k256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
 schemars = "0.8.15"
 serde = { version = "1.0.189", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.49" }
-tonic = { version = "0.11.0"}
+tonic = { version = "0.11.0" }
 tonic-build = "0.11.0"
-cosmrs = { version = "0.16.0"}
+cosmrs = { version = "0.16.0" }
 cosmwasm-std = { version = "1.5.2", default-features = false }
 serde_json = { version = "1.0.94", default-features = false }
 ecies = { version = "0.2.3", default-features = false, features = ["pure"] }
@@ -40,9 +40,10 @@ cycles-sync.workspace = true
 mtcs.workspace = true
 
 # quartz
+cw-proof = { path = "../../../core/light-client-proofs/cw-proof" }
 quartz-cw = { path = "../../../cosmwasm/packages/quartz-cw" }
 quartz-proto = { path = "../../../core/quartz-proto" }
-quartz-enclave = { path = "../../../core/quartz"}
+quartz-enclave = { path = "../../../core/quartz" }
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"
