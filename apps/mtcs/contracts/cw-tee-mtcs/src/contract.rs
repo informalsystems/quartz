@@ -121,6 +121,7 @@ pub mod execute {
     use quartz_cw::state::{Hash, EPOCH_COUNTER};
     use crate::imports;
 
+    use crate::state::STATE;
     use crate::{
         state::{
             current_epoch_key, previous_epoch_key, LiquiditySourcesItem, ObligationsItem, RawHash,
@@ -203,6 +204,8 @@ pub mod execute {
         SetoffsItem::new(&previous_epoch_key(SETOFFS_KEY, deps.storage)?)
             .save(deps.storage, &setoffs_enc)?;
 
+        let overdrafts = STATE.load(deps.storage)?.overdraft;
+
         let mut messages: Vec<WasmMsg> = vec![];
         for (_, so) in setoffs_enc {
             if let SettleOff::Transfer(t) = so {
@@ -221,7 +224,7 @@ pub mod execute {
                 let payee_checked: Addr = deps.api.addr_validate(&t.payee)?;
 
                 let increase_msg = WasmMsg::Execute { 
-                    contract_addr: "overdraft".to_owned(), 
+                    contract_addr: overdrafts.to_string(), 
                     msg: to_json_binary(&imports::IncreaseBalance {
                         receiver: payee_checked,
                         amount: t.amount.into()
@@ -237,7 +240,7 @@ pub mod execute {
                 let payer_checked = deps.api.addr_validate(&t.payer)?;
                 
                 let decrease_msg = WasmMsg::Execute { 
-                    contract_addr: "overdraft".to_owned(), 
+                    contract_addr: overdrafts.to_string(), 
                     msg: to_json_binary(&imports::DecreaseBalance {
                         receiver: payer_checked,
                         amount: t.amount.into()
