@@ -3,11 +3,9 @@ use std::{
     time::Duration,
 };
 
-use cw_proof::{
-    proof::{
-        cw::{CwProof, RawCwProof},
-        Proof,
-    },
+use cw_proof::proof::{
+    cw::{CwProof, RawCwProof},
+    Proof,
 };
 use k256::ecdsa::SigningKey;
 use quartz_cw::{
