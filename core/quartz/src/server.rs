@@ -4,7 +4,6 @@ use std::{
 };
 
 use cw_proof::{
-    error::ProofError,
     proof::{
         cw::{CwProof, RawCwProof},
         Proof,
@@ -16,7 +15,7 @@ use quartz_cw::{
         execute::{session_create::SessionCreate, session_set_pub_key::SessionSetPubKey},
         instantiate::CoreInstantiate,
     },
-    state::{Config, Nonce, Session},
+    state::{Config, LightClientOpts, Nonce, Session},
 };
 use quartz_proto::quartz::{
     core_server::Core, InstantiateRequest as RawInstantiateRequest,
@@ -102,58 +101,15 @@ where
         request: Request<RawSessionSetPubKeyRequest>,
     ) -> TonicResult<Response<RawSessionSetPubKeyResponse>> {
         // FIXME(hu55a1n1) - disallow calling more than once
-        let proof: ProofOfPublication = serde_json::from_str(&request.into_inner().message)
-            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+        let proof: ProofOfPublication<Option<()>> =
+            serde_json::from_str(&request.into_inner().message)
+                .map_err(|e| Status::invalid_argument(e.to_string()))?;
 
-        let config_trust_threshold = self.config.light_client_opts().trust_threshold();
-        let trust_threshold =
-            TrustThreshold::new(config_trust_threshold.0, config_trust_threshold.1).unwrap();
+        let (value, _msg) = proof
+            .verify(self.config.light_client_opts())
+            .map_err(Status::failed_precondition)?;
 
-        let config_trusting_period = self.config.light_client_opts().trusting_period();
-        let trusting_period = Duration::from_secs(config_trusting_period);
-
-        let config_clock_drift = self.config.light_client_opts().max_clock_drift();
-        let clock_drift = Duration::from_secs(config_clock_drift);
-        let options = Options {
-            trust_threshold,
-            trusting_period,
-            clock_drift,
-        };
-
-        let target_height = proof.light_client_proof.last().unwrap().height();
-
-        let primary_block = make_provider(
-            self.config.light_client_opts().chain_id(),
-            self.config
-                .light_client_opts()
-                .trusted_height()
-                .try_into()
-                .unwrap(),
-            self.config
-                .light_client_opts()
-                .trusted_hash()
-                .to_vec()
-                .try_into()
-                .unwrap(),
-            proof.light_client_proof,
-            options,
-        )
-        .and_then(|mut primary| primary.verify_to_height(target_height))
-        .map_err(|e| Status::internal(e.to_string()))?;
-
-        let proof = CwProof::from(proof.merkle_proof);
-        proof
-            .verify(
-                primary_block
-                    .signed_header
-                    .header
-                    .app_hash
-                    .as_bytes()
-                    .to_vec(),
-            )
-            .map_err(|e: ProofError| Status::internal(e.to_string()))?;
-
-        let session: Session = serde_json::from_slice(&proof.value).unwrap();
+        let session: Session = serde_json::from_slice(&value).unwrap();
         let nonce = self.nonce.lock().unwrap();
 
         if session.nonce() != *nonce {
@@ -177,7 +133,57 @@ where
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ProofOfPublication {
+pub struct ProofOfPublication<M> {
     light_client_proof: Vec<LightBlock>,
     merkle_proof: RawCwProof,
+    msg: M,
+}
+
+impl<M> ProofOfPublication<M> {
+    pub fn verify(self, light_client_opts: &LightClientOpts) -> Result<(Vec<u8>, M), String> {
+        let config_trust_threshold = light_client_opts.trust_threshold();
+        let trust_threshold =
+            TrustThreshold::new(config_trust_threshold.0, config_trust_threshold.1).unwrap();
+
+        let config_trusting_period = light_client_opts.trusting_period();
+        let trusting_period = Duration::from_secs(config_trusting_period);
+
+        let config_clock_drift = light_client_opts.max_clock_drift();
+        let clock_drift = Duration::from_secs(config_clock_drift);
+        let options = Options {
+            trust_threshold,
+            trusting_period,
+            clock_drift,
+        };
+
+        let target_height = self.light_client_proof.last().unwrap().height();
+
+        let primary_block = make_provider(
+            light_client_opts.chain_id(),
+            light_client_opts.trusted_height().try_into().unwrap(),
+            light_client_opts
+                .trusted_hash()
+                .to_vec()
+                .try_into()
+                .unwrap(),
+            self.light_client_proof,
+            options,
+        )
+        .and_then(|mut primary| primary.verify_to_height(target_height))
+        .map_err(|e| e.to_string())?;
+
+        let proof = CwProof::from(self.merkle_proof);
+        proof
+            .verify(
+                primary_block
+                    .signed_header
+                    .header
+                    .app_hash
+                    .as_bytes()
+                    .to_vec(),
+            )
+            .map_err(|e| e.to_string())?;
+
+        Ok((proof.value, self.msg))
+    }
 }
