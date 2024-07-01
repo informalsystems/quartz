@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::{Addr, HexBinary};
 use quartz_cw::{
     msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation},
     prelude::*,
@@ -12,7 +12,10 @@ use crate::state::{RawHash, SettleOff};
 type AttestedMsg<M> = RawAttested<RawAttestedMsgSansHandler<M>, RawEpidAttestation>;
 
 #[cw_serde]
-pub struct InstantiateMsg(pub QuartzInstantiateMsg);
+pub struct InstantiateMsg {
+    pub quartz: QuartzInstantiateMsg,
+    pub overdrafts: Addr,
+}
 
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]

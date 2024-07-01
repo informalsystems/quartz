@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{HexBinary, StdError, Storage};
+use cosmwasm_std::{Addr, HexBinary, StdError, Storage};
 use cw_storage_plus::Item;
 use quartz_cw::state::EPOCH_COUNTER;
 
@@ -15,6 +15,7 @@ pub type LiquiditySourcesItem<'a> = Item<'a, BTreeSet<HexBinary>>;
 #[cw_serde]
 pub struct State {
     pub owner: String,
+    pub overdraft: Addr,
 }
 
 #[cw_serde]
