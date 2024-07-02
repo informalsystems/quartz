@@ -24,6 +24,8 @@ pub enum ExecuteMsg {
 }
 
 pub mod execute {
+    use cosmwasm_std::Uint128;
+
     use super::*;
 
 
@@ -60,6 +62,15 @@ pub mod execute {
         pub setoffs_enc: BTreeMap<RawHash, SettleOff>,
         // pub proof: π,
     }
+
+    #[cw_serde]
+pub enum EscrowExecuteMsg {
+    ExecuteSetoff {
+        payer: String,
+        payee: String,
+        amount: Vec<(String, Uint128)>,
+    }
+}
 }
 
 #[cw_serde]

@@ -16,6 +16,9 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized,
 
+    #[error("Liquidity source not found")]
+    LiquiditySourceNotFound,
+
     #[error("Duplicate entry found")]
     DuplicateEntry,
 

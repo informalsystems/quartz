@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, HexBinary, StdError, Storage};
+use cosmwasm_std::{Addr, HexBinary, StdError, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
 use quartz_cw::state::EPOCH_COUNTER;
 
@@ -20,7 +20,7 @@ pub struct State {
 pub struct Transfer {
     pub payer: String,
     pub payee: String,
-    pub amount: u64,
+    pub amount: (String, Uint128),
 }
 
 #[cw_serde]

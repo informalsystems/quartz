@@ -104,18 +104,14 @@ pub fn execute(
 pub mod execute {
     use std::{collections::BTreeMap, ops::DerefMut};
 
-    use cosmwasm_std::{to_json_binary, to_json_vec, Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult, SubMsg, WasmMsg};
+    use cosmwasm_std::{to_json_binary, to_json_vec, Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult, Storage, SubMsg, WasmMsg};
     use cw20_base::contract::{execute_burn, execute_mint};
     use quartz_cw::state::{Hash, EPOCH_COUNTER};
 
     use crate::{
-        state::{
-            current_epoch_key, previous_epoch_key, LiquiditySource, LiquiditySourceType,
-            ObligationsItem, RawHash, SetoffsItem, SettleOff,
-            LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY,
-            SETOFFS_KEY,
-        },
-        ContractError,
+        msg::execute::EscrowExecuteMsg, state::{
+            current_epoch_key, previous_epoch_key, LiquiditySource, LiquiditySourceType, ObligationsItem, RawHash, SetoffsItem, SettleOff, Transfer, LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, SETOFFS_KEY
+        }, ContractError
     };
 
     pub fn submit_obligation(
@@ -165,8 +161,8 @@ pub mod execute {
     }
 
     pub fn submit_setoffs(
-        mut deps: DepsMut,
-        env: Env,
+        deps: DepsMut,
+        _env: Env,
         setoffs_enc: BTreeMap<RawHash, SettleOff>,
     ) -> Result<Response, ContractError> {
         // Store the setoffs
@@ -177,47 +173,24 @@ pub mod execute {
     
         for (_, so) in setoffs_enc {
             if let SettleOff::Transfer(t) = so {
-                // Check if the payer is a liquidity source
-                let liquidity_source = LIQUIDITY_SOURCES
-                    .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-                    .find_map(|res| {
-                        res.ok().and_then(|(_, source)| {
-                            if source.address == Addr::unchecked(&t.payer) {
-                                Some(source)
-                            } else {
-                                None
-                            }
-                        })
-                    });
+                // Check if either payer or payee is a liquidity source
+                let payer_source = find_liquidity_source(deps.storage, &t.payer);
+                let payee_source = find_liquidity_source(deps.storage, &t.payee);
     
-                if let Some(source) = liquidity_source {
-                    // Execute transfer based on the liquidity source type
-                    let msg = match source.source_type {
-                        LiquiditySourceType::Escrow => SubMsg::new(WasmMsg::Execute {
-                            contract_addr: source.address.to_string(),
-                            msg: to_json_binary(&EscrowExecuteMsg::TransferFromTender { // TODO Make sure we use the same interface in both contracts
-                                sender: t.payer.to_string(),
-                                receiver: t.payee.to_string(),
-                                amount: vec![(String::from("token"), t.amount.into())],
-                            })?,
-                            funds: vec![],
-                        }),
-                        LiquiditySourceType::Overdraft => SubMsg::new(WasmMsg::Execute {
-                            contract_addr: source.address.to_string(),
-                            msg: to_json_binary(&OverdraftExecuteMsg::TransferCreditFromTender {
-                                sender: Addr::unchecked(t.payer),
-                                receiver: Addr::unchecked(t.payee),
-                                amount: t.amount.into(),
-                            })?,
-                            funds: vec![],
-                        }),
-                        LiquiditySourceType::External => {
-                            return Err(ContractError::UnsupportedLiquiditySource {})
-                        }
-                    };
-                    messages.push(msg);
-                } else {
-                    return Err(ContractError::LiquiditySourceNotFound {});
+                match (payer_source, payee_source) {
+                    (Some(source), _) => {
+                        // Payer is a liquidity source
+                        let msg = create_transfer_message(&source, &t, true)?;
+                        messages.push(msg);
+                    },
+                    (_, Some(source)) => {
+                        // Payee is a liquidity source
+                        let msg = create_transfer_message(&source, &t, false)?;
+                        messages.push(msg);
+                    },
+                    (None, None) => {
+                        return Err(ContractError::LiquiditySourceNotFound {});
+                    }
                 }
             }
         }
@@ -227,6 +200,80 @@ pub mod execute {
             .add_attribute("action", "submit_setoffs"))
     }
     
+    fn find_liquidity_source(storage: &dyn Storage, address: &str) -> Option<LiquiditySource> {
+        LIQUIDITY_SOURCES
+            .range(storage, None, None, cosmwasm_std::Order::Ascending)
+            .find_map(|res| {
+                res.ok().and_then(|(_, source)| {
+                    if source.address == Addr::unchecked(address) {
+                        Some(source)
+                    } else {
+                        None
+                    }
+                })
+            })
+    }
+    
+    fn create_transfer_message(
+        source: &LiquiditySource,
+        transfer: &Transfer,
+        is_payer: bool,
+    ) -> Result<SubMsg, ContractError> {
+        let msg = match source.source_type {
+            LiquiditySourceType::Escrow => {
+                let (payer, payee, amount) = if is_payer {
+                    (
+                        transfer.payer.clone(),
+                        transfer.payee.clone(),
+                        vec![transfer.amount.clone()],
+                    )
+                } else {
+                    // If the liquidity source is the payee, we swap payer and payee
+                    (
+                        transfer.payee.clone(),
+                        transfer.payer.clone(),
+                        vec![transfer.amount.clone()],
+                    )
+                };
+                
+                WasmMsg::Execute {
+                    contract_addr: source.address.to_string(),
+                    msg: to_json_binary(&EscrowExecuteMsg::ExecuteSetoff {
+                        payer,
+                        payee,
+                        amount,
+                    })?,
+                    funds: vec![],
+                }
+            },
+            LiquiditySourceType::Overdraft => {
+
+                let (sender, receiver) = if is_payer {
+                    (transfer.payer.clone(), transfer.payee.clone())
+                } else {
+                    (transfer.payee.clone(), transfer.payer.clone())
+                };
+                
+                WasmMsg::Execute {
+                    contract_addr: source.address.to_string(),
+                    msg: to_json_binary(&OverdraftExecuteMsg::TransferCreditFromTender {
+                        sender: Addr::unchecked(sender),
+                        receiver: Addr::unchecked(receiver),
+                        amount: if is_payer { transfer.amount.1 } else { -transfer.amount.1 },
+                    })?,
+                    funds: vec![],
+                }
+            },
+            LiquiditySourceType::External => return Err(ContractError::UnsupportedLiquiditySource {}),
+        };
+    
+        Ok(SubMsg::new(msg))
+    }
+
+
+
+
+
     pub fn init_clearing(deps: DepsMut) -> Result<Response, ContractError> {
         EPOCH_COUNTER.update(deps.storage, |mut counter| -> StdResult<_> {
             counter += 1;
