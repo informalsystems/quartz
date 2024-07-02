@@ -66,13 +66,13 @@ where
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
 
-        let (value, message) = message
+        let (proof_value, message) = message
             .verify(self.config.light_client_opts())
             .map_err(Status::failed_precondition)?;
 
-        let value_matches_msg =
-            serde_json::to_string(&message.intents).is_ok_and(|s| s.as_bytes() == &value);
-        if !value_matches_msg {
+        let proof_value_matches_msg =
+            serde_json::to_string(&message.intents).is_ok_and(|s| s.as_bytes() == &proof_value);
+        if !proof_value_matches_msg {
             return Err(Status::failed_precondition("proof verification"));
         }
 
