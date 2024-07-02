@@ -71,7 +71,7 @@ where
             .map_err(Status::failed_precondition)?;
 
         let proof_value_matches_msg =
-            serde_json::to_string(&message.intents).is_ok_and(|s| s.as_bytes() == &proof_value);
+            serde_json::to_string(&message.intents).is_ok_and(|s| s.as_bytes() == proof_value);
         if !proof_value_matches_msg {
             return Err(Status::failed_precondition("proof verification"));
         }
