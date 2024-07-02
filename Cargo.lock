@@ -1041,37 +1041,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "enclave"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "cosmrs",
- "cosmwasm-std",
- "cw-multi-test",
- "cw-proof",
- "cw-tee-mtcs",
- "cycles-sync",
- "ecies",
- "hex",
- "k256",
- "mtcs",
- "prost",
- "quartz-cw",
- "quartz-enclave",
- "quartz-proto",
- "schemars",
- "serde",
- "serde_json",
- "tendermint 0.36.0",
- "tendermint-light-client",
- "thiserror",
- "tokio",
- "tonic",
- "tonic-build",
-]
-
-[[package]]
 name = "encoding_rs"
 version = "0.8.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2340,6 +2309,67 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9091c90b0a32608e984ff2fa4091273cbdd755d54935c51d520887f4a1dbd5b0"
 dependencies = [
  "prost",
+]
+
+[[package]]
+name = "quartz-app-mtcs-enclave"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "color-eyre",
+ "cosmrs",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw-proof",
+ "cw-tee-mtcs",
+ "cycles-sync",
+ "ecies",
+ "hex",
+ "k256",
+ "mtcs",
+ "prost",
+ "quartz-cw",
+ "quartz-enclave",
+ "quartz-proto",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tendermint 0.36.0",
+ "tendermint-light-client",
+ "thiserror",
+ "tokio",
+ "tonic",
+ "tonic-build",
+]
+
+[[package]]
+name = "quartz-app-transfers-enclave"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "color-eyre",
+ "cosmrs",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "ecies",
+ "hex",
+ "k256",
+ "prost",
+ "quartz-cw",
+ "quartz-enclave",
+ "quartz-proto",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2 0.10.8",
+ "tendermint 0.36.0",
+ "tendermint-light-client",
+ "thiserror",
+ "tokio",
+ "tonic",
+ "tonic-build",
+ "transfers_contracts",
 ]
 
 [[package]]
@@ -3731,6 +3761,22 @@ dependencies = [
  "thread_local",
  "tracing",
  "tracing-core",
+]
+
+[[package]]
+name = "transfers_contracts"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "cw20-base",
+ "quartz-cw",
+ "serde_json",
+ "sha2 0.10.8",
+ "thiserror",
 ]
 
 [[package]]
