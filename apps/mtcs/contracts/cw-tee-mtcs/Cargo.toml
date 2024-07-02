@@ -24,6 +24,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 # external
+getrandom = { version = "0.2", features = ["js"] }
 hex = { version = "0.4.3", default-features = false }
 k256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
 schemars = "0.8.15"
