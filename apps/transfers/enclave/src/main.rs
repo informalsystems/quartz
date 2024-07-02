@@ -63,11 +63,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Server::builder()
         .add_service(CoreServer::new(CoreService::new(
-            config,
+            config.clone(),
             sk.clone(),
             EpidAttestor,
         )))
         .add_service(TransfersServer::new(TransfersService::<EpidAttestor>::new(
+            config.clone(),
             sk.clone(),
             EpidAttestor,
         )))
