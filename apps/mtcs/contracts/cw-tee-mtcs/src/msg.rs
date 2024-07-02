@@ -24,6 +24,7 @@ pub enum ExecuteMsg {
     SubmitObligations(execute::SubmitObligationsMsg),
     SubmitSetoffs(AttestedMsg<execute::SubmitSetoffsMsg>),
     InitClearing,
+    SetLiquiditySources(execute::SetLiquiditySourcesMsg),
 }
 
 pub mod execute {
@@ -81,6 +82,11 @@ pub mod execute {
             user_data[0..32].copy_from_slice(&digest);
             user_data
         }
+    }
+
+    #[cw_serde]
+    pub struct SetLiquiditySourcesMsg {
+        pub liquidity_sources: Vec<HexBinary>,
     }
 }
 
