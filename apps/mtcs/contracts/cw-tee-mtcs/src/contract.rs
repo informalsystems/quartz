@@ -170,6 +170,17 @@ pub mod execute {
             },
         )?;
 
+        // TODO: determine the necessity of this replacement to the above logic 
+        // let cur_epoch = &current_epoch_key(OBLIGATIONS_KEY, deps.storage)?;
+        // let obligs_key = ObligationsItem::new(cur_epoch);
+        // let mut epoch_obligation = obligs_key.load(deps.storage).unwrap_or_default();
+        
+        // if let Some(_duplicate) = epoch_obligation.insert(digest.clone(), ciphertext.clone()) {
+        //     return Err(ContractError::DuplicateEntry);
+        // }
+        
+        // obligs_key.save(deps.storage, &epoch_obligation)?;
+
         Ok(Response::new()
             .add_attribute("action", "submit_obligation")
             .add_attribute("digest", digest.to_string())
@@ -225,7 +236,7 @@ pub mod execute {
 
                 let increase_msg = WasmMsg::Execute { 
                     contract_addr: overdrafts.to_string(), 
-                    msg: to_json_binary(&imports::IncreaseBalance {
+                    msg: to_json_binary(&imports::ExecuteMsg::IncreaseBalance {
                         receiver: payee_checked,
                         amount: t.amount.into()
                     })?, 
@@ -241,7 +252,7 @@ pub mod execute {
                 
                 let decrease_msg = WasmMsg::Execute { 
                     contract_addr: overdrafts.to_string(), 
-                    msg: to_json_binary(&imports::DecreaseBalance {
+                    msg: to_json_binary(&imports::ExecuteMsg::IncreaseBalance {
                         receiver: payer_checked,
                         amount: t.amount.into()
                     })?, 

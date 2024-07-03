@@ -1,72 +1,95 @@
 
 
-ROOT=${ROOT:-$HOME}
+    ROOT=${ROOT:-$HOME}
+    DIR_MTCS="$ROOT/cycles-quartz/apps/mtcs"
+    DIR_PROTO="$DIR_MTCS/enclave/proto"
+    DEFAULT_NODE="127.0.0.1:26657"
+    NODE_URL=${NODE_URL:-$DEFAULT_NODE}
 
-DEFAULT_NODE="127.0.0.1:26657"
-NODE_URL=${NODE_URL:-$DEFAULT_NODE}
 
-if [ "$#" -eq 0 ]; then
-    echo "Usage: $0 <contract_address>"
-    exit 1  # Exit with a non-zero status to indicate an error
-fi
+    # Attestation constants
+    IAS_API_KEY="669244b3e6364b5888289a11d2a1726d"
+    RA_CLIENT_SPID="51CAF5A48B450D624AEFE3286D314894"
+    QUOTE_FILE="/tmp/${USER}_test.quote"
+    REPORT_FILE="/tmp/${USER}_datareport"
+    REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
-CONTRACT=$1
+    if [ "$#" -eq 0 ]; then
+        echo "Usage: $0 <contract_address>"
+        exit 1  # Exit with a non-zero status to indicate an error
+    fi
 
-CMD="wasmd --node http://$NODE_URL"
+    CONTRACT=$1
 
-WSURL="ws://$NODE_URL/websocket"
+    CMD="wasmd --node http://$NODE_URL"
 
-SUBSCRIBE="{\"jsonrpc\":\"2.0\",\"method\":\"subscribe\",\"params\":[\"execute._contract_address = '$CONTRACT' AND wasm-transfer.action = 'user'\"],\"id\":1}"
+    WSURL="ws://$NODE_URL/websocket"
 
-echo $SUBSCRIBE
+    SUBSCRIBE="{\"jsonrpc\":\"2.0\",\"method\":\"subscribe\",\"params\":[\"tm.event='Tx' AND wasm._contract_address = '$CONTRACT' AND wasm.action='init_clearing'\"],\"id\":1}"
 
-echo "--------------------------------------------------------"
-echo "subscribe to events"
+    echo $SUBSCRIBE
 
-# cat keeps the stdin open so websocat doesnt close
-(echo "$SUBSCRIBE"; cat) | websocat $WSURL | while read msg; do 
-    if [[ "$msg" == '{"jsonrpc":"2.0","id":1,"result":{}}' ]]; then
-        echo "... subscribed"
+    echo "--------------------------------------------------------"
+    echo "subscribe to events"
+
+    # cat keeps the stdin open so websocat doesnt close
+    (echo "$SUBSCRIBE"; cat) | websocat $WSURL | while read msg; do 
+        if [[ "$msg" == '{"jsonrpc":"2.0","id":1,"result":{}}' ]]; then
+            echo "... subscribed"
+            echo "---------------------------------------------------------"
+            echo "... waiting for event"
+            continue
+        fi 
+
+        if echo "$msg" | jq 'has("error")' > /dev/null; then
+            echo "... error msg $msg"
+            echo "---------------------------------------------------------"
+            echo "... waiting for event"
+            continue
+        fi 
+
+
+        echo "... received init_clearing event!"
+        echo $msg 
+
+        echo "... fetching obligations"
+
+        export OBLIGATIONS=$($CMD query wasm contract-state raw "$CONTRACT" $(printf '%s' "1/obligations" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
+        export LIQUIDITY_SOURCES=$($CMD query wasm contract-state raw "$CONTRACT" $(printf '%s' "1/liquidity_sources" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
+        # export REQUEST_MSG=$(jq -nc --arg message "$OBLIGATIONS" '$ARGS.named')
+        COMBINED_JSON=$(jq -nc \
+            --argjson intents "$OBLIGATIONS" \
+            --argjson liquidity_sources "$LIQUIDITY_SOURCES" \
+            '{intents: $intents, liquidity_sources: $liquidity_sources}')
+
+        # Wrap the combined JSON string into another JSON object with a "message" field
+        REQUEST_MSG=$(jq -nc --arg message "$COMBINED_JSON" '{"message": $message}')
+
+        echo "... executing mtcs"
+        export ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto mtcs.proto -d "$REQUEST_MSG" '127.0.0.1:11090' mtcs.Clearing/Run | jq -c '.message | fromjson')
+
+        QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
+        MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
+
+        # request the IAS report for EPID attestations
+        echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
+        gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
+        REPORT=$(cat "$REPORT_FILE")
+        REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
+
+        echo "... submitting update"
+
+
+        export EXECUTE=$(jq -nc --argjson submit_setoffs "$(jq -nc --argjson msg "$MSG" --argjson attestation \
+            "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
+            '$ARGS.named')" '$ARGS.named')
+        
+        $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
+
+
+        echo " ... done"
         echo "---------------------------------------------------------"
         echo "... waiting for event"
-        continue
-    fi 
-
-    if echo "$msg" | jq 'has("error")' > /dev/null; then
-        echo "... error msg $msg"
-        echo "---------------------------------------------------------"
-        echo "... waiting for event"
-        continue
-    fi 
-
-
-    echo "... received event! "
-    echo $msg 
-
-    echo "... fetching requests"
-
-    REQUESTS=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "requests" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
-    STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
-
-    export ENCLAVE_REQUEST=$(jq -nc --argjson requests "$REQUESTS" --argjson state $STATE '$ARGS.named')
-    echo $ENCLAVE_REQUEST | jq .
-
-    export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
-
-    cd $ROOT/cycles-quartz/apps/mtcs/enclave
-
-    echo "... executing transfer"
-    export UPDATE=$(grpcurl -plaintext -import-path ./proto/ -proto mtcs.proto -d "$REQUEST_MSG" '127.0.0.1:11090' mtcs.Clearing/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
-
-
-    echo "... submitting update"
-
-    $CMD tx wasm execute $CONTRACT "{\"update\": "$UPDATE" }" --chain-id testing --from admin --node http://$NODE_URL -y
-
-
-    echo " ... done"
-    echo "---------------------------------------------------------"
-    echo "... waiting for event"
-done
+    done
 
 
