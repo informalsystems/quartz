@@ -4,6 +4,7 @@ use cosmrs::{tendermint::chain::Id, AccountId};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
+use anyhow;
 
 pub trait WasmdClient {
     type Address: AsRef<str>;
@@ -57,7 +58,7 @@ impl WasmdClient for CliWasmdClient {
     type Address = AccountId;
     type Query = serde_json::Value;
     type ChainId = Id;
-    type Error = Box<dyn Error>;
+    type Error = anyhow::Error;
 
     fn query_smart<R: FromVec>(
         &self,
@@ -99,7 +100,7 @@ impl WasmdClient for CliWasmdClient {
             .arg("-y");
 
         let output = command.output()?;
-        debug!("{:?} => {:?}", command, output);
+        println!("{:?} => {:?}", command, output);
 
         if output.status.success() {
             println!("{}", String::from_utf8(output.stdout).unwrap());
