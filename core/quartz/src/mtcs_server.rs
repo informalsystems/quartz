@@ -71,7 +71,8 @@ where
         let mut mtcs = ComplexIdMtcs::wrapping(DefaultMtcs::new(PrimalDual::default()));
         let setoffs: Vec<SimpleSetoff<_, i64>> = mtcs.run(obligations).unwrap();
 
-        let liquidity_sources: Vec<_> = message
+        // TODO Switch from Vec<_> to Vec<LiquiditySource>
+        let liquidity_sources: Vec<_> = message 
             .liquidity_sources
             .into_iter()
             .map(|ls| VerifyingKey::from_sec1_bytes(&ls))
@@ -90,6 +91,8 @@ where
     }
 }
 
+
+// TODO Switch from Vec<_> to Vec<LiquiditySource>
 fn into_settle_offs(
     so: SimpleSetoff<HexBinary, i64>,
     liquidity_sources: &[VerifyingKey],
