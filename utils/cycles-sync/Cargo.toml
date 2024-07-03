@@ -9,6 +9,13 @@ repository.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "submit"
+path = "src/bin/submit.rs"
+
 [dependencies]
 # external
 async-trait.workspace = true
@@ -26,6 +33,7 @@ tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 uuid.workspace = true
+anyhow ={ version = "*"}
 
 # cosmos
 cosmrs.workspace = true
