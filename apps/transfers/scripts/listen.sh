@@ -45,8 +45,6 @@ echo "subscribe to events"
 
     if echo "$CLEAN_MSG" | grep -q 'wasm-transfer'; then
         echo "... received wasm-transfer event!"
-        echo $msg 
-
         echo "... fetching requests"
 
         REQUESTS=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "requests" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
@@ -60,7 +58,8 @@ echo "subscribe to events"
         cd $ROOT/cycles-quartz/apps/transfers/enclave
 
         echo "... executing transfer"
-        export UPDATE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11090' transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
+        export UPDATE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
+        echo $UPDATE | jq '.msg'
 
         echo "... submitting update"
 
@@ -71,8 +70,6 @@ echo "subscribe to events"
         echo "... waiting for event"
     elif echo "$CLEAN_MSG" | grep -q 'wasm-query_balance'; then
         echo "... received wasm-query_balance event!"
-        echo $msg 
-
         echo "... fetching state"
 
         STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
@@ -87,19 +84,25 @@ echo "subscribe to events"
         echo $ENCLAVE_REQUEST | jq .
 
         export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
+        echo $REQUEST_MSG | jq .
 
         cd $ROOT/cycles-quartz/apps/transfers/enclave
 
         echo "... executing query balance"
 
-        export BALANCE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11090' transfers.Settlement/Query | jq .message | jq -R 'fromjson | fromjson' | jq -c )
+        ENCRYPTED_BAL=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Query | jq -r '.message | fromjson | .msg.encrypted_bal')
+
+        # Create the RawQueryResponseMsg structure
+        export BALANCE=$(jq -n \
+                        --arg address "$ADDRESS" \
+                        --arg encrypted_bal "$ENCRYPTED_BAL" \
+                        '{address: $address, encrypted_bal: $encrypted_bal}')
+
+        echo "RawQueryResponseMsg:"
+        echo $BALANCE | jq .
 
         echo "... submitting update"
-        # TODO - Fails here with:
-            # jq: error (at <stdin>:1): null (null) only strings can be parsed
-            # ... submitting update
-            # Error: payload msg: invalid
-        $CMD tx wasm execute $CONTRACT "{\"store_balance\": "$BALANCE" }" --chain-id testing --from admin --node http://$NODE_URL -y
+        $CMD tx wasm execute $CONTRACT "{\"store_balance\": $(echo $BALANCE | jq -c .) }" --chain-id testing --from admin --node http://$NODE_URL -y
 
         echo " ... done"
         echo "---------------------------------------------------------"

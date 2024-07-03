@@ -19,7 +19,7 @@ fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// RPC server address
-    #[clap(long, default_value = "127.0.0.1:11090")]
+    #[clap(long, default_value = "127.0.0.1:11091")]
     pub rpc_addr: SocketAddr,
 
     /// Identifier of the chain

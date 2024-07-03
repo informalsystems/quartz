@@ -223,8 +223,7 @@ where
         Ok(Response::new(RunTransfersResponse { message }))
     }
 
-    // TODO
-    // serialize the request into the account address (sender)
+    // TODO - serialize the request into the account address (sender)
     async fn query(&self, request: Request<QueryRequest>) -> TonicResult<Response<QueryResponse>> {
         // Request contains a serialized json string
 
@@ -233,6 +232,8 @@ where
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
+
+        println!("query request message: {:?}", message);
 
         // Decrypt and deserialize the state
         let mut state = {
@@ -255,6 +256,8 @@ where
             }
         };
 
+        println!("state gotten {:?}", state.state);
+
         let mut bal: RawBalance;
 
         match state.state.entry(message.address.clone()) {
@@ -270,6 +273,9 @@ where
                 };
             }
         }
+
+        println!("bal gotten {:?}", bal);
+
         // Encrypt the balance
         // Gets lock on PrivKey, generates PubKey to encrypt with
         let bal_enc = {
@@ -292,6 +298,8 @@ where
             encrypted_bal: bal_enc,
         };
 
+        println!("query RESPONSE message: {:?}", msg);
+
         // Attest to message
         let quote = self
             .attestor
@@ -299,13 +307,18 @@ where
             .map_err(|e| Status::internal(e.to_string()))?;
 
         let attested_msg = AttestedMsg { msg, quote };
+        println!("attested mesg {:?}", attested_msg);
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
+            println!("final  mesg {:?}", message);
+
+        Ok(Response::new(QueryResponse { message }))
+            // Ok(Response::new(QueryResponse { message }))
 
         // Ok(Response::new(QueryResponse { message }))
-        Ok(Response::new(QueryResponse {
-            message: "".to_string(),
-        }))
+        // Ok(Response::new(QueryResponse {
+        //     message: "".to_string(),
+        // }))
     }
 }
 

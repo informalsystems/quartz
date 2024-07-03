@@ -129,7 +129,6 @@ pub mod execute {
     pub struct RawQueryResponseMsg {
         pub address: Addr,
         pub encrypted_bal: HexBinary,
-        // pub proof: π
     }
 
     #[derive(Clone, Debug, PartialEq)]
