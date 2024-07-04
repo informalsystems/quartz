@@ -28,9 +28,8 @@ pub enum ExecuteMsg {
     QueryRequest(execute::QueryRequestMsg),
     // ---- end user txs
 
-
     // msgs sent by the enclave
-    Update(RawAttested<execute::RawUpdateMsg, RawEpidAttestation>),
+    Update(execute::UpdateMsg),
     QueryResponse(execute::QueryResponseMsg),
 }
 
@@ -79,51 +78,58 @@ pub mod execute {
         // pub proof: π
     }
 
-
-    #[derive(Clone, Debug, PartialEq)]
-    pub struct UpdateMsg(pub RawUpdateMsg);
-
-    impl HasUserData for UpdateMsg {
-        fn user_data(&self) -> UserData {
-            let mut hasher = Sha256::new();
-            hasher.update(serde_json::to_string(&self.0).expect("infallible serializer"));
-            let digest: [u8; 32] = hasher.finalize().into();
-
-            let mut user_data = [0u8; 64];
-            user_data[0..32].copy_from_slice(&digest);
-            user_data
-        }
+    #[cw_serde]
+    pub struct UpdateMsg {
+        pub ciphertext: HexBinary,
+        pub quantity: u32,
+        pub withdrawals: Vec<(Addr, Uint128)>,
     }
 
-    impl HasDomainType for RawUpdateMsg {
-        type DomainType = UpdateMsg;
-    }
 
-    impl TryFrom<RawUpdateMsg> for UpdateMsg {
-        type Error = StdError;
+    // #[derive(Clone, Debug, PartialEq)]
+    // pub struct UpdateMsg(pub RawUpdateMsg);
 
-        fn try_from(value: RawUpdateMsg) -> Result<Self, Self::Error> {
-            Ok(Self(value))
-        }
-    }
+    // impl HasUserData for UpdateMsg {
+    //     fn user_data(&self) -> UserData {
+    //         let mut hasher = Sha256::new();
+    //         hasher.update(serde_json::to_string(&self.0).expect("infallible serializer"));
+    //         let digest: [u8; 32] = hasher.finalize().into();
 
-    impl From<UpdateMsg> for RawUpdateMsg {
-        fn from(value: UpdateMsg) -> Self {
-            value.0
-        }
-    }
+    //         let mut user_data = [0u8; 64];
+    //         user_data[0..32].copy_from_slice(&digest);
+    //         user_data
+    //     }
+    // }
 
-    impl Handler for UpdateMsg {
-        fn handle(
-            self,
-            _deps: DepsMut<'_>,
-            _env: &Env,
-            _info: &MessageInfo,
-        ) -> Result<Response, Error> {
-            // basically handle `transfer_request` here
-            Ok(Response::default())
-        }
-    }
+    // impl HasDomainType for RawUpdateMsg {
+    //     type DomainType = UpdateMsg;
+    // }
+
+    // impl TryFrom<RawUpdateMsg> for UpdateMsg {
+    //     type Error = StdError;
+
+    //     fn try_from(value: RawUpdateMsg) -> Result<Self, Self::Error> {
+    //         Ok(Self(value))
+    //     }
+    // }
+
+    // impl From<UpdateMsg> for RawUpdateMsg {
+    //     fn from(value: UpdateMsg) -> Self {
+    //         value.0
+    //     }
+    // }
+
+    // impl Handler for UpdateMsg {
+    //     fn handle(
+    //         self,
+    //         _deps: DepsMut<'_>,
+    //         _env: &Env,
+    //         _info: &MessageInfo,
+    //     ) -> Result<Response, Error> {
+    //         // basically handle `transfer_request` here
+    //         Ok(Response::default())
+    //     }
+    // }
 
     #[cw_serde]
     pub struct RawQueryResponseMsg {

@@ -57,13 +57,8 @@ pub fn execute(
         // Cipher user msgs
         ExecuteMsg::TransferRequest(msg) => transfer_request(deps, env, info, msg),
 
-        // Enclave msgs
-        ExecuteMsg::Update(attested_msg) => {
-            let _ = attested_msg
-                .clone()
-                .handle_raw(deps.branch(), &env, &info)?;
-            update(deps, env, info, UpdateMsg(attested_msg.msg))
-        }
+        // Enclave msgs // TODO - reattach the attestations
+        ExecuteMsg::Update(msg) => update(deps, env, info, msg),
         ExecuteMsg::QueryResponse(msg) => store_balance(deps, env, info, msg)
     }
 }
@@ -151,12 +146,12 @@ pub mod execute {
         msg: UpdateMsg,
     ) -> Result<Response, ContractError> {
         // Store state
-        STATE.save(deps.storage, &msg.0.ciphertext)?;
+        STATE.save(deps.storage, &msg.ciphertext)?;
 
         // Clear queue
         let mut requests: Vec<Request> = REQUESTS.load(deps.storage)?;
 
-        requests.drain(0..msg.0.quantity as usize);
+        requests.drain(0..msg.quantity as usize);
 
         REQUESTS.save(deps.storage, &requests)?;
 
@@ -164,7 +159,6 @@ pub mod execute {
         let denom = DENOM.load(deps.storage)?;
 
         let messages = msg
-            .0
             .withdrawals
             .into_iter()
             .map(|(user, funds)| BankMsg::Send {
