@@ -20,6 +20,14 @@ SUBSCRIBE_QUERY="{\"jsonrpc\":\"2.0\",\"method\":\"subscribe\",\"params\":[\"exe
 echo $SUBSCRIBE_TRANSFER
 echo $SUBSCRIBE_QUERY
 
+# Attestation constants
+IAS_API_KEY="669244b3e6364b5888289a11d2a1726d"
+RA_CLIENT_SPID="51CAF5A48B450D624AEFE3286D314894"
+QUOTE_FILE="/tmp/${USER}_test.quote"
+REPORT_FILE="/tmp/${USER}_datareport"
+REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
+
+
 echo "--------------------------------------------------------"
 echo "subscribe to events"
 
@@ -58,12 +66,35 @@ echo "subscribe to events"
         cd $ROOT/cycles-quartz/apps/transfers/enclave
 
         echo "... executing transfer"
-        export UPDATE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
-        echo $UPDATE | jq '.msg'
+        export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
+        # echo $UPDATE #| jq '.msg'
+        # echo $UPDATE | jq '.msg'
+        QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
+        MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
+        # echo "quote"
+        # echo $QUOTE
+        echo $MSG
+
+        echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
+        gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
+        REPORT=$(cat "$REPORT_FILE")
+        REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
+
 
         echo "... submitting update"
 
-        $CMD tx wasm execute $CONTRACT "{\"update\": "$UPDATE" }" --chain-id testing --from admin --node http://$NODE_URL -y
+
+        export EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
+            "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
+            '$ARGS.named')" '$ARGS.named')
+
+        echo $EXECUTE | jq '.'
+
+        
+        $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
+
+
+        # $CMD tx wasm execute $CONTRACT "{\"update\": "$UPDATE" }" --chain-id testing --from admin --node http://$NODE_URL -y
 
         echo " ... done"
         echo "---------------------------------------------------------"
@@ -77,7 +108,7 @@ echo "subscribe to events"
         # Extract the address from the event
         ADDRESS=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq -r '.result.events["message.sender"]'[0])
 
-        echo "ADDRESS BABY" $ADDRESS
+        echo "ADDRESS:::::" $ADDRESS
 
         # Create the enclave request with state and address
         export ENCLAVE_REQUEST=$(jq -nc --argjson state "$STATE" --arg address "$ADDRESS" '$ARGS.named')
@@ -90,19 +121,20 @@ echo "subscribe to events"
 
         echo "... executing query balance"
 
-        ENCRYPTED_BAL=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Query | jq -r '.message | fromjson | .msg.encrypted_bal')
+        # Get the entire msg object, including the attestation
+        ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Query | jq -r '.message | fromjson')
 
-        # Create the RawQueryResponseMsg structure
+        # Create the RawQueryResponseMsg structure with address inside the msg
         export BALANCE=$(jq -n \
                         --arg address "$ADDRESS" \
-                        --arg encrypted_bal "$ENCRYPTED_BAL" \
-                        '{address: $address, encrypted_bal: $encrypted_bal}')
+                        --argjson msg "$ATTESTED_MSG" \
+                        '{msg: ($msg.msg + {address: $address}), quote: $msg.quote}')
 
         echo "RawQueryResponseMsg:"
         echo $BALANCE | jq .
 
         echo "... submitting update"
-        $CMD tx wasm execute $CONTRACT "{\"store_balance\": $(echo $BALANCE | jq -c .) }" --chain-id testing --from admin --node http://$NODE_URL -y
+        $CMD tx wasm execute $CONTRACT "{\"query_response\": $(echo $BALANCE | jq -c .) }" --chain-id testing --from admin --node http://$NODE_URL -y
 
         echo " ... done"
         echo "---------------------------------------------------------"

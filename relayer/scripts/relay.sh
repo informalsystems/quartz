@@ -24,7 +24,7 @@ REQUEST_MSG=${2:-"{}"}
 rm -f "$QUOTE_FILE" "$REPORT_FILE" "$REPORT_SIG_FILE"
 
 # query the gRPC quartz enclave service
-ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto quartz.proto -d "$REQUEST_MSG" '127.0.0.1:11090' quartz.Core/"$REQUEST" | jq -c '.message | fromjson')
+ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto quartz.proto -d "$REQUEST_MSG" '127.0.0.1:11091' quartz.Core/"$REQUEST" | jq -c '.message | fromjson')
 
 # parse out the quote and the message
 QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')

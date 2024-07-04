@@ -22,8 +22,8 @@ loader.env.GRAMINE_PORT = "{{ gramine_port }}"
 
 loader.argv = ["enclave",
                 "--chain-id", "testing",
-                "--trusted-height", "1",
-                "--trusted-hash", "9A5627F601CA82FF4C3967BAE6521B67B6CECB8FF6FCBAE11A1DF563192E7EB9"]
+                "--trusted-height", "500000",
+                "--trusted-hash", "F8F5D053FAA9E09635620D8569AB49E3C205989A7B29E785B31304480094C61E"]
 
 fs.mounts = [
   { uri = "file:{{ gramine.runtimedir() }}", path = "/lib" },

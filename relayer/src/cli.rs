@@ -19,7 +19,7 @@ pub enum AddressError {
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// RPC server address
-    #[clap(long, default_value = "http://localhost:11090")]
+    #[clap(long, default_value = "http://localhost:11091")]
     pub enclave_addr: Endpoint,
 
     /// Blockchain node gRPC URL
