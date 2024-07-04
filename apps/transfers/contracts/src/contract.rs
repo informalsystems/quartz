@@ -187,7 +187,8 @@ pub mod execute {
         // Emit event
         let event = Event::new("store_balance")
             .add_attribute("query", "enclave") // TODO Weird to name it enclave?
-            .add_attribute(msg.address.to_string(), msg.encrypted_bal.to_string());
+            .add_attribute("address", msg.address.to_string())
+            .add_attribute("encrypted_balance", msg.encrypted_bal.to_string());
         let resp = Response::new().add_event(event);
         Ok(resp)
     }
