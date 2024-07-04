@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint64};
 use quartz_tee_ra::Error as RaVerificationError;
 
 use crate::{
@@ -31,8 +31,9 @@ impl Handler for CoreInstantiate {
         CONFIG
             .save(deps.storage, &RawConfig::from(self.config().clone()))
             .map_err(Error::Std)?;
+        let epoch_counter = Uint64::new(1);
 
-        EPOCH_COUNTER.save(deps.storage, &1).map_err(Error::Std)?;
+        EPOCH_COUNTER.save(deps.storage, &epoch_counter).map_err(Error::Std)?;
 
         Ok(Response::new().add_attribute("action", "instantiate"))
     }

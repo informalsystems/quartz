@@ -1,7 +1,7 @@
 use core::time::Duration;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{HexBinary, StdError};
+use cosmwasm_std::{HexBinary, StdError, Uint64};
 use cw_storage_plus::Item;
 use k256::ecdsa::VerifyingKey;
 
@@ -225,6 +225,7 @@ impl Session {
     }
 }
 
-pub const CONFIG: Item<'_, RawConfig> = Item::new("quartz_config");
-pub const SESSION: Item<'_, Session> = Item::new("quartz_session");
-pub const EPOCH_COUNTER: Item<'_, usize> = Item::new("epoch_counter");
+pub const CONFIG: Item< RawConfig> = Item::new("quartz_config");
+pub const SESSION: Item< Session> = Item::new("quartz_session");
+// pub const EPOCH_COUNTER: Item<u64> = Item::new("epoch_counter");
+pub const EPOCH_COUNTER: Item<Uint64> = Item::new("epoch_counter");
