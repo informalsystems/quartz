@@ -31,7 +31,7 @@ pub enum ExecuteMsg {
 
     // msgs sent by the enclave
     Update(RawAttested<execute::RawUpdateMsg, RawEpidAttestation>),
-    QueryResponse(RawAttested<execute::RawQueryResponseMsg, RawEpidAttestation>),
+    QueryResponse(execute::QueryResponseMsg),
 }
 
 pub mod execute {
@@ -131,51 +131,58 @@ pub mod execute {
         pub encrypted_bal: HexBinary,
     }
 
-    #[derive(Clone, Debug, PartialEq)]
-    pub struct QueryResponseMsg(pub RawQueryResponseMsg);
-
-
-    impl HasUserData for QueryResponseMsg {
-        fn user_data(&self) -> UserData {
-            let mut hasher = Sha256::new();
-            hasher.update(serde_json::to_string(&self.0).expect("infallible serializer"));
-            let digest: [u8; 32] = hasher.finalize().into();
-
-            let mut user_data = [0u8; 64];
-            user_data[0..32].copy_from_slice(&digest);
-            user_data
-        }
+    #[cw_serde]
+    pub struct QueryResponseMsg {
+        pub address: Addr,
+        pub encrypted_bal: HexBinary,
+        // pub proof: π
     }
 
-    impl HasDomainType for RawQueryResponseMsg {
-        type DomainType = QueryResponseMsg;
-    }
+    // #[derive(Clone, Debug, PartialEq)]
+    // pub struct QueryResponseMsg(pub RawQueryResponseMsg);
 
-    impl TryFrom<RawQueryResponseMsg> for QueryResponseMsg {
-        type Error = StdError;
 
-        fn try_from(value: RawQueryResponseMsg) -> Result<Self, Self::Error> {
-            Ok(Self(value))
-        }
-    }
+    // impl HasUserData for QueryResponseMsg {
+    //     fn user_data(&self) -> UserData {
+    //         let mut hasher = Sha256::new();
+    //         hasher.update(serde_json::to_string(&self.0).expect("infallible serializer"));
+    //         let digest: [u8; 32] = hasher.finalize().into();
 
-    impl From<QueryResponseMsg> for RawQueryResponseMsg {
-        fn from(value: QueryResponseMsg) -> Self {
-            value.0
-        }
-    }
+    //         let mut user_data = [0u8; 64];
+    //         user_data[0..32].copy_from_slice(&digest);
+    //         user_data
+    //     }
+    // }
 
-    impl Handler for QueryResponseMsg {
-        fn handle(
-            self,
-            _deps: DepsMut<'_>,
-            _env: &Env,
-            _info: &MessageInfo,
-        ) -> Result<Response, Error> {
-            // basically handle `transfer_request` here
-            Ok(Response::default())
-        }
-    }
+    // impl HasDomainType for RawQueryResponseMsg {
+    //     type DomainType = QueryResponseMsg;
+    // }
+
+    // impl TryFrom<RawQueryResponseMsg> for QueryResponseMsg {
+    //     type Error = StdError;
+
+    //     fn try_from(value: RawQueryResponseMsg) -> Result<Self, Self::Error> {
+    //         Ok(Self(value))
+    //     }
+    // }
+
+    // impl From<QueryResponseMsg> for RawQueryResponseMsg {
+    //     fn from(value: QueryResponseMsg) -> Self {
+    //         value.0
+    //     }
+    // }
+
+    // impl Handler for QueryResponseMsg {
+    //     fn handle(
+    //         self,
+    //         _deps: DepsMut<'_>,
+    //         _env: &Env,
+    //         _info: &MessageInfo,
+    //     ) -> Result<Response, Error> {
+    //         // basically handle `transfer_request` here
+    //         Ok(Response::default())
+    //     }
+    // }
 
 
 }

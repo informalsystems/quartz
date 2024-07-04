@@ -64,12 +64,7 @@ pub fn execute(
                 .handle_raw(deps.branch(), &env, &info)?;
             update(deps, env, info, UpdateMsg(attested_msg.msg))
         }
-        ExecuteMsg::QueryResponse(attested_msg) => {
-            let _ = attested_msg
-                .clone()
-                .handle_raw(deps.branch(), &env, &info)?;
-            store_balance(deps, env, info, QueryResponseMsg(attested_msg.msg))
-        }
+        ExecuteMsg::QueryResponse(msg) => store_balance(deps, env, info, msg)
     }
 }
 
@@ -191,14 +186,14 @@ pub mod execute {
         // Store state
         BALANCES.save(
             deps.storage,
-            &msg.0.address.to_string(),
-            &msg.0.encrypted_bal,
+            &msg.address.to_string(),
+            &msg.encrypted_bal,
         )?;
 
         // Emit event
         let event = Event::new("store_balance")
             .add_attribute("query", "enclave") // TODO Weird to name it enclave?
-            .add_attribute(msg.0.address.to_string(), msg.0.encrypted_bal.to_string());
+            .add_attribute(msg.address.to_string(), msg.encrypted_bal.to_string());
         let resp = Response::new().add_event(event);
         Ok(resp)
     }

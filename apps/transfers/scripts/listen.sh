@@ -108,8 +108,6 @@ echo "subscribe to events"
         # Extract the address from the event
         ADDRESS=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq -r '.result.events["message.sender"]'[0])
 
-        echo "ADDRESS:::::" $ADDRESS
-
         # Create the enclave request with state and address
         export ENCLAVE_REQUEST=$(jq -nc --argjson state "$STATE" --arg address "$ADDRESS" '$ARGS.named')
         echo $ENCLAVE_REQUEST | jq .
@@ -121,20 +119,36 @@ echo "subscribe to events"
 
         echo "... executing query balance"
 
-        # Get the entire msg object, including the attestation
-        ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Query | jq -r '.message | fromjson')
+        # TODO - Uncomment this out when I get attested messages working
+        # # Get the entire msg object, including the attestation
+        # ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Query | jq -r '.message | fromjson')
 
-        # Create the RawQueryResponseMsg structure with address inside the msg
+        # # Create the RawQueryResponseMsg structure with address inside the msg
+        # export BALANCE=$(jq -n \
+        #                 --arg address "$ADDRESS" \
+        #                 --argjson msg "$ATTESTED_MSG" \
+        #                 '{msg: ($msg.msg + {address: $address}), quote: $msg.quote}')
+
+        # echo "RawQueryResponseMsg:"
+        # echo $BALANCE | jq .
+
+        # echo "... submitting update"
+        # $CMD tx wasm execute $CONTRACT "{\"query_response\": $(echo $BALANCE | jq -c .) }" --chain-id testing --from admin --node http://$NODE_URL -y
+
+        # Get the encrypted balance from the gRPC response
+        ENCRYPTED_BAL=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Query | jq -r '.message | fromjson | .msg.encrypted_bal')
+
+        # Create the QueryResponseMsg structure
         export BALANCE=$(jq -n \
                         --arg address "$ADDRESS" \
-                        --argjson msg "$ATTESTED_MSG" \
-                        '{msg: ($msg.msg + {address: $address}), quote: $msg.quote}')
+                        --arg encrypted_bal "$ENCRYPTED_BAL" \
+                        '{address: $address, encrypted_bal: $encrypted_bal}')
 
-        echo "RawQueryResponseMsg:"
+        echo "QueryResponseMsg:"
         echo $BALANCE | jq .
 
         echo "... submitting update"
-        $CMD tx wasm execute $CONTRACT "{\"query_response\": $(echo $BALANCE | jq -c .) }" --chain-id testing --from admin --node http://$NODE_URL -y
+        $CMD tx wasm execute $CONTRACT "{\"query_response\": $(echo $BALANCE | jq -c .)}" --chain-id testing --from admin --node http://$NODE_URL -y
 
         echo " ... done"
         echo "---------------------------------------------------------"

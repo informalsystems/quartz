@@ -313,12 +313,6 @@ where
             println!("final  mesg {:?}", message);
 
         Ok(Response::new(QueryResponse { message }))
-            // Ok(Response::new(QueryResponse { message }))
-
-        // Ok(Response::new(QueryResponse { message }))
-        // Ok(Response::new(QueryResponse {
-        //     message: "".to_string(),
-        // }))
     }
 }
 
