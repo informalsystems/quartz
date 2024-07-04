@@ -20,12 +20,14 @@ path = "bin/encrypt.rs"
 
 
 
+
 [dependencies]
 # external
 hex = { version = "0.4.3", default-features = false }
 k256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
 schemars = "0.8.15"
-# serde = { version = "1.0.189", default-features = false, features = ["derive"] }
+mio = "=1.0.0"
+
 thiserror = { version = "1.0.49" }
 tonic = { version = "0.11.0"}
 cosmrs = { version = "0.16.0"}
@@ -35,7 +37,7 @@ serde_json = { version = "1.0.117", default-features = false }
 
 ecies = { version = "0.2.3", default-features = false, features = ["pure"] }
 clap = { version = "4.1.8", default-features = false, features = ["derive", "std"] }
-tokio = { version = "1.0", default-features = false, features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.0", default-features = false, features = ["macros", "rt-multi-thread", "rt"] }
 tendermint = { version = "=0.36.0", default-features = false }
 tendermint-light-client = { version = "=0.36.0", default-features = false, features = ["rust-crypto"] }
 color-eyre = { version = "0.6.2", default-features = false }
@@ -64,3 +66,4 @@ cosmwasm-vm = "2.0.0"
 
 [build-dependencies]
 tonic-build = "0.11.0"
+
