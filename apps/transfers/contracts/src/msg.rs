@@ -53,7 +53,9 @@ pub mod execute {
     }
 
     #[cw_serde]
-    pub struct QueryRequestMsg {}
+    pub struct QueryRequestMsg {
+        pub emphemeral_pubkey: HexBinary,
+    }
 
     #[cw_serde]
     pub struct TransferRequestMsg {

@@ -112,12 +112,13 @@ pub mod execute {
         _deps: DepsMut,
         _env: Env,
         info: MessageInfo,
-        _msg: QueryRequestMsg,
+        msg: QueryRequestMsg,
     ) -> Result<Response, ContractError> {
         let event = Event::new("query_balance")
             .add_attribute("query", "user")
-            .add_attribute("address", info.sender);
-        let resp = Response::new().add_event(event);
+            .add_attribute("address", info.sender)
+            .add_attribute("emphemeral_pubkey", msg.emphemeral_pubkey.to_string());
+    let resp = Response::new().add_event(event);
         Ok(resp)
     }
 
