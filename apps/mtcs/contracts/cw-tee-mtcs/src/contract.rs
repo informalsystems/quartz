@@ -13,8 +13,8 @@ use crate::{
     error::ContractError,
     msg::{
         execute::{
-            Cw20Transfer, FaucetMintMsg, SubmitObligationMsg, SubmitObligationsMsg,
-            SubmitSetoffsMsg,
+            Cw20Transfer, FaucetMintMsg, SetLiquiditySourcesMsg, SubmitObligationMsg,
+            SubmitObligationsMsg, SubmitSetoffsMsg,
         },
         ExecuteMsg, InstantiateMsg, QueryMsg,
     },
@@ -96,7 +96,7 @@ pub fn execute(
             for o in obligations {
                 execute::submit_obligation(deps.branch(), o.ciphertext, o.digest)?;
             }
-            execute::append_liquidity_sources(deps, liquidity_sources)?;
+            execute::set_liquidity_sources(deps, liquidity_sources)?;
             Ok(Response::new())
         }
         ExecuteMsg::SubmitSetoffs(attested_msg) => {
@@ -107,6 +107,9 @@ pub fn execute(
             execute::submit_setoffs(deps, env, setoffs_enc)
         }
         ExecuteMsg::InitClearing => execute::init_clearing(deps),
+        ExecuteMsg::SetLiquiditySources(SetLiquiditySourcesMsg { liquidity_sources }) => {
+            execute::set_liquidity_sources(deps, liquidity_sources)
+        }
     }
 }
 
@@ -172,10 +175,10 @@ pub mod execute {
             .add_attribute("ciphertext", ciphertext.to_string()))
     }
 
-    pub fn append_liquidity_sources(
+    pub fn set_liquidity_sources(
         deps: DepsMut,
         liquidity_sources: Vec<HexBinary>,
-    ) -> Result<(), ContractError> {
+    ) -> Result<Response, ContractError> {
         // validate liquidity sources as public keys
         liquidity_sources
             .iter()
@@ -184,11 +187,12 @@ pub mod execute {
         // store the liquidity sources
         LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
             .update(deps.storage, |mut ls| {
+                ls.clear();
                 ls.extend(liquidity_sources);
                 Ok::<_, ContractError>(ls)
             })?;
 
-        Ok(())
+        Ok(Response::default())
     }
 
     pub fn submit_setoffs(
