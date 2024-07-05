@@ -51,6 +51,7 @@ pub struct RunTransfersResponseMessage {
 pub struct QueryRequestMessage {
     state: HexBinary,
     address: Addr,
+    ephemeral_pubkey: HexBinary,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryResponseMessage {
@@ -223,13 +224,10 @@ where
         Ok(Response::new(RunTransfersResponse { message }))
     }
 
-    // TODO - serialize the request into the account address (sender)
     async fn query(&self, request: Request<QueryRequest>) -> TonicResult<Response<QueryResponse>> {
-        // Request contains a serialized json string
-
         // Serialize request into struct containing State and the Requests vec
         let message: QueryRequestMessage = {
-            let message = request.into_inner().message;
+            let message: String = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
 
@@ -251,54 +249,53 @@ where
                 let sk = sk_lock
                     .as_ref()
                     .ok_or(Status::internal("SigningKey unavailable"))?;
-
                 decrypt_state(sk, &message.state)?
             }
         };
 
         println!("state gotten {:?}", state.state);
 
-        let mut bal: RawBalance;
+        let bal = match state.state.get(&message.address) {
+            Some(balance) => RawBalance { balance: *balance },
+            None => RawBalance {
+                balance: Uint128::new(0),
+            },
+        };
 
-        match state.state.entry(message.address.clone()) {
-            Entry::Occupied(entry) => {
-                bal = RawBalance {
-                    balance: *entry.get(),
-                };
-            }
-            Entry::Vacant(entry) => {
-                entry.insert(Uint128::new(0));
-                bal = RawBalance {
-                    balance: Uint128::new(0),
-                };
-            }
-        }
+        // let mut bal: RawBalance;
+
+        // match state.state.entry(message.address.clone()) {
+        //     Entry::Occupied(entry) => {
+        //         bal = RawBalance {
+        //             balance: *entry.get(),
+        //         };
+        //     }
+        //     Entry::Vacant(entry) => {
+        //         entry.insert(Uint128::new(0));
+        //         bal = RawBalance {
+        //             balance: Uint128::new(0),
+        //         };
+        //     }
+        // }
 
         println!("bal gotten {:?}", bal);
 
-        // Encrypt the balance
-        // Gets lock on PrivKey, generates PubKey to encrypt with
-        let bal_enc = {
-            let sk_lock = self
-                .sk
-                .lock()
-                .map_err(|e| Status::internal(e.to_string()))?;
-            let pk = VerifyingKey::from(
-                sk_lock
-                    .as_ref()
-                    .ok_or(Status::internal("SigningKey unavailable"))?,
-            );
+        // Parse the ephemeral public key
+        let ephemeral_pubkey =
+            VerifyingKey::from_sec1_bytes(&message.ephemeral_pubkey).map_err(|e| {
+                Status::invalid_argument(format!("Invalid ephemeral public key: {}", e))
+            })?;
 
-            encrypt_balance(RawBalance::from(bal), pk) // TODO update this
-                .map_err(|e| Status::invalid_argument(e.to_string()))?
-        };
+        // Encrypt the balance using the ephemeral public key
+        let bal_enc = encrypt_balance(bal, ephemeral_pubkey)
+            .map_err(|e| Status::internal(format!("Encryption error: {}", e)))?;
 
         // Prepare message to chain
         let msg = QueryResponseMessage {
             encrypted_bal: bal_enc,
         };
 
-        println!("query RESPONSE message: {:?}", msg);
+        println!("query RESPONSE message, i.e. encrypted: {:?}", msg);
 
         // Attest to message
         let quote = self
@@ -310,7 +307,7 @@ where
         println!("attested mesg {:?}", attested_msg);
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
-            println!("final  mesg {:?}", message);
+        println!("final  mesg {:?}", message);
 
         Ok(Response::new(QueryResponse { message }))
     }
@@ -347,11 +344,11 @@ fn encrypt_state(state: RawState, enclave_pk: VerifyingKey) -> TonicResult<RawCi
     }
 }
 
-fn encrypt_balance(state: RawBalance, enclave_pk: VerifyingKey) -> TonicResult<RawCipherText> {
-    let serialized_state = serde_json::to_string(&state).expect("infallible serializer");
+fn encrypt_balance(balance: RawBalance, ephemeral_pk: VerifyingKey) -> TonicResult<RawCipherText> {
+    let serialized_balance = serde_json::to_string(&balance).expect("infallible serializer");
 
-    match encrypt(&enclave_pk.to_sec1_bytes(), serialized_state.as_bytes()) {
-        Ok(encrypted_state) => Ok(encrypted_state.into()),
+    match encrypt(&ephemeral_pk.to_sec1_bytes(), serialized_balance.as_bytes()) {
+        Ok(encrypted_balance) => Ok(encrypted_balance.into()),
         Err(e) => Err(Status::internal(format!("Encryption error: {}", e))),
     }
 }
