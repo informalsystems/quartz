@@ -9,13 +9,13 @@ fi
 ENCRYPTED_BALANCE=$1
 
 # Check if eciespy is installed
-if ! pip list | grep -q eciespy; then
+if ! pip list 2>/dev/null | grep -q eciespy; then
     echo "eciespy is not installed. Installing now..."
-    pip install eciespy
+    pip install eciespy >/dev/null 2>&1
 fi
 
 # Extract the private key from wasmd
-EPHEMERAL_PRIVKEY=$(wasmd keys export ephemeral_user --unsafe --unarmored-hex)
+EPHEMERAL_PRIVKEY=$( yes | wasmd keys export ephemeral_user --unsafe --unarmored-hex)
 
 if [ $? -ne 0 ]; then
     echo "Failed to export private key. Make sure 'ephemeral_user' exists and you've entered the correct password."
@@ -42,6 +42,7 @@ EOF
 # Run the Python script to decrypt
 DECRYPTED=$(python3 "$TEMP_PYTHON_SCRIPT" "$EPHEMERAL_PRIVKEY" "$ENCRYPTED_BALANCE")
 
+echo "---------------------------------------------------------"
 echo "Decrypted result:"
 echo "$DECRYPTED"
 
