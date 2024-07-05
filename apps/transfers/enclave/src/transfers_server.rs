@@ -231,8 +231,6 @@ where
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
 
-        println!("query request message: {:?}", message);
-
         // Decrypt and deserialize the state
         let mut state = {
             if message.state.len() == 1 && message.state[0] == 0 {
@@ -253,32 +251,12 @@ where
             }
         };
 
-        println!("state gotten {:?}", state.state);
-
         let bal = match state.state.get(&message.address) {
             Some(balance) => RawBalance { balance: *balance },
             None => RawBalance {
                 balance: Uint128::new(0),
             },
         };
-
-        // let mut bal: RawBalance;
-
-        // match state.state.entry(message.address.clone()) {
-        //     Entry::Occupied(entry) => {
-        //         bal = RawBalance {
-        //             balance: *entry.get(),
-        //         };
-        //     }
-        //     Entry::Vacant(entry) => {
-        //         entry.insert(Uint128::new(0));
-        //         bal = RawBalance {
-        //             balance: Uint128::new(0),
-        //         };
-        //     }
-        // }
-
-        println!("bal gotten {:?}", bal);
 
         // Parse the ephemeral public key
         let ephemeral_pubkey =
@@ -295,8 +273,6 @@ where
             encrypted_bal: bal_enc,
         };
 
-        println!("query RESPONSE message, i.e. encrypted: {:?}", msg);
-
         // Attest to message
         let quote = self
             .attestor
@@ -304,10 +280,8 @@ where
             .map_err(|e| Status::internal(e.to_string()))?;
 
         let attested_msg = AttestedMsg { msg, quote };
-        println!("attested mesg {:?}", attested_msg);
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
-        println!("final  mesg {:?}", message);
 
         Ok(Response::new(QueryResponse { message }))
     }

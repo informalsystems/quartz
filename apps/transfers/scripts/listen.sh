@@ -17,9 +17,6 @@ WSURL="ws://$NODE_URL/websocket"
 SUBSCRIBE_TRANSFER="{\"jsonrpc\":\"2.0\",\"method\":\"subscribe\",\"params\":[\"execute._contract_address = '$CONTRACT' AND wasm-transfer.action = 'user'\"],\"id\":1}"
 SUBSCRIBE_QUERY="{\"jsonrpc\":\"2.0\",\"method\":\"subscribe\",\"params\":[\"execute._contract_address = '$CONTRACT' AND wasm-query_balance.query = 'user'\"],\"id\":2}"
 
-echo $SUBSCRIBE_TRANSFER
-echo $SUBSCRIBE_QUERY
-
 # Attestation constants
 IAS_API_KEY="669244b3e6364b5888289a11d2a1726d"
 RA_CLIENT_SPID="51CAF5A48B450D624AEFE3286D314894"
@@ -49,7 +46,6 @@ echo "subscribe to events"
     #fi 
 
     CLEAN_MSG=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq '.result.events')
-    echo "CLEAN" $CLEAN_MSG
 
     if echo "$CLEAN_MSG" | grep -q 'wasm-transfer'; then
         echo "... received wasm-transfer event!"
@@ -59,7 +55,6 @@ echo "subscribe to events"
         STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
 
         export ENCLAVE_REQUEST=$(jq -nc --argjson requests "$REQUESTS" --argjson state $STATE '$ARGS.named')
-        echo $ENCLAVE_REQUEST | jq .
 
         export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
 
@@ -95,9 +90,7 @@ echo "subscribe to events"
         # REPORT=$(cat "$REPORT_FILE")
         # REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
 
-
         # echo "... submitting update"
-
 
         # export EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
         #     "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
@@ -107,9 +100,6 @@ echo "subscribe to events"
 
         
         # $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
-
-
-        # $CMD tx wasm execute $CONTRACT "{\"update\": "$UPDATE" }" --chain-id testing --from admin --node http://$NODE_URL -y
 
         echo " ... done"
         echo "---------------------------------------------------------"
@@ -128,10 +118,7 @@ echo "subscribe to events"
 
         # Create the enclave request with state and address
         export ENCLAVE_REQUEST=$(jq -nc --argjson state "$STATE" --arg address "$ADDRESS" --arg ephemeral_pubkey "$EPHEMERAL_PUBKEY" '$ARGS.named')
-        echo $ENCLAVE_REQUEST | jq .
-
         export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
-        echo $REQUEST_MSG | jq .
 
         cd $ROOT/cycles-quartz/apps/transfers/enclave
 

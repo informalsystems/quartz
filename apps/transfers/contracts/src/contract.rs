@@ -28,8 +28,6 @@ pub fn instantiate(
     let state: HexBinary = HexBinary::from(&[0x00]);
     STATE.save(deps.storage, &state)?;
 
-    // TODO - do I need to instantiate  BALANCES
-
     Ok(Response::new()
         .add_attribute("method", "instantiate")
         .add_attribute("owner", info.sender))
