@@ -4,13 +4,13 @@ use std::{
 };
 
 use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::{Addr, HexBinary};
 //TODO: get rid of this
 use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
     state::{RawHash, SettleOff, Transfer},
 };
-use cycles_sync::types::RawObligation;
+use cycles_sync::types::{ContractObligation, RawObligation};
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use mtcs::{
@@ -23,6 +23,7 @@ use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
 use crate::proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse};
+use std::collections::BTreeSet;
 
 pub type RawCipherText = HexBinary;
 
@@ -35,7 +36,7 @@ pub struct MtcsService<A> {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RunClearingMessage {
     intents: BTreeMap<RawHash, RawCipherText>,
-    liquidity_sources: Vec<HexBinary>,
+    liquidity_sources: BTreeSet<Addr>,
 }
 
 impl<A> MtcsService<A>
@@ -60,25 +61,18 @@ where
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
-
+        let liquidity_sources: Vec<Addr> = message.liquidity_sources.into_iter().collect();
         let digests_ciphertexts = message.intents;
         let (digests, ciphertexts): (Vec<_>, Vec<_>) = digests_ciphertexts.into_iter().unzip();
 
         let sk = self.sk.lock().unwrap();
-        let obligations: Vec<SimpleObligation<_, i64>> = ciphertexts
+        let obligations: Vec<SimpleObligation<Addr, i64>> = ciphertexts
             .into_iter()
             .map(|ciphertext| decrypt_obligation(sk.as_ref().unwrap(), &ciphertext))
             .collect();
 
         let mut mtcs = ComplexIdMtcs::wrapping(DefaultMtcs::new(PrimalDual::default()));
-        let setoffs: Vec<SimpleSetoff<_, i64>> = mtcs.run(obligations).unwrap();
-
-        let liquidity_sources: Vec<_> = message
-            .liquidity_sources
-            .into_iter()
-            .map(|ls| VerifyingKey::from_sec1_bytes(&ls))
-            .collect::<Result<_, _>>()
-            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+        let setoffs: Vec<SimpleSetoff<Addr, i64>> = mtcs.run(obligations).unwrap();
 
         let setoffs_enc: BTreeMap<RawHash, SettleOff> = setoffs
             .into_iter()
@@ -96,63 +90,70 @@ where
 
         let attested_msg = RawAttested { msg, attestation };
         let message = serde_json::to_string(&attested_msg).unwrap();
-
         Ok(Response::new(RunClearingResponse { message }))
     }
 }
 
 fn into_settle_offs(
-    so: SimpleSetoff<HexBinary, i64>,
-    liquidity_sources: &[VerifyingKey],
+    so: SimpleSetoff<Addr, i64>,
+    liquidity_sources: &Vec<Addr>,
 ) -> SettleOff {
-    let debtor_pk = VerifyingKey::from_sec1_bytes(&so.debtor).unwrap();
-    let creditor_pk = VerifyingKey::from_sec1_bytes(&so.creditor).unwrap();
+    println!("setoff: {:?}", so);
+    println!("liq sources: {:?}", liquidity_sources);
 
-    if let Some(ls_pk) = liquidity_sources.iter().find(|ls| ls == &&debtor_pk) {
+    if liquidity_sources.contains(&&so.debtor) {
         // A setoff on a tender should result in the creditor's (i.e. the tender receiver) balance
         // decreasing by the setoff amount
         SettleOff::Transfer(Transfer {
-            payer: wasm_address(creditor_pk),
-            payee: wasm_address(*ls_pk),
+            payer: so.creditor.to_string(),
+            payee: so.debtor.to_string(),
             amount: so.set_off as u64,
         })
-    } else if let Some(ls_pk) = liquidity_sources.iter().find(|ls| ls == &&creditor_pk) {
+    } else if liquidity_sources.contains(&&so.creditor) {
         // A setoff on an acceptance should result in the debtor's (i.e. the acceptance initiator)
         // balance increasing by the setoff amount
         SettleOff::Transfer(Transfer {
-            payer: wasm_address(*ls_pk),
-            payee: wasm_address(debtor_pk),
+            payer: so.creditor.to_string(),
+            payee: so.debtor.to_string(),
             amount: so.set_off as u64,
         })
     } else {
-        SettleOff::SetOff(encrypt_setoff(so, debtor_pk, creditor_pk))
+        // TODO: Add logic after implementing epoch-persistence 
+        // SettleOff::SetOff(encrypt_setoff(so, debtor_pk, creditor_pk))
+        
+        // Need to do a no-op here
+        SettleOff::Transfer(Transfer {
+            payer: "0".to_string(),
+            payee: "0".to_string(),
+            amount: so.set_off as u64,
+        })
     }
 }
 
-fn wasm_address(pk: VerifyingKey) -> String {
-    let tm_pk = TmAccountId::from(pk);
-    AccountId::new("wasm", tm_pk.as_bytes())
-        .unwrap()
-        .to_string()
-}
+// fn wasm_address(pk: VerifyingKey) -> String {
+//     let tm_pk = TmAccountId::from(pk);
+//     AccountId::new("wasm", tm_pk.as_bytes())
+//         .unwrap()
+//         .to_string()
+// }
 
-fn encrypt_setoff(
-    so: SimpleSetoff<HexBinary, i64>,
-    debtor_pk: VerifyingKey,
-    creditor_pk: VerifyingKey,
-) -> Vec<RawCipherText> {
-    let so_ser = serde_json::to_string(&so).expect("infallible serializer");
-    let so_debtor = encrypt(&debtor_pk.to_sec1_bytes(), so_ser.as_bytes()).unwrap();
-    let so_creditor = encrypt(&creditor_pk.to_sec1_bytes(), so_ser.as_bytes()).unwrap();
+// fn encrypt_setoff(
+//     so: SimpleSetoff<HexBinary, i64>,
+//     debtor_pk: VerifyingKey,
+//     creditor_pk: VerifyingKey,
+// ) -> Vec<RawCipherText> {
+//     let so_ser = serde_json::to_string(&so).expect("infallible serializer");
+//     let so_debtor = encrypt(&debtor_pk.to_sec1_bytes(), so_ser.as_bytes()).unwrap();
+//     let so_creditor = encrypt(&creditor_pk.to_sec1_bytes(), so_ser.as_bytes()).unwrap();
 
-    vec![so_debtor.into(), so_creditor.into()]
-}
+//     vec![so_debtor.into(), so_creditor.into()]
+// }
 
 fn decrypt_obligation(
     sk: &SigningKey,
     ciphertext: &RawCipherText,
-) -> SimpleObligation<HexBinary, i64> {
-    let o: RawObligation = {
+) -> SimpleObligation<Addr, i64> {
+    let o: ContractObligation = {
         let o = decrypt(&sk.to_bytes(), ciphertext).unwrap();
         serde_json::from_slice(&o).unwrap()
     };

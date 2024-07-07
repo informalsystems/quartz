@@ -19,7 +19,7 @@ cd "$DIR_QUARTZ_TM_PROVER"
 cargo run -- --chain-id testing \
 --primary "http://$NODE_URL" \
 --witnesses "http://$NODE_URL" \
---trusted-height 1 \
+--trusted-height 500000 \
 --trusted-hash "5237772462A41C0296ED688A0327B8A60DF310F08997AD760EB74A70D0176C27" \
 --contract-address "wasm14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s0phg4d" \
 --storage-key "quartz_session" \

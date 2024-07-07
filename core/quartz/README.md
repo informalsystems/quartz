@@ -25,6 +25,6 @@ gramine-sgx ./quartz
 
 ```bash
 cargo run -- --chain-id testing \
-    --trusted-height 1 \
+    --trusted-height 500000 \
     --trusted-hash "A1D115BA3A5E9FCC12ED68A9D8669159E9085F6F96EC26619F5C7CEB4EE02869"
 ```

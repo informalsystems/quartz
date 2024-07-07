@@ -28,12 +28,15 @@ echo "PUB KEY: '$PUB_KEY'"
 echo "------------ shook some hands ------------"
 
 cd $DIR_CYCLES_SYNC
-cargo run --bin submit $PUB_KEY $CONTRACT
+cargo run --bin submit $PUB_KEY $CONTRACT "false"
 
 echo "------------ submitted obligations ------------"
 
 #add contract to owners list in overdrafts contract
-WASMD_OUTPUT=$(wasmd tx wasm execute wasm1huhuswjxfydydxvdadqqsaet2p72wshtmr72yzx09zxncxtndf2sqs24hk '{"add_owner": {"new": "'$CONTRACT'"}}' --from wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70 --node http://$NODE_URL --chain-id testing)
+sleep 1
+CURRENT_SEQUENCE=$(wasmd query account wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70 --node http://$NODE_URL --output json | jq -r .sequence)
+WASMD_OUTPUT=$(wasmd tx wasm execute wasm1huhuswjxfydydxvdadqqsaet2p72wshtmr72yzx09zxncxtndf2sqs24hk '{"add_owner": {"new": "'$CONTRACT'"}}' --from wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70 --node http://$NODE_URL --chain-id testing --sequence $CURRENT_SEQUENCE)
+
 echo $WASMD_OUTPUT
 echo "------------ added contract as owner of overdrafts ------------"
 

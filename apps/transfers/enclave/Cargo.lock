@@ -713,6 +713,8 @@ dependencies = [
  "quartz-cw",
  "schemars",
  "serde",
+ "serde_json",
+ "sha2 0.10.8",
  "thiserror",
 ]
 
@@ -780,6 +782,7 @@ dependencies = [
 name = "cycles-sync"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "bip32",
  "clap",

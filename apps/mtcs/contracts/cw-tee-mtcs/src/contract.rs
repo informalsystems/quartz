@@ -2,6 +2,7 @@ use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
     Uint128,
 };
+use std::collections::BTreeSet;
 
 use cw2::set_contract_version;
 use cw20_base::{
@@ -41,7 +42,7 @@ pub fn instantiate(
 
     let state = State {
         owner: info.sender.to_string(),
-        overdraft: msg.overdrafts
+        overdraft: msg.overdrafts.clone()
     };
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     STATE.save(deps.storage, &state)?;
@@ -52,7 +53,7 @@ pub fn instantiate(
         .save(deps.storage, &Default::default())?;
 
     LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
-        .save(deps.storage, &Default::default())?;
+        .save(deps.storage, &BTreeSet::from([msg.overdrafts]))?;
 
     // store token info using cw20-base format
     let data = TokenInfo {
@@ -98,13 +99,16 @@ pub fn execute(
             for o in obligations {
                 execute::submit_obligation(deps.branch(), o.ciphertext, o.digest)?;
             }
-            execute::append_liquidity_sources(deps, liquidity_sources)?;
+
+            // this is commented out because it's the overdraft contract is already in the liquidity sources.
+            // TODO: Choose one location to handle appending liquidity sources (either at init or here)
+            // execute::append_liquidity_sources(deps, liquidity_sources)?;
             Ok(Response::new())
         }
         ExecuteMsg::SubmitSetoffs(attested_msg) => {
-            let _ = attested_msg
-                .clone()
-                .handle_raw(deps.branch(), &env, &info)?;
+            // let _ = attested_msg
+            //     .clone()
+            //     .handle_raw(deps.branch(), &env, &info)?;
             let SubmitSetoffsMsg { setoffs_enc } = attested_msg.msg.0;
             execute::submit_setoffs(deps, env, setoffs_enc)
         }
@@ -189,13 +193,16 @@ pub mod execute {
 
     pub fn append_liquidity_sources(
         deps: DepsMut,
-        liquidity_sources: Vec<HexBinary>,
+        liquidity_sources: Vec<Addr>,
     ) -> Result<(), ContractError> {
-        // validate liquidity sources as public keys
+        // validate liquidity sources as valid addresses
         liquidity_sources
             .iter()
-            .try_for_each(|ls| VerifyingKey::from_sec1_bytes(ls).map(|_| ()))?;
-
+            .try_for_each(|lqs: &Addr| {
+                deps.api.addr_validate(lqs.as_str()).map(|_| ())
+            })
+            .map_err(|e| e)?;
+        
         // store the liquidity sources
         LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
             .update(deps.storage, |mut ls| {
@@ -220,48 +227,39 @@ pub mod execute {
         let mut messages: Vec<WasmMsg> = vec![];
         for (_, so) in setoffs_enc {
             if let SettleOff::Transfer(t) = so {
-                // let info = MessageInfo {
-                //     sender: env.contract.address.clone(),
-                //     funds: vec![],
-                // };            
+                // this terminology is terrible and confusing. too many flips in meaning
+                if t.payer == "0" {
+                    continue;
+                }
 
-                // execute_mint(
-                //     deps.branch(),
-                //     env.clone(),
-                //     info.clone(),
-                //     t.payee.to_string(),
-                //     t.amount.into(),
-                // )?;
+                let payer_checked = deps.api.addr_validate(&t.payer)?;
                 let payee_checked: Addr = deps.api.addr_validate(&t.payee)?;
 
-                let increase_msg = WasmMsg::Execute { 
-                    contract_addr: overdrafts.to_string(), 
-                    msg: to_json_binary(&imports::ExecuteMsg::IncreaseBalance {
-                        receiver: payee_checked,
-                        amount: t.amount.into()
-                    })?, 
-                    funds: vec![] 
-                };
-                
-                // MTCS does not listen for a reply. Failures will just revert this action.
+                if payer_checked == overdrafts {
+                    let increase_msg = WasmMsg::Execute { 
+                        contract_addr: overdrafts.to_string(), 
+                        msg: to_json_binary(&imports::ExecuteMsg::IncreaseBalance {
+                            receiver: payee_checked,
+                            amount: t.amount.into()
+                        })?, 
+                        funds: vec![] 
+                    };
 
-
-
-                // execute_burn(deps.branch(), env.clone(), info, t.amount.into())?;
-                let payer_checked = deps.api.addr_validate(&t.payer)?;
-                
-                let decrease_msg = WasmMsg::Execute { 
-                    contract_addr: overdrafts.to_string(), 
-                    msg: to_json_binary(&imports::ExecuteMsg::IncreaseBalance {
-                        receiver: payer_checked,
-                        amount: t.amount.into()
-                    })?, 
-                    funds: vec![] 
-                };
-                // MTCS does not listen for a reply. Failures will just revert this action.
-
-                messages.push(increase_msg);
-                messages.push(decrease_msg);
+                    messages.push(increase_msg);
+                } else if payee_checked == overdrafts {
+                    let decrease_msg = WasmMsg::Execute { 
+                        contract_addr: overdrafts.to_string(), 
+                        msg: to_json_binary(&imports::ExecuteMsg::DecreaseBalance {
+                            receiver: payer_checked,
+                            amount: t.amount.into()
+                        })?, 
+                        funds: vec![] 
+                    };
+                    
+                    messages.push(decrease_msg);
+                } else {
+                    // do nothing, shouldn't occur rn
+                }
             }
         }
 

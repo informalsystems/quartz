@@ -58,7 +58,7 @@ pub mod execute {
     #[cw_serde]
     pub struct SubmitObligationsMsg {
         pub obligations: Vec<SubmitObligationMsg>,
-        pub liquidity_sources: Vec<HexBinary>,
+        pub liquidity_sources: Vec<Addr>,
     }
 
     #[cw_serde]
@@ -106,7 +106,7 @@ pub struct GetAllSetoffsResponse {
 
 #[cw_serde]
 pub struct GetLiquiditySourcesResponse {
-    pub liquidity_sources: Vec<HexBinary>,
+    pub liquidity_sources: Vec<Addr>,
 }
 
 #[cfg(test)]

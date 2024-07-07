@@ -85,7 +85,7 @@ echo "contract $CONTRACT"
 cargo run -vvv -- --chain-id testing \
     --primary "http://$NODE_URL" \
     --witnesses "http://$NODE_URL" \
-    --trusted-height 1 \
+    --trusted-height 500000 \
     --trusted-hash $TRUSTED_HASH \
     --contract-address $CONTRACT \
     --storage-key "quartz_session" \

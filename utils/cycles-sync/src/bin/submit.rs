@@ -16,7 +16,7 @@ use bip32::{
     Error as Bip32Error, Language, Mnemonic, Prefix, PrivateKey, Seed, XPrv,
 };
 use cosmrs::{tendermint::account::Id as TmAccountId, tendermint::chain::Id as TmChainId, AccountId};
-use cosmwasm_std::{HexBinary, StdError};
+use cosmwasm_std::{Addr, HexBinary, StdError};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::{debug, Level};
@@ -28,7 +28,7 @@ use subtle_encoding::{bech32::decode as bech32_decode, Error as Bech32DecodeErro
 use cycles_sync::{
     obligato_client::{http::HttpClient, Client},
     types::{
-        Obligation, ObligatoObligation, ObligatoSetOff, RawEncryptedObligation, RawObligation,
+        Obligation, ObligatoObligation, ObligatoSetOff, ContractObligation, RawEncryptedObligation, RawObligation,
         RawOffset, RawSetOff, SubmitObligationsMsg, SubmitObligationsMsgInner,
     },
     wasmd_client::{CliWasmdClient, QueryResult, WasmdClient},
@@ -51,73 +51,105 @@ struct QueryAllSetoffsResponse {
 async fn main() -> anyhow::Result<()> {
 
     let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
+    if args.len() != 4 {
         panic!()
     }
+    
     let epoch_pk = &args[1];
     let contract: AccountId = wasmaddr_to_id(&args[2])?;
+    let flip: bool = bool::from_str(&args[3])?;
 
     let node: Url = Url::parse("http://143.244.186.205:26657")?;
     let chain_id: TmChainId = TmChainId::from_str("testing")?;
-    let user = String::from("wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70");
 
-    let mut intents: Vec<ObligatoObligation> = vec![
-        ObligatoObligation {
-            id: Uuid::parse_str("bf2fd7a0-b3d2-4fe7-be1b-8259351461f3").map_err(|e| anyhow!(e))?,
-            debtor_id: Uuid::parse_str("3879fa15-d86e-4464-b679-0a3d78cf3dd3").map_err(|e| anyhow!(e))?,
-            creditor_id: Uuid::parse_str("b4686486-e0e4-4f03-ac33-4b86fb5c640d").map_err(|e| anyhow!(e))?,
-            amount: 200,
-        },
-        ObligatoObligation {
-            id: Uuid::parse_str("d329bca4-1125-4ead-b710-d0e0c45b8e44").map_err(|e| anyhow!(e))?,
-            debtor_id: Uuid::parse_str("b4686486-e0e4-4f03-ac33-4b86fb5c640d").map_err(|e| anyhow!(e))?,
-            creditor_id: Uuid::parse_str("57b4b6be-9ab1-4164-9b8b-530d22c2384e").map_err(|e| anyhow!(e))?,
-            amount: 1000,
-        },
-        ObligatoObligation {
-            id: Uuid::parse_str("19acf2a3-e50a-40bc-bb65-1103e8eb1528").map_err(|e| anyhow!(e))?,
-            debtor_id: Uuid::parse_str("57b4b6be-9ab1-4164-9b8b-530d22c2384e").map_err(|e| anyhow!(e))?,
-            creditor_id: Uuid::parse_str("36da0463-6c34-4ed4-96e8-6bc47081c369").map_err(|e| anyhow!(e))?,
-            amount: 300,
-        },
-        ObligatoObligation {
-            id: Uuid::parse_str("0c222ec6-90d1-4b50-92c8-bd0c7f20d28d").map_err(|e| anyhow!(e))?,
-            debtor_id: Uuid::parse_str("57b4b6be-9ab1-4164-9b8b-530d22c2384e").map_err(|e| anyhow!(e))?,
-            creditor_id: Uuid::parse_str("787ddd72-6ff3-484a-976b-4510041be523").map_err(|e| anyhow!(e))?,
-            amount: 700,
-        },
-        ObligatoObligation {
-            id: Uuid::parse_str("affcb9f8-544d-47b5-87cb-ab32008d7bc7").map_err(|e| anyhow!(e))?,
-            debtor_id: Uuid::parse_str("787ddd72-6ff3-484a-976b-4510041be523").map_err(|e| anyhow!(e))?,
-            creditor_id: Uuid::parse_str("b4686486-e0e4-4f03-ac33-4b86fb5c640d").map_err(|e| anyhow!(e))?,
-            amount: 800,
-        },
-    ];
-    let liquidity_sources = &[Uuid::parse_str("3879fa15-d86e-4464-b679-0a3d78cf3dd3").map_err(|e| anyhow!(e))?];
+    // TODO: replace Addr with string, probably
 
-    let keys = derive_keys(&mut intents, liquidity_sources)?;
+    let admin = Addr::unchecked("wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70");
 
-    add_default_acceptances(&mut intents, liquidity_sources);
 
-    println!("intents: {intents:?}");
+    let mut alice = Addr::unchecked("wasm124tuy67a9dcvfgcr4gjmz60syd8ddaugl33v0n");
+    let mut bob = Addr::unchecked("wasm1ctkqmg45u85jnf5ur9796h7ze4hj6ep5y7m7l6");    
 
-    let intents_enc = {
-        let epoch_pk = VerifyingKey::from_sec1_bytes(&hex::decode(epoch_pk).unwrap()).unwrap();
-        encrypt_intents(intents, &keys, &epoch_pk)
+    if flip {
+        let temp = alice.clone();
+        alice = bob;
+        bob = temp;
+    }
+
+    let overdraft = Addr::unchecked("wasm1huhuswjxfydydxvdadqqsaet2p72wshtmr72yzx09zxncxtndf2sqs24hk");
+
+    let alice_to_bob: ContractObligation = ContractObligation {
+        debtor: alice.clone(),
+        creditor: bob.clone(),
+        amount: 10,
+        salt: HexBinary::from([0; 64]),
     };
-    println!("Encrypted {} intents", intents_enc.len());
 
-    let liquidity_sources = liquidity_sources
-        .iter()
-        .map(|id| keys[id].private_key().public_key())
-        .collect();
+    let bob_acceptance: ContractObligation = ContractObligation {
+        debtor: bob.clone(),
+        creditor: overdraft.clone(),
+        amount: 10,
+        salt: HexBinary::from([0; 64]),
+    };
+
+    let alice_tender: ContractObligation = ContractObligation {
+        debtor: overdraft.clone(),
+        creditor: alice.clone(),
+        amount: 10,
+        salt: HexBinary::from([0; 64]),
+    };
+
+    let intents = vec![alice_to_bob, bob_acceptance, alice_tender];
+    println!("intents: {:?}", intents);
+
+    let epoch_pk = VerifyingKey::from_sec1_bytes(&hex::decode(epoch_pk).unwrap()).unwrap();
+
+    let intents_enc = encrypt_overdraft_intents(
+                    intents, 
+                    &epoch_pk);
+
+    let liquidity_sources = vec![overdraft];
 
     let msg = create_wasm_msg(intents_enc, liquidity_sources)?;
     let wasmd_client = CliWasmdClient::new(node);
-    wasmd_client.tx_execute(&contract, &chain_id, 3000000, user, msg)?;
+    wasmd_client.tx_execute(&contract, &chain_id, 3000000, admin.to_string(), msg)?;              
 
     Ok(())
 }
+
+pub struct OverdraftObligation {
+    pub debtor: Addr,
+    pub creditor: Addr,
+    pub amount: u64,
+}
+
+fn encrypt_overdraft_intents(
+    intents: Vec<ContractObligation>,
+    epoch_pk: &VerifyingKey,
+) -> Vec<(Sha256Digest, Vec<u8>)> {
+    let mut intents_enc = vec![];
+
+    for i in intents {
+        // serialize intent
+        let i_ser = serde_json::to_string(&i).unwrap();
+
+        // encrypt intent
+        let i_cipher = ecies::encrypt(&epoch_pk.to_sec1_bytes(), i_ser.as_bytes()).unwrap();
+
+        // hash intent
+        let i_digest: Sha256Digest = {
+            let mut hasher = Sha256::new();
+            hasher.update(i_ser);
+            hasher.finalize().into()
+        };
+
+        intents_enc.push((i_digest, i_cipher));
+    }
+
+    intents_enc
+}
+
+
 
 fn address_from_uuid(uuid: Uuid) -> anyhow::Result<()> {
     let seed = global_seed()?;
@@ -140,58 +172,9 @@ fn global_seed() -> Result<Seed, Bip32Error> {
     Ok(mnemonic.to_seed("password"))
 }
 
-// async fn sync_setoffs(cli: Cli) -> anyhow::Result<()> {
-//     let wasmd_client = CliWasmdClient::new(cli.node);
-//     let query_result: QueryResult<QueryAllSetoffsResponse> =
-//         wasmd_client.query_smart(&cli.contract, json!("get_all_setoffs"))?;
-//     let setoffs = query_result.data.setoffs;
-
-//     // read keys
-//     let keys = read_keys_file(cli.keys_file)?;
-//     let obligation_user_map = read_obligation_user_map_file(cli.obligation_user_map_file)?;
-
-//     let setoffs: Vec<ObligatoSetOff> = setoffs
-//         .iter()
-//         .flat_map(|(obligation_digest, so)| match so {
-//             RawSetOff::SetOff(sos_enc) => {
-//                 let so_enc = sos_enc.first().unwrap();
-//                 let (debtor_id, creditor_id) = obligation_user_map
-//                     .get(obligation_digest)
-//                     .map(Clone::clone)
-//                     .unwrap();
-
-//                 let sk = |id| keys[&id].private_key().to_bytes();
-//                 let so_ser = if let Ok(so) = ecies::decrypt(&sk(debtor_id), so_enc.as_slice()) {
-//                     so
-//                 } else if let Ok(so) = ecies::decrypt(&sk(creditor_id), so_enc.as_slice()) {
-//                     so
-//                 } else {
-//                     unreachable!()
-//                 };
-
-//                 let so: RawOffset = serde_json::from_slice(&so_ser).unwrap();
-//                 Some(ObligatoSetOff {
-//                     debtor_id,
-//                     creditor_id,
-//                     amount: so.set_off,
-//                 })
-//             }
-//             RawSetOff::Transfer(_) => None,
-//         })
-//         .collect();
-
-//     debug!("setoffs: {setoffs:?}");
-
-//     // send to Obligato
-//     let client = HttpClient::new(cli.obligato_url, cli.obligato_key);
-//     client.set_setoffs(setoffs).await?;
-
-//     Ok(())
-// }
-
 fn create_wasm_msg(
     obligations_enc: Vec<(Sha256Digest, Vec<u8>)>,
-    liquidity_sources: Vec<VerifyingKey>,
+    liquidity_sources: Vec<Addr>,
 ) -> anyhow::Result<serde_json::Value> {
     let obligations_enc: Vec<_> = obligations_enc
         .into_iter()
@@ -204,7 +187,7 @@ fn create_wasm_msg(
 
     let liquidity_sources = liquidity_sources
         .into_iter()
-        .map(|pk| HexBinary::from(pk.to_sec1_bytes().as_ref()))
+        .map(|addr| HexBinary::from(addr.as_bytes()))
         .collect();
 
     let msg = SubmitObligationsMsg {
