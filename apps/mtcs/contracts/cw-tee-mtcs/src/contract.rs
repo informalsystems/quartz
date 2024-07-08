@@ -19,7 +19,8 @@ use crate::{
         ExecuteMsg, InstantiateMsg, QueryMsg,
     },
     state::{
-        current_epoch_key, State, LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS, OBLIGATIONS_KEY, STATE
+        current_epoch_key, State, LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS,
+        OBLIGATIONS_KEY, STATE,
     },
 };
 
@@ -41,9 +42,8 @@ pub fn instantiate(
         owner: info.sender.to_string(),
     };
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    STATE.save(deps.storage, &state)?;       
-    
-    
+    STATE.save(deps.storage, &state)?;
+
     let epoch_counter = Uint64::new(1);
     EPOCH_COUNTER.save(deps.storage, &epoch_counter)?;
 
@@ -54,8 +54,6 @@ pub fn instantiate(
     // Now use the pre-computed keys
     OBLIGATIONS.save(deps.storage, &obligations_key, &Default::default())?;
     LIQUIDITY_SOURCES.save(deps.storage, &liquidity_sources_key, &Default::default())?;
-
-
 
     // store token info using cw20-base format
     let data = TokenInfo {
@@ -128,7 +126,8 @@ pub mod execute {
 
     use crate::{
         state::{
-            current_epoch_key, previous_epoch_key, RawHash,  SettleOff, LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, SETOFFS, SETOFFS_KEY
+            current_epoch_key, previous_epoch_key, RawHash, SettleOff, LIQUIDITY_SOURCES,
+            LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, SETOFFS, SETOFFS_KEY,
         },
         ContractError,
     };
@@ -162,9 +161,9 @@ pub mod execute {
         digest: HexBinary,
     ) -> Result<Response, ContractError> {
         let _: Hash = digest.to_array()?;
-    
+
         let current_obligation_key = current_epoch_key(OBLIGATIONS_KEY, deps.storage)?;
-    
+
         // store the `(digest, ciphertext)` tuple
         OBLIGATIONS.update(
             deps.storage,
@@ -177,7 +176,7 @@ pub mod execute {
                 Ok(obligations)
             },
         )?;
-    
+
         Ok(Response::new()
             .add_attribute("action", "submit_obligation")
             .add_attribute("digest", digest.to_string())
@@ -192,16 +191,17 @@ pub mod execute {
         liquidity_sources
             .iter()
             .try_for_each(|ls| VerifyingKey::from_sec1_bytes(ls).map(|_| ()))?;
-    
+
         let current_liquidity_key = current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?;
-    
+
         // store the liquidity sources
-        let liquidity_sources_set: std::collections::BTreeSet<_> = liquidity_sources.into_iter().collect();
+        let liquidity_sources_set: std::collections::BTreeSet<_> =
+            liquidity_sources.into_iter().collect();
         LIQUIDITY_SOURCES.save(deps.storage, &current_liquidity_key, &liquidity_sources_set)?;
-    
+
         Ok(Response::default())
     }
-   
+
     pub fn submit_setoffs(
         mut deps: DepsMut,
         env: Env,
@@ -210,14 +210,14 @@ pub mod execute {
         // store the `BTreeMap<RawHash, RawCipherText>`
         let previous_epoch_key = previous_epoch_key(SETOFFS_KEY, deps.storage)?;
         SETOFFS.save(deps.storage, &previous_epoch_key, &setoffs_enc)?;
-    
+
         for (_, so) in setoffs_enc {
             if let SettleOff::Transfer(t) = so {
                 let info = MessageInfo {
                     sender: env.contract.address.clone(),
                     funds: vec![],
                 };
-    
+
                 execute_mint(
                     deps.branch(),
                     env.clone(),
@@ -225,17 +225,17 @@ pub mod execute {
                     t.payee.to_string(),
                     t.amount.into(),
                 )?;
-    
+
                 let payer = deps.api.addr_validate(&t.payer.to_string())?;
                 let info = MessageInfo {
                     sender: payer,
                     funds: vec![],
                 };
-    
+
                 execute_burn(deps.branch(), env.clone(), info, t.amount.into())?;
             }
         }
-    
+
         Ok(Response::new().add_attribute("action", "submit_setoffs"))
     }
 
@@ -265,8 +265,8 @@ pub mod query {
     use crate::{
         msg::{GetAllSetoffsResponse, GetLiquiditySourcesResponse},
         state::{
-            current_epoch_key, epoch_key, previous_epoch_key, LIQUIDITY_SOURCES, SETOFFS,
-            LIQUIDITY_SOURCES_KEY, SETOFFS_KEY,
+            current_epoch_key, epoch_key, previous_epoch_key, LIQUIDITY_SOURCES,
+            LIQUIDITY_SOURCES_KEY, SETOFFS, SETOFFS_KEY,
         },
     };
 
@@ -285,7 +285,7 @@ pub mod query {
             None => current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?,
             Some(e) => epoch_key(LIQUIDITY_SOURCES_KEY, e)?,
         };
-    
+
         let liquidity_sources_set = LIQUIDITY_SOURCES.load(deps.storage, &epoch_key)?;
         let liquidity_sources = liquidity_sources_set.into_iter().collect();
         Ok(GetLiquiditySourcesResponse { liquidity_sources })

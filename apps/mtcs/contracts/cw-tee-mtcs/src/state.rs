@@ -12,7 +12,6 @@ pub type ObligationsItem = Item<BTreeMap<RawHash, RawCipherText>>;
 pub type SetoffsItem = Item<BTreeMap<RawHash, SettleOff>>;
 pub type LiquiditySourcesItem = Item<BTreeSet<HexBinary>>;
 
-
 pub const OBLIGATIONS: Map<&str, BTreeMap<RawHash, RawCipherText>> = Map::new("obligations");
 pub const SETOFFS: Map<&str, BTreeMap<RawHash, SettleOff>> = Map::new("setoffs");
 pub const LIQUIDITY_SOURCES: Map<&str, BTreeSet<HexBinary>> = Map::new("liquidity_sources");
@@ -53,7 +52,6 @@ pub const LIQUIDITY_SOURCES_KEY: &str = "liquidity_sources";
 //     Ok(format!("{}/{key}", epoch))
 // }
 
-
 pub fn current_epoch_key(key: &str, storage: &dyn Storage) -> Result<String, StdError> {
     let epoch = EPOCH_COUNTER.load(storage)?;
     epoch_key(key, epoch.into())
@@ -62,7 +60,9 @@ pub fn current_epoch_key(key: &str, storage: &dyn Storage) -> Result<String, Std
 pub fn previous_epoch_key(key: &str, storage: &dyn Storage) -> Result<String, StdError> {
     let epoch = EPOCH_COUNTER.load(storage)?;
     if epoch == Uint64::zero() {
-        return Err(StdError::generic_err("Cannot get previous epoch for epoch 0"));
+        return Err(StdError::generic_err(
+            "Cannot get previous epoch for epoch 0",
+        ));
     }
     epoch_key(key, epoch - Uint64::new(1))
 }
@@ -70,4 +70,3 @@ pub fn previous_epoch_key(key: &str, storage: &dyn Storage) -> Result<String, St
 pub fn epoch_key(key: &str, epoch: Uint64) -> Result<String, StdError> {
     Ok(format!("{}/{}", epoch, key))
 }
-
