@@ -204,7 +204,7 @@ pub enum QueryMsg {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetBalance { address } => to_json_binary(&query::query_balance(deps, address)?),
+        QueryMsg::GetBalance { address } => to_json_binary(&query::query_contract_balance(deps, address)?),
     }
 }
 mod query {
