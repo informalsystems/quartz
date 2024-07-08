@@ -37,7 +37,7 @@ where
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{
-        testing::{mock_dependencies, mock_env, message_info},
+        testing::{message_info, mock_dependencies, mock_env},
         DepsMut,
     };
     use serde::Deserialize;
@@ -63,7 +63,10 @@ mod tests {
         R::DomainType: Handler,
     {
         let msg = parse_msg::<R>(msg_str);
-        let creator = deps.api.addr_validate("creator").expect("Hardcoded creator");
+        let creator = deps
+            .api
+            .addr_validate("creator")
+            .expect("Hardcoded creator");
         let info = message_info(&creator, &[]);
         let env = mock_env();
         let res = msg
