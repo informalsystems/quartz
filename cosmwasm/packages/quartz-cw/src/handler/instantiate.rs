@@ -33,7 +33,9 @@ impl Handler for CoreInstantiate {
             .map_err(Error::Std)?;
         let epoch_counter = Uint64::new(1);
 
-        EPOCH_COUNTER.save(deps.storage, &epoch_counter).map_err(Error::Std)?;
+        EPOCH_COUNTER
+            .save(deps.storage, &epoch_counter)
+            .map_err(Error::Std)?;
 
         Ok(Response::new().add_attribute("action", "instantiate"))
     }
