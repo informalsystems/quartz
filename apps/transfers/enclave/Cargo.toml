@@ -49,8 +49,6 @@ cosmwasm-schema = { version = "2.0.0", default-features = false }
 cosmwasm-std = { version = "2.0.0", default-features = false , features = ["std"] }
 cw-storage-plus = { version = "2.0.0", default-features = false}
 
-
-
 # local
 transfers_contracts = { path = "../contracts" }
 
@@ -61,9 +59,6 @@ quartz-enclave = { path = "../../../core/quartz"}
 
 [dev-dependencies]
 cw-multi-test = "2.0.0"
-# serde_json = "1.0.117"
-# cosmwasm-vm = "2.0.0"
 
 [build-dependencies]
 tonic-build = "0.11.0"
-
