@@ -26,7 +26,7 @@ path = "bin/encrypt.rs"
 hex = { version = "0.4.3", default-features = false }
 k256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
 schemars = "0.8.15"
-mio = "=1.0.0"
+mio = "1.0.0"
 
 thiserror = { version = "1.0.49" }
 tonic = { version = "0.11.0"}
@@ -37,7 +37,7 @@ serde_json = { version = "1.0.117", default-features = false }
 
 ecies = { version = "0.2.3", default-features = false, features = ["pure"] }
 clap = { version = "4.1.8", default-features = false, features = ["derive", "std"] }
-tokio = { version = "1.0", default-features = false, features = ["macros", "rt-multi-thread", "rt"] }
+tokio = { version = "1.38.0", default-features = false, features = ["macros", "rt-multi-thread", "rt"] }
 tendermint = { version = "=0.36.0", default-features = false }
 tendermint-light-client = { version = "=0.36.0", default-features = false, features = ["rust-crypto"] }
 color-eyre = { version = "0.6.2", default-features = false }
@@ -61,7 +61,7 @@ quartz-enclave = { path = "../../../core/quartz"}
 
 [dev-dependencies]
 cw-multi-test = "2.0.0"
-serde_json = "1.0.117"
+# serde_json = "1.0.117"
 # cosmwasm-vm = "2.0.0"
 
 [build-dependencies]
