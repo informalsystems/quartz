@@ -4377,7 +4377,6 @@ dependencies = [
  "getrandom",
  "mio 1.0.0",
  "quartz-cw",
- "region",
  "serde_json",
  "sha2 0.10.8",
  "thiserror",
