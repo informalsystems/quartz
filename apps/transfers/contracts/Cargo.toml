@@ -43,7 +43,7 @@ cosmwasm-std = { version = "2.0.0", default-features = false , features = ["std"
 cw-storage-plus = { version = "2.0.0", default-features = false}
 # cosmwasm-vm = "2.0.0"
 
-region = "=3.0.2"
+# region = "3.0.2"
 # corosensei = "0.1.4"
 # wasmer = "^4.2.6"
 
