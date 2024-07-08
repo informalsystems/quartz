@@ -118,8 +118,6 @@ where
         // Decrypt and deserialize the state
         let mut state = {
             if message.state.len() == 1 && message.state[0] == 0 {
-                println!("{}", message.state);
-
                 State {
                     state: BTreeMap::<Addr, Uint128>::new(),
                 }
@@ -234,8 +232,6 @@ where
         // Decrypt and deserialize the state
         let mut state = {
             if message.state.len() == 1 && message.state[0] == 0 {
-                println!("{}", message.state);
-
                 State {
                     state: BTreeMap::<Addr, Uint128>::new(),
                 }

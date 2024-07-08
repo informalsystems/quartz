@@ -1,9 +1,14 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, HexBinary, Uint128};
+use cosmwasm_std::{
+    entry_point, to_json_binary, Addr, Binary, Deps, HexBinary, StdResult, Uint128, Env
+};
 use quartz_cw::{
     msg::execute::attested::{RawAttested, RawEpidAttestation},
     prelude::*,
 };
+use serde::{Deserialize, Serialize};
+
+use crate::state::BALANCES;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -34,6 +39,7 @@ pub enum ExecuteMsg {
 }
 
 pub mod execute {
+    use super::*;
     use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError};
     use quartz_cw::{
         error::Error,
@@ -42,7 +48,6 @@ pub mod execute {
         state::UserData,
     };
     use sha2::{Digest, Sha256};
-    use super::*;
 
     #[cw_serde]
     pub struct ClearTextTransferRequestMsg {
@@ -86,7 +91,6 @@ pub mod execute {
         pub quantity: u32,
         pub withdrawals: Vec<(Addr, Uint128)>,
     }
-
 
     // #[derive(Clone, Debug, PartialEq)]
     // pub struct UpdateMsg(pub RawUpdateMsg);
@@ -149,7 +153,6 @@ pub mod execute {
     // #[derive(Clone, Debug, PartialEq)]
     // pub struct QueryResponseMsg(pub RawQueryResponseMsg);
 
-
     // impl HasUserData for QueryResponseMsg {
     //     fn user_data(&self) -> UserData {
     //         let mut hasher = Sha256::new();
@@ -191,6 +194,24 @@ pub mod execute {
     //         Ok(Response::default())
     //     }
     // }
+}
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum QueryMsg {
+    GetBalance { address: String },
+}
 
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetBalance { address } => to_json_binary(&query::query_balance(deps, address)?),
+    }
+}
+mod query {
+    use super::*;
 
+    pub fn query_contract_balance(deps: Deps, address: String) -> StdResult<HexBinary> {
+        let balance = BALANCES.may_load(deps.storage, &address)?;
+        Ok(balance.unwrap_or_default())
+    }
 }

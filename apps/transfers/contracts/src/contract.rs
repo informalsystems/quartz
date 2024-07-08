@@ -106,6 +106,7 @@ pub mod execute {
         Ok(resp)
     }
 
+    // TODO - name query_enclave_balance ????
     pub fn query_balance(
         _deps: DepsMut,
         _env: Env,
