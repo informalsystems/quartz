@@ -42,7 +42,8 @@ cw2 = "2.0.0"
 cosmwasm-schema = { version = "2.0.0", default-features = false }
 cosmwasm-std = { version = "2.0.0", default-features = false , features = ["std"] }
 cw-storage-plus = { version = "2.0.0", default-features = false }
-cosmwasm-vm = "2.0.0"
+# cosmwasm-vm = "2.0.0"
+
 
 
 # quartz
@@ -53,3 +54,5 @@ cw-multi-test = "2.0.0"
 serde_json = "1.0.113"
 # rand = { version = "0.8", features = ["getrandom"] }
 # getrandom = { version = "0.2.15", features = ["js"] }
+mio = "0.8.9"
+region = "3.0.2"
