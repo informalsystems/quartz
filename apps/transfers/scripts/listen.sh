@@ -24,14 +24,11 @@ QUOTE_FILE="/tmp/${USER}_test.quote"
 REPORT_FILE="/tmp/${USER}_datareport"
 REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
-
-echo "--------------------------------------------------------"
-
 # cat keeps the stdin open so websocat doesnt close
 (echo "$SUBSCRIBE_TRANSFER"; echo "$SUBSCRIBE_QUERY"; cat) | websocat $WSURL | while read msg; do 
     if [[ "$msg" == '{"jsonrpc":"2.0","id":1,"result":{}}' ]] || [[ "$msg" == '{"jsonrpc":"2.0","id":2,"result":{}}' ]]; then
-        echo "... subscribed to $msg"
         echo "---------------------------------------------------------"
+        echo "... subscribed to $msg"
         echo "... waiting for event"
         continue
     fi 

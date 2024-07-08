@@ -1,14 +1,10 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{
-    entry_point, to_json_binary, Addr, Binary, Deps, HexBinary, StdResult, Uint128, Env
-};
+use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_cw::{
     msg::execute::attested::{RawAttested, RawEpidAttestation},
     prelude::*,
 };
 use serde::{Deserialize, Serialize};
-
-use crate::state::BALANCES;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -199,19 +195,4 @@ pub mod execute {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     GetBalance { address: String },
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    match msg {
-        QueryMsg::GetBalance { address } => to_json_binary(&query::query_contract_balance(deps, address)?),
-    }
-}
-mod query {
-    use super::*;
-
-    pub fn query_contract_balance(deps: Deps, address: String) -> StdResult<HexBinary> {
-        let balance = BALANCES.may_load(deps.storage, &address)?;
-        Ok(balance.unwrap_or_default())
-    }
 }

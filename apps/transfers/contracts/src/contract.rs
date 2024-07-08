@@ -1,13 +1,16 @@
-use cosmwasm_std::{entry_point, DepsMut, Env, HexBinary, MessageInfo, Response};
+use cosmwasm_std::{
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, HexBinary, MessageInfo, Response,
+    StdResult,
+};
 use quartz_cw::handler::RawHandler;
 
 use crate::{
     error::ContractError,
     msg::{
         execute::{QueryResponseMsg, Request, UpdateMsg},
-        ExecuteMsg, InstantiateMsg,
+        ExecuteMsg, InstantiateMsg,QueryMsg
     },
-    state::{DENOM, REQUESTS, STATE},
+    state::{DENOM, REQUESTS, STATE, BALANCES},
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -57,7 +60,7 @@ pub fn execute(
 
         // Enclave msgs // TODO - reattach the attestations
         ExecuteMsg::Update(msg) => update(deps, env, info, msg),
-        ExecuteMsg::QueryResponse(msg) => store_balance(deps, env, info, msg)
+        ExecuteMsg::QueryResponse(msg) => store_balance(deps, env, info, msg),
     }
 }
 
@@ -116,7 +119,7 @@ pub mod execute {
         let event = Event::new("query_balance")
             .add_attribute("query", "user")
             .add_attribute("emphemeral_pubkey", msg.emphemeral_pubkey.to_string());
-    let resp = Response::new().add_event(event);
+        let resp = Response::new().add_event(event);
         Ok(resp)
     }
 
@@ -177,11 +180,7 @@ pub mod execute {
         msg: QueryResponseMsg,
     ) -> Result<Response, ContractError> {
         // Store state
-        BALANCES.save(
-            deps.storage,
-            &msg.address.to_string(),
-            &msg.encrypted_bal,
-        )?;
+        BALANCES.save(deps.storage, &msg.address.to_string(), &msg.encrypted_bal)?;
 
         // Emit event
         let event = Event::new("store_balance")
@@ -190,5 +189,20 @@ pub mod execute {
             .add_attribute("encrypted_balance", msg.encrypted_bal.to_string());
         let resp = Response::new().add_event(event);
         Ok(resp)
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetBalance { address } => to_json_binary(&query::get_balance(deps, address)?),
+    }
+}
+mod query {
+    use super::*;
+
+    pub fn get_balance(deps: Deps, address: String) -> StdResult<HexBinary> {
+        let balance = BALANCES.may_load(deps.storage, &address)?;
+        Ok(balance.unwrap_or_default())
     }
 }
