@@ -8,7 +8,7 @@ ROOT=${ROOT:-$HOME}
 echo "--------------------------------------------------------"
 echo "instantiate"
 cd  $ROOT/cycles-quartz/relayer/
-export INSTANTIATE_MSG=$(./scripts/relay.sh Instantiate | jq '{quartz: .} + {overdrafts: "wasm1huhuswjxfydydxvdadqqsaet2p72wshtmr72yzx09zxncxtndf2sqs24hk"}' )
+export INSTANTIATE_MSG=$(./scripts/relay.sh Instantiate | jq '{quartz: .}' )
 echo "--------------------------------------------------------"
 
 echo "deploy contract"

@@ -53,7 +53,7 @@ pub fn instantiate(
         .save(deps.storage, &Default::default())?;
 
     LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
-        .save(deps.storage, &BTreeSet::from([msg.overdrafts]))?;
+        .save(deps.storage, &Default::default())?;
 
     // store token info using cw20-base format
     let data = TokenInfo {

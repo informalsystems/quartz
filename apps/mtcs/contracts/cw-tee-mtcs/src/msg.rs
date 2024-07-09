@@ -14,7 +14,6 @@ type AttestedMsg<M> = RawAttested<RawAttestedMsgSansHandler<M>, RawEpidAttestati
 #[cw_serde]
 pub struct InstantiateMsg {
     pub quartz: QuartzInstantiateMsg,
-    pub overdrafts: Addr,
 }
 
 #[cw_serde]

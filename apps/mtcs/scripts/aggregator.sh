@@ -35,8 +35,9 @@ echo "------------ submitted obligations ------------"
 
 #add contract to owners list in overdrafts contract
 sleep 1
-CURRENT_SEQUENCE=$(wasmd query account wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70 --node http://$NODE_URL --output json | jq -r .sequence)
-WASMD_OUTPUT=$(wasmd tx wasm execute wasm1huhuswjxfydydxvdadqqsaet2p72wshtmr72yzx09zxncxtndf2sqs24hk '{"add_owner": {"new": "'$CONTRACT'"}}' --from wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70 --node http://$NODE_URL --chain-id testing --sequence $CURRENT_SEQUENCE)
+# CURRENT_SEQUENCE=$(wasmd query account wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70 --node http://$NODE_URL --output json | jq -r .sequence)
+# --sequence $CURRENT_SEQUENCE
+WASMD_OUTPUT=$(wasmd tx wasm execute wasm1huhuswjxfydydxvdadqqsaet2p72wshtmr72yzx09zxncxtndf2sqs24hk '{"add_owner": {"new": "'$CONTRACT'"}}' --from wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70 --node http://$NODE_URL --chain-id testing)
 
 echo $WASMD_OUTPUT
 echo "------------ added contract as owner of overdrafts ------------"
