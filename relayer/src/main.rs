@@ -30,7 +30,7 @@ use cosmrs::{
 };
 use ecies::{PublicKey, SecretKey};
 use quartz_cw::msg::{
-    execute::attested::{Attested, EpidAttestation},
+    execute::attested::{Attested, MockAttestation},
     instantiate::{CoreInstantiate, RawInstantiate},
     InstantiateMsg,
 };
@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         serde_json::to_string(&ias_report).expect("infallible serializer")
     );
     let ias_report: IASReport = serde_json::from_str(&ias_report.to_string())?;
-    let attestation = EpidAttestation::new(ias_report);
+    let attestation: MockAttestation = MockAttestation::default();
     let cw_instantiate_msg = Attested::new(CoreInstantiate::new(config), attestation);
 
     // Read the TSP secret
