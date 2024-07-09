@@ -72,6 +72,7 @@ where
             .collect();
 
         let mut mtcs = ComplexIdMtcs::wrapping(DefaultMtcs::new(PrimalDual::default()));
+        // TODO: change Addr to LiquiditySource
         let setoffs: Vec<SimpleSetoff<Addr, i64>> = mtcs.run(obligations).unwrap();
 
         let setoffs_enc: BTreeMap<RawHash, SettleOff> = setoffs
@@ -94,6 +95,8 @@ where
     }
 }
 
+
+// TODO Switch from Vec<_> to Vec<LiquiditySource>
 fn into_settle_offs(
     so: SimpleSetoff<Addr, i64>,
     liquidity_sources: &Vec<Addr>,

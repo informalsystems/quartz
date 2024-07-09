@@ -7,7 +7,7 @@ use quartz_cw::{
     prelude::*,
 };
 
-use crate::state::{RawHash, SettleOff};
+use crate::state::{LiquiditySource, RawHash, SettleOff};
 
 type AttestedMsg<M> = RawAttested<RawAttestedMsgSansHandler<M>, RawEpidAttestation>;
 
@@ -20,8 +20,9 @@ pub struct InstantiateMsg {
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     Quartz(QuartzExecuteMsg),
-    FaucetMint(execute::FaucetMintMsg),
+
     Transfer(execute::Cw20Transfer),
+    
     SubmitObligation(execute::SubmitObligationMsg),
     SubmitObligations(execute::SubmitObligationsMsg),
     SubmitSetoffs(AttestedMsg<execute::SubmitSetoffsMsg>),
@@ -34,12 +35,8 @@ pub mod execute {
 
     use super::*;
 
-    #[cw_serde]
-    pub struct FaucetMintMsg {
-        pub recipient: String,
-        pub amount: u64,
-    }
 
+    /// This CW20 Transfer should work with both `escrow` and `overdraft` contracts entrypoints
     #[cw_serde]
     pub struct Cw20Transfer {
         pub recipient: String,
@@ -57,7 +54,7 @@ pub mod execute {
     #[cw_serde]
     pub struct SubmitObligationsMsg {
         pub obligations: Vec<SubmitObligationMsg>,
-        pub liquidity_sources: Vec<Addr>,
+        pub liquidity_sources: Vec<LiquiditySource>,
     }
 
     #[cw_serde]
@@ -115,8 +112,9 @@ pub struct GetAllSetoffsResponse {
 
 #[cw_serde]
 pub struct GetLiquiditySourcesResponse {
-    pub liquidity_sources: Vec<Addr>,
+    pub liquidity_sources: Vec<LiquiditySource>,
 }
+
 
 #[cfg(test)]
 mod tests {

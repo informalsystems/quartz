@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GetLiquiditySourcesResponse",
+  "type": "object",
+  "required": [
+    "liquidity_sources"
+  ],
+  "properties": {
+    "liquidity_sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/HexBinary"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "HexBinary": {
+      "description": "This is a wrapper around Vec<u8> to add hex de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is similar to `cosmwasm_std::Binary` but uses hex. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
+      "type": "string"
+    }
+  }
+}
