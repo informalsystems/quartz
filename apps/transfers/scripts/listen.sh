@@ -44,6 +44,7 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
     CLEAN_MSG=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq '.result.events')
 
     if echo "$CLEAN_MSG" | grep -q 'wasm-transfer'; then
+        echo "---------------------------------------------------------"
         echo "... received wasm-transfer event!"
         echo "... fetching requests"
 
@@ -56,46 +57,46 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
         cd $ROOT/cycles-quartz/apps/transfers/enclave
 
-        # Get the update message from the gRPC response
-        UPDATE_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Run | jq -r '.message | fromjson | .msg')
+        # # Get the update message from the gRPC response
+        # UPDATE_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Run | jq -r '.message | fromjson | .msg')
 
-        # Create the UpdateMsg structure
-        export UPDATE=$(jq -n \
-                        --argjson msg "$UPDATE_MSG" \
-                        '{update: $msg}')
+        # # Create the UpdateMsg structure
+        # export UPDATE=$(jq -n \
+        #                 --argjson msg "$UPDATE_MSG" \
+        #                 '{update: $msg}')
 
-        echo "UpdateMsg:"
-        echo $UPDATE | jq .
-
-        echo "... submitting update"
-        $CMD tx wasm execute $CONTRACT "$(echo $UPDATE | jq -c .)" --chain-id testing --from admin --node http://$NODE_URL -y
-
-        # TODO - add back in once attestations are figured out
-        # echo "... executing transfer"
-        # export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
-        # # echo $UPDATE #| jq '.msg'
-        # # echo $UPDATE | jq '.msg'
-        # QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
-        # MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
-        # # echo "quote"
-        # # echo $QUOTE
-        # echo $MSG
-
-        # echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
-        # gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
-        # REPORT=$(cat "$REPORT_FILE")
-        # REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
+        # echo "UpdateMsg:"
+        # echo $UPDATE | jq .
 
         # echo "... submitting update"
+        # $CMD tx wasm execute $CONTRACT "$(echo $UPDATE | jq -c .)" --chain-id testing --from admin --node http://$NODE_URL -y
 
-        # export EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
-        #     "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
-        #     '$ARGS.named')" '$ARGS.named')
+        # TODO - add back in once attestations are figured out
+        echo "... executing transfer"
+        export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
+        # echo $UPDATE #| jq '.msg'
+        # echo $UPDATE | jq '.msg'
+        QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
+        MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
+        # echo "quote"
+        # echo $QUOTE
+        echo $MSG
 
-        # echo $EXECUTE | jq '.'
+        echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
+        gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
+        REPORT=$(cat "$REPORT_FILE")
+        REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
+
+        echo "... submitting update"
+
+        export EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
+            "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
+            '$ARGS.named')" '$ARGS.named')
+
+        echo $EXECUTE | jq '.'
 
         
-        # $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
+        $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
 
         echo " ... done"
         echo "---------------------------------------------------------"
