@@ -30,6 +30,12 @@ pub enum ContractError {
 
     #[error("Cw20 error: {0}")]
     Cw20(Cw20ContractError),
+
+    #[error("Liquidity source not found")]
+    LiquiditySourceNotFound,
+
+    #[error("Unsupported liquidity source")]
+    UnsupportedLiquiditySource
 }
 
 impl From<K256Error> for ContractError {

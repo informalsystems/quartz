@@ -117,15 +117,15 @@ pub fn execute(
 pub mod execute {
     use std::collections::BTreeMap;
 
-    use cosmwasm_std::{Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult, SubMsg, WasmMsg, Int128, to_json_binary};
+    use cosmwasm_std::{Addr, DepsMut, Env, HexBinary, Storage, MessageInfo, Response, StdResult, SubMsg, WasmMsg, Uint128, to_json_binary};
     use cw20_base::contract::{execute_burn, execute_mint};
     use quartz_cw::state::{Hash, EPOCH_COUNTER};
     use crate::imports;
 
     use crate::{
+        msg::execute::EscrowExecuteMsg,
         state::{
-            current_epoch_key, previous_epoch_key, LiquiditySourcesItem, ObligationsItem, RawHash,
-            SetoffsItem, SettleOff, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, SETOFFS_KEY,
+            current_epoch_key, previous_epoch_key, LiquiditySource, LiquiditySourceType, LiquiditySourcesItem, ObligationsItem, RawHash, SetoffsItem, SettleOff, Transfer, LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, SETOFFS_KEY
         },
         ContractError,
     };
@@ -220,48 +220,147 @@ pub mod execute {
         let overdrafts = LiquiditySourcesItem::new(&previous_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
             .load(deps.storage)?.first().unwrap().to_string();
 
-        let mut messages: Vec<WasmMsg> = vec![];
+        let mut messages: Vec<SubMsg> = vec![];
+        // for (_, so) in setoffs_enc {
+        //     if let SettleOff::Transfer(t) = so {
+        //         // this terminology is terrible and confusing. too many flips in meaning
+        //         if t.payer == "0" {
+        //             continue;
+        //         }
+
+        //         if t.payer.as_str() == &overdrafts {
+        //             let increase_msg = WasmMsg::Execute { 
+        //                 contract_addr: overdrafts.clone(), 
+        //                 msg: to_json_binary(&imports::ExecuteMsg::IncreaseBalance {
+        //                     receiver: t.payee.clone(),
+        //                     amount: t.amount.into()
+        //                 })?, 
+        //                 funds: vec![] 
+        //             };
+
+        //             messages.push(increase_msg);
+        //         } else if payee_checked.as_str() == &overdrafts {
+        //             let decrease_msg = WasmMsg::Execute { 
+        //                 contract_addr: overdrafts.clone(), 
+        //                 msg: to_json_binary(&imports::ExecuteMsg::DecreaseBalance {
+        //                     receiver: payer_checked,
+        //                     amount: t.amount.into()
+        //                 })?, 
+        //                 funds: vec![] 
+        //             };
+                    
+        //             messages.push(decrease_msg);
+        //         } else {
+        //             // do nothing, shouldn't occur rn
+        //         }
+        //     }
+        // }
+
         for (_, so) in setoffs_enc {
             if let SettleOff::Transfer(t) = so {
-                // this terminology is terrible and confusing. too many flips in meaning
-                if t.payer == "0" {
-                    continue;
-                }
-
-                let payer_checked = deps.api.addr_validate(&t.payer)?;
-                let payee_checked: Addr = deps.api.addr_validate(&t.payee)?;
-
-                if payer_checked.as_str() == &overdrafts {
-                    let increase_msg = WasmMsg::Execute { 
-                        contract_addr: overdrafts.clone(), 
-                        msg: to_json_binary(&imports::ExecuteMsg::IncreaseBalance {
-                            receiver: payee_checked,
-                            amount: t.amount.into()
-                        })?, 
-                        funds: vec![] 
-                    };
-
-                    messages.push(increase_msg);
-                } else if payee_checked.as_str() == &overdrafts {
-                    let decrease_msg = WasmMsg::Execute { 
-                        contract_addr: overdrafts.clone(), 
-                        msg: to_json_binary(&imports::ExecuteMsg::DecreaseBalance {
-                            receiver: payer_checked,
-                            amount: t.amount.into()
-                        })?, 
-                        funds: vec![] 
-                    };
-                    
-                    messages.push(decrease_msg);
-                } else {
-                    // do nothing, shouldn't occur rn
+                // Check if either payer or payee is a liquidity source
+                let payer_source = find_liquidity_source(deps.storage, &t.payer);
+                let payee_source = find_liquidity_source(deps.storage, &t.payee);
+    
+                match (payer_source, payee_source) {
+                    (Some(source), _) => {
+                        // Payer is a liquidity source
+                        let msg = create_transfer_message(&source, &t, true)?;
+                        messages.push(msg);
+                    },
+                    (_, Some(source)) => {
+                        // Payee is a liquidity source
+                        let msg = create_transfer_message(&source, &t, false)?;
+                        messages.push(msg);
+                    },
+                    (None, None) => {
+                        return Err(ContractError::LiquiditySourceNotFound {});
+                    }
                 }
             }
         }
 
         Ok(Response::new()
-            .add_messages(messages)
+            .add_submessages(messages)
             .add_attribute("action", "submit_setoffs"))
+    }
+
+    fn find_liquidity_source(storage: &dyn Storage, address: &Addr) -> Option<LiquiditySource> {
+        LIQUIDITY_SOURCES
+            .range(storage, None, None, cosmwasm_std::Order::Ascending)
+            .find_map(|res| {
+                res.ok().and_then(|(_, source)| {
+                    if source.address == address {
+                        Some(source)
+                    } else {
+                        None
+                    }
+                })
+            })
+    }
+
+    fn create_transfer_message(
+        source: &LiquiditySource,
+        transfer: &Transfer,
+        is_payer: bool,
+    ) -> Result<SubMsg, ContractError> {
+        let msg = match source.source_type {
+            LiquiditySourceType::Escrow => {
+                let (payer, payee, amount) = if is_payer {
+                    (
+                        transfer.payer.to_string(),
+                        transfer.payee.to_string(),
+                        vec![transfer.amount.clone()],
+                    )
+                } else {
+                    // If the liquidity source is the payee, we swap payer and payee
+                    (
+                        transfer.payee.to_string(),
+                        transfer.payer.to_string(),
+                        vec![transfer.amount.clone()],
+                    )
+                };
+                
+                WasmMsg::Execute {
+                    contract_addr: source.address.to_string(),
+                    msg: to_json_binary(&EscrowExecuteMsg::ExecuteSetoff {
+                        payer,
+                        payee,
+                        amount: amount.iter().map(|item| ("denom".to_owned(), Uint128::from(*item as u128))).collect(), // TODO: temporary patch to support overdraft's u64's
+                    })?,
+                    funds: vec![],
+                }
+            },
+            LiquiditySourceType::Overdraft => {
+                
+                if is_payer {    
+                    let increase_msg = WasmMsg::Execute { 
+                        contract_addr: source.address.to_string(), 
+                        msg: to_json_binary(&imports::ExecuteMsg::IncreaseBalance {
+                            receiver: transfer.payee.clone(),
+                            amount: transfer.amount.into()
+                        })?, 
+                        funds: vec![] 
+                    };
+
+                    increase_msg
+                } else {
+                    let decrease_msg = WasmMsg::Execute { 
+                        contract_addr: source.address.to_string(), 
+                        msg: to_json_binary(&imports::ExecuteMsg::DecreaseBalance {
+                            receiver: transfer.payer.clone(),
+                            amount: transfer.amount.into()
+                        })?, 
+                        funds: vec![] 
+                    };
+
+                    decrease_msg
+                }
+            },
+            LiquiditySourceType::External => return Err(ContractError::UnsupportedLiquiditySource {}),
+        };
+    
+        Ok(SubMsg::new(msg))
     }
 
     pub fn init_clearing(deps: DepsMut) -> Result<Response, ContractError> {

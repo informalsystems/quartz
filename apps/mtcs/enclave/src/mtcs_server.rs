@@ -105,16 +105,16 @@ fn into_settle_offs(
         // A setoff on a tender should result in the creditor's (i.e. the tender receiver) balance
         // decreasing by the setoff amount
         SettleOff::Transfer(Transfer {
-            payer: so.creditor.to_string(),
-            payee: so.debtor.to_string(),
+            payer: so.creditor.clone(),
+            payee: so.debtor.clone(),
             amount: so.set_off as u64,
         })
     } else if liquidity_sources.contains(&&so.creditor) {
         // A setoff on an acceptance should result in the debtor's (i.e. the acceptance initiator)
         // balance increasing by the setoff amount
         SettleOff::Transfer(Transfer {
-            payer: so.creditor.to_string(),
-            payee: so.debtor.to_string(),
+            payer: so.creditor.clone(),
+            payee: so.debtor.clone(),
             amount: so.set_off as u64,
         })
     } else {
@@ -123,8 +123,8 @@ fn into_settle_offs(
         
         // Need to do a no-op here
         SettleOff::Transfer(Transfer {
-            payer: "0".to_string(),
-            payee: "0".to_string(),
+            payer: Addr::unchecked("0"),
+            payee: Addr::unchecked("0"),
             amount: so.set_off as u64,
         })
     }

@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, HexBinary};
+use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_cw::{
     msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation},
     prelude::*,
@@ -84,6 +84,16 @@ pub mod execute {
             user_data
         }
     }
+
+    #[cw_serde]
+    pub enum EscrowExecuteMsg {
+        ExecuteSetoff {
+            payer: String,
+            payee: String,
+            amount: Vec<(String, Uint128)>,
+        }
+    }
+
 }
 
 #[cw_serde]
