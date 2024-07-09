@@ -4,14 +4,14 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError};
 use quartz_tee_ra::IASReport;
 
-#[cfg(ra_type = "epid")]
+#[cfg(not(feature = "mock-sgx"))]
 pub type DefaultAttestation = EpidAttestation;
-#[cfg(ra_type = "epid")]
+#[cfg(not(feature = "mock-sgx"))]
 pub type RawDefaultAttestation = RawEpidAttestation;
 
-#[cfg(ra_type = "mock")]
+#[cfg(feature = "mock-sgx")]
 pub type DefaultAttestation = MockAttestation;
-#[cfg(ra_type = "mock")]
+#[cfg(feature = "mock-sgx")]
 pub type RawDefaultAttestation = RawMockAttestation;
 
 use crate::{

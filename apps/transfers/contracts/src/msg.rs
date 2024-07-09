@@ -6,7 +6,7 @@ use quartz_cw::{
 };
 
 #[cw_serde]
-pub struct InstantiateMsg<RA = RawDefaultAttestation>  {
+pub struct InstantiateMsg<RA = RawDefaultAttestation> {
     pub quartz: QuartzInstantiateMsg<RA>,
     pub denom: String,
 }
