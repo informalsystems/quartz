@@ -63,13 +63,13 @@ pub fn execute(
             let _ = attested_msg
                 .clone()
                 .handle_raw(deps.branch(), &env, &info)?;
-            update(deps, env, info, UpdateMsg(attested_msg.msg))
+            update(deps, env, info, attested_msg.msg.0)
         }
         ExecuteMsg::QueryResponse(attested_msg) => {
             let _ = attested_msg
                 .clone()
                 .handle_raw(deps.branch(), &env, &info)?;
-            store_balance(deps, env, info, QueryResponseMsg(attested_msg.msg))
+            store_balance(deps, env, info, attested_msg.msg.0)
         }
     }
 }
@@ -158,12 +158,12 @@ pub mod execute {
         msg: UpdateMsg,
     ) -> Result<Response, ContractError> {
         // Store state
-        STATE.save(deps.storage, &msg.0.ciphertext)?;
+        STATE.save(deps.storage, &msg.ciphertext)?;
 
         // Clear queue
         let mut requests: Vec<Request> = REQUESTS.load(deps.storage)?;
 
-        requests.drain(0..msg.0.quantity as usize);
+        requests.drain(0..msg.quantity as usize);
 
         REQUESTS.save(deps.storage, &requests)?;
 
@@ -171,7 +171,6 @@ pub mod execute {
         let denom = DENOM.load(deps.storage)?;
 
         let messages = msg
-            .0
             .withdrawals
             .into_iter()
             .map(|(user, funds)| BankMsg::Send {
@@ -193,15 +192,15 @@ pub mod execute {
         // Store state
         BALANCES.save(
             deps.storage,
-            &msg.0.address.to_string(),
-            &msg.0.encrypted_bal,
+            &msg.address.to_string(),
+            &msg.encrypted_bal,
         )?;
 
         // Emit event
         let event = Event::new("store_balance")
             .add_attribute("query", "enclave") // TODO Weird to name it enclave?
-            .add_attribute("address", msg.0.address.to_string())
-            .add_attribute("encrypted_balance", msg.0.encrypted_bal.to_string());
+            .add_attribute("address", msg.address.to_string())
+            .add_attribute("encrypted_balance", msg.encrypted_bal.to_string());
         let resp = Response::new().add_event(event);
         Ok(resp)
     }
