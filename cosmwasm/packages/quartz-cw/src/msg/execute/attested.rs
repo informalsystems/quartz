@@ -1,5 +1,7 @@
+use std::{convert::Into, default::Default};
+
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::StdError;
+use cosmwasm_std::{HexBinary, StdError};
 use quartz_tee_ra::IASReport;
 
 use crate::{
@@ -137,22 +139,28 @@ impl Attestation for EpidAttestation {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct MockAttestation;
+pub struct MockAttestation(pub UserData);
+
+impl Default for MockAttestation {
+    fn default() -> Self {
+        Self([0u8; 64])
+    }
+}
 
 #[cw_serde]
-pub struct RawMockAttestation;
+pub struct RawMockAttestation(pub HexBinary);
 
 impl TryFrom<RawMockAttestation> for MockAttestation {
     type Error = StdError;
 
-    fn try_from(_value: RawMockAttestation) -> Result<Self, Self::Error> {
-        Ok(Self)
+    fn try_from(value: RawMockAttestation) -> Result<Self, Self::Error> {
+        Ok(Self(value.0.to_array()?))
     }
 }
 
 impl From<MockAttestation> for RawMockAttestation {
-    fn from(_value: MockAttestation) -> Self {
-        Self
+    fn from(value: MockAttestation) -> Self {
+        Self(value.0.into())
     }
 }
 
@@ -162,13 +170,13 @@ impl HasDomainType for RawMockAttestation {
 
 impl HasUserData for MockAttestation {
     fn user_data(&self) -> UserData {
-        unimplemented!("MockAttestation handler is a noop")
+        self.0
     }
 }
 
 impl Attestation for MockAttestation {
     fn mr_enclave(&self) -> MrEnclave {
-        unimplemented!("MockAttestation handler is a noop")
+        Default::default()
     }
 }
 

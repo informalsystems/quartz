@@ -44,12 +44,13 @@ pub struct MockAttestor;
 impl Attestor for MockAttestor {
     type Error = String;
 
-    fn quote(&self, _user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
-        Ok(vec![])
+    fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
+        let user_data = user_data.user_data();
+        Ok(user_data.to_vec())
     }
 
     fn mr_enclave(&self) -> Result<MrEnclave, Self::Error> {
-        Ok([0u8; 32])
+        Ok(Default::default())
     }
 }
 
