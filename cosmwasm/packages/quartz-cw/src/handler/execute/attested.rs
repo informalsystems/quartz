@@ -56,6 +56,8 @@ where
         let (msg, attestation) = self.into_tuple();
         println!("{:?}", msg);
         if msg.user_data() != attestation.user_data() {
+            println!("{:?}", msg.user_data());
+            println!("{:?}", attestation.user_data());
             return Err(RaVerificationError::UserDataMismatch.into());
         }
 
