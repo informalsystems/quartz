@@ -67,6 +67,7 @@ impl HasUserData for RunTransfersResponseMessage {
 
         let mut user_data = [0u8; 64];
         user_data[0..32].copy_from_slice(&digest);
+        println!("{:?}", user_data);
         user_data
     }
 }

@@ -21,6 +21,7 @@ impl Handler for EpidAttestation {
         _info: &MessageInfo,
     ) -> Result<Response, Error> {
         // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
+        println!("{:?}", self.user_data());
         verify_epid_attestation(
             self.clone().into_report(),
             self.mr_enclave(),
@@ -55,9 +56,9 @@ where
     ) -> Result<Response, Error> {
         let (msg, attestation) = self.into_tuple();
         println!("{:?}", msg);
+        println!("{:?}", msg.user_data());
+        println!("{:?}", attestation.user_data());
         if msg.user_data() != attestation.user_data() {
-            println!("{:?}", msg.user_data());
-            println!("{:?}", attestation.user_data());
             return Err(RaVerificationError::UserDataMismatch.into());
         }
 
