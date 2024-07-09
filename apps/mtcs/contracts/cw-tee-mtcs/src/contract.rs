@@ -42,8 +42,8 @@ pub fn instantiate(
 
     let state = State {
         owner: info.sender.to_string(),
-        overdraft: msg.overdrafts.clone()
     };
+
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     STATE.save(deps.storage, &state)?;
 
@@ -100,9 +100,7 @@ pub fn execute(
                 execute::submit_obligation(deps.branch(), o.ciphertext, o.digest)?;
             }
 
-            // this is commented out because it's the overdraft contract is already in the liquidity sources.
-            // TODO: Choose one location to handle appending liquidity sources (either at init or here)
-            // execute::append_liquidity_sources(deps, liquidity_sources)?;
+            execute::append_liquidity_sources(deps, liquidity_sources)?;
             Ok(Response::new())
         }
         ExecuteMsg::SubmitSetoffs(attested_msg) => {
@@ -121,11 +119,9 @@ pub mod execute {
 
     use cosmwasm_std::{Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult, SubMsg, WasmMsg, Int128, to_json_binary};
     use cw20_base::contract::{execute_burn, execute_mint};
-    use k256::ecdsa::VerifyingKey;
     use quartz_cw::state::{Hash, EPOCH_COUNTER};
     use crate::imports;
 
-    use crate::state::STATE;
     use crate::{
         state::{
             current_epoch_key, previous_epoch_key, LiquiditySourcesItem, ObligationsItem, RawHash,
@@ -164,26 +160,15 @@ pub mod execute {
         let _: Hash = digest.to_array()?;
 
         // store the `(digest, ciphertext)` tuple
-        ObligationsItem::new(&current_epoch_key(OBLIGATIONS_KEY, deps.storage)?).update(
-            deps.storage,
-            |mut obligations| {
-                if let Some(_duplicate) = obligations.insert(digest.clone(), ciphertext.clone()) {
-                    return Err(ContractError::DuplicateEntry);
-                }
-                Ok(obligations)
-            },
-        )?;
-
-        // TODO: determine the necessity of this replacement to the above logic 
-        // let cur_epoch = &current_epoch_key(OBLIGATIONS_KEY, deps.storage)?;
-        // let obligs_key = ObligationsItem::new(cur_epoch);
-        // let mut epoch_obligation = obligs_key.load(deps.storage).unwrap_or_default();
+        let cur_epoch = &current_epoch_key(OBLIGATIONS_KEY, deps.storage)?;
+        let obligs_key = ObligationsItem::new(cur_epoch);
+        let mut epoch_obligation = obligs_key.may_load(deps.storage)?.unwrap_or_default();
         
-        // if let Some(_duplicate) = epoch_obligation.insert(digest.clone(), ciphertext.clone()) {
-        //     return Err(ContractError::DuplicateEntry);
-        // }
+        if let Some(_duplicate) = epoch_obligation.insert(digest.clone(), ciphertext.clone()) {
+            return Err(ContractError::DuplicateEntry);
+        }
         
-        // obligs_key.save(deps.storage, &epoch_obligation)?;
+        obligs_key.save(deps.storage, &epoch_obligation)?;
 
         Ok(Response::new()
             .add_attribute("action", "submit_obligation")
@@ -203,12 +188,21 @@ pub mod execute {
             })
             .map_err(|e| e)?;
         
+
         // store the liquidity sources
-        LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
-            .update(deps.storage, |mut ls| {
-                ls.extend(liquidity_sources);
-                Ok::<_, ContractError>(ls)
-            })?;
+        let cur_epoch = &current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?;
+        let lqs_key = LiquiditySourcesItem::new(cur_epoch);
+        let mut epoch_lqs = lqs_key.may_load(deps.storage)?.unwrap_or_default();
+        
+        epoch_lqs.extend(liquidity_sources);
+
+        lqs_key.save(deps.storage, &epoch_lqs)?;
+
+        // LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
+        //     .update(deps.storage, |mut ls| {
+        //         ls.extend(liquidity_sources);
+        //         Ok::<_, ContractError>(ls)
+        //     })?;
 
         Ok(())
     }
@@ -222,7 +216,9 @@ pub mod execute {
         SetoffsItem::new(&previous_epoch_key(SETOFFS_KEY, deps.storage)?)
             .save(deps.storage, &setoffs_enc)?;
 
-        let overdrafts = STATE.load(deps.storage)?.overdraft;
+        // Setoffs are submitted only once per epoch, so this can be turned into a direct write-to instead of read-write? 
+        let overdrafts = LiquiditySourcesItem::new(&previous_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
+            .load(deps.storage)?.first().unwrap().to_string();
 
         let mut messages: Vec<WasmMsg> = vec![];
         for (_, so) in setoffs_enc {
@@ -235,9 +231,9 @@ pub mod execute {
                 let payer_checked = deps.api.addr_validate(&t.payer)?;
                 let payee_checked: Addr = deps.api.addr_validate(&t.payee)?;
 
-                if payer_checked == overdrafts {
+                if payer_checked.as_str() == &overdrafts {
                     let increase_msg = WasmMsg::Execute { 
-                        contract_addr: overdrafts.to_string(), 
+                        contract_addr: overdrafts.clone(), 
                         msg: to_json_binary(&imports::ExecuteMsg::IncreaseBalance {
                             receiver: payee_checked,
                             amount: t.amount.into()
@@ -246,9 +242,9 @@ pub mod execute {
                     };
 
                     messages.push(increase_msg);
-                } else if payee_checked == overdrafts {
+                } else if payee_checked.as_str() == &overdrafts {
                     let decrease_msg = WasmMsg::Execute { 
-                        contract_addr: overdrafts.to_string(), 
+                        contract_addr: overdrafts.clone(), 
                         msg: to_json_binary(&imports::ExecuteMsg::DecreaseBalance {
                             receiver: payer_checked,
                             amount: t.amount.into()

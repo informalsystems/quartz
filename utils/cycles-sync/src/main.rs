@@ -27,7 +27,7 @@ use crate::{
     obligato_client::{http::HttpClient, Client},
     types::{
         Obligation, ObligatoObligation, ObligatoSetOff, RawEncryptedObligation, RawObligation,
-        RawOffset, RawSetOff, SubmitObligationsMsg, SubmitObligationsMsgInner,
+        RawOffset, RawSetOff, SubmitObligatioMsg, SubmitObligatoObligationsMsgInner,
     },
     wasmd_client::{CliWasmdClient, QueryResult, WasmdClient},
 };
@@ -202,8 +202,8 @@ fn create_wasm_msg(
         .map(|pk| HexBinary::from(pk.to_sec1_bytes().as_ref()))
         .collect();
 
-    let msg = SubmitObligationsMsg {
-        submit_obligations: SubmitObligationsMsgInner {
+    let msg = SubmitObligatioMsg {
+        submit_obligations: SubmitObligatoObligationsMsgInner {
             obligations: obligations_enc,
             liquidity_sources,
         },

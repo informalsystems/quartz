@@ -100,8 +100,6 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let intents = vec![alice_to_bob, bob_acceptance, alice_tender];
-    println!("intents: {:?}", intents);
-
     let epoch_pk = VerifyingKey::from_sec1_bytes(&hex::decode(epoch_pk).unwrap()).unwrap();
 
     let intents_enc = encrypt_overdraft_intents(
@@ -111,6 +109,7 @@ async fn main() -> anyhow::Result<()> {
     let liquidity_sources = vec![overdraft];
 
     let msg = create_wasm_msg(intents_enc, liquidity_sources)?;
+
     let wasmd_client = CliWasmdClient::new(node);
     wasmd_client.tx_execute(&contract, &chain_id, 3000000, admin.to_string(), msg)?;              
 
@@ -183,11 +182,6 @@ fn create_wasm_msg(
             let ciphertext = HexBinary::from(ciphertext);
             RawEncryptedObligation { digest, ciphertext }
         })
-        .collect();
-
-    let liquidity_sources = liquidity_sources
-        .into_iter()
-        .map(|addr| HexBinary::from(addr.as_bytes()))
         .collect();
 
     let msg = SubmitObligationsMsg {

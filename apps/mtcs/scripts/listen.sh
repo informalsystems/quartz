@@ -4,7 +4,7 @@
     DIR_MTCS="$ROOT/cycles-quartz/apps/mtcs"
     DIR_PROTO="$DIR_MTCS/enclave/proto"
     DEFAULT_NODE="127.0.0.1:26657"
-    NODE_URL=${NODE_URL:-$DEFAULT_NODE}
+    NODE_URL="143.244.186.205:26657"
 
 
     # Attestation constants
@@ -54,10 +54,11 @@
 
         echo "... fetching obligations"
 
-        # export EPOCH=$($CMD query wasm contract-state raw "$CONTRACT" "65706f63685f636f756e746572" -o json | jq -r .data | base64 -d)
-        export OBLIGATIONS=$($CMD query wasm contract-state raw "$CONTRACT" $(printf '1/%s' "obligations" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
-        export LIQUIDITY_SOURCES=$($CMD query wasm contract-state raw "$CONTRACT" $(printf '1/%s' "liquidity_sources" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
-        # export REQUEST_MSG=$(jq -nc --arg message "$OBLIGATIONS" '$ARGS.named')
+        export EPOCH=$($CMD query wasm contract-state raw "$CONTRACT" "65706f63685f636f756e746572" -o json | jq -r .data | base64 -d)
+        PREV_EPOCH=$((EPOCH - 1))
+
+        export OBLIGATIONS=$($CMD query wasm contract-state raw "$CONTRACT" $(printf '%s/%s' "$PREV_EPOCH" "obligations" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
+        export LIQUIDITY_SOURCES=$($CMD query wasm contract-state raw "$CONTRACT" $(printf '%s/%s' "$PREV_EPOCH" "liquidity_sources" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
 
         COMBINED_JSON=$(jq -nc \
             --argjson intents "$OBLIGATIONS" \

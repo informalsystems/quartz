@@ -15,7 +15,6 @@ pub type LiquiditySourcesItem<'a> = Item<'a, BTreeSet<Addr>>;
 #[cw_serde]
 pub struct State {
     pub owner: String,
-    pub overdraft: Addr,
 }
 
 #[cw_serde]

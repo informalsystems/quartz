@@ -29,6 +29,7 @@ echo "------------ shook some hands ------------"
 
 cd $DIR_CYCLES_SYNC
 cargo run --bin submit $PUB_KEY $CONTRACT "false"
+echo "cargo run --bin submit $PUB_KEY $CONTRACT false"
 
 echo "------------ submitted obligations ------------"
 
