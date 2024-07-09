@@ -3,13 +3,13 @@ use std::collections::BTreeMap;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::HexBinary;
 use quartz_cw::{
-    msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation},
+    msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation},
     prelude::*,
 };
 
 use crate::state::{RawHash, SettleOff};
 
-type AttestedMsg<M> = RawAttested<RawAttestedMsgSansHandler<M>, RawEpidAttestation>;
+type AttestedMsg<M> = RawAttested<RawAttestedMsgSansHandler<M>, RawDefaultAttestation>;
 
 #[cw_serde]
 pub struct InstantiateMsg(pub QuartzInstantiateMsg);

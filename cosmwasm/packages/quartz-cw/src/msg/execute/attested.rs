@@ -4,6 +4,16 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError};
 use quartz_tee_ra::IASReport;
 
+#[cfg(ra_type = "epid")]
+pub type DefaultAttestation = EpidAttestation;
+#[cfg(ra_type = "epid")]
+pub type RawDefaultAttestation = RawEpidAttestation;
+
+#[cfg(ra_type = "mock")]
+pub type DefaultAttestation = MockAttestation;
+#[cfg(ra_type = "mock")]
+pub type RawDefaultAttestation = RawMockAttestation;
+
 use crate::{
     msg::HasDomainType,
     state::{MrEnclave, UserData},

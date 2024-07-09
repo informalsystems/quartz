@@ -5,7 +5,7 @@ use sha2::{Digest, Sha256};
 use crate::{
     msg::{
         execute::attested::{
-            Attested, HasUserData, MockAttestation, RawAttested, RawMockAttestation,
+            Attested, DefaultAttestation, HasUserData, RawAttested, RawDefaultAttestation,
         },
         HasDomainType,
     },
@@ -13,10 +13,10 @@ use crate::{
 };
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Instantiate<A = MockAttestation>(pub Attested<CoreInstantiate, A>);
+pub struct Instantiate<A = DefaultAttestation>(pub Attested<CoreInstantiate, A>);
 
 #[cw_serde]
-pub struct RawInstantiate<RA = RawMockAttestation>(RawAttested<RawCoreInstantiate, RA>);
+pub struct RawInstantiate<RA = RawDefaultAttestation>(RawAttested<RawCoreInstantiate, RA>);
 
 impl<RA> TryFrom<RawInstantiate<RA>> for Instantiate<RA::DomainType>
 where

@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_cw::{
-    msg::execute::attested::{RawAttested, RawEpidAttestation},
+    msg::execute::attested::{RawAttested, RawDefaultAttestation},
     prelude::*,
 };
 
@@ -28,7 +28,7 @@ pub enum ExecuteMsg {
     ClearTextTransferRequest(execute::ClearTextTransferRequestMsg),
 
     // enclave msg
-    Update(RawAttested<execute::RawUpdateMsg, RawEpidAttestation>),
+    Update(RawAttested<execute::RawUpdateMsg, RawDefaultAttestation>),
 }
 
 pub mod execute {
