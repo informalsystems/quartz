@@ -8,7 +8,7 @@ use cosmwasm_std::{Addr, HexBinary};
 //TODO: get rid of this
 use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
-    state::{RawHash, SettleOff, Transfer},
+    state::{RawHash, SettleOff, Transfer, LiquiditySource, LiquiditySourceType},
 };
 use cycles_sync::types::{ContractObligation, RawObligation};
 use ecies::{decrypt, encrypt};
@@ -36,7 +36,7 @@ pub struct MtcsService<A> {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RunClearingMessage {
     intents: BTreeMap<RawHash, RawCipherText>,
-    liquidity_sources: BTreeSet<Addr>,
+    liquidity_sources: BTreeSet<LiquiditySource>,
 }
 
 impl<A> MtcsService<A>
@@ -61,19 +61,19 @@ where
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
-        let liquidity_sources: Vec<Addr> = message.liquidity_sources.into_iter().collect();
+        let liquidity_sources: Vec<LiquiditySource> = message.liquidity_sources.into_iter().collect();
         let digests_ciphertexts = message.intents;
         let (digests, ciphertexts): (Vec<_>, Vec<_>) = digests_ciphertexts.into_iter().unzip();
 
         let sk = self.sk.lock().unwrap();
-        let obligations: Vec<SimpleObligation<Addr, i64>> = ciphertexts
+        let obligations: Vec<SimpleObligation<LiquiditySource, i64>> = ciphertexts
             .into_iter()
             .map(|ciphertext| decrypt_obligation(sk.as_ref().unwrap(), &ciphertext))
             .collect();
 
         let mut mtcs = ComplexIdMtcs::wrapping(DefaultMtcs::new(PrimalDual::default()));
-        // TODO: change Addr to LiquiditySource
-        let setoffs: Vec<SimpleSetoff<Addr, i64>> = mtcs.run(obligations).unwrap();
+        
+        let setoffs: Vec<SimpleSetoff<LiquiditySource, i64>> = mtcs.run(obligations).unwrap();
 
         let setoffs_enc: BTreeMap<RawHash, SettleOff> = setoffs
             .into_iter()
@@ -98,8 +98,8 @@ where
 
 // TODO Switch from Vec<_> to Vec<LiquiditySource>
 fn into_settle_offs(
-    so: SimpleSetoff<Addr, i64>,
-    liquidity_sources: &Vec<Addr>,
+    so: SimpleSetoff<LiquiditySource, i64>,
+    liquidity_sources: &Vec<LiquiditySource>,
 ) -> SettleOff {
     println!("setoff: {:?}", so);
     println!("liq sources: {:?}", liquidity_sources);
@@ -108,16 +108,16 @@ fn into_settle_offs(
         // A setoff on a tender should result in the creditor's (i.e. the tender receiver) balance
         // decreasing by the setoff amount
         SettleOff::Transfer(Transfer {
-            payer: so.creditor.clone(),
-            payee: so.debtor.clone(),
+            payer: so.creditor.address.clone(),
+            payee: so.debtor.address.clone(),
             amount: so.set_off as u64,
         })
     } else if liquidity_sources.contains(&&so.creditor) {
         // A setoff on an acceptance should result in the debtor's (i.e. the acceptance initiator)
         // balance increasing by the setoff amount
         SettleOff::Transfer(Transfer {
-            payer: so.creditor.clone(),
-            payee: so.debtor.clone(),
+            payer: so.creditor.address.clone(),
+            payee: so.debtor.address.clone(),
             amount: so.set_off as u64,
         })
     } else {
@@ -155,10 +155,21 @@ fn into_settle_offs(
 fn decrypt_obligation(
     sk: &SigningKey,
     ciphertext: &RawCipherText,
-) -> SimpleObligation<Addr, i64> {
+) -> SimpleObligation<LiquiditySource, i64> {
     let o: ContractObligation = {
         let o = decrypt(&sk.to_bytes(), ciphertext).unwrap();
         serde_json::from_slice(&o).unwrap()
     };
-    SimpleObligation::new(None, o.debtor, o.creditor, i64::try_from(o.amount).unwrap()).unwrap()
+
+    SimpleObligation::new(None, 
+        LiquiditySource {
+            address: o.debtor, 
+            source_type: LiquiditySourceType::External
+        }, 
+        LiquiditySource {
+            address: o.creditor, 
+            source_type: LiquiditySourceType::External
+        },
+        i64::try_from(o.amount).unwrap()).unwrap()
+
 }
