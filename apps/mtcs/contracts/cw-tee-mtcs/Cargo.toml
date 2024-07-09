@@ -2,6 +2,7 @@
 name = "cw-tee-mtcs"
 version = "0.1.0"
 edition = "2021"
+authors = ["Informal Systems <hello@informal.systems>"]
 
 exclude = ["contract.wasm", "hash.txt"]
 

@@ -1082,38 +1082,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "enclave"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "color-eyre",
- "cosmrs",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-multi-test",
- "cw-storage-plus",
- "ecies",
- "hex",
- "k256",
- "prost",
- "quartz-cw",
- "quartz-enclave",
- "quartz-proto",
- "schemars",
- "serde",
- "serde_json",
- "sha2 0.10.8",
- "tendermint 0.36.0",
- "tendermint-light-client",
- "thiserror",
- "tokio",
- "tonic",
- "tonic-build",
- "transfers_contracts",
-]
-
-[[package]]
 name = "encoding_rs"
 version = "0.8.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3755,6 +3723,38 @@ dependencies = [
  "sharded-slab",
  "thread_local",
  "tracing-core",
+]
+
+[[package]]
+name = "transfers-enclave"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "color-eyre",
+ "cosmrs",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "ecies",
+ "hex",
+ "k256",
+ "prost",
+ "quartz-cw",
+ "quartz-enclave",
+ "quartz-proto",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2 0.10.8",
+ "tendermint 0.36.0",
+ "tendermint-light-client",
+ "thiserror",
+ "tokio",
+ "tonic",
+ "tonic-build",
+ "transfers_contracts",
 ]
 
 [[package]]

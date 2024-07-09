@@ -1,22 +1,19 @@
 [workspace]
 resolver = "2"
-members = [ 
-    # "apps/transfers/contracts",
-    # "apps/transfers/enclave",
-
-    # "apps/mtcs/contracts/cw-tee-mtcs",
-        # "apps/mtcs/contracts/enclave",
+members = [
+    "apps/mtcs/enclave",
+    "apps/transfers/enclave",
     "core/light-client-proofs/*",
     "core/quartz",
     "cosmwasm/packages/*",
     "utils/*",
 ]
-exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/mtcs/enclave", "apps/transfers", "apps/transfers/enclave"]
+exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers/contracts"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.78.0"
+rust-version = "1.74.1"
 license = ""
 readme = "README.md"
 repository = "https://github.com/informalsystems/cycles-quartz"
@@ -26,7 +23,6 @@ authors = ["Informal Systems <hello@informal.systems>"]
 
 
 [workspace.dependencies]
-
 # external
 async-trait = { version = "0.1.79", default-features = false }
 bip32 = { version = "0.5.1", default-features = false, features = ["alloc", "secp256k1", "bip39"] }
@@ -105,3 +101,14 @@ quartz-proto = { path = "core/quartz-proto", default-features = false }
 quartz-relayer = { path = "relayer", default-features = false }
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
 tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
