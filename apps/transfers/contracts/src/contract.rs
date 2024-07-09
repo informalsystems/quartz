@@ -58,7 +58,6 @@ pub fn execute(
         // Cipher user msgs
         ExecuteMsg::TransferRequest(msg) => transfer_request(deps, env, info, msg),
 
-        // Enclave msgs // TODO - reattach the attestations
         // Enclave msgs
         ExecuteMsg::Update(attested_msg) => {
             let _ = attested_msg

@@ -63,6 +63,7 @@ impl HasUserData for RunTransfersResponseMessage {
         let mut hasher = Sha256::new();
         hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
         let digest: [u8; 32] = hasher.finalize().into();
+        println!("{}", serde_json::to_string(&self).expect("infallible serializer"));
 
         let mut user_data = [0u8; 64];
         user_data[0..32].copy_from_slice(&digest);
