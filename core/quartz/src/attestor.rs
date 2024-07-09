@@ -8,6 +8,12 @@ use quartz_cw::{
     state::{MrEnclave, UserData},
 };
 
+#[cfg(not(feature = "mock-sgx"))]
+pub type DefaultAttestor = EpidAttestor;
+
+#[cfg(feature = "mock-sgx")]
+pub type DefaultAttestor = MockAttestor;
+
 pub trait Attestor {
     type Error: ToString;
 
@@ -16,7 +22,7 @@ pub trait Attestor {
     fn mr_enclave(&self) -> Result<MrEnclave, Self::Error>;
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Default)]
 pub struct EpidAttestor;
 
 impl Attestor for EpidAttestor {
@@ -38,7 +44,7 @@ impl Attestor for EpidAttestor {
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Default)]
 pub struct MockAttestor;
 
 impl Attestor for MockAttestor {

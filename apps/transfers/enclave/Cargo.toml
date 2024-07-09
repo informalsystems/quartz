@@ -18,6 +18,8 @@ overflow-checks = true
 name = "encrypt"
 path = "bin/encrypt.rs"
 
+[features]
+mock-sgx = ["quartz-cw/mock-sgx", "quartz-enclave/mock-sgx"]
 
 [dependencies]
 # external
