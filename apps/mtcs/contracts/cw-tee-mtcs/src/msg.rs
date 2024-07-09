@@ -9,20 +9,20 @@ use quartz_cw::{
 
 use crate::state::{RawHash, SettleOff};
 
-type AttestedMsg<M> = RawAttested<RawAttestedMsgSansHandler<M>, RawDefaultAttestation>;
+type AttestedMsg<M, RA> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
 
 #[cw_serde]
-pub struct InstantiateMsg(pub QuartzInstantiateMsg);
+pub struct InstantiateMsg<RA = RawDefaultAttestation>(pub QuartzInstantiateMsg<RA>);
 
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
-pub enum ExecuteMsg {
+pub enum ExecuteMsg<RA = RawDefaultAttestation> {
     Quartz(QuartzExecuteMsg),
     FaucetMint(execute::FaucetMintMsg),
     Transfer(execute::Cw20Transfer),
     SubmitObligation(execute::SubmitObligationMsg),
     SubmitObligations(execute::SubmitObligationsMsg),
-    SubmitSetoffs(AttestedMsg<execute::SubmitSetoffsMsg>),
+    SubmitSetoffs(AttestedMsg<execute::SubmitSetoffsMsg, RA>),
     InitClearing,
     SetLiquiditySources(execute::SetLiquiditySourcesMsg),
 }

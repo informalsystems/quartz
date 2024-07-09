@@ -6,14 +6,14 @@ use quartz_cw::{
 };
 
 #[cw_serde]
-pub struct InstantiateMsg {
-    pub quartz: QuartzInstantiateMsg,
+pub struct InstantiateMsg<RA = RawDefaultAttestation>  {
+    pub quartz: QuartzInstantiateMsg<RA>,
     pub denom: String,
 }
 
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
-pub enum ExecuteMsg {
+pub enum ExecuteMsg<RA = RawDefaultAttestation> {
     // quartz initialization
     Quartz(QuartzExecuteMsg),
 
@@ -28,7 +28,7 @@ pub enum ExecuteMsg {
     ClearTextTransferRequest(execute::ClearTextTransferRequestMsg),
 
     // enclave msg
-    Update(RawAttested<execute::RawUpdateMsg, RawDefaultAttestation>),
+    Update(RawAttested<execute::RawUpdateMsg, RA>),
 }
 
 pub mod execute {
