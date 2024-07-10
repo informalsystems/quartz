@@ -4,8 +4,10 @@ macro_rules! quartz_server {
         quartz_server!($crate::cli::Cli, $server_type, $service_new);
     };
     ($cli_type:ty, $server_type:ty, $service_new:expr) => {
-        use std::sync::{Arc, Mutex};
-        use std::time::Duration;
+        use std::{
+            sync::{Arc, Mutex},
+            time::Duration,
+        };
 
         use clap::Parser;
         use quartz_common::{

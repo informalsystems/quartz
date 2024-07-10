@@ -17,14 +17,16 @@ mod cli;
 mod mtcs_server;
 mod proto;
 
+use cli::Cli;
 use mtcs_server::MtcsService;
 use proto::clearing_server::ClearingServer as MtcsServer;
-use cli::Cli;
-
 use quartz_common::quartz_server;
 
 // Passing a custom clap Cli is optional
-quartz_server!(Cli, MtcsServer, |sk| MtcsServer::new(MtcsService::new(sk, EpidAttestor)));
+quartz_server!(Cli, MtcsServer, |sk| MtcsServer::new(MtcsService::new(
+    sk,
+    EpidAttestor
+)));
 
 // With default Cli:
 // quartz_server!(MtcsServer, |sk| MtcsServer::new(MtcsService::new(sk, EpidAttestor)));
