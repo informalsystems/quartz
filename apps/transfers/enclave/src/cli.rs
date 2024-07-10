@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{env, net::SocketAddr};
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
@@ -19,7 +19,7 @@ fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// RPC server address
-    #[clap(long, default_value = "127.0.0.1:11091")]
+    #[clap(long, default_value_t = default_rpc_addr())]
     pub rpc_addr: SocketAddr,
 
     /// Identifier of the chain
@@ -49,4 +49,10 @@ pub struct Cli {
     /// Maximum block lag, in seconds
     #[clap(long, default_value = "5")]
     pub max_block_lag: u64,
+}
+
+
+fn default_rpc_addr() -> SocketAddr {
+    let port = env::var("QUARTZ_PORT").unwrap_or_else(|_| "11090".to_string());
+    format!("127.0.0.1:{}", port).parse().expect("Invalid socket address")
 }

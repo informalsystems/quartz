@@ -3,6 +3,9 @@ ROOT=${ROOT:-$HOME}
 DEFAULT_NODE="127.0.0.1:26657"
 NODE_URL=${NODE_URL:-$DEFAULT_NODE}
 
+# Use the QUARTZ_PORT environment variable if set, otherwise default to 11090
+QUARTZ_PORT="${QUARTZ_PORT:-11090}"
+
 if [ "$#" -eq 0 ]; then
     echo "Usage: $0 <contract_address>"
     exit 1  # Exit with a non-zero status to indicate an error
@@ -60,10 +63,8 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         # # Get the update message from the gRPC response
         # UPDATE_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Run | jq -r '.message | fromjson | .msg')
 
-        # # Create the UpdateMsg structure
-        # export UPDATE=$(jq -n \
-        #                 --argjson msg "$UPDATE_MSG" \
-        #                 '{update: $msg}')
+	echo "... executing transfer"
+	export UPDATE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
 
         # echo "UpdateMsg:"
         # echo $UPDATE | jq .

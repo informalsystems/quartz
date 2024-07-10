@@ -24,6 +24,7 @@ CMD="wasmd --node http://$NODE_URL"
 
 cd "$ROOT/cycles-quartz/apps/transfers"
 export TRUSTED_HASH=$(cat trusted.hash)
+export TRUSTED_HEIGHT=$(cat trusted.height)
 
 echo "using CMD: $CMD"
 echo "--------------------------------------------------------"
@@ -85,7 +86,7 @@ echo "contract $CONTRACT"
 cargo run -vvv -- --chain-id testing \
     --primary "http://$NODE_URL" \
     --witnesses "http://$NODE_URL" \
-    --trusted-height 500000 \
+    --trusted-height $TRUSTED_HEIGHT \
     --trusted-hash $TRUSTED_HASH \
     --contract-address $CONTRACT \
     --storage-key "quartz_session" \

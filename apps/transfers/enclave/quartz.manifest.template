@@ -18,12 +18,12 @@ loader.env.RA_TLS_ISV_SVN = { passthrough = true }
 loader.env.RA_TLS_ISV_PROD_ID = { passthrough = true }
 loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
-loader.env.GRAMINE_PORT = "{{ gramine_port }}"
+loader.env.QUARTZ_PORT = { passthrough = true }
 
 loader.argv = ["enclave",
                 "--chain-id", "testing",
-                "--trusted-height", "500000",
-                "--trusted-hash", "F8F5D053FAA9E09635620D8569AB49E3C205989A7B29E785B31304480094C61E"]
+                "--trusted-height", "{{ trusted_height }}",
+                "--trusted-hash", "{{ trusted_hash }}"]
 
 fs.mounts = [
   { uri = "file:{{ gramine.runtimedir() }}", path = "/lib" },
