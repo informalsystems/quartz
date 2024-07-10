@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Event};
-use quartz_tee_ra::{verify_epid_attestation, Error as RaVerificationError};
+use quartz_tee_ra::verify_epid_attestation;//, Error as RaVerificationError};
 
 use crate::{
     error::Error,
@@ -10,7 +10,7 @@ use crate::{
         Attestation, Attested, AttestedMsgSansHandler, EpidAttestation, HasUserData,
         MockAttestation,
     },
-    state::CONFIG,
+    // state::CONFIG,
 };
 
 impl Handler for EpidAttestation {
@@ -45,8 +45,8 @@ impl Handler for MockAttestation {
 
 impl<M, A> Handler for Attested<M, A>
 where
-    M: Handler + HasUserData + Debug + Clone,
-    A: Handler + HasUserData + Attestation + Clone,
+    M: Handler + HasUserData + Debug,
+    A: Handler + HasUserData + Attestation,
 {
     fn handle(
         self,
