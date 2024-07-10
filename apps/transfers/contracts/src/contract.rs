@@ -60,10 +60,10 @@ pub fn execute(
 
         // Enclave msgs
         ExecuteMsg::Update(attested_msg) => {
-            let _ = attested_msg
+            attested_msg
                 .clone()
-                .handle_raw(deps.branch(), &env, &info)?;
-            update(deps, env, info, attested_msg.msg.0)
+                .handle_raw(deps.branch(), &env, &info).map_err(Into::into)
+            // update(deps, env, info, attested_msg.msg.0)
         }
         ExecuteMsg::QueryResponse(attested_msg) => {
             let _ = attested_msg
