@@ -11,6 +11,7 @@ macro_rules! quartz_server {
         };
 
         use clap::Parser;
+        use tonic::transport::Server;
         use $crate::{
             contract::state::{Config, LightClientOpts},
             enclave::{
@@ -19,7 +20,6 @@ macro_rules! quartz_server {
             },
             proto::core_server::CoreServer,
         };
-        use tonic::transport::Server;
 
         #[tokio::main(flavor = "current_thread")]
         async fn main() -> Result<(), Box<dyn std::error::Error>> {

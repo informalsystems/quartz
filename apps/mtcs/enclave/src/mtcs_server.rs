@@ -20,7 +20,10 @@ use quartz_common::{contract::msg::execute::attested::RawAttested, enclave::atte
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
-use crate::{proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse}, types::RawObligation};
+use crate::{
+    proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
+    types::RawObligation,
+};
 
 pub type RawCipherText = HexBinary;
 
