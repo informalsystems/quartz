@@ -37,6 +37,9 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
+      - name: Install protobuf-compiler
+        run: sudo apt-get install -y protobuf-compiler
+        
       - name: Install wasm32-unknown-unknown toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
