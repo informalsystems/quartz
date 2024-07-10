@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Event};
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use quartz_tee_ra::{verify_epid_attestation, Error as RaVerificationError};
 
 use crate::{
@@ -56,17 +56,12 @@ where
     ) -> Result<Response, Error> {
         let (msg, attestation) = self.into_tuple();
 
-        let test_msg = format!("{:?}", msg);
-        if test_msg.contains("withdrawals") {
-            let event = Event::new("debugging_dave")
-            .add_attribute("msg", format!("{:?}", msg))
-            .add_attribute("user_data", format!("{:?}", msg.user_data()))
-            .add_attribute("attestation",format!("{:?}", attestation.user_data()));
-            assert_eq!(msg.user_data(), attestation.user_data(), "they are not equal!");
-            let resp = Response::new().add_event(event);
-            return Ok(resp);
-        }
-
+        // let test_msg = format!("{:?}", msg);
+        // if test_msg.contains("withdrawals") {
+        //     assert_eq!(msg.user_data(), attestation.user_data(), "they are not equal!");
+        //     let resp = Response::new().add_event(event);
+        //     return Ok(resp);
+        // }
 
         if msg.user_data() != attestation.user_data() {
             return Err(RaVerificationError::UserDataMismatch.into());
