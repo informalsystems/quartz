@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! quartz_server {
     ($server_type:ty, $service_new:expr) => {
-        quartz_server!(crate::cli::Cli, $server_type, $service_new);
+        quartz_server!($crate::cli::Cli, $server_type, $service_new);
     };
     ($cli_type:ty, $server_type:ty, $service_new:expr) => {
         use std::sync::{Arc, Mutex};
