@@ -120,6 +120,8 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
         echo "... executing query balance"
         ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Query | jq -r '.message | fromjson')
+        echo "atts msg"
+        echo $ATTESTED_MSG
         QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
         MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
         echo "quote"
