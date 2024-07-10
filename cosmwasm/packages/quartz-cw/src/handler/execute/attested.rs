@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Event};
-use quartz_tee_ra::verify_epid_attestation;//, Error as RaVerificationError};
+use quartz_tee_ra::{verify_epid_attestation, Error as RaVerificationError};
 
 use crate::{
     error::Error,
@@ -10,7 +10,7 @@ use crate::{
         Attestation, Attested, AttestedMsgSansHandler, EpidAttestation, HasUserData,
         MockAttestation,
     },
-    // state::CONFIG,
+    state::CONFIG,
 };
 
 impl Handler for EpidAttestation {
@@ -50,35 +50,41 @@ where
 {
     fn handle(
         self,
-        _deps: DepsMut<'_>,
-        _env: &Env,
-        _info: &MessageInfo,
+        mut deps: DepsMut<'_>,
+        env: &Env,
+        info: &MessageInfo,
     ) -> Result<Response, Error> {
         let (msg, attestation) = self.into_tuple();
-        let event = Event::new("debugging_dave")
-        .add_attribute("msg", format!("{:?}", msg))
-        .add_attribute("user_data", format!("{:?}", msg.user_data()))
-        .add_attribute("attestation",format!("{:?}", attestation.user_data()));
-        let resp = Response::new().add_event(event);
-        return Ok(resp);
-        // if msg.user_data() != attestation.user_data() {
-        //     return Err(RaVerificationError::UserDataMismatch.into());
-        // }
 
-        // if let Some(config) = CONFIG.may_load(deps.storage)? {
-        //     // if we weren't able to load then the context was from InstantiateMsg so we don't fail
-        //     // in such cases, the InstantiateMsg handler will verify that the mr_enclave matches
-        //     if config.mr_enclave() != attestation.mr_enclave() {
-        //         return Err(RaVerificationError::MrEnclaveMismatch.into());
-        //     }
-        // }
+        let test_msg = format!("{:?}", msg);
+        if test_msg.contains("withdrawals") {
+            let event = Event::new("debugging_dave")
+            .add_attribute("msg", format!("{:?}", msg))
+            .add_attribute("user_data", format!("{:?}", msg.user_data()))
+            .add_attribute("attestation",format!("{:?}", attestation.user_data()));
+            let resp = Response::new().add_event(event);
+            return Ok(resp);
+        }
 
-        // // handle message first, this has 2 benefits -
-        // // 1. we avoid (the more expensive) attestation verification if the message handler fails
-        // // 2. we allow the message handler to make changes to the config so that the attestation
-        // //    handler can use those changes, e.g. InstantiateMsg
-        // Handler::handle(msg.clone(), deps.branch(), env, info)?;
-        // Handler::handle(attestation.clone(), deps, env, info)
+
+        if msg.user_data() != attestation.user_data() {
+            return Err(RaVerificationError::UserDataMismatch.into());
+        }
+
+        if let Some(config) = CONFIG.may_load(deps.storage)? {
+            // if we weren't able to load then the context was from InstantiateMsg so we don't fail
+            // in such cases, the InstantiateMsg handler will verify that the mr_enclave matches
+            if config.mr_enclave() != attestation.mr_enclave() {
+                return Err(RaVerificationError::MrEnclaveMismatch.into());
+            }
+        }
+
+        // handle message first, this has 2 benefits -
+        // 1. we avoid (the more expensive) attestation verification if the message handler fails
+        // 2. we allow the message handler to make changes to the config so that the attestation
+        //    handler can use those changes, e.g. InstantiateMsg
+        Handler::handle(msg, deps.branch(), env, info)?;
+        Handler::handle(attestation, deps, env, info)
     }
 }
 
