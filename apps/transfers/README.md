@@ -20,8 +20,8 @@ You may want to exit and start a new terminal session to get the rust toolchain 
 Now downgrade rust to v1.76.0:
 
 ```
-rustup install v1.76.0
-rustup default v1.76.0
+rustup install 1.76.0
+rustup default 1.76.0
 ```
 
 Check the version with `cargo version`.
@@ -61,7 +61,7 @@ git checkout v0.44.0
 go install ./cmd/wasmd
 ```
 
-Check that both work by running `grpccurl` and `wasmd`.
+Check that both work by running `grpcurl` and `wasmd`.
 
 Finally, you neeed `websocat`:
 
@@ -113,6 +113,13 @@ First set the `NODE_URL` variable to the address of the blockchain node. If it's
 
 The `scripts` dir contains some bash scripts to help run the app. 
 These scripts should be replaced by a new `quartz` tool. See [issue](https://github.com/informalsystems/cycles-quartz/issues/61).
+
+Note: to build/run on a non-SGX machine you can set the `MOCK_SGX` env var or append `MOCK_SGX=1` to all bash scripts below, e.g. - 
+```shell
+$ MOCK_SGX=1 bash scripts/build.sh
+$ MOCK_SGX=1 bash scripts/start.sh
+# etc.
+```
 
 ### Build the Binaries
 
