@@ -62,6 +62,7 @@ where
             .add_attribute("msg", format!("{:?}", msg))
             .add_attribute("user_data", format!("{:?}", msg.user_data()))
             .add_attribute("attestation",format!("{:?}", attestation.user_data()));
+            assert_eq!(msg.user_data(), attestation.user_data(), "they are not equal!");
             let resp = Response::new().add_event(event);
             return Ok(resp);
         }
