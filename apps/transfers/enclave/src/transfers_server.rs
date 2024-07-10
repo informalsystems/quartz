@@ -272,12 +272,12 @@ where
         };
 
         // Attest to message
-        let quote = self
+        let attestation = self
             .attestor
             .quote(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = AttestedMsg { msg, quote };
+        let attested_msg = RawAttested { msg, attestation };
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
