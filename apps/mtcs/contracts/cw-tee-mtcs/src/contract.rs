@@ -19,7 +19,7 @@ use crate::{
         ExecuteMsg, InstantiateMsg, QueryMsg,
     },
     state::{
-        current_epoch_key, State, LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS,
+        current_epoch_key, LiquiditySourcesItem, ObligationsItem, State, LIQUIDITY_SOURCES_KEY,
         OBLIGATIONS_KEY, STATE,
     },
 };
@@ -47,13 +47,11 @@ pub fn instantiate(
     let epoch_counter = Uint64::new(1);
     EPOCH_COUNTER.save(deps.storage, &epoch_counter)?;
 
-    // Pre-compute the keys
-    let obligations_key = current_epoch_key(OBLIGATIONS_KEY, deps.storage)?;
-    let liquidity_sources_key = current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?;
+    ObligationsItem::new_dyn(current_epoch_key(OBLIGATIONS_KEY, deps.storage)?)
+        .save(deps.storage, &Default::default())?;
 
-    // Now use the pre-computed keys
-    OBLIGATIONS.save(deps.storage, &obligations_key, &Default::default())?;
-    LIQUIDITY_SOURCES.save(deps.storage, &liquidity_sources_key, &Default::default())?;
+    LiquiditySourcesItem::new_dyn(current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
+        .save(deps.storage, &Default::default())?;
 
     // store token info using cw20-base format
     let data = TokenInfo {
@@ -126,8 +124,8 @@ pub mod execute {
 
     use crate::{
         state::{
-            current_epoch_key, previous_epoch_key, RawHash, SettleOff, LIQUIDITY_SOURCES,
-            LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, SETOFFS, SETOFFS_KEY,
+            current_epoch_key, previous_epoch_key, LiquiditySourcesItem, ObligationsItem, RawHash,
+            SetoffsItem, SettleOff, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, SETOFFS_KEY,
         },
         ContractError,
     };
@@ -153,7 +151,6 @@ pub mod execute {
 
         Ok(Response::new().add_attribute("action", "faucet_mint"))
     }
-    use crate::state::OBLIGATIONS;
 
     pub fn submit_obligation(
         deps: DepsMut,
@@ -162,14 +159,10 @@ pub mod execute {
     ) -> Result<Response, ContractError> {
         let _: Hash = digest.to_array()?;
 
-        let current_obligation_key = current_epoch_key(OBLIGATIONS_KEY, deps.storage)?;
-
         // store the `(digest, ciphertext)` tuple
-        OBLIGATIONS.update(
+        ObligationsItem::new_dyn(current_epoch_key(OBLIGATIONS_KEY, deps.storage)?).update(
             deps.storage,
-            &current_obligation_key,
-            |obligations| -> Result<_, ContractError> {
-                let mut obligations = obligations.unwrap_or_default();
+            |mut obligations| {
                 if let Some(_duplicate) = obligations.insert(digest.clone(), ciphertext.clone()) {
                     return Err(ContractError::DuplicateEntry);
                 }
@@ -192,12 +185,13 @@ pub mod execute {
             .iter()
             .try_for_each(|ls| VerifyingKey::from_sec1_bytes(ls).map(|_| ()))?;
 
-        let current_liquidity_key = current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?;
-
         // store the liquidity sources
-        let liquidity_sources_set: std::collections::BTreeSet<_> =
-            liquidity_sources.into_iter().collect();
-        LIQUIDITY_SOURCES.save(deps.storage, &current_liquidity_key, &liquidity_sources_set)?;
+        LiquiditySourcesItem::new_dyn(current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
+            .update(deps.storage, |mut ls| {
+                ls.clear();
+                ls.extend(liquidity_sources);
+                Ok::<_, ContractError>(ls)
+            })?;
 
         Ok(Response::default())
     }
@@ -208,8 +202,8 @@ pub mod execute {
         setoffs_enc: BTreeMap<RawHash, SettleOff>,
     ) -> Result<Response, ContractError> {
         // store the `BTreeMap<RawHash, RawCipherText>`
-        let previous_epoch_key = previous_epoch_key(SETOFFS_KEY, deps.storage)?;
-        SETOFFS.save(deps.storage, &previous_epoch_key, &setoffs_enc)?;
+        SetoffsItem::new_dyn(previous_epoch_key(SETOFFS_KEY, deps.storage)?)
+            .save(deps.storage, &setoffs_enc)?;
 
         for (_, so) in setoffs_enc {
             if let SettleOff::Transfer(t) = so {
@@ -265,15 +259,16 @@ pub mod query {
     use crate::{
         msg::{GetAllSetoffsResponse, GetLiquiditySourcesResponse},
         state::{
-            current_epoch_key, epoch_key, previous_epoch_key, LIQUIDITY_SOURCES,
-            LIQUIDITY_SOURCES_KEY, SETOFFS, SETOFFS_KEY,
+            current_epoch_key, epoch_key, previous_epoch_key, LiquiditySourcesItem, SetoffsItem,
+            LIQUIDITY_SOURCES_KEY, SETOFFS_KEY,
         },
     };
 
     pub fn get_all_setoffs(deps: Deps) -> StdResult<GetAllSetoffsResponse> {
-        let previous_epoch_key = previous_epoch_key(SETOFFS_KEY, deps.storage)?;
-        let setoffs_map = SETOFFS.load(deps.storage, &previous_epoch_key)?;
-        let setoffs = setoffs_map.into_iter().collect();
+        let setoffs = SetoffsItem::new_dyn(previous_epoch_key(SETOFFS_KEY, deps.storage)?)
+            .load(deps.storage)?
+            .into_iter()
+            .collect();
         Ok(GetAllSetoffsResponse { setoffs })
     }
 
@@ -286,8 +281,10 @@ pub mod query {
             Some(e) => epoch_key(LIQUIDITY_SOURCES_KEY, e)?,
         };
 
-        let liquidity_sources_set = LIQUIDITY_SOURCES.load(deps.storage, &epoch_key)?;
-        let liquidity_sources = liquidity_sources_set.into_iter().collect();
+        let liquidity_sources = LiquiditySourcesItem::new_dyn(epoch_key)
+            .load(deps.storage)?
+            .into_iter()
+            .collect();
         Ok(GetLiquiditySourcesResponse { liquidity_sources })
     }
 }
