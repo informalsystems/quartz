@@ -136,9 +136,9 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
         # Create the QueryResponseMsg structure with address inside the msg
         export QUERY_RESPONSE_MSG=$(jq -n \
-                        --arg address "$ADDRESS" \
-                        --argjson msg "$MSG" \
-                        '{msg: ($msg + {address: $address})}')
+            --arg address "$ADDRESS" \
+            --argjson msg "$MSG" \
+            '{address: $address, encrypted_bal: $msg.encrypted_bal}')
 
 
         # Create the execute message for query_response
