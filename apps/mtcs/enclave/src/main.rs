@@ -16,6 +16,7 @@
 mod cli;
 mod mtcs_server;
 mod proto;
+mod types;
 
 use cli::Cli;
 use mtcs_server::MtcsService;

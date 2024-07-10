@@ -42,7 +42,7 @@ cw20 = "1.1.1"
 cw2 = "1.1.1"
 
 # quartz
-quartz-common = { path = "../../../../core/quartz-common/" }
+quartz-common = { path = "../../../../core/quartz-common/", features = ["contract"]}
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"

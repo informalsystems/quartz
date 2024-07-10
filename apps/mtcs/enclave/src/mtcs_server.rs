@@ -10,7 +10,6 @@ use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
     state::{RawHash, SettleOff, Transfer},
 };
-use cycles_sync::types::RawObligation;
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use mtcs::{
@@ -21,7 +20,7 @@ use quartz_common::{contract::msg::execute::attested::RawAttested, enclave::atte
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
-use crate::proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse};
+use crate::{proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse}, types::RawObligation};
 
 pub type RawCipherText = HexBinary;
 

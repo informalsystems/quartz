@@ -36,11 +36,10 @@ prost = { version = "0.12.3", default-features = false }
 
 # local
 cw-tee-mtcs.workspace = true
-cycles-sync.workspace = true
 mtcs.workspace = true
 
 # quartz
-quartz-common.workspace = true
+quartz-common = { workspace = true, features = ["full"]}
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"

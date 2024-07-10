@@ -33,7 +33,6 @@ tendermint-light-client.workspace = true
 
 # quartz
 cw-proof.workspace = true
-cycles-sync.workspace = true
 mtcs.workspace = true
 quartz-cw.workspace = true
 quartz-proto.workspace = true

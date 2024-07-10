@@ -1,3 +1,4 @@
+#[cfg(feature = "macro")]
 #[macro_export]
 macro_rules! quartz_server {
     ($server_type:ty, $service_new:expr) => {
@@ -10,7 +11,7 @@ macro_rules! quartz_server {
         };
 
         use clap::Parser;
-        use quartz_common::{
+        use $crate::{
             contract::state::{Config, LightClientOpts},
             enclave::{
                 attestor::{Attestor, EpidAttestor},
