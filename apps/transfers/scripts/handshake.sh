@@ -49,7 +49,7 @@ done
 # need to wait another block for light client proof
 BLOCK_HEIGHT=$($CMD query block | jq .block.header.height)
 
-echo "at heigh $BLOCK_HEIGHT. need to wait for a block"
+echo "at height $BLOCK_HEIGHT. need to wait for a block"
 while [[ $BLOCK_HEIGHT == $($CMD query block | jq .block.header.height) ]]; do
     echo "... 🕐 waiting for another block"
     sleep 1
@@ -57,7 +57,7 @@ done
 
 # need to wait another block for light client proof
 BLOCK_HEIGHT=$($CMD query block | jq .block.header.height)
-echo "at heigh $BLOCK_HEIGHT. need to wait for a block"
+echo "at height $BLOCK_HEIGHT. need to wait for a block"
 while [[ $BLOCK_HEIGHT == $($CMD query block | jq .block.header.height) ]]; do
     echo "... 🕐 waiting for another block"
     sleep 1

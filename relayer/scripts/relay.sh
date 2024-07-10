@@ -20,15 +20,35 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 REQUEST="$1"
 REQUEST_MSG=${2:-"{}"}
 
-# clear tmp files from previous runs
-rm -f "$QUOTE_FILE" "$REPORT_FILE" "$REPORT_SIG_FILE"
-
 # query the gRPC quartz enclave service
 ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto quartz.proto -d "$REQUEST_MSG" '127.0.0.1:11090' quartz.Core/"$REQUEST" | jq -c '.message | fromjson')
 
 # parse out the quote and the message
 QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')
 MSG=$(echo "$ATTESTED_MSG" | jq 'del(.quote)')
+
+if [ -n "$MOCK_SGX" ]; then
+    case "$REQUEST" in
+        "Instantiate")
+            jq -nc --argjson msg "$MSG" --argjson "attestation" \
+                        "$QUOTE" \
+                        '$ARGS.named' ;;
+
+        "SessionCreate" | "SessionSetPubKey")
+            REQUEST_KEY=$(echo "$REQUEST" | sed 's/\([A-Z]\)/_\L\1/g;s/^_//')
+            jq -nc --argjson quartz "$(jq -nc --argjson "$REQUEST_KEY" "$(jq -nc --argjson  msg "$MSG" --argjson attestation \
+                "$QUOTE" '$ARGS.named')" '$ARGS.named')" '$ARGS.named' ;;
+
+        *)
+            usage ;;
+    esac
+
+    exit
+fi
+
+
+# clear tmp files from previous runs
+rm -f "$QUOTE_FILE" "$REPORT_FILE" "$REPORT_SIG_FILE"
 
 # request the IAS report for EPID attestations
 echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"

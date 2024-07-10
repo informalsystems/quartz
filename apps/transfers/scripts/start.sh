@@ -31,6 +31,14 @@ export TRUSTED_HASH=$(cat trusted.hash)
 echo "... $TRUSTED_HASH"
 rm output
 
+if [ -n "$MOCK_SGX" ]; then
+    echo "MOCK_SGX is set. Running enclave without gramine."
+    cd $DIR_QUARTZ_ENCLAVE
+    cargo run --bin enclave --features=mock-sgx -- --chain-id "testing" --trusted-height 1 --trusted-hash "$TRUSTED_HASH"
+    exit
+fi
+
+
 echo "--------------------------------------------------------"
 echo "configure gramine"
 cd "$DIR_QUARTZ_ENCLAVE"
