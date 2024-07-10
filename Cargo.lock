@@ -762,6 +762,7 @@ dependencies = [
  "cw2",
  "cw20",
  "cw20-base",
+ "getrandom",
  "hex",
  "k256",
  "quartz-cw",
