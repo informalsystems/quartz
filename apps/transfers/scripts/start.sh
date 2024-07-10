@@ -21,6 +21,10 @@ TRUSTED_HASH=$(echo "$CHAIN_STATUS" | jq -r .SyncInfo.latest_block_hash)
 TRUSTED_HEIGHT=$(echo "$CHAIN_STATUS" | jq -r .SyncInfo.latest_block_height)
 echo "... $TRUSTED_HASH"
 
+cd ""$DIR_QUARTZ_APP""
+echo "$TRUSTED_HASH" > trusted.hash
+echo "$TRUSTED_HEIGHT" > trusted.height
+
 echo "--------------------------------------------------------"
 echo "configure gramine"
 cd "$DIR_QUARTZ_ENCLAVE"
