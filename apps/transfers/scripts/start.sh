@@ -16,20 +16,10 @@ echo "--------------------------------------------------------"
 echo "set trusted hash"
 
 cd "$DIR_QUARTZ_TM_PROVER"
-cargo run -- --chain-id testing \
---primary "http://$NODE_URL" \
---witnesses "http://$NODE_URL" \
---trusted-height 1 \
---trusted-hash "5237772462A41C0296ED688A0327B8A60DF310F08997AD760EB74A70D0176C27" \
---contract-address "wasm14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s0phg4d" \
---storage-key "quartz_session" \
---trace-file light-client-proof.json &> $DIR_QUARTZ_APP/output
-
-cd $DIR_QUARTZ_APP
-cat output | grep found | head -1 | awk '{print $NF}' | sed 's/\x1b\[[0-9;]*m//g' > trusted.hash
-export TRUSTED_HASH=$(cat trusted.hash)
+CHAIN_STATUS=$($CMD status)
+TRUSTED_HASH=$(echo "$CHAIN_STATUS" | jq -r .SyncInfo.latest_block_hash)
+TRUSTED_HEIGHT=$(echo "$CHAIN_STATUS" | jq -r .SyncInfo.latest_block_height)
 echo "... $TRUSTED_HASH"
-rm output
 
 echo "--------------------------------------------------------"
 echo "configure gramine"
@@ -37,10 +27,6 @@ cd "$DIR_QUARTZ_ENCLAVE"
 
 echo "... gen priv key if it doesnt exist"
 gramine-sgx-gen-private-key > /dev/null 2>&1 || :  # may fail
-
-echo "... update manifest template with trusted hash $TRUSTED_HASH"
-sed -i -r "s/(\"--trusted-hash\", \")[A-Z0-9]+(\"])/\1$TRUSTED_HASH\2/" quartz.manifest.template
-
 
 echo "... create manifest"
 gramine-manifest  \
