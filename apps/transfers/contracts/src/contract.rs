@@ -1,5 +1,5 @@
 use cosmwasm_std::{entry_point, DepsMut, Env, HexBinary, MessageInfo, Response};
-use quartz_cw::handler::RawHandler;
+use quartz_common::contract::handler::RawHandler;
 
 use crate::{
     error::ContractError,

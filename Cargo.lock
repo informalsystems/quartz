@@ -762,9 +762,10 @@ dependencies = [
  "cw2",
  "cw20",
  "cw20-base",
+ "getrandom",
  "hex",
  "k256",
- "quartz-cw",
+ "quartz-common",
  "schemars",
  "serde",
  "serde_json",
@@ -1115,9 +1116,7 @@ dependencies = [
  "k256",
  "mtcs",
  "prost",
- "quartz-cw",
- "quartz-enclave",
- "quartz-proto",
+ "quartz-common",
  "schemars",
  "serde",
  "serde_json",
@@ -2410,6 +2409,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "quartz-common"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "color-eyre",
+ "cosmrs",
+ "quartz-cw",
+ "quartz-enclave",
+ "quartz-proto",
+ "tendermint-light-client",
+]
+
+[[package]]
 name = "quartz-cw"
 version = "0.1.0"
 dependencies = [
@@ -2433,7 +2445,6 @@ dependencies = [
  "cosmrs",
  "cosmwasm-std",
  "cw-proof",
- "cw-tee-mtcs",
  "cycles-sync",
  "ecies",
  "hex",

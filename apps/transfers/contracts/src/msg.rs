@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
-use quartz_cw::{
+use quartz_common::contract::{
     msg::execute::attested::{RawAttested, RawEpidAttestation},
     prelude::*,
 };
@@ -33,7 +33,7 @@ pub enum ExecuteMsg {
 
 pub mod execute {
     use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError};
-    use quartz_cw::{
+    use quartz_common::contract::{
         error::Error,
         handler::Handler,
         msg::{execute::attested::HasUserData, HasDomainType},

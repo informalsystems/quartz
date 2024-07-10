@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::HexBinary;
-use quartz_cw::{
+use quartz_common::contract::{
     msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation},
     prelude::*,
 };
@@ -28,7 +28,7 @@ pub enum ExecuteMsg {
 }
 
 pub mod execute {
-    use quartz_cw::{msg::execute::attested::HasUserData, state::UserData};
+    use quartz_common::contract::{msg::execute::attested::HasUserData, state::UserData};
     use sha2::{Digest, Sha256};
 
     use super::*;

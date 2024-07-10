@@ -17,59 +17,14 @@ mod cli;
 mod mtcs_server;
 mod proto;
 
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
-
-use clap::Parser;
-use cli::Cli;
 use mtcs_server::MtcsService;
 use proto::clearing_server::ClearingServer as MtcsServer;
-use quartz_cw::state::{Config, LightClientOpts};
-use quartz_enclave::{
-    attestor::{Attestor, EpidAttestor},
-    server::CoreService,
-};
-use quartz_proto::quartz::core_server::CoreServer;
-use tonic::transport::Server;
+use cli::Cli;
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Cli::parse();
+use quartz_common::quartz_server;
 
-    let light_client_opts = LightClientOpts::new(
-        args.chain_id,
-        args.trusted_height.into(),
-        Vec::from(args.trusted_hash)
-            .try_into()
-            .expect("invalid trusted hash"),
-        (
-            args.trust_threshold.numerator(),
-            args.trust_threshold.denominator(),
-        ),
-        args.trusting_period,
-        args.max_clock_drift,
-        args.max_block_lag,
-    )?;
+// Passing a custom clap Cli is optional
+quartz_server!(Cli, MtcsServer, |sk| MtcsServer::new(MtcsService::new(sk, EpidAttestor)));
 
-    let config = Config::new(
-        EpidAttestor.mr_enclave()?,
-        Duration::from_secs(30 * 24 * 60),
-        light_client_opts,
-    );
-
-    let sk = Arc::new(Mutex::new(None));
-
-    Server::builder()
-        .add_service(CoreServer::new(CoreService::new(
-            config,
-            sk.clone(),
-            EpidAttestor,
-        )))
-        .add_service(MtcsServer::new(MtcsService::new(sk.clone(), EpidAttestor)))
-        .serve(args.rpc_addr)
-        .await?;
-
-    Ok(())
-}
+// With default Cli:
+// quartz_server!(MtcsServer, |sk| MtcsServer::new(MtcsService::new(sk, EpidAttestor)));

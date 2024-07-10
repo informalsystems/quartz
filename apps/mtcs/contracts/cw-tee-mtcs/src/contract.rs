@@ -7,7 +7,7 @@ use cw20_base::{
     contract::query_balance as cw20_query_balance,
     state::{MinterData, TokenInfo, TOKEN_INFO},
 };
-use quartz_cw::{handler::RawHandler, state::EPOCH_COUNTER};
+use quartz_common::contract::{handler::RawHandler, state::EPOCH_COUNTER};
 
 use crate::{
     error::ContractError,
@@ -119,7 +119,7 @@ pub mod execute {
     use cosmwasm_std::{DepsMut, Env, HexBinary, MessageInfo, Response, StdResult};
     use cw20_base::contract::{execute_burn, execute_mint};
     use k256::ecdsa::VerifyingKey;
-    use quartz_cw::state::{Hash, EPOCH_COUNTER};
+    use quartz_common::contract::state::{Hash, EPOCH_COUNTER};
 
     use crate::{
         state::{

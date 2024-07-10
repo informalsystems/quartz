@@ -2,7 +2,7 @@
 resolver = "2"
 members = [ "apps/mtcs/enclave",
     "core/light-client-proofs/*",
-    "core/quartz",
+    "core/quartz", "core/quartz-common",
     "cosmwasm/packages/*",
     "utils/*",
 ]
@@ -75,8 +75,10 @@ cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = fals
 cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
 cycles-sync = { path = "utils/cycles-sync", default-features = false }
 mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
+quartz-common = { path = "core/quartz-common"}
 quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
 quartz-proto = { path = "core/quartz-proto", default-features = false }
 quartz-relayer = { path = "relayer", default-features = false }
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
+quartz-enclave = { path = "core/quartz"}
 tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }

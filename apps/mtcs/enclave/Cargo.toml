@@ -40,9 +40,7 @@ cycles-sync.workspace = true
 mtcs.workspace = true
 
 # quartz
-quartz-cw = { path = "../../../cosmwasm/packages/quartz-cw" }
-quartz-proto = { path = "../../../core/quartz-proto" }
-quartz-enclave = { path = "../../../core/quartz"}
+quartz-common.workspace = true
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"

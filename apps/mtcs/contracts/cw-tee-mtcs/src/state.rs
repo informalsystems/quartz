@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError, Storage};
 use cw_storage_plus::Item;
-use quartz_cw::state::EPOCH_COUNTER;
+use quartz_common::contract::state::EPOCH_COUNTER;
 
 pub type RawHash = HexBinary;
 pub type RawCipherText = HexBinary;

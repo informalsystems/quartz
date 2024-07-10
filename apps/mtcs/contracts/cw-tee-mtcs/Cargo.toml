@@ -42,7 +42,7 @@ cw20 = "1.1.1"
 cw2 = "1.1.1"
 
 # quartz
-quartz-cw = { path = "../../../../cosmwasm/packages/quartz-cw" }
+quartz-common = { path = "../../../../core/quartz-common/" }
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"
