@@ -74,8 +74,8 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
         # TODO - add back in once attestations are figured out
         echo "... executing transfer"
-	echo "$QUARTZ_PORT"        
-export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
+	    echo "$QUARTZ_PORT"        
+        export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
         echo "Atts msg"
         echo $ATTESTED_MSG
         # echo $UPDATE #| jq '.msg'
@@ -94,13 +94,20 @@ export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.
 
         echo "... submitting update"
 
-        export EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
-            "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
-            '$ARGS.named')" '$ARGS.named')
+        # export EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
+        #     "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
+        #     '$ARGS.named')" '$ARGS.named')
+
+        export EXECUTE=$(jq -nc --argjson update "$(jq -nc \
+            --arg ciphertext "$($MSG | jq -r '.ciphertext')" \
+            --arg quantity "$($MSG | jq -r '.quantity')" \
+            --argjson withdrawals "$($MSG | jq '.withdrawals')" \
+            --argjson attestation "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
+            '{ciphertext: $ciphertext, quantity: $quantity | tonumber, withdrawals: $withdrawals, attestation: $attestation}')" \
+            '{update: $update}')
 
         echo $EXECUTE | jq '.'
 
-        
         $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
 
         echo " ... done"
