@@ -65,7 +65,10 @@ impl HasUserData for UpdateMsg {
         hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
         let digest: [u8; 32] = hasher.finalize().into();
         println!("msg:");
-        println!("{}", serde_json::to_string(&self).expect("infallible serializer"));
+        println!(
+            "{}",
+            serde_json::to_string(&self).expect("infallible serializer")
+        );
 
         let mut user_data = [0u8; 64];
         user_data[0..32].copy_from_slice(&digest);

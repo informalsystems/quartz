@@ -64,9 +64,9 @@ where
         // }
         //env.lognew(serde_json::to_string(msg));
 
-        //if msg.user_data() != attestation.user_data() {
-        //    return Err(RaVerificationError::UserDataMismatch.into());
-        //}
+        if msg.user_data() != attestation.user_data() {
+           return Err(RaVerificationError::UserDataMismatch.into());
+        }
 
         if let Some(config) = CONFIG.may_load(deps.storage)? {
             // if we weren't able to load then the context was from InstantiateMsg so we don't fail
