@@ -64,7 +64,7 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         # UPDATE_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Run | jq -r '.message | fromjson | .msg')
 
 	echo "... executing transfer"
-	export UPDATE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
+	#export UPDATE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
 
         # echo "UpdateMsg:"
         # echo $UPDATE | jq .
@@ -74,7 +74,8 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
         # TODO - add back in once attestations are figured out
         echo "... executing transfer"
-        export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
+	echo "$QUARTZ_PORT"        
+export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
         echo "Atts msg"
         echo $ATTESTED_MSG
         # echo $UPDATE #| jq '.msg'
