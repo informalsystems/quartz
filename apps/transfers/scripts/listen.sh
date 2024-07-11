@@ -94,20 +94,20 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
         echo "... submitting update"
 
-        # export EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
-        #     "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
-        #     '$ARGS.named')" '$ARGS.named')
+        export EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
+            "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
+            '$ARGS.named')" '$ARGS.named')
 
-        export EXECUTE=$(jq -nc --argjson update "$(jq -nc \
-            --argjson msg "$MSG" \
-            --argjson attestation "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
-            '{
-                ciphertext: $msg.ciphertext,
-                quantity: $msg.quantity,
-                withdrawals: $msg.withdrawals,
-                attestation: $attestation
-            }')" \
-            '{update: $update}')
+        # export EXECUTE=$(jq -nc --argjson update "$(jq -nc \
+        #     --argjson msg "$MSG" \
+        #     --argjson attestation "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
+        #     '{
+        #         ciphertext: $msg.ciphertext,
+        #         quantity: $msg.quantity,
+        #         withdrawals: $msg.withdrawals,
+        #         attestation: $attestation
+        #     }')" \
+        #     '{update: $update}')
 
         echo $EXECUTE | jq '.'
 
