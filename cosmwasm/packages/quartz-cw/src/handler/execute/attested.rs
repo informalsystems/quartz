@@ -62,7 +62,7 @@ where
         //     let resp = Response::new().add_event(event);
         //     return Ok(resp);
         // }
-	//env.lognew(serde_json::to_string(msg));
+        //env.lognew(serde_json::to_string(msg));
 
         //if msg.user_data() != attestation.user_data() {
         //    return Err(RaVerificationError::UserDataMismatch.into());

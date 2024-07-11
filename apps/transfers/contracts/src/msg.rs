@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_cw::{
-    msg::execute::attested::{RawAttested, RawEpidAttestation, RawAttestedMsgSansHandler},
+    msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation},
     prelude::*,
 };
 use serde::{Deserialize, Serialize};
@@ -39,10 +39,10 @@ pub enum ExecuteMsg {
 
     // msgs sent by the enclave
     Update(AttestedMsg<execute::UpdateMsg>),
-    QueryResponse(AttestedMsg<execute::QueryResponseMsg>),}
+    QueryResponse(AttestedMsg<execute::QueryResponseMsg>),
+}
 
 pub mod execute {
-    use super::*;
     use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError};
     use quartz_cw::{
         error::Error,
@@ -51,6 +51,8 @@ pub mod execute {
         state::UserData,
     };
     use sha2::{Digest, Sha256};
+
+    use super::*;
 
     #[cw_serde]
     pub struct ClearTextTransferRequestMsg {
