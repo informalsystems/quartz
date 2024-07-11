@@ -5,6 +5,9 @@ ROOT=${ROOT:-$HOME}
 DEFAULT_NODE="127.0.0.1:26657"
 NODE_URL=${NODE_URL:-$DEFAULT_NODE}
 
+# Use the QUARTZ_PORT environment variable if set, otherwise default to 11090
+QUARTZ_PORT="${QUARTZ_PORT:-11090}"
+
 if [ "$#" -eq 0 ]; then
     echo "Usage: $0 <contract_address>"
     exit 1  # Exit with a non-zero status to indicate an error
@@ -56,7 +59,7 @@ echo "subscribe to events"
     cd $ROOT/cycles-quartz/apps/transfers/enclave
 
     echo "... executing transfer"
-    export UPDATE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11090' transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
+    export UPDATE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
 
 
 
