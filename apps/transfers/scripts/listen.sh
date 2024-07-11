@@ -99,11 +99,14 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         #     '$ARGS.named')" '$ARGS.named')
 
         export EXECUTE=$(jq -nc --argjson update "$(jq -nc \
-            --arg ciphertext "$($MSG | jq -r '.ciphertext')" \
-            --arg quantity "$($MSG | jq -r '.quantity')" \
-            --argjson withdrawals "$($MSG | jq '.withdrawals')" \
+            --argjson msg "$MSG" \
             --argjson attestation "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
-            '{ciphertext: $ciphertext, quantity: $quantity | tonumber, withdrawals: $withdrawals, attestation: $attestation}')" \
+            '{
+                ciphertext: $msg.ciphertext,
+                quantity: $msg.quantity,
+                withdrawals: $msg.withdrawals,
+                attestation: $attestation
+            }')" \
             '{update: $update}')
 
         echo $EXECUTE | jq '.'
