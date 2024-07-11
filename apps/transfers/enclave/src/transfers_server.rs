@@ -215,10 +215,11 @@ where
         };
 
         // Attest to message
-        let attestation = self
+        let attestation: HexBinary = self
             .attestor
             .quote(msg.clone())
-            .map_err(|e| Status::internal(e.to_string()))?;
+            .map_err(|e| Status::internal(e.to_string()))?
+            .into();
 
         let attested_msg = RawAttested { msg, attestation };
         let message =
@@ -275,10 +276,11 @@ where
         };
 
         // Attest to message
-        let attestation = self
+        let attestation: HexBinary = self
             .attestor
             .quote(msg.clone())
-            .map_err(|e| Status::internal(e.to_string()))?;
+            .map_err(|e| Status::internal(e.to_string()))?
+            .into();
 
         let attested_msg = RawAttested { msg, attestation };
         let message =
