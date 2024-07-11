@@ -4,6 +4,7 @@ use std::{
 };
 
 use cosmwasm_std::{Addr, HexBinary, Uint128};
+use schemars::JsonSchema;
 
 pub type RawCipherText = HexBinary;
 
@@ -39,8 +40,8 @@ pub struct RunTransfersRequestMessage {
     requests: Vec<TransfersRequest>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RunTransfersResponseMessage {
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
+pub struct UpdateMsg {
     ciphertext: HexBinary,
     quantity: u32,
     withdrawals: Vec<(Addr, Uint128)>,
@@ -58,7 +59,7 @@ pub struct QueryResponseMessage {
     encrypted_bal: HexBinary,
 }
 
-impl HasUserData for RunTransfersResponseMessage {
+impl HasUserData for UpdateMsg {
     fn user_data(&self) -> UserData {
         let mut hasher = Sha256::new();
         hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
@@ -207,7 +208,7 @@ where
         };
 
         // Prepare message to chain
-        let msg = RunTransfersResponseMessage {
+        let msg = UpdateMsg {
             ciphertext: state_enc,
             quantity: requests_len,
             withdrawals: withdrawals_response,
