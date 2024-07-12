@@ -1,0 +1,60 @@
+[package]
+name = "tcbinfo"
+version = "0.1.0"
+authors = ["quinine"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
+
+[features]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[package.metadata.scripts]
+optimize = """docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/optimizer:0.15.0
+"""
+
+[dependencies]
+
+cosmwasm-schema = "2.0.1"
+cosmwasm-std = { version = "2.0.1", features = [
+  "cosmwasm_1_3",
+  # Enable this if you only deploy to chains that have CosmWasm 1.4 or higher
+  # "cosmwasm_1_4",
+] }
+cw-storage-plus = "2.0.0"
+cw2 = "2.0.0"
+datetime = "0.5.2"
+getrandom = { version = "0.2", features = ["js"] }
+schemars = "0.8.16"
+serde = { version = "1.0.197", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.58" }
+x509-cert = { version = "0.2.5", default-features = false, features = ["pem"] }
+x509-parser = {version = "0.16.0", features = ["verify"] }
+der = { version = "0.7.9" }
+quartz-tee-ra = { path = "../quartz-tee-ra" }
+mc-attestation-verifier = {version = "0.4.3"}
+p256 = "0.13.2"
+serde_json = { version = "1.0", default-features = false }
+hashbrown = {version = "0.14.5", features = ["serde"]}
+hex = {version = "0.4.3", default-features = false, features = ["serde"]}
+
+[dev-dependencies]
+cw-multi-test = "2.0.0"
