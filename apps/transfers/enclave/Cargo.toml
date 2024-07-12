@@ -1,18 +1,9 @@
 [package]
-name = "enclave"
+name = "quartz-app-transfers-enclave"
 version = "0.1.0"
 edition = "2021"
-
-[profile.release]
-opt-level = 3
-debug = false
-rpath = false
-lto = true
-debug-assertions = false
-codegen-units = 1
-panic = 'abort'
-incremental = false
-overflow-checks = true
+authors = ["Informal Systems <hello@informal.systems>"]
+autobins = false
 
 [[bin]]
 name = "encrypt"
@@ -23,36 +14,31 @@ mock-sgx = ["quartz-cw/mock-sgx", "quartz-enclave/mock-sgx"]
 
 [dependencies]
 # external
-hex = { version = "0.4.3", default-features = false }
-k256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
-schemars = "0.8.15"
-serde = { version = "1.0.189", default-features = false, features = ["derive"] }
-thiserror = { version = "1.0.49" }
-tonic = { version = "0.11.0"}
-cosmrs = { version = "0.16.0"}
-cosmwasm-std = { version = "1.5.2", default-features = false }
-serde_json = { version = "1.0.94", default-features = false }
-ecies = { version = "0.2.3", default-features = false, features = ["pure"] }
-clap = { version = "4.1.8", default-features = false, features = ["derive", "std"] }
-tokio = { version = "1.0", default-features = false, features = ["macros", "rt-multi-thread"] }
-tendermint = { version = "=0.36.0", default-features = false }
-tendermint-light-client = { version = "=0.36.0", default-features = false, features = ["rust-crypto"] }
-color-eyre = { version = "0.6.2", default-features = false }
-prost = { version = "0.12.3", default-features = false }
-anyhow ={ version = "*" }
-sha2 = "0.10.8"
+anyhow.workspace = true
+clap.workspace = true
+color-eyre.workspace = true
+ecies.workspace = true
+hex.workspace = true
+k256.workspace = true
+prost.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tonic.workspace = true
 
-# local
-transfers_contracts = { path = "../contracts" }
+# cosmos
+cosmrs.workspace = true
+cosmwasm-std.workspace = true
+tendermint.workspace = true
+tendermint-light-client.workspace = true
 
 # quartz
-quartz-cw = { path = "../../../cosmwasm/packages/quartz-cw" }
-quartz-proto = { path = "../../../core/quartz-proto" }
-quartz-enclave = { path = "../../../core/quartz"}
-
-[dev-dependencies]
-cw-multi-test = "0.17.0"
-serde_json = "1.0.113"
+cycles-sync.workspace = true
+quartz-cw.workspace = true
+quartz-proto.workspace = true
+quartz-enclave.workspace = true
+transfers-contract.workspace = true
 
 [build-dependencies]
-tonic-build = "0.11.0"
+tonic-build.workspace = true

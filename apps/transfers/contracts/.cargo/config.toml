@@ -2,4 +2,3 @@
 wasm = "build --target wasm32-unknown-unknown --release --lib"
 wasm-debug = "build --target wasm32-unknown-unknown --lib"
 schema = "run schema"
-

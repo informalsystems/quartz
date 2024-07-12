@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::{HexBinary, Uint64};
 use quartz_cw::{
     msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation},
     prelude::*,
@@ -96,7 +96,7 @@ pub enum QueryMsg {
     #[returns(GetAllSetoffsResponse)]
     GetAllSetoffs,
     #[returns(GetLiquiditySourcesResponse)]
-    GetLiquiditySources { epoch: Option<usize> }, // `None` means latest
+    GetLiquiditySources { epoch: Option<Uint64> }, // `None` means latest
     #[returns(cw20::BalanceResponse)]
     Balance { address: String },
 }

@@ -8,7 +8,7 @@ use k256::{
     pkcs8::DecodePublicKey,
 };
 use serde::{Deserialize, Serialize};
-use transfers_contracts::msg::execute::ClearTextTransferRequestMsg;
+use transfers_contract::msg::execute::ClearTextTransferRequestMsg;
 
 pub type RawCipherText = HexBinary;
 
