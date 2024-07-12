@@ -60,9 +60,9 @@ pub fn execute(
 
         // Enclave msgs
         ExecuteMsg::Update(attested_msg) => {
-            // let _ = attested_msg
-            //     .clone()
-            //     .handle_raw(deps.branch(), &env, &info)?;
+            let _ = attested_msg
+                .clone()
+                .handle_raw(deps.branch(), &env, &info)?;
             let UpdateMsg { ciphertext, quantity, withdrawals } = attested_msg.msg.0;
             update(deps, env, info, UpdateMsg { ciphertext, quantity, withdrawals })
         }
