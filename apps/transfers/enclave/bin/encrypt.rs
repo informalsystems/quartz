@@ -4,7 +4,7 @@ use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::encrypt;
 use k256::ecdsa::VerifyingKey;
 use serde::{Deserialize, Serialize};
-use transfers_contracts::msg::execute::ClearTextTransferRequestMsg;
+use transfers_contract::msg::execute::ClearTextTransferRequestMsg;
 
 pub type RawCipherText = HexBinary;
 

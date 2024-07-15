@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    Uint128,
+    Uint128, Uint64,
 };
 use cw2::set_contract_version;
 use cw20_base::{
@@ -44,12 +44,13 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     STATE.save(deps.storage, &state)?;
 
-    EPOCH_COUNTER.save(deps.storage, &1)?;
+    let epoch_counter = Uint64::new(1);
+    EPOCH_COUNTER.save(deps.storage, &epoch_counter)?;
 
-    ObligationsItem::new(&current_epoch_key(OBLIGATIONS_KEY, deps.storage)?)
+    ObligationsItem::new_dyn(current_epoch_key(OBLIGATIONS_KEY, deps.storage)?)
         .save(deps.storage, &Default::default())?;
 
-    LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
+    LiquiditySourcesItem::new_dyn(current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
         .save(deps.storage, &Default::default())?;
 
     // store token info using cw20-base format
@@ -116,7 +117,7 @@ pub fn execute(
 pub mod execute {
     use std::collections::BTreeMap;
 
-    use cosmwasm_std::{DepsMut, Env, HexBinary, MessageInfo, Response, StdResult};
+    use cosmwasm_std::{DepsMut, Env, HexBinary, MessageInfo, Response, StdResult, Uint64};
     use cw20_base::contract::{execute_burn, execute_mint};
     use k256::ecdsa::VerifyingKey;
     use quartz_cw::state::{Hash, EPOCH_COUNTER};
@@ -159,7 +160,7 @@ pub mod execute {
         let _: Hash = digest.to_array()?;
 
         // store the `(digest, ciphertext)` tuple
-        ObligationsItem::new(&current_epoch_key(OBLIGATIONS_KEY, deps.storage)?).update(
+        ObligationsItem::new_dyn(current_epoch_key(OBLIGATIONS_KEY, deps.storage)?).update(
             deps.storage,
             |mut obligations| {
                 if let Some(_duplicate) = obligations.insert(digest.clone(), ciphertext.clone()) {
@@ -185,7 +186,7 @@ pub mod execute {
             .try_for_each(|ls| VerifyingKey::from_sec1_bytes(ls).map(|_| ()))?;
 
         // store the liquidity sources
-        LiquiditySourcesItem::new(&current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
+        LiquiditySourcesItem::new_dyn(current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?)
             .update(deps.storage, |mut ls| {
                 ls.clear();
                 ls.extend(liquidity_sources);
@@ -201,7 +202,7 @@ pub mod execute {
         setoffs_enc: BTreeMap<RawHash, SettleOff>,
     ) -> Result<Response, ContractError> {
         // store the `BTreeMap<RawHash, RawCipherText>`
-        SetoffsItem::new(&previous_epoch_key(SETOFFS_KEY, deps.storage)?)
+        SetoffsItem::new_dyn(previous_epoch_key(SETOFFS_KEY, deps.storage)?)
             .save(deps.storage, &setoffs_enc)?;
 
         for (_, so) in setoffs_enc {
@@ -234,7 +235,7 @@ pub mod execute {
 
     pub fn init_clearing(deps: DepsMut) -> Result<Response, ContractError> {
         EPOCH_COUNTER.update(deps.storage, |mut counter| -> StdResult<_> {
-            counter += 1;
+            counter = counter.saturating_add(Uint64::from(1u64));
             Ok(counter)
         })?;
         Ok(Response::new().add_attribute("action", "init_clearing"))
@@ -253,7 +254,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 pub mod query {
-    use cosmwasm_std::{Deps, StdResult};
+    use cosmwasm_std::{Deps, StdResult, Uint64};
 
     use crate::{
         msg::{GetAllSetoffsResponse, GetLiquiditySourcesResponse},
@@ -264,7 +265,7 @@ pub mod query {
     };
 
     pub fn get_all_setoffs(deps: Deps) -> StdResult<GetAllSetoffsResponse> {
-        let setoffs = SetoffsItem::new(&previous_epoch_key(SETOFFS_KEY, deps.storage)?)
+        let setoffs = SetoffsItem::new_dyn(previous_epoch_key(SETOFFS_KEY, deps.storage)?)
             .load(deps.storage)?
             .into_iter()
             .collect();
@@ -273,14 +274,14 @@ pub mod query {
 
     pub fn get_liquidity_sources(
         deps: Deps,
-        epoch: Option<usize>,
+        epoch: Option<Uint64>,
     ) -> StdResult<GetLiquiditySourcesResponse> {
         let epoch_key = match epoch {
             None => current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?,
             Some(e) => epoch_key(LIQUIDITY_SOURCES_KEY, e)?,
         };
 
-        let liquidity_sources = LiquiditySourcesItem::new(&epoch_key)
+        let liquidity_sources = LiquiditySourcesItem::new_dyn(epoch_key)
             .load(deps.storage)?
             .into_iter()
             .collect();
