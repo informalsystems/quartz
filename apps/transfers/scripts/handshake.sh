@@ -83,7 +83,7 @@ echo "contract $CONTRACT"
 # run prover to get light client proof
 # TODO: assume this binary is pre-built?
 # TODO: pass in addresses and chain id 
-cargo run -vvv -- --chain-id testing \
+cargo run -- --chain-id testing \
     --primary "http://$NODE_URL" \
     --witnesses "http://$NODE_URL" \
     --trusted-height $TRUSTED_HEIGHT \
