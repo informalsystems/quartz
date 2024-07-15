@@ -4,7 +4,6 @@
     clippy::checked_conversions,
     clippy::panic,
     clippy::panic_in_result_fn,
-    missing_docs,
     trivial_casts,
     trivial_numeric_casts,
     rust_2018_idioms,

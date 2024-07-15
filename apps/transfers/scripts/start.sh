@@ -28,7 +28,7 @@ echo "$TRUSTED_HEIGHT" > trusted.height
 if [ -n "$MOCK_SGX" ]; then
     echo "MOCK_SGX is set. Running enclave without gramine."
     cd $DIR_QUARTZ_ENCLAVE
-    cargo run --bin enclave --features=mock-sgx -- --chain-id "testing" --trusted-height 1 --trusted-hash "$TRUSTED_HASH"
+    cargo run --features=mock-sgx -- --chain-id "testing" --trusted-height "$TRUSTED_HEIGHT" --trusted-hash "$TRUSTED_HASH"
     exit
 fi
 
