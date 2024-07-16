@@ -70,7 +70,8 @@ pub fn execute(
             let _ = attested_msg
                 .clone()
                 .handle_raw(deps.branch(), &env, &info)?;
-            store_balance(deps, env, info, attested_msg.msg.0)
+            let QueryResponseMsg { address, encrypted_bal } = attested_msg.msg.0;
+            store_balance(deps, env, info, QueryResponseMsg { address, encrypted_bal })
         }
     }
 }

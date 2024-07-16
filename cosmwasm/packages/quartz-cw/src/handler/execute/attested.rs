@@ -56,13 +56,6 @@ where
     ) -> Result<Response, Error> {
         let (msg, attestation) = self.into_tuple();
 
-        // let test_msg = format!("{:?}", msg);
-        // if test_msg.contains("withdrawals") {
-        //     assert_eq!(msg.user_data(), attestation.user_data(), "they are not equal!");
-        //     let resp = Response::new().add_event(event);
-        //     return Ok(resp);
-        // }
-        //env.lognew(serde_json::to_string(msg));
 
         if msg.user_data() != attestation.user_data() {
            return Err(RaVerificationError::UserDataMismatch.into());
