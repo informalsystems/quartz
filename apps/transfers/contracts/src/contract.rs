@@ -66,6 +66,7 @@ pub fn execute(
             let UpdateMsg { ciphertext, quantity, withdrawals } = attested_msg.msg.0;
             update(deps, env, info, UpdateMsg { ciphertext, quantity, withdrawals })
         }
+        // TODO - Query response currently fails on "Specified user data does not match the report"
         ExecuteMsg::QueryResponse(attested_msg) => {
             let _ = attested_msg
                 .clone()
@@ -107,8 +108,6 @@ pub mod execute {
         _env: Env,
         info: MessageInfo,
     ) -> Result<Response, ContractError> {
-        // TODO: verify denom
-
         let mut requests = REQUESTS.load(deps.storage)?;
 
         requests.push(Request::Withdraw(info.sender));
@@ -121,7 +120,6 @@ pub mod execute {
         Ok(resp)
     }
 
-    // TODO - name query_enclave_balance ????
     pub fn query_balance(
         _deps: DepsMut,
         _env: Env,

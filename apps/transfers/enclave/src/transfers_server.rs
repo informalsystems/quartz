@@ -22,8 +22,8 @@ use transfers_contracts::msg::execute::{ClearTextTransferRequestMsg, Request as 
 
 use crate::{
     proto::{
-        settlement_server::Settlement, QueryRequest, QueryResponse, RunTransfersRequest,
-        RunTransfersResponse,
+        settlement_server::Settlement, QueryRequest, QueryResponse, UpdateRequest,
+        UpdateResponse,
     },
     state::{RawBalance, RawState, State},
 };
@@ -35,7 +35,7 @@ pub struct TransfersService<A> {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RunTransfersRequestMessage {
+pub struct UpdateRequestMessage {
     state: HexBinary,
     requests: Vec<TransfersRequest>,
 }
@@ -113,12 +113,12 @@ where
 {
     async fn run(
         &self,
-        request: Request<RunTransfersRequest>,
-    ) -> TonicResult<Response<RunTransfersResponse>> {
+        request: Request<UpdateRequest>,
+    ) -> TonicResult<Response<UpdateResponse>> {
         // Request contains a serialized json string
 
         // Serialize request into struct containing State and the Requests vec
-        let message: RunTransfersRequestMessage = {
+        let message: UpdateRequestMessage = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
