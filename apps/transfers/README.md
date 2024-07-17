@@ -125,7 +125,9 @@ bash scripts/build.sh
 ### Configure and Run Gramine
 
 Setup and sign the Gramine config, and then start the gramine process, which will run the 
-grpc server that hosts the transfer application.
+grpc server that hosts the transfer application. The quartz port defaults to `11090`, but you can set it deliberately with 
+`export QUARTZ_PORT=XXXXX`. It is best to set it everytime, since if 2 people are sshing into the same machine to use
+the secure enclave, this could create undesired env conditions where your app is talking to the wrong enclave.
 
 ```
 bash scripts/start.sh

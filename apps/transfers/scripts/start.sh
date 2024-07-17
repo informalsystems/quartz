@@ -13,7 +13,7 @@ CMD="wasmd --node http://$NODE_URL"
 
 
 echo "--------------------------------------------------------"
-echo "GRAMINE_PORT is set to: $GRAMINE_PORT"
+echo "QUARTZ is set to: $QUARTZ"
 echo "set trusted hash"
 
 cd "$DIR_QUARTZ_TM_PROVER"
@@ -44,7 +44,7 @@ gramine-manifest  \
 -Dquartz_dir="$(pwd)"  \
 -Dtrusted_height="$TRUSTED_HEIGHT"  \
 -Dtrusted_hash="$TRUSTED_HASH"  \
--Dgramine_port="$GRAMINE_PORT" \
+-Dgramine_port="$QUARTZ_PORT" \
 quartz.manifest.template quartz.manifest
 
 echo "... sign manifest"
