@@ -36,7 +36,7 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         continue
     fi 
 
-    # TODO - Some reason this is saying ERROR when its fine, will fix
+    # TODO - Some reason this is saying ERROR when its fine, needs to be fixed or removed
     #if echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq 'has("error")' > /dev/null; then
      #   echo "... error msg $msg"
      #   echo "---------------------------------------------------------"
@@ -49,68 +49,31 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
     if echo "$CLEAN_MSG" | grep -q 'wasm-transfer'; then
         echo "---------------------------------------------------------"
         echo "... received wasm-transfer event!"
-        echo "... fetching requests"
 
+        echo "... fetching requests"
         REQUESTS=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "requests" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
         STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
-
         export ENCLAVE_REQUEST=$(jq -nc --argjson requests "$REQUESTS" --argjson state $STATE '$ARGS.named')
-
         export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
 
         cd $ROOT/cycles-quartz/apps/transfers/enclave
 
-        # # Get the update message from the gRPC response
-        # UPDATE_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Run | jq -r '.message | fromjson | .msg')
-
-	echo "... executing transfer"
-	#export UPDATE=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
-
-        # echo "UpdateMsg:"
-        # echo $UPDATE | jq .
-
-        # echo "... submitting update"
-        # $CMD tx wasm execute $CONTRACT "$(echo $UPDATE | jq -c .)" --chain-id testing --from admin --node http://$NODE_URL -y
-
-        # TODO - add back in once attestations are figured out
         echo "... executing transfer"
-	    echo "$QUARTZ_PORT"        
         export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | jq .message | jq -R 'fromjson | fromjson' | jq -c )
-        echo "Atts msg"
-        echo $ATTESTED_MSG
-        # echo $UPDATE #| jq '.msg'
-        # echo $UPDATE | jq '.msg'
         QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
         MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
-        echo "quote"
-        echo $QUOTE
-        echo "msg"
-        echo $MSG
 
+        echo "... getting report"
         echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
         gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
         REPORT=$(cat "$REPORT_FILE")
         REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
 
         echo "... submitting update"
-
         export EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
             "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
             '$ARGS.named')" '$ARGS.named')
-
-        # export EXECUTE=$(jq -nc --argjson update "$(jq -nc \
-        #     --argjson msg "$MSG" \
-        #     --argjson attestation "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
-        #     '{
-        #         ciphertext: $msg.ciphertext,
-        #         quantity: $msg.quantity,
-        #         withdrawals: $msg.withdrawals,
-        #         attestation: $attestation
-        #     }')" \
-        #     '{update: $update}')
-
         echo $EXECUTE | jq '.'
-
         $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
 
         echo " ... done"
@@ -120,63 +83,65 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         echo "... received wasm-query_balance event!"
         echo "... fetching state"
 
-        STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
+        echo "UNIMPLEMENTED!!!!"
 
-        # Extract the address from the event
-        ADDRESS=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq -r '.result.events["message.sender"]'[0])
+        # STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
 
-        EPHEMERAL_PUBKEY=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq -r '.result.events["wasm-query_balance.emphemeral_pubkey"]'[0])
+        # # Extract the address from the event
+        # ADDRESS=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq -r '.result.events["message.sender"]'[0])
 
-        # Create the enclave request with state and address
-        export ENCLAVE_REQUEST=$(jq -nc --argjson state "$STATE" --arg address "$ADDRESS" --arg ephemeral_pubkey "$EPHEMERAL_PUBKEY" '$ARGS.named')
-        export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
+        # EPHEMERAL_PUBKEY=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq -r '.result.events["wasm-query_balance.emphemeral_pubkey"]'[0])
 
-        cd $ROOT/cycles-quartz/apps/transfers/enclave
+        # # Create the enclave request with state and address
+        # export ENCLAVE_REQUEST=$(jq -nc --argjson state "$STATE" --arg address "$ADDRESS" --arg ephemeral_pubkey "$EPHEMERAL_PUBKEY" '$ARGS.named')
+        # export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
 
-        echo "... executing query balance"
-        ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Query | jq -r '.message | fromjson')
-        echo "atts msg"
-        echo $ATTESTED_MSG
-        QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
-        MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
-        echo "quote"
-        echo $QUOTE
-        echo "msg"
-        echo $MSG
+        # cd $ROOT/cycles-quartz/apps/transfers/enclave
 
-        echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
-        gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
-        REPORT=$(cat "$REPORT_FILE")
-        REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
+        # echo "... executing query balance"
+        # ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" '127.0.0.1:11091' transfers.Settlement/Query | jq -r '.message | fromjson')
+        # echo "atts msg"
+        # echo $ATTESTED_MSG
+        # QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
+        # MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
+        # echo "quote"
+        # echo $QUOTE
+        # echo "msg"
+        # echo $MSG
 
-        echo "... submitting update"
+        # echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
+        # gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
+        # REPORT=$(cat "$REPORT_FILE")
+        # REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
 
-        # Create the QueryResponseMsg structure with address inside the msg
-        export QUERY_RESPONSE_MSG=$(jq -n \
-            --arg address "$ADDRESS" \
-            --argjson msg "$MSG" \
-            '{address: $address, encrypted_bal: $msg.encrypted_bal}')
+        # echo "... submitting update"
 
+        # # Create the QueryResponseMsg structure with address inside the msg
+        # export QUERY_RESPONSE_MSG=$(jq -n \
+        #     --arg address "$ADDRESS" \
+        #     --argjson msg "$MSG" \
+        #     '{address: $address, encrypted_bal: $msg.encrypted_bal}')
 
-        # Create the execute message for query_response
-        export EXECUTE=$(jq -nc \
-            --argjson query_response "$(jq -nc \
-                --argjson msg "$QUERY_RESPONSE_MSG" \
-                --argjson attestation "$(jq -nc \
-                    --argjson report "$(jq -nc \
-                        --argjson report "$REPORT" \
-                        --arg reportsig "$REPORTSIG" \
-                        '$ARGS.named')" \
-                    '$ARGS.named')" \
-                '$ARGS.named')" \
-            '{query_response: $query_response}')
+        echo "Currrently a bug where there is a User Data mistmatch when the listener sends back the attested message"
+        # # Create the execute message for query_response
+        # export EXECUTE=$(jq -nc \
+        #     --argjson query_response "$(jq -nc \
+        #         --argjson msg "$QUERY_RESPONSE_MSG" \
+        #         --argjson attestation "$(jq -nc \
+        #             --argjson report "$(jq -nc \
+        #                 --argjson report "$REPORT" \
+        #                 --arg reportsig "$REPORTSIG" \
+        #                 '$ARGS.named')" \
+        #             '$ARGS.named')" \
+        #         '$ARGS.named')" \
+        #     '{query_response: $query_response}')
 
-        echo $EXECUTE | jq '.'
+        # echo $EXECUTE | jq '.'
         
-        $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
+        # $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
 
-        echo " ... done"
-        echo "------------------------------------"
+        # echo " ... done"
+        # echo "------------------------------------"
         echo "... waiting for event"
     fi
 done
