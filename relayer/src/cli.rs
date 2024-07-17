@@ -1,6 +1,4 @@
 use std::path::PathBuf;
-use std::{env, net::SocketAddr};
-
 
 use clap::Parser;
 use cosmrs::{tendermint::chain::Id, AccountId};
@@ -21,13 +19,12 @@ pub enum AddressError {
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// RPC server address
-    #[clap(long, default_value_t = default_rpc_addr())]
-    // #[clap(long, default_value = "http://localhost:11095")]
-    pub enclave_addr: SocketAddr,
+    #[clap(long, default_value = "http://localhost:11090")]
+    pub enclave_addr: Endpoint,
 
     /// Blockchain node gRPC URL
     #[arg(short, long, default_value = "tcp://127.0.0.1:9090")]
-    pub node_addr: SocketAddr,
+    pub node_addr: Endpoint,
 
     /// Chain-id of MTCS chain
     #[arg(long, default_value = "testing")]
@@ -53,9 +50,4 @@ fn wasm_address(address_str: &str) -> Result<AccountId, AddressError> {
     }
 
     Ok(address_str.parse().unwrap())
-}
-
-fn default_rpc_addr() -> SocketAddr {
-    let port = env::var("QUARTZ_PORT").unwrap_or_else(|_| "11090".to_string());
-    format!("127.0.0.1:{}", port).parse().expect("Invalid socket address")
 }

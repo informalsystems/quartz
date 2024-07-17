@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use quartz_tee_ra::{verify_epid_attestation, Error as RaVerificationError};
 
@@ -21,7 +19,6 @@ impl Handler for EpidAttestation {
         _info: &MessageInfo,
     ) -> Result<Response, Error> {
         // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
-        println!("{:?}", self.user_data());
         verify_epid_attestation(
             self.clone().into_report(),
             self.mr_enclave(),
@@ -45,7 +42,7 @@ impl Handler for MockAttestation {
 
 impl<M, A> Handler for Attested<M, A>
 where
-    M: Handler + HasUserData + Debug,
+    M: Handler + HasUserData,
     A: Handler + HasUserData + Attestation,
 {
     fn handle(
@@ -55,10 +52,8 @@ where
         info: &MessageInfo,
     ) -> Result<Response, Error> {
         let (msg, attestation) = self.into_tuple();
-
-
         if msg.user_data() != attestation.user_data() {
-           return Err(RaVerificationError::UserDataMismatch.into());
+            return Err(RaVerificationError::UserDataMismatch.into());
         }
 
         if let Some(config) = CONFIG.may_load(deps.storage)? {

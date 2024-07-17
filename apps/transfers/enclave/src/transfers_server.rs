@@ -18,12 +18,13 @@ use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tonic::{Request, Response, Result as TonicResult, Status};
-use transfers_contracts::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
+use transfers_contracts::msg::execute::{
+    ClearTextTransferRequestMsg, Request as TransfersRequest, UpdateMsg,
+};
 
 use crate::{
     proto::{
-        settlement_server::Settlement, QueryRequest, QueryResponse, UpdateRequest,
-        UpdateResponse,
+        settlement_server::Settlement, QueryRequest, QueryResponse, UpdateRequest, UpdateResponse,
     },
     state::{RawBalance, RawState, State},
 };
@@ -40,12 +41,12 @@ pub struct UpdateRequestMessage {
     requests: Vec<TransfersRequest>,
 }
 
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
-pub struct UpdateMsg {
-    ciphertext: HexBinary,
-    quantity: u32,
-    withdrawals: Vec<(Addr, Uint128)>,
-}
+// #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
+// pub struct UpdateMsg {
+//     ciphertext: HexBinary,
+//     quantity: u32,
+//     withdrawals: Vec<(Addr, Uint128)>,
+// }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 
@@ -111,10 +112,7 @@ impl<A> Settlement for TransfersService<A>
 where
     A: Attestor + Send + Sync + 'static,
 {
-    async fn run(
-        &self,
-        request: Request<UpdateRequest>,
-    ) -> TonicResult<Response<UpdateResponse>> {
+    async fn run(&self, request: Request<UpdateRequest>) -> TonicResult<Response<UpdateResponse>> {
         // Request contains a serialized json string
 
         // Serialize request into struct containing State and the Requests vec
@@ -228,7 +226,7 @@ where
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
-        Ok(Response::new(RunTransfersResponse { message }))
+        Ok(Response::new(UpdateResponse { message }))
     }
 
     async fn query(&self, request: Request<QueryRequest>) -> TonicResult<Response<QueryResponse>> {

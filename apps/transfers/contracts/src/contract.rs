@@ -63,16 +63,40 @@ pub fn execute(
             let _ = attested_msg
                 .clone()
                 .handle_raw(deps.branch(), &env, &info)?;
-            let UpdateMsg { ciphertext, quantity, withdrawals } = attested_msg.msg.0;
-            update(deps, env, info, UpdateMsg { ciphertext, quantity, withdrawals })
+            let UpdateMsg {
+                ciphertext,
+                quantity,
+                withdrawals,
+            } = attested_msg.msg.0;
+            update(
+                deps,
+                env,
+                info,
+                UpdateMsg {
+                    ciphertext,
+                    quantity,
+                    withdrawals,
+                },
+            )
         }
         // TODO - Query response currently fails on "Specified user data does not match the report"
         ExecuteMsg::QueryResponse(attested_msg) => {
             let _ = attested_msg
                 .clone()
                 .handle_raw(deps.branch(), &env, &info)?;
-            let QueryResponseMsg { address, encrypted_bal } = attested_msg.msg.0;
-            store_balance(deps, env, info, QueryResponseMsg { address, encrypted_bal })
+            let QueryResponseMsg {
+                address,
+                encrypted_bal,
+            } = attested_msg.msg.0;
+            store_balance(
+                deps,
+                env,
+                info,
+                QueryResponseMsg {
+                    address,
+                    encrypted_bal,
+                },
+            )
         }
     }
 }
