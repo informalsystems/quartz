@@ -72,7 +72,7 @@ where
         // Create withdraw requests
 
         // Send to chain
-        
+
         let message: RunClearingMessage = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
