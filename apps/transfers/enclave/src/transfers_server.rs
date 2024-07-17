@@ -41,20 +41,13 @@ pub struct UpdateRequestMessage {
     requests: Vec<TransfersRequest>,
 }
 
-// #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
-// pub struct UpdateMsg {
-//     ciphertext: HexBinary,
-//     quantity: u32,
-//     withdrawals: Vec<(Addr, Uint128)>,
-// }
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
-
 pub struct QueryRequestMessage {
     state: HexBinary,
     address: Addr,
     ephemeral_pubkey: HexBinary,
 }
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryResponseMessage {
     encrypted_bal: HexBinary,
@@ -65,16 +58,9 @@ impl HasUserData for UpdateMsg {
         let mut hasher = Sha256::new();
         hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
         let digest: [u8; 32] = hasher.finalize().into();
-        println!("msg:");
-        println!(
-            "{}",
-            serde_json::to_string(&self).expect("infallible serializer")
-        );
 
         let mut user_data = [0u8; 64];
         user_data[0..32].copy_from_slice(&digest);
-        println!("user data:");
-        println!("{:?}", user_data);
         user_data
     }
 }
@@ -91,7 +77,6 @@ impl HasUserData for QueryResponseMessage {
     }
 }
 
-// TODO: this should probably just be an import from quartz
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct AttestedMsg<M> {
     msg: M,
