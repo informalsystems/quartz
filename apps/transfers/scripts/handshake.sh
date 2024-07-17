@@ -36,6 +36,7 @@ cd $ROOT/cycles-quartz/relayer
 
 # execute SessionCreate on enclave
 export EXECUTE_CREATE=$(./scripts/relay.sh SessionCreate)
+echo $EXECUTE_CREATE
 
 # submit SessionCreate to contract
 RES=$($CMD tx wasm execute "$CONTRACT" "$EXECUTE_CREATE" --from admin --chain-id testing -y --output json)
@@ -43,7 +44,7 @@ TX_HASH=$(echo $RES | jq -r '.["txhash"]')
 
 # wait for tx to commit
 while ! $CMD query tx $TX_HASH &> /dev/null; do
-    echo "... 🕐 waiting for tx"
+    echo "... 🕐 waiting for tx $TX_HASH"
     sleep 1 
 done 
 
@@ -78,6 +79,7 @@ fi
 
 # TODO: pass this in?
 echo "trusted hash $TRUSTED_HASH"
+echo "trusted hash $TRUSTED_HEIGHT"
 echo "contract $CONTRACT"
 
 # run prover to get light client proof
@@ -104,7 +106,7 @@ TX_HASH=$(echo $RES | jq -r '.["txhash"]')
 
 # wait for tx to commit
 while ! $CMD query tx $TX_HASH &> /dev/null; do
-    echo "... 🕐 waiting for tx"
+    echo "... 🕐 waiting for tx $TX_HASH"
     sleep 1 
 done 
 
