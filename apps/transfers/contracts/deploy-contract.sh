@@ -60,7 +60,7 @@ TX_HASH=$(echo $RES | jq -r '.["txhash"]')
 
 echo ""
 while ! $CMD query tx $TX_HASH &> /dev/null; do
-    echo "... 🕐 waiting for contract to be queryable"
+    echo "... 🕐 waiting for contract to be queryable from tx hash $TX_HASH"
     sleep 1
 done
 

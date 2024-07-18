@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 use anyhow;
 use cosmwasm_std::{Addr, HexBinary, Uint128};

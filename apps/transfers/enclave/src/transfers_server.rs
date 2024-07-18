@@ -4,9 +4,6 @@ use std::{
 };
 
 use cosmwasm_std::{Addr, HexBinary, Uint128};
-
-pub type RawCipherText = HexBinary;
-
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_cw::{
@@ -17,12 +14,14 @@ use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tonic::{Request, Response, Result as TonicResult, Status};
-use transfers_contracts::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
+use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
 
 use crate::{
     proto::{settlement_server::Settlement, RunTransfersRequest, RunTransfersResponse},
     state::{RawState, State},
 };
+
+pub type RawCipherText = HexBinary;
 
 #[derive(Clone, Debug)]
 pub struct TransfersService<A> {
@@ -178,10 +177,11 @@ where
         };
 
         // Attest to message
-        let attestation = self
+        let attestation: HexBinary = self
             .attestor
             .quote(msg.clone())
-            .map_err(|e| Status::internal(e.to_string()))?;
+            .map_err(|e| Status::internal(e.to_string()))?
+            .into();
 
         let attested_msg = RawAttested { msg, attestation };
         let message =

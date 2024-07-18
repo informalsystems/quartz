@@ -25,6 +25,14 @@ cd ""$DIR_QUARTZ_APP""
 echo "$TRUSTED_HASH" > trusted.hash
 echo "$TRUSTED_HEIGHT" > trusted.height
 
+if [ -n "$MOCK_SGX" ]; then
+    echo "MOCK_SGX is set. Running enclave without gramine..."
+    cd $DIR_QUARTZ_ENCLAVE
+    ./target/release/quartz-app-transfers-enclave --chain-id "testing" --trusted-height "$TRUSTED_HEIGHT" --trusted-hash "$TRUSTED_HASH"
+    exit
+fi
+
+
 echo "--------------------------------------------------------"
 echo "configure gramine"
 cd "$DIR_QUARTZ_ENCLAVE"

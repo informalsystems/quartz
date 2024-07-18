@@ -19,6 +19,9 @@ panic = 'abort'
 incremental = false
 overflow-checks = true
 
+[features]
+mock-sgx = ["quartz-cw/mock-sgx"]
+
 [dependencies]
 # external
 hex = { version = "0.4.3", default-features = false }
