@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tonic::{Request, Response, Result as TonicResult, Status};
 use transfers_contract::msg::execute::{
-    ClearTextTransferRequestMsg, Request as TransfersRequest, UpdateMsg,
+    ClearTextTransferRequestMsg, Request as TransfersRequest
 };
 
 use crate::{
@@ -49,6 +49,13 @@ pub struct QueryRequestMessage {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryResponseMessage {
     encrypted_bal: HexBinary,
+}
+
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+pub struct UpdateMsg {
+    ciphertext: HexBinary,
+    quantity: u32,
+    withdrawals: Vec<(Addr, Uint128)>,
 }
 
 impl HasUserData for UpdateMsg {

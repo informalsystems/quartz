@@ -43,11 +43,6 @@ pub struct RawBalance {
     pub balance: Uint128,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RawEncryptedBalaance {
-    pub ciphertext: HexBinary,
-}
-
 impl From<Balance> for RawBalance {
     fn from(o: Balance) -> Self {
         Self { balance: o.balance }
