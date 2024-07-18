@@ -114,11 +114,17 @@ First set the `NODE_URL` variable to the address of the blockchain node. If it's
 The `scripts` dir contains some bash scripts to help run the app. 
 These scripts should be replaced by a new `quartz` tool. See [issue](https://github.com/informalsystems/cycles-quartz/issues/61).
 
-Note: to build/run on a non-SGX machine you can set the `MOCK_SGX` env var or append `MOCK_SGX=1` to all bash scripts below, e.g. - 
-```shell
-$ MOCK_SGX=1 bash scripts/build.sh
-$ MOCK_SGX=1 bash scripts/start.sh
-# etc.
+Note: to build/run on a non-SGX machine you must set the `MOCK_SGX` env var for all bash scripts below
+```
+# 1st Terminal
+$ export MOCK_SGX=1
+$ bash scripts/build.sh
+$ bash scripts/start.sh
+
+# 2nd Terminal
+$ export MOCK_SGX=1
+$ bash scripts/deploy.sh
+$ ...
 ```
 
 ### Build the Binaries
