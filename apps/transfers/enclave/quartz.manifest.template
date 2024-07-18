@@ -20,7 +20,7 @@ loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
 loader.env.QUARTZ_PORT = { passthrough = true }
 
-loader.argv = ["enclave",
+loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "testing",
                 "--trusted-height", "{{ trusted_height }}",
                 "--trusted-hash", "{{ trusted_hash }}"]
@@ -43,7 +43,7 @@ sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
 
 sgx.trusted_files = [
   "file:{{ gramine.libos }}",
-  "file:{{ quartz_dir }}/target/release/enclave",
+  "file:{{ quartz_dir }}/target/release/quartz-app-transfers-enclave",
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
