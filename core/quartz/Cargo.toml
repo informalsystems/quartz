@@ -9,8 +9,8 @@ repository.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 
-[lib]
-path = "src/lib.rs"
+[features]
+mock-sgx = ["quartz-cw/mock-sgx"]
 
 [dependencies]
 # external

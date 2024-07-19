@@ -14,9 +14,7 @@ use quartz_enclave::attestor::Attestor;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tonic::{Request, Response, Result as TonicResult, Status};
-use transfers_contract::msg::execute::{
-    ClearTextTransferRequestMsg, Request as TransfersRequest
-};
+use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
 
 use crate::{
     proto::{

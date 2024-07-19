@@ -1,13 +1,13 @@
 use cosmwasm_schema::cw_serde;
 use quartz_cw::{
-    msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation},
+    msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation},
     prelude::*,
 };
 use serde::{Deserialize, Serialize};
 
 #[cw_serde]
-pub struct InstantiateMsg {
-    pub quartz: QuartzInstantiateMsg,
+pub struct InstantiateMsg<RA = RawDefaultAttestation> {
+    pub quartz: QuartzInstantiateMsg<RA>,
     pub denom: String,
 }
 
@@ -17,12 +17,12 @@ pub enum QueryMsg {
     GetBalance { address: String },
 }
 
-type AttestedMsg<M> = RawAttested<RawAttestedMsgSansHandler<M>, RawEpidAttestation>;
+type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
 
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
-pub enum ExecuteMsg {
-    // Quartz initialization
+pub enum ExecuteMsg<RA = RawDefaultAttestation> {
+    // quartz initialization
     Quartz(QuartzExecuteMsg),
 
     // User msgs
@@ -35,8 +35,8 @@ pub enum ExecuteMsg {
     QueryRequest(execute::QueryRequestMsg),
 
     // Enclave msgs
-    Update(AttestedMsg<execute::UpdateMsg>),
-    QueryResponse(AttestedMsg<execute::QueryResponseMsg>),
+    Update(AttestedMsg<execute::UpdateMsg, RA>),
+    QueryResponse(AttestedMsg<execute::QueryResponseMsg, RA>),
 }
 
 pub mod execute {
