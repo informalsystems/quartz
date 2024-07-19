@@ -2333,6 +2333,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "quartz"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "color-eyre",
+ "displaydoc",
+ "serde",
+ "thiserror",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "quartz-app-mtcs-enclave"
 version = "0.1.0"
 dependencies = [

@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "apps/mtcs/enclave",
     "apps/transfers/enclave",
+    "cli",
     "core/light-client-proofs/*",
     "core/quartz",
     "cosmwasm/packages/*",
