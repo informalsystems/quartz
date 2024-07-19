@@ -182,19 +182,12 @@ The `scripts` dir contains some bash scripts to help run the app. These scripts
 should be replaced by a new `quartz` tool. See
 [issue](https://github.com/informalsystems/cycles-quartz/issues/61).
 
-Note: to build/run on a non-SGX machine you must set the `MOCK_SGX` env var for
-all bash scripts below
+**NOTE: If you want to run on a non-SGX machine, you must set the following
+*environment variable prior to running any further commands in *all* terminals
+*in which you run them:**
 
 ```bash
-# 1st Terminal
-$ export MOCK_SGX=1
-$ bash scripts/build.sh
-$ bash scripts/start.sh
-
-# 2nd Terminal
-$ export MOCK_SGX=1
-$ bash scripts/deploy.sh
-$ ...
+export MOCK_SGX=1
 ```
 
 ### Build the Binaries
@@ -208,7 +201,7 @@ bash scripts/build.sh
 ### Configure and Run Gramine
 
 Setup and sign the Gramine config, and then start the gramine process, which
-will run the grpc server that hosts the transfer application. The quartz port
+will run the gRPC server that hosts the transfer application. The quartz port
 defaults to `11090`, but you can set it deliberately with `export
 QUARTZ_PORT=XXXXX`. It is best to set it everytime, since if 2 people are sshing
 into the same machine to use the secure enclave, this could create undesired env
