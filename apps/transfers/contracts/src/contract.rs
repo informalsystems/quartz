@@ -79,7 +79,7 @@ pub fn execute(
                 },
             )
         }
-        // TODO - Query response currently fails on "Specified user data does not match the report"
+
         ExecuteMsg::QueryResponse(attested_msg) => {
             let _ = attested_msg
                 .clone()
