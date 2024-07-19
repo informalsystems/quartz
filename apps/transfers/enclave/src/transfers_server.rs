@@ -17,8 +17,10 @@ use tonic::{Request, Response, Result as TonicResult, Status};
 use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
 
 use crate::{
-    proto::{settlement_server::Settlement, RunTransfersRequest, RunTransfersResponse},
-    state::{RawState, State},
+    proto::{
+        settlement_server::Settlement, QueryRequest, QueryResponse, UpdateRequest, UpdateResponse,
+    },
+    state::{RawBalance, RawState, State},
 };
 
 pub type RawCipherText = HexBinary;
@@ -30,19 +32,32 @@ pub struct TransfersService<A> {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RunTransfersRequestMessage {
+pub struct UpdateRequestMessage {
     state: HexBinary,
     requests: Vec<TransfersRequest>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RunTransfersResponseMessage {
+pub struct QueryRequestMessage {
+    state: HexBinary,
+    address: Addr,
+    ephemeral_pubkey: HexBinary,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct QueryResponseMessage {
+    address: Addr,
+    encrypted_bal: HexBinary,
+}
+
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+pub struct UpdateMsg {
     ciphertext: HexBinary,
     quantity: u32,
     withdrawals: Vec<(Addr, Uint128)>,
 }
 
-impl HasUserData for RunTransfersResponseMessage {
+impl HasUserData for UpdateMsg {
     fn user_data(&self) -> UserData {
         let mut hasher = Sha256::new();
         hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
@@ -52,6 +67,24 @@ impl HasUserData for RunTransfersResponseMessage {
         user_data[0..32].copy_from_slice(&digest);
         user_data
     }
+}
+
+impl HasUserData for QueryResponseMessage {
+    fn user_data(&self) -> UserData {
+        let mut hasher = Sha256::new();
+        hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
+        let digest: [u8; 32] = hasher.finalize().into();
+
+        let mut user_data = [0u8; 64];
+        user_data[0..32].copy_from_slice(&digest);
+        user_data
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct AttestedMsg<M> {
+    msg: M,
+    quote: Vec<u8>,
 }
 
 impl<A> TransfersService<A>
@@ -68,14 +101,11 @@ impl<A> Settlement for TransfersService<A>
 where
     A: Attestor + Send + Sync + 'static,
 {
-    async fn run(
-        &self,
-        request: Request<RunTransfersRequest>,
-    ) -> TonicResult<Response<RunTransfersResponse>> {
+    async fn run(&self, request: Request<UpdateRequest>) -> TonicResult<Response<UpdateResponse>> {
         // Request contains a serialized json string
 
         // Serialize request into struct containing State and the Requests vec
-        let message: RunTransfersRequestMessage = {
+        let message: UpdateRequestMessage = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
@@ -83,8 +113,6 @@ where
         // Decrypt and deserialize the state
         let mut state = {
             if message.state.len() == 1 && message.state[0] == 0 {
-                println!("{}", message.state);
-
                 State {
                     state: BTreeMap::<Addr, Uint128>::new(),
                 }
@@ -103,7 +131,7 @@ where
 
         let requests_len = message.requests.len() as u32;
         // Instantiate empty withdrawals map to include in response (Update message to smart contract)
-        let mut withdrawals_response = Vec::<(Addr, Uint128)>::new();
+        let mut withdrawals_response: Vec<(Addr, Uint128)> = Vec::<(Addr, Uint128)>::new();
 
         // Loop through requests, match on cases, and apply changes to state
         for req in message.requests {
@@ -170,7 +198,7 @@ where
         };
 
         // Prepare message to chain
-        let msg = RunTransfersResponseMessage {
+        let msg = UpdateMsg {
             ciphertext: state_enc,
             quantity: requests_len,
             withdrawals: withdrawals_response,
@@ -187,7 +215,69 @@ where
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
-        Ok(Response::new(RunTransfersResponse { message }))
+        Ok(Response::new(UpdateResponse { message }))
+    }
+
+    async fn query(&self, request: Request<QueryRequest>) -> TonicResult<Response<QueryResponse>> {
+        // Serialize request into struct containing State and the Requests vec
+        let message: QueryRequestMessage = {
+            let message: String = request.into_inner().message;
+            serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
+        };
+
+        // Decrypt and deserialize the state
+        let state = {
+            if message.state.len() == 1 && message.state[0] == 0 {
+                State {
+                    state: BTreeMap::<Addr, Uint128>::new(),
+                }
+            } else {
+                let sk_lock = self
+                    .sk
+                    .lock()
+                    .map_err(|e| Status::internal(e.to_string()))?;
+                let sk = sk_lock
+                    .as_ref()
+                    .ok_or(Status::internal("SigningKey unavailable"))?;
+                decrypt_state(sk, &message.state)?
+            }
+        };
+
+        let bal = match state.state.get(&message.address) {
+            Some(balance) => RawBalance { balance: *balance },
+            None => RawBalance {
+                balance: Uint128::new(0),
+            },
+        };
+
+        // Parse the ephemeral public key
+        let ephemeral_pubkey =
+            VerifyingKey::from_sec1_bytes(&message.ephemeral_pubkey).map_err(|e| {
+                Status::invalid_argument(format!("Invalid ephemeral public key: {}", e))
+            })?;
+
+        // Encrypt the balance using the ephemeral public key
+        let bal_enc = encrypt_balance(bal, ephemeral_pubkey)
+            .map_err(|e| Status::internal(format!("Encryption error: {}", e)))?;
+
+        // Prepare message to chain
+        let msg = QueryResponseMessage {
+            address: message.address,
+            encrypted_bal: bal_enc,
+        };
+
+        // Attest to message
+        let attestation: HexBinary = self
+            .attestor
+            .quote(msg.clone())
+            .map_err(|e| Status::internal(e.to_string()))?
+            .into();
+
+        let attested_msg = RawAttested { msg, attestation };
+        let message =
+            serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(QueryResponse { message }))
     }
 }
 
@@ -218,6 +308,15 @@ fn encrypt_state(state: RawState, enclave_pk: VerifyingKey) -> TonicResult<RawCi
 
     match encrypt(&enclave_pk.to_sec1_bytes(), serialized_state.as_bytes()) {
         Ok(encrypted_state) => Ok(encrypted_state.into()),
+        Err(e) => Err(Status::internal(format!("Encryption error: {}", e))),
+    }
+}
+
+fn encrypt_balance(balance: RawBalance, ephemeral_pk: VerifyingKey) -> TonicResult<RawCipherText> {
+    let serialized_balance = serde_json::to_string(&balance).expect("infallible serializer");
+
+    match encrypt(&ephemeral_pk.to_sec1_bytes(), serialized_balance.as_bytes()) {
+        Ok(encrypted_balance) => Ok(encrypted_balance.into()),
         Err(e) => Err(Status::internal(format!("Encryption error: {}", e))),
     }
 }
