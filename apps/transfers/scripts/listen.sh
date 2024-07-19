@@ -82,8 +82,62 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
     elif echo "$CLEAN_MSG" | grep -q 'wasm-query_balance'; then
         echo "... received wasm-query_balance event!"
         echo "... fetching state"
-        echo "UNIMPLEMENTED!!!!"
-        echo "Currrently a bug where there is a User Data mistmatch when the listener sends back the attested message"
+
+        STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
+
+        # Extract the address from the event
+        ADDRESS=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq -r '.result.events["message.sender"]'[0])
+
+        EPHEMERAL_PUBKEY=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq -r '.result.events["wasm-query_balance.emphemeral_pubkey"]'[0])
+
+        # Create the enclave request with state and address
+        export ENCLAVE_REQUEST=$(jq -nc --argjson state "$STATE" --arg address "$ADDRESS" --arg ephemeral_pubkey "$EPHEMERAL_PUBKEY" '$ARGS.named')
+        export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
+
+        cd $ROOT/cycles-quartz/apps/transfers/enclave
+
+        echo "... executing query balance"
+        ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Query | jq -r '.message | fromjson')
+        echo "atts msg"
+        echo $ATTESTED_MSG
+        QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
+        MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
+        echo "quote"
+        echo $QUOTE
+        echo "msg"
+        echo $MSG
+
+        echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
+        gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
+        REPORT=$(cat "$REPORT_FILE")
+        REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
+
+        echo "... submitting update"
+
+        # Create the QueryResponseMsg structure with address inside the msg
+        export QUERY_RESPONSE_MSG=$(jq -n \
+            --arg address "$ADDRESS" \
+            --argjson msg "$MSG" \
+            '{address: $address, encrypted_bal: $msg.encrypted_bal}')
+
+
+        # Create the execute message for query_response
+        export EXECUTE=$(jq -nc \
+            --argjson query_response "$(jq -nc \
+                --argjson msg "$QUERY_RESPONSE_MSG" \
+                --argjson attestation "$(jq -nc \
+                    --argjson report "$(jq -nc \
+                        --argjson report "$REPORT" \
+                        --arg reportsig "$REPORTSIG" \
+                        '$ARGS.named')" \
+                    '$ARGS.named')" \
+                '$ARGS.named')" \
+            '{query_response: $query_response}')
+
+        echo $EXECUTE | jq '.'
+
+        $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
+
         echo " ... done"
         echo "------------------------------------"
         echo "... waiting for event"
