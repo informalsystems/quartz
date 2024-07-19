@@ -92,6 +92,16 @@ pub mod execute {
         }
     }
 
+    // {
+    //     "query_response": {
+    //         "msg": {
+    //             "address": "wasm1vx5jkp8gd4j6krpttgeddplslw9aamuzmxaesw",
+    //             "encrypted_bal": "0497ac92d27e7faa7264045e925ed9aab59e495d626e549bb66383647d5b5479f42904ef4b50d806efeb8c1be53d079ac489ac8c948e83e6ae41674203d0753b8fddc600bd44c77f706b8159b21624f45272ca094c1a76e709aab7a3a6b956c9ee189d64a2078886b34940e1442e64d9cde535"
+    //         },
+    //         "attestation": null
+    //     }
+    // }
+
     #[cw_serde]
     pub struct QueryResponseMsg {
         pub address: Addr,

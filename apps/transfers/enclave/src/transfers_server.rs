@@ -46,6 +46,7 @@ pub struct QueryRequestMessage {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryResponseMessage {
+    address: Addr,
     encrypted_bal: HexBinary,
 }
 
@@ -261,6 +262,7 @@ where
 
         // Prepare message to chain
         let msg = QueryResponseMessage {
+            address: message.address,
             encrypted_bal: bal_enc,
         };
 
