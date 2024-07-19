@@ -67,7 +67,7 @@ go install ./cmd/wasmd
 
 Check that both work by running `grpcurl` and `wasmd`.
 
-Finally, you neeed `websocat`:
+Finally, you need `websocat`:
 
 ```bash
 cargo install websocat
