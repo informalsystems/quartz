@@ -1,3 +1,5 @@
+#!/bin/bash
+
 ROOT=${ROOT:-$HOME}
 
 DEFAULT_NODE="127.0.0.1:26657"
@@ -36,14 +38,6 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         continue
     fi 
 
-    # TODO - Some reason this is saying ERROR when its fine, needs to be fixed or removed
-    #if echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq 'has("error")' > /dev/null; then
-     #   echo "... error msg $msg"
-     #   echo "---------------------------------------------------------"
-     #   echo "... waiting for event"
-     #   continue
-    #fi 
-
     CLEAN_MSG=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | jq '.result.events')
 
     if echo "$CLEAN_MSG" | grep -q 'wasm-transfer'; then
@@ -63,16 +57,22 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
         MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
 
-        echo "... getting report"
-        echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
-        gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
-        REPORT=$(cat "$REPORT_FILE")
-        REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
+        if [ -n "$MOCK_SGX" ]; then
+            echo "... running in MOCK_SGX mode"
+            EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation "$QUOTE" '$ARGS.named')" '$ARGS.named')
+        else
+            echo "... getting report"
+            echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
+            gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
+            REPORT=$(cat "$REPORT_FILE")
+            REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
+
+            EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
+                "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
+                '$ARGS.named')" '$ARGS.named')
+        fi
 
         echo "... submitting update"
-        export EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" --argjson attestation \
-            "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" \
-            '$ARGS.named')" '$ARGS.named')
         echo $EXECUTE | jq '.'
         $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
 
@@ -107,33 +107,46 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         echo "msg"
         echo $MSG
 
-        echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
-        gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
-        REPORT=$(cat "$REPORT_FILE")
-        REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
+        if [ -n "$MOCK_SGX" ]; then
+            echo "... running in MOCK_SGX mode"
+            QUERY_RESPONSE_MSG=$(jq -n \
+                --arg address "$ADDRESS" \
+                --argjson msg "$MSG" \
+                '{address: $address, encrypted_bal: $msg.encrypted_bal}')
 
-        echo "... submitting update"
+            EXECUTE=$(jq -nc \
+                --argjson query_response "$(jq -nc \
+                    --argjson msg "$QUERY_RESPONSE_MSG" \
+                    --argjson attestation "$QUOTE" \
+                    '$ARGS.named')" \
+                '{query_response: $query_response}')
+        else
+            echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
+            gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
+            REPORT=$(cat "$REPORT_FILE")
+            REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
 
-        # Create the QueryResponseMsg structure with address inside the msg
-        export QUERY_RESPONSE_MSG=$(jq -n \
-            --arg address "$ADDRESS" \
-            --argjson msg "$MSG" \
-            '{address: $address, encrypted_bal: $msg.encrypted_bal}')
+            # Create the QueryResponseMsg structure with address inside the msg
+            QUERY_RESPONSE_MSG=$(jq -n \
+                --arg address "$ADDRESS" \
+                --argjson msg "$MSG" \
+                '{address: $address, encrypted_bal: $msg.encrypted_bal}')
 
-
-        # Create the execute message for query_response
-        export EXECUTE=$(jq -nc \
-            --argjson query_response "$(jq -nc \
-                --argjson msg "$QUERY_RESPONSE_MSG" \
-                --argjson attestation "$(jq -nc \
-                    --argjson report "$(jq -nc \
-                        --argjson report "$REPORT" \
-                        --arg reportsig "$REPORTSIG" \
+            # Create the execute message for query_response
+            EXECUTE=$(jq -nc \
+                --argjson query_response "$(jq -nc \
+                    --argjson msg "$QUERY_RESPONSE_MSG" \
+                    --argjson attestation "$(jq -nc \
+                        --argjson report "$(jq -nc \
+                            --argjson report "$REPORT" \
+                            --arg reportsig "$REPORTSIG" \
+                            '$ARGS.named')" \
                         '$ARGS.named')" \
                     '$ARGS.named')" \
-                '$ARGS.named')" \
-            '{query_response: $query_response}')
+                '{query_response: $query_response}')
+        fi
 
+        echo "... submitting update"
         echo $EXECUTE | jq '.'
 
         $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from admin --chain-id testing -y --gas 2000000
