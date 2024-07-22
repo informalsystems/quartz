@@ -32,3 +32,27 @@ impl TryFrom<RawState> for State {
         Ok(Self { state: o.state })
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct Balance {
+    pub balance: Uint128,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+pub struct RawBalance {
+    pub balance: Uint128,
+}
+
+impl From<Balance> for RawBalance {
+    fn from(o: Balance) -> Self {
+        Self { balance: o.balance }
+    }
+}
+
+impl TryFrom<RawBalance> for Balance {
+    type Error = anyhow::Error;
+
+    fn try_from(o: RawBalance) -> Result<Self, anyhow::Error> {
+        Ok(Self { balance: o.balance })
+    }
+}
