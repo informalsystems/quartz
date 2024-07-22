@@ -22,8 +22,8 @@ OPTIONS:
 SUBCOMMANDS:
     init        Create base Quartz app directory from template
     build       Build the contract and enclave binaries
-    start       Configure Gramine, sign, and start the enclave binary
-    deploy      Deploy the WASM binary to the blockchain and call instantiate
+    enclave     Enclave subcommads to configure Gramine, build, sign, and start the enclave binary
+    contract    Contract subcommads to build, deploy the WASM binary to the blockchain and call instantiate
     handshake   Run the handshake between the contract and enclave
 ```
 
