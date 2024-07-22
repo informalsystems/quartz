@@ -11,8 +11,11 @@ DIR_QUARTZ_TM_PROVER="$DIR_QUARTZ/utils/tm-prover"
 NODE_URL=${NODE_URL:-127.0.0.1:26657}
 CMD="wasmd --node http://$NODE_URL"
 
+# Use the QUARTZ_PORT environment variable if set, otherwise default to 11090
+QUARTZ_PORT="${QUARTZ_PORT:-11090}"
 
 echo "--------------------------------------------------------"
+echo "QUARTZ_PORT is set to: $QUARTZ_PORT"
 echo "set trusted hash"
 
 cd "$DIR_QUARTZ_TM_PROVER"
@@ -51,6 +54,7 @@ gramine-manifest  \
 -Dquartz_dir="$(pwd)"  \
 -Dtrusted_height="$TRUSTED_HEIGHT"  \
 -Dtrusted_hash="$TRUSTED_HASH"  \
+-Dgramine_port="$QUARTZ_PORT" \
 quartz.manifest.template quartz.manifest
 
 echo "... sign manifest"
