@@ -2549,6 +2549,7 @@ dependencies = [
  "color-eyre",
  "displaydoc",
  "serde",
+ "serde_json",
  "thiserror",
  "tracing",
  "tracing-subscriber",

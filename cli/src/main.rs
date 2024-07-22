@@ -48,8 +48,13 @@ fn main() -> Result<()> {
 
     // Each `Request` defines an associated `Handler` (i.e. logic) and `Response`. All handlers are
     // free to log to the terminal and these logs are sent to `stderr`.
+    let response = request.handle(args.verbose)?;
+
     // `Handlers` must use `Responses` to output to `stdout`.
-    request.handle(args.verbose)?;
+    println!(
+        "{}",
+        serde_json::to_string(&response).expect("infallible serializer")
+    );
 
     Ok(())
 }
