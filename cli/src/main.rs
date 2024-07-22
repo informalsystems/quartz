@@ -41,7 +41,14 @@ fn main() -> Result<()> {
         .finish()
         .init();
 
+    // The idea is to parse the input args and convert them into `Requests` which are
+    // correct-by-construction types that this tool can handle. All validation should happen during
+    // this conversion.
     let request = Request::try_from(args.command)?;
+
+    // Each `Request` defines an associated `Handler` (i.e. logic) and `Response`. All handlers are
+    // free to log to the terminal and these logs are sent to `stderr`.
+    // `Handlers` must use `Responses` to output to `stdout`.
     request.handle(args.verbose)?;
 
     Ok(())
