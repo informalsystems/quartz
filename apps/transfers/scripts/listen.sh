@@ -104,10 +104,6 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
             -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Query | jq -r '.message | fromjson')
         QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
         MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
-        echo "quote"
-        echo $QUOTE
-        echo "msg"
-        echo $MSG
 
         if [ -n "$MOCK_SGX" ]; then
             echo "... running in MOCK_SGX mode"
