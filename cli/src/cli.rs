@@ -34,6 +34,7 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Create an empty Quartz app from a template
     Init {
         /// path to create & init a quartz app, defaults to current path if unspecified
         #[clap(long)]
