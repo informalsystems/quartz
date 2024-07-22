@@ -24,7 +24,6 @@ SUBCOMMANDS:
     build       Build the contract and enclave binaries
     start       Configure Gramine, sign, and start the enclave binary
     deploy      Deploy the WASM binary to the blockchain and call instantiate
-    run         Run the enclave handler, and expose a public query server for users
     handshake   Run the handshake between the contract and enclave
 ```
 
