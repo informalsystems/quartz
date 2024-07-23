@@ -39,6 +39,10 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
     if echo "$CLEAN_MSG" | grep -q 'wasm-transfer'; then
         echo "---------------------------------------------------------"
         echo "... received wasm-transfer event!"
+
+        echo "waiting for next block"
+        sleep 10;
+
         echo "... fetching requests"
         REQUESTS=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "requests" | \
             hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
