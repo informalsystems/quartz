@@ -18,7 +18,7 @@ run: build
 		$(ORG)/wasmd:$(WASMD_VERSION)
 .PHONY: run
 
-create-accounts: check-wasmd
+create-accounts:
 	mkdir -p ./accounts
 	wasmd keys add admin > ./accounts/admin.txt 2>&1
 	wasmd keys add alice > ./accounts/alice.txt 2>&1
@@ -26,13 +26,9 @@ create-accounts: check-wasmd
 	wasmd keys add charlie > ./accounts/charlie.txt 2>&1
 .PHONY: create-accounts
 
-delete-accounts: check-wasmd
+delete-accounts:
 	wasmd keys delete -y admin
 	wasmd keys delete -y alice
 	wasmd keys delete -y bob
 	wasmd keys delete -y charlie
 .PHONY: delete-accounts
-
-check-wasmd:
-	# TODO: Check that wasmd version is as expected
-.PHONY: check-wasmd
