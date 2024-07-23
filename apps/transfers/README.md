@@ -9,7 +9,7 @@ and withdraw whatever funds they have.
 ### Install Rust
 
 The minimum Rust supported version is v1.74.1.
-The recommended Rust version v1.78.0 since we're running against
+The recommended Rust version v1.79.0 since we're running against
 wasmd v0.45.
 
 Install rust by executing a script from the internet (😅):
@@ -18,15 +18,6 @@ Install rust by executing a script from the internet (😅):
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-You may want to exit and start a new terminal session to get the rust toolchain
-on your path.
-
-Now downgrade rust to v1.78.0:
-
-```bash
-rustup install 1.78.0
-rustup default 1.78.0
-```
 
 Check the version with `cargo version`.
 
