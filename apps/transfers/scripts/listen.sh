@@ -44,8 +44,40 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
             hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
         STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | \
             hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
+
+        cd "$ROOT/cycles-quartz/apps/transfers"
+        export TRUSTED_HASH=$(cat trusted.hash)
+        export TRUSTED_HEIGHT=$(cat trusted.height)
+
+        cd $ROOT/cycles-quartz/utils/tm-prover
+        export PROOF_FILE="light-client-proof.json"
+        if [ -f "$PROOF_FILE" ]; then
+            rm "$PROOF_FILE"
+            echo "removed old $PROOF_FILE"
+        fi
+
+        # TODO: pass this in?
+        echo "trusted hash $TRUSTED_HASH"
+        echo "trusted hash $TRUSTED_HEIGHT"
+        echo "contract $CONTRACT"
+
+        # run prover to get light client proof
+        # TODO: assume this binary is pre-built?
+        # TODO: pass in addresses and chain id
+        cargo run -- --chain-id testing \
+            --primary "http://$NODE_URL" \
+            --witnesses "http://$NODE_URL" \
+            --trusted-height $TRUSTED_HEIGHT \
+            --trusted-hash $TRUSTED_HASH \
+            --contract-address $CONTRACT \
+            --storage-key "requests" \
+            --trace-file $PROOF_FILE
+
+        export POP=$(cat $PROOF_FILE)
+        export POP_MSG=$(jq -nc --arg message "$POP" '$ARGS.named')
+
         export ENCLAVE_REQUEST=$(jq -nc --argjson requests "$REQUESTS" --argjson state $STATE '$ARGS.named')
-        export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
+        export REQUEST_MSG=$(jq --argjson msg "$ENCLAVE_REQUEST" '. + {msg: $msg}' <<< "$POP_MSG")
 
         cd $ROOT/cycles-quartz/apps/transfers/enclave
 
