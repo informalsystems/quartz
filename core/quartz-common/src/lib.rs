@@ -1,5 +1,5 @@
 #[cfg(feature = "macro")]
-mod cli;
+pub mod cli;
 #[cfg(feature = "macro")]
 mod quartz_macro;
 

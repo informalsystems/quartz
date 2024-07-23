@@ -1,16 +1,16 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{HexBinary, StdError, Storage};
+use cosmwasm_std::{HexBinary, StdError, Storage, Uint64};
 use cw_storage_plus::Item;
 use quartz_common::contract::state::EPOCH_COUNTER;
 
 pub type RawHash = HexBinary;
 pub type RawCipherText = HexBinary;
 
-pub type ObligationsItem<'a> = Item<'a, BTreeMap<RawHash, RawCipherText>>;
-pub type SetoffsItem<'a> = Item<'a, BTreeMap<RawHash, SettleOff>>;
-pub type LiquiditySourcesItem<'a> = Item<'a, BTreeSet<HexBinary>>;
+pub type ObligationsItem = Item<BTreeMap<RawHash, RawCipherText>>;
+pub type SetoffsItem = Item<BTreeMap<RawHash, SettleOff>>;
+pub type LiquiditySourcesItem = Item<BTreeSet<HexBinary>>;
 
 #[cw_serde]
 pub struct State {
@@ -37,13 +37,20 @@ pub const SETOFFS_KEY: &str = "setoffs";
 pub const LIQUIDITY_SOURCES_KEY: &str = "liquidity_sources";
 
 pub fn current_epoch_key(key: &str, storage: &dyn Storage) -> Result<String, StdError> {
-    epoch_key(key, EPOCH_COUNTER.load(storage)?)
+    let epoch = EPOCH_COUNTER.load(storage)?;
+    epoch_key(key, epoch.into())
 }
 
 pub fn previous_epoch_key(key: &str, storage: &dyn Storage) -> Result<String, StdError> {
-    epoch_key(key, EPOCH_COUNTER.load(storage)? - 1)
+    let epoch = EPOCH_COUNTER.load(storage)?;
+    if epoch == Uint64::zero() {
+        return Err(StdError::generic_err(
+            "Cannot get previous epoch for epoch 0",
+        ));
+    }
+    epoch_key(key, epoch - Uint64::new(1))
 }
 
-pub fn epoch_key(key: &str, epoch: usize) -> Result<String, StdError> {
-    Ok(format!("{}/{key}", epoch))
+pub fn epoch_key(key: &str, epoch: Uint64) -> Result<String, StdError> {
+    Ok(format!("{}/{}", epoch, key))
 }
