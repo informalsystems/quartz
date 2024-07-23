@@ -8,8 +8,9 @@ and withdraw whatever funds they have.
 
 ### Install Rust
 
-We only have this working so far with Rust v1.76.0 since we're running against
-wasmd v0.44.
+The minimum Rust supported version is v1.74.1.
+The recommended Rust version v1.79.0 since we're running against
+wasmd v0.45.
 
 Install rust by executing a script from the internet (😅):
 
@@ -17,15 +18,6 @@ Install rust by executing a script from the internet (😅):
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-You may want to exit and start a new terminal session to get the rust toolchain
-on your path.
-
-Now downgrade rust to v1.76.0:
-
-```bash
-rustup install 1.76.0
-rustup default 1.76.0
-```
 
 Check the version with `cargo version`.
 
@@ -56,12 +48,12 @@ You need grpcurl:
 go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
 ```
 
-You need wasmd v0.44.0:
+You need wasmd v0.45.0:
 
 ```bash
 git clone https://github.com/cosmwasm/wasmd/
 cd wasmd
-git checkout v0.44.0
+git checkout v0.45.0
 go install ./cmd/wasmd
 ```
 
