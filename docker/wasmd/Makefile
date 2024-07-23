@@ -18,6 +18,10 @@ run: build
 		$(ORG)/wasmd:$(WASMD_VERSION)
 .PHONY: run
 
+# The create-accounts and delete-accounts commands are exclusively for local use
+# to refresh the accounts in ./accounts/
+#
+# Both targets require that the correct version of wasmd be installed locally.
 create-accounts:
 	mkdir -p ./accounts
 	wasmd keys add admin > ./accounts/admin.txt 2>&1
