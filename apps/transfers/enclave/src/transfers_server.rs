@@ -6,13 +6,12 @@ use std::{
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
-
 use quartz_common::{
-    enclave::attestor::Attestor,
     contract::{
         msg::execute::attested::{HasUserData, RawAttested},
         state::UserData,
-    }
+    },
+    enclave::attestor::Attestor,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};

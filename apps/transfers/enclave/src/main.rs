@@ -17,9 +17,10 @@ pub mod proto;
 pub mod state;
 pub mod transfers_server;
 
-use transfers_server::TransfersService;
 use proto::settlement_server::SettlementServer as TransfersServer;
-
 use quartz_common::quartz_server;
+use transfers_server::TransfersService;
 
-quartz_server!(TransfersServer, |sk| TransfersServer::new(TransfersService::<EpidAttestor>::new(sk, EpidAttestor)));
+quartz_server!(TransfersServer, |sk| TransfersServer::new(
+    TransfersService::<EpidAttestor>::new(sk, EpidAttestor)
+));

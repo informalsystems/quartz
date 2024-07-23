@@ -4,7 +4,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{HexBinary, Uint64};
 use quartz_common::contract::{
     msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation},
-    prelude::*
+    prelude::*,
 };
 
 use crate::state::{RawHash, SettleOff};

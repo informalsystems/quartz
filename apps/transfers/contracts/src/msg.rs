@@ -2,9 +2,8 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_common::contract::{
     msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation},
-    prelude::*
+    prelude::*,
 };
-
 use serde::{Deserialize, Serialize};
 
 type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
@@ -41,14 +40,14 @@ pub enum ExecuteMsg<RA = RawDefaultAttestation> {
 }
 
 pub mod execute {
-    use cosmwasm_std::{Addr, HexBinary, Uint128, DepsMut, Env, MessageInfo, Response, StdError};
+    use cosmwasm_schema::cw_serde;
+    use cosmwasm_std::{Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdError, Uint128};
     use quartz_common::contract::{
         error::Error,
         handler::Handler,
         msg::{execute::attested::HasUserData, HasDomainType},
         state::UserData,
     };
-    use cosmwasm_schema::cw_serde;
     use sha2::{Digest, Sha256};
 
     #[cw_serde]

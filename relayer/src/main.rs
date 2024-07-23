@@ -25,12 +25,11 @@ use cosmrs::{
 };
 use ecies::{PublicKey, SecretKey};
 use quartz_cw::msg::{
-        execute::attested::{Attested, MockAttestation, EpidAttestation},
-        instantiate::{CoreInstantiate, RawInstantiate},
-        InstantiateMsg,
-        };
+    execute::attested::{Attested, EpidAttestation, MockAttestation},
+    instantiate::{CoreInstantiate, RawInstantiate},
+    InstantiateMsg,
+};
 use quartz_proto::quartz::{core_client::CoreClient, InstantiateRequest};
-
 use quartz_relayer::types::InstantiateResponse;
 use subtle_encoding::base64;
 use tendermint::public_key::Secp256k1 as TmPublicKey;
@@ -46,9 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response: InstantiateResponse = response.into_inner().try_into()?;
 
     #[cfg(feature = "mock-sgx")]
-    let attestation = {
-        MockAttestation::default()
-    };
+    let attestation = { MockAttestation::default() };
 
     #[cfg(not(feature = "mock-sgx"))]
     let attestation = {
