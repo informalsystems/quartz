@@ -32,23 +32,21 @@ MSG=$(echo "$ATTESTED_MSG" | jq 'del(.quote)')
 
 if [ -n "$MOCK_SGX" ]; then
     case "$REQUEST" in
-    "Instantiate")
-    jq -nc --argjson msg "$MSG" --argjson "attestation" \
-        "$QUOTE" \
-        '$ARGS.named' ;;
-
-"SessionCreate" | "SessionSetPubKey")
-    REQUEST_KEY=$(echo "$REQUEST" | perl -pe 's/([A-Z])/_\L$1/g;s/^_//') #sed 's/\([A-Z]\)/_\L\1/g;s/^_//')
-    jq -nc --argjson quartz "$(jq -nc --argjson "$REQUEST_KEY" "$(jq -nc --argjson  msg "$MSG" --argjson attestation \
-                "$QUOTE" '$ARGS.named')" '$ARGS.named')" '$ARGS.named' ;;
-
-    *)
-    usage ;;
-esac
-
-exit
+        "Instantiate")
+            jq -nc --argjson msg "$MSG" --argjson "attestation" "$QUOTE" '$ARGS.named'
+            ;;
+        "SessionCreate" | "SessionSetPubKey")
+            REQUEST_KEY=$(echo "$REQUEST" | perl -pe 's/([A-Z])/_\L$1/g;s/^_//')
+            jq -nc --argjson quartz "$(jq -nc --argjson "$REQUEST_KEY" "$(jq -nc \
+                --argjson msg "$MSG" --argjson attestation "$QUOTE" '$ARGS.named')" \
+                '$ARGS.named')" '$ARGS.named'
+            ;;
+        *)
+            usage
+            ;;
+    esac
+    exit
 fi
-
 
 # clear tmp files from previous runs
 rm -f "$QUOTE_FILE" "$REPORT_FILE" "$REPORT_SIG_FILE"
