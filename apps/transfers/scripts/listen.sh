@@ -104,12 +104,11 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
             -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Query | jq -r '.message | fromjson')
         QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
         MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
+        QUERY_RESPONSE_MSG=$(jq -n --arg address "$ADDRESS" --argjson msg "$MSG" \
+            '{address: $address, encrypted_bal: $msg.encrypted_bal}')
 
         if [ -n "$MOCK_SGX" ]; then
             echo "... running in MOCK_SGX mode"
-            QUERY_RESPONSE_MSG=$(jq -n --arg address "$ADDRESS" --argjson msg "$MSG" \
-                '{address: $address, encrypted_bal: $msg.encrypted_bal}')
-
             EXECUTE=$(jq -nc --argjson query_response "$(jq -nc --argjson msg "$QUERY_RESPONSE_MSG" \
                 --argjson attestation "$QUOTE" '$ARGS.named')" '{query_response: $query_response}')
         else
@@ -118,10 +117,6 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
                 -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
             REPORT=$(cat "$REPORT_FILE")
             REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
-
-            QUERY_RESPONSE_MSG=$(jq -n --arg address "$ADDRESS" --argjson msg "$MSG" \
-                '{address: $address, encrypted_bal: $msg.encrypted_bal}')
-
             EXECUTE=$(jq -nc --argjson query_response "$(jq -nc --argjson msg "$QUERY_RESPONSE_MSG" \
                 --argjson attestation "$(jq -nc --argjson report "$(jq -nc --argjson report "$REPORT" \
                 --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" '$ARGS.named')" \
