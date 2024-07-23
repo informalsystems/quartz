@@ -74,16 +74,16 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
             --trace-file $PROOF_FILE
 
         export POP=$(cat $PROOF_FILE)
-        export POP_MSG=$(jq -nc --arg message "$POP" '$ARGS.named')
 
         export ENCLAVE_REQUEST=$(jq -nc --argjson requests "$REQUESTS" --argjson state $STATE '$ARGS.named')
-        export REQUEST_MSG=$(jq --argjson msg "$ENCLAVE_REQUEST" '. + {msg: $msg}' <<< "$POP_MSG")
+        export REQUEST_MSG=$(jq --argjson msg "$ENCLAVE_REQUEST" '. + {msg: $msg}' <<< "$POP")
+        export PROTO_MSG=$(jq -nc --arg message "$REQUEST_MSG" '$ARGS.named')
 
         cd $ROOT/cycles-quartz/apps/transfers/enclave
 
         echo "... executing transfer"
         export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto \
-            -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | \
+            -d "$PROTO_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | \
             jq .message | jq -R 'fromjson | fromjson' | jq -c)
         QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
         MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
