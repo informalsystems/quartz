@@ -1,5 +1,5 @@
 [package]
-name = "quartz-app-mtcs-enclave"
+name = "mtcs-enclave"
 version = "0.1.0"
 edition = "2021"
 authors = ["Informal Systems <hello@informal.systems>"]
