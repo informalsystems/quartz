@@ -1,0 +1,11 @@
+
+- address: wasm19azg82cx3qx88gar8nl08rz7x0p27amtmadfep
+  name: alice
+  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AjTyNLPEA3jD6+BUogvEowwjKi9XjVlJ09RDnc4mhlcR"}'
+  type: local
+
+
+**Important** write this mnemonic phrase in a safe place.
+It is the only way to recover your account if you ever forget your password.
+
+grain shoe diamond mix chunk turn odor across reduce room smart napkin scale ghost emotion stove mistake someone account snow country rail boy rescue
