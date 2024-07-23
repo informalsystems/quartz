@@ -1,0 +1,11 @@
+
+- address: wasm1mkrm9m8g0dzv5z73xg8yzlj6srqc72qru5xfv3
+  name: admin
+  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"Ax3A4I9zO4eI9+3YuU4s2wAy7vQZANa7SgdCjvgkE592"}'
+  type: local
+
+
+**Important** write this mnemonic phrase in a safe place.
+It is the only way to recover your account if you ever forget your password.
+
+scrap toss pottery food asset question utility uncle napkin glare sketch poet entire column comfort traffic hurdle person annual quick party crumble slab tissue
