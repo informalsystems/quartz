@@ -3,13 +3,22 @@ syntax = "proto3";
 package transfers;
 
 service Settlement {
-  rpc Run (RunTransfersRequest) returns (RunTransfersResponse) {}
+  rpc Run (UpdateRequest) returns (UpdateResponse) {}
+  rpc Query (QueryRequest) returns (QueryResponse) {}
 }
 
-message RunTransfersRequest {
+message UpdateRequest {
   string message = 1;
 }
 
-message RunTransfersResponse {
+message UpdateResponse {
+  string message = 1;
+}
+
+message QueryRequest {
+  string message = 1;
+}
+
+message QueryResponse {
   string message = 1;
 }

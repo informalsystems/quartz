@@ -27,7 +27,7 @@ use cli::Cli;
 use proto::settlement_server::SettlementServer as TransfersServer;
 use quartz_cw::state::{Config, LightClientOpts};
 use quartz_enclave::{
-    attestor::{Attestor, EpidAttestor},
+    attestor::{Attestor, DefaultAttestor},
     server::CoreService,
 };
 use quartz_proto::quartz::core_server::CoreServer;
@@ -53,8 +53,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.max_block_lag,
     )?;
 
+    let attestor = DefaultAttestor::default();
+
     let config = Config::new(
-        EpidAttestor.mr_enclave()?,
+        attestor.mr_enclave()?,
         Duration::from_secs(30 * 24 * 60),
         light_client_opts,
     );
@@ -65,12 +67,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_service(CoreServer::new(CoreService::new(
             config.clone(),
             sk.clone(),
-            EpidAttestor,
+            attestor.clone(),
         )))
-        .add_service(TransfersServer::new(TransfersService::<EpidAttestor>::new(
-            config.clone(),
-            sk.clone(),
-            EpidAttestor,
+        .add_service(TransfersServer::new(TransfersService::new(
+            config, sk, attestor,
         )))
         .serve(args.rpc_addr)
         .await?;

@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Informal Systems <hello@informal.systems>"]
 
+[features]
+mock-sgx = ["quartz-cw/mock-sgx", "quartz-enclave/mock-sgx"]
+
 [dependencies]
 # external
 clap.workspace = true
