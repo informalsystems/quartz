@@ -10,6 +10,14 @@ build:
 		.
 .PHONY: build
 
+run: build
+	docker run --rm -it \
+		-p 26657:26657 -p 26656:26656 -p 1317:1317 -p 9090:9090 \
+		--mount type=volume,source=wasmd_data,target=/root \
+		--name wasmd \
+		$(ORG)/wasmd:$(WASMD_VERSION)
+.PHONY: run
+
 create-accounts: check-wasmd
 	mkdir -p ./accounts
 	wasmd keys add admin > ./accounts/admin.txt 2>&1
