@@ -5,12 +5,18 @@ FROM cosmwasm/wasmd:${WASMD_VERSION}
 # Increase the amount of ucosm given to accounts
 RUN sed -i  's/1000000000/12000000000000/g' /opt/setup_wasmd.sh
 
-# Set up wasmd
-RUN /opt/setup_wasmd.sh
+# Set up wasmd. The account numbers correspond to those in the ./accounts/
+# folder.
+RUN /opt/setup_wasmd.sh \
+        wasm1mkrm9m8g0dzv5z73xg8yzlj6srqc72qru5xfv3 \
+        wasm19azg82cx3qx88gar8nl08rz7x0p27amtmadfep \
+        wasm1adcnk7lt6qst7p5d0g5607e28k77um7nxwxuqy \
+        wasm1jn34x50hy3my0a2mxwcx8fttgfxu2n5gpvu0ty
 
 # Configure the validator for single-node operation within a Docker container
 RUN <<EOF
-sed -i 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' /root/.wasmd/config/app.toml &&
+sed -i 's/keyring-backend = "os"/keyring-backend = "test"/g' /root/.wasmd/config/client.toml
+sed -i 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' /root/.wasmd/config/app.toml
 sed -i 's/address = \"tcp:\/\/localhost:1317\"/address = \"tcp:\/\/0.0.0.0:1317\"/g' /root/.wasmd/config/app.toml
 sed -i 's/address = \"localhost:909/address = \"0.0.0.0:909/g' /root/.wasmd/config/app.toml
 sed -i 's/enable = false/enable = true/g' /root/.wasmd/config/app.toml
