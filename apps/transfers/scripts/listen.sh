@@ -40,8 +40,13 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         echo "---------------------------------------------------------"
         echo "... received wasm-transfer event!"
 
-        echo "waiting for next block"
-        sleep 10;
+        current_height=$(wasmd status 2>&1 | jq -r .SyncInfo.latest_block_height)
+        next_height=$((current_height + 1))
+
+        while [ "$(wasmd status 2>&1 | jq -r .SyncInfo.latest_block_height)" -lt "$next_height" ]; do
+            echo "waiting for next block"
+            sleep 1
+        done
 
         echo "... fetching requests"
         REQUESTS=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "requests" | \
