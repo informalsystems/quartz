@@ -39,19 +39,57 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
     if echo "$CLEAN_MSG" | grep -q 'wasm-transfer'; then
         echo "---------------------------------------------------------"
         echo "... received wasm-transfer event!"
+
+        current_height=$($CMD status | jq -r .SyncInfo.latest_block_height)
+        next_height=$((current_height + 1))
+
+        while [ "$($CMD status 2>&1 | jq -r .SyncInfo.latest_block_height)" -lt "$next_height" ]; do
+            echo "waiting for next block"
+            sleep 1
+        done
+
         echo "... fetching requests"
         REQUESTS=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "requests" | \
             hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
         STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | \
             hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
+
+        cd "$ROOT/cycles-quartz/apps/transfers"
+        export TRUSTED_HASH=$(cat trusted.hash)
+        export TRUSTED_HEIGHT=$(cat trusted.height)
+
+        cd $ROOT/cycles-quartz/utils/tm-prover
+        export PROOF_FILE="light-client-proof.json"
+        if [ -f "$PROOF_FILE" ]; then
+            rm "$PROOF_FILE"
+            echo "removed old $PROOF_FILE"
+        fi
+
+        echo "trusted hash $TRUSTED_HASH"
+        echo "trusted hash $TRUSTED_HEIGHT"
+        echo "contract $CONTRACT"
+
+        # run prover to get light client proof
+        cargo run -- --chain-id testing \
+            --primary "http://$NODE_URL" \
+            --witnesses "http://$NODE_URL" \
+            --trusted-height $TRUSTED_HEIGHT \
+            --trusted-hash $TRUSTED_HASH \
+            --contract-address $CONTRACT \
+            --storage-key "requests" \
+            --trace-file $PROOF_FILE
+
+        export POP=$(cat $PROOF_FILE)
+
         export ENCLAVE_REQUEST=$(jq -nc --argjson requests "$REQUESTS" --argjson state $STATE '$ARGS.named')
-        export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
+        export REQUEST_MSG=$(jq --argjson msg "$ENCLAVE_REQUEST" '. + {msg: $msg}' <<< "$POP")
+        export PROTO_MSG=$(jq -nc --arg message "$REQUEST_MSG" '$ARGS.named')
 
         cd $ROOT/cycles-quartz/apps/transfers/enclave
 
         echo "... executing transfer"
         export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto \
-            -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | \
+            -d "$PROTO_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | \
             jq .message | jq -R 'fromjson | fromjson' | jq -c)
         QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
         MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')

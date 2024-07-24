@@ -8,9 +8,9 @@ use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_cw::{
     msg::execute::attested::{HasUserData, RawAttested},
-    state::UserData,
+    state::{Config, UserData},
 };
-use quartz_enclave::attestor::Attestor;
+use quartz_enclave::{attestor::Attestor, server::ProofOfPublication};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tonic::{Request, Response, Result as TonicResult, Status};
@@ -27,6 +27,7 @@ pub type RawCipherText = HexBinary;
 
 #[derive(Clone, Debug)]
 pub struct TransfersService<A> {
+    config: Config,
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
 }
@@ -91,8 +92,12 @@ impl<A> TransfersService<A>
 where
     A: Attestor,
 {
-    pub fn new(sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
-        Self { sk, attestor }
+    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+        Self {
+            config,
+            sk,
+            attestor,
+        }
     }
 }
 
@@ -102,13 +107,21 @@ where
     A: Attestor + Send + Sync + 'static,
 {
     async fn run(&self, request: Request<UpdateRequest>) -> TonicResult<Response<UpdateResponse>> {
-        // Request contains a serialized json string
-
         // Serialize request into struct containing State and the Requests vec
-        let message: UpdateRequestMessage = {
+        let message: ProofOfPublication<UpdateRequestMessage> = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
+
+        let (proof_value, message) = message
+            .verify(self.config.light_client_opts())
+            .map_err(Status::failed_precondition)?;
+
+        let proof_value_matches_msg =
+            serde_json::to_string(&message.requests).is_ok_and(|s| s.as_bytes() == proof_value);
+        if !proof_value_matches_msg {
+            return Err(Status::failed_precondition("proof verification"));
+        }
 
         // Decrypt and deserialize the state
         let mut state = {
