@@ -46,7 +46,8 @@ sha2 = { version = "0.10.8", default-features = false }
 subtle-encoding = { version = "0.5.1", default-features = false, features = ["bech32-preview"] }
 tempfile = { version = "3", default-features = false }
 thiserror = { version = "1.0.49", default-features = false }
-tokio = { version = "1.38.0", default-features = false, features = ["macros", "rt-multi-thread"] }
+tokio = { version = "=1.39.1", features = ["full"] }
+# tokio = { version = "=1.38.0", default-features = false, features = ["macros", "rt-multi-thread"] }
 tonic = { version = "0.11", default-features = false, features = ["codegen", "prost", "transport"] }
 tonic-build = { version = "0.11", default-features = false, features = ["prost", "transport"] }
 tracing = { version = "0.1.39", default-features = false }
@@ -76,16 +77,16 @@ mc-attestation-verifier = { git = "https://github.com/informalsystems/attestatio
 
 # quartz
 cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = false }
-cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
+cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false ,  features = ["mock-sgx"]}
 cycles-sync = { path = "utils/cycles-sync", default-features = false }
 mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
-quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
-quartz-enclave = { path = "core/quartz", default-features = false }
+quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false,  features = ["mock-sgx"] }
+quartz-enclave = { path = "core/quartz", default-features = false , features = ["mock-sgx"]}
 quartz-proto = { path = "core/quartz-proto", default-features = false }
-quartz-relayer = { path = "relayer", default-features = false }
+quartz-relayer = { path = "relayer", default-features = false ,  features = ["mock-sgx"]}
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
 tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
-transfers-contract = { path = "apps/transfers/contracts", default-features = false }
+transfers-contract = { path = "apps/transfers/contracts", default-features = false ,  features = ["mock-sgx"]}
 
 [profile.release]
 opt-level = 3
