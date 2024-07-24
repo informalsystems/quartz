@@ -40,10 +40,10 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         echo "---------------------------------------------------------"
         echo "... received wasm-transfer event!"
 
-        current_height=$(wasmd status 2>&1 | jq -r .SyncInfo.latest_block_height)
+        current_height=$($CMD status | jq -r .SyncInfo.latest_block_height)
         next_height=$((current_height + 1))
 
-        while [ "$(wasmd status 2>&1 | jq -r .SyncInfo.latest_block_height)" -lt "$next_height" ]; do
+        while [ "$($CMD status 2>&1 | jq -r .SyncInfo.latest_block_height)" -lt "$next_height" ]; do
             echo "waiting for next block"
             sleep 1
         done
