@@ -65,14 +65,11 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
             echo "removed old $PROOF_FILE"
         fi
 
-        # TODO: pass this in?
         echo "trusted hash $TRUSTED_HASH"
         echo "trusted hash $TRUSTED_HEIGHT"
         echo "contract $CONTRACT"
 
         # run prover to get light client proof
-        # TODO: assume this binary is pre-built?
-        # TODO: pass in addresses and chain id
         cargo run -- --chain-id testing \
             --primary "http://$NODE_URL" \
             --witnesses "http://$NODE_URL" \
