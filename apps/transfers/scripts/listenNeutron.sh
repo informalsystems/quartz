@@ -2,12 +2,48 @@
 
 set -eo pipefail
 
+# Color definitions
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# Function to print colored and formatted messages
+print_message() {
+    local color=$1
+    local message=$2
+    echo -e "${color}${BOLD}${message}${NC}"
+}
+
+# Function to print section headers
+print_header() {
+    local message=$1
+    echo -e "\n${MAGENTA}${BOLD}======== $message ========${NC}\n"
+}
+
+# Function to print success messages
+print_success() {
+    local message=$1
+    echo -e "${GREEN}${BOLD}✅ $message${NC}"
+}
+
+# Function to print error messages
+print_error() {
+    local message=$1
+    echo -e "${RED}${BOLD}❌ Error: $message${NC}" >&2
+}
+
+# Set up variables
 ROOT=${HOME}
 NODE_URL=${NODE_URL:-127.0.0.1:26657}
 QUARTZ_PORT="${QUARTZ_PORT:-11090}"
 
 if [ "$#" -eq 0 ]; then
-    echo "Usage: $0 <contract_address>"
+    print_error "Usage: $0 <contract_address>"
     exit 1
 fi
 
@@ -15,6 +51,7 @@ CONTRACT=$1
 CMD="neutrond --node http://$NODE_URL"
 WSURL="ws://$NODE_URL/websocket"
 
+# Subscription messages
 SUBSCRIBE_TRANSFER=$(cat <<EOF
 {
   "jsonrpc": "2.0",
@@ -46,7 +83,7 @@ QUOTE_FILE="/tmp/${USER}_test.quote"
 REPORT_FILE="/tmp/${USER}_datareport"
 REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
-echo "Attempting to connect to WebSocket at $WSURL"
+print_header "Starting WebSocket Listener"
 
 send_subscription() {
     local subscription="$1"
@@ -57,12 +94,9 @@ send_subscription() {
 
 handle_message() {
     local msg="$1"
-    echo "Received message: $msg"
     if jq -e '.result' <<< "$msg" > /dev/null 2>&1; then
         if jq -e '.result.query' <<< "$msg" > /dev/null 2>&1; then
-            echo "---------------------------------------------------------"
-            echo "... subscribed successfully"
-            echo "... waiting for events"
+            print_success "Subscribed successfully"
             return 0
         fi
         CLEAN_MSG=$(jq -r '.result.events // empty' <<< "$msg")
@@ -74,27 +108,24 @@ handle_message() {
             fi
         fi
     elif jq -e '.error' <<< "$msg" > /dev/null 2>&1; then
-        echo "Error in message: $msg"
+        print_error "Error in message: $msg"
         return 1
     else
-        echo "Unexpected message format: $msg"
+        print_error "Unexpected message format: $msg"
         return 1
     fi
 }
 
 handle_transfer_event() {
-    echo "---------------------------------------------------------"
-    echo "... received wasm-transfer event!"
+    print_header "Handling Transfer Event"
 
     current_height=$($CMD status | jq -r .sync_info.latest_block_height)
     next_height=$((current_height + 1))
 
     while [ "$($CMD status 2>&1 | jq -r .sync_info.latest_block_height)" -lt "$next_height" ]; do
-        echo "waiting for next block"
         sleep 1
     done
 
-    echo "... fetching requests"
     REQUESTS=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "requests" | \
         hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
     STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | \
@@ -106,14 +137,7 @@ handle_transfer_event() {
 
     cd $ROOT/cycles-quartz/utils/tm-prover
     export PROOF_FILE="light-client-proof.json"
-    if [ -f "$PROOF_FILE" ]; then
-        rm "$PROOF_FILE"
-        echo "removed old $PROOF_FILE"
-    fi
-
-    echo "trusted hash $TRUSTED_HASH"
-    echo "trusted height $TRUSTED_HEIGHT"
-    echo "contract $CONTRACT"
+    [ -f "$PROOF_FILE" ] && rm "$PROOF_FILE"
 
     cargo run -- --chain-id test-1 \
         --primary "$NODE_URL" \
@@ -122,7 +146,7 @@ handle_transfer_event() {
         --trusted-hash $TRUSTED_HASH \
         --contract-address $CONTRACT \
         --storage-key "requests" \
-        --trace-file $PROOF_FILE
+        --trace-file $PROOF_FILE > /dev/null 2>&1
 
     export POP=$(cat $PROOF_FILE)
 
@@ -132,7 +156,6 @@ handle_transfer_event() {
 
     cd $ROOT/cycles-quartz/apps/transfers/enclave
 
-    echo "... executing transfer"
     export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto \
         -d "$PROTO_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | \
         jq .message | jq -R 'fromjson | fromjson' | jq -c)
@@ -140,11 +163,9 @@ handle_transfer_event() {
     MSG=$(echo "$ATTESTED_MSG" | jq -c '.msg')
 
     if [ -n "$MOCK_SGX" ]; then
-        echo "... running in MOCK_SGX mode"
         EXECUTE=$(jq -nc --argjson update "$(jq -nc --argjson msg "$MSG" \
             --argjson attestation "$QUOTE" '$ARGS.named')" '$ARGS.named')
     else
-        echo "... getting report"
         echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
         gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" \
             -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
@@ -156,19 +177,14 @@ handle_transfer_event() {
             --arg reportsig "$REPORTSIG" '$ARGS.named')" '$ARGS.named')" '$ARGS.named')" '$ARGS.named')
     fi
 
-    echo "... submitting update"
-    echo $EXECUTE | jq '.'
-    $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from "$USER_ADDR" $TXFLAG --keyring-backend test --keyring-dir "/home/peppi/.neutrond/" --chain-id test-1 -y --output json
+    $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from "$USER_ADDR" $TXFLAG --keyring-backend test --keyring-dir "/home/peppi/.neutrond/" --chain-id test-1 -y --output json > /dev/null
 
-    echo " ... done"
-    echo "---------------------------------------------------------"
-    echo "... waiting for event"
+    print_success "Transfer execution completed"
 }
 
 handle_query_balance_event() {
     local msg="$1"
-    echo "... received wasm-query_balance event!"
-    echo "... fetching state"
+    print_header "Handling Query Balance Event"
 
     STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | \
         hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
@@ -185,7 +201,6 @@ handle_query_balance_event() {
 
     cd $ROOT/cycles-quartz/apps/transfers/enclave
 
-    echo "... executing query balance"
     ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto \
         -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Query | jq -r '.message | fromjson')
     QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.attestation')
@@ -194,7 +209,6 @@ handle_query_balance_event() {
         '{address: $address, encrypted_bal: $msg.encrypted_bal}')
 
     if [ -n "$MOCK_SGX" ]; then
-        echo "... running in MOCK_SGX mode"
         EXECUTE=$(jq -nc --argjson query_response "$(jq -nc --argjson msg "$QUERY_RESPONSE_MSG" \
             --argjson attestation "$QUOTE" '$ARGS.named')" '{query_response: $query_response}')
     else
@@ -209,13 +223,9 @@ handle_query_balance_event() {
             '{query_response: $query_response}')
     fi
 
-    echo "... submitting update"
-    echo $EXECUTE | jq '.'
-    $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from "$USER_ADDR" $TXFLAG --keyring-backend test --keyring-dir "/home/peppi/.neutrond/" --chain-id test-1 -y --output json
+    $CMD tx wasm execute "$CONTRACT" "$EXECUTE" --from "$USER_ADDR" $TXFLAG --keyring-backend test --keyring-dir "/home/peppi/.neutrond/" --chain-id test-1 -y --output json > /dev/null
 
-    echo " ... done"
-    echo "------------------------------------"
-    echo "... waiting for event"
+    print_success "Query balance execution completed"
 }
 
 connect_websocket() {
@@ -225,7 +235,7 @@ connect_websocket() {
         while true; do
             read -r msg
             if ! handle_message "$msg"; then
-                echo "Error handling message, reconnecting..."
+                print_error "Error handling message, reconnecting..."
                 return 1
             fi
         done
@@ -234,7 +244,7 @@ connect_websocket() {
 
 while true; do
     if ! connect_websocket; then
-        echo "WebSocket connection failed, retrying in 5 seconds..."
+        print_error "WebSocket connection failed, retrying in 5 seconds..."
         sleep 5
     fi
 done
