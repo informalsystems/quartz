@@ -2,7 +2,7 @@
 
 #set -eo pipefail
 
-ROOT=${ROOT:-$HOME/Dev}
+ROOT=${HOME}
 DIR_QUARTZ="$ROOT/cycles-quartz"
 DIR_QUARTZ_APP="$DIR_QUARTZ/apps/transfers"
 DIR_QUARTZ_ENCLAVE="$DIR_QUARTZ_APP/enclave"
@@ -23,7 +23,7 @@ TRUSTED_HASH=$(echo "$CHAIN_STATUS" | jq -r .sync_info.latest_block_hash)
 TRUSTED_HEIGHT=$(echo "$CHAIN_STATUS" | jq -r .sync_info.latest_block_height)
 echo "... $TRUSTED_HASH"
 
-cd ""$DIR_QUARTZ_APP""
+cd "$DIR_QUARTZ_APP"
 echo "$TRUSTED_HASH" > trusted.hash
 echo "$TRUSTED_HEIGHT" > trusted.height
 
