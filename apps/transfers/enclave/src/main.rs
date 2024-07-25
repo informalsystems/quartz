@@ -65,11 +65,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Server::builder()
         .add_service(CoreServer::new(CoreService::new(
-            config,
+            config.clone(),
             sk.clone(),
             attestor.clone(),
         )))
-        .add_service(TransfersServer::new(TransfersService::new(sk, attestor)))
+        .add_service(TransfersServer::new(TransfersService::new(
+            config, sk, attestor,
+        )))
         .serve(args.rpc_addr)
         .await?;
 

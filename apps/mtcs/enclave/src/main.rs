@@ -4,7 +4,6 @@
     clippy::checked_conversions,
     clippy::panic,
     clippy::panic_in_result_fn,
-    missing_docs,
     trivial_casts,
     trivial_numeric_casts,
     rust_2018_idioms,
@@ -65,11 +64,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Server::builder()
         .add_service(CoreServer::new(CoreService::new(
-            config,
+            config.clone(),
             sk.clone(),
             attestor.clone(),
         )))
-        .add_service(MtcsServer::new(MtcsService::new(sk, attestor)))
+        .add_service(MtcsServer::new(MtcsService::new(config, sk, attestor)))
         .serve(args.rpc_addr)
         .await?;
 
