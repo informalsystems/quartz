@@ -3,7 +3,10 @@ ARG WASMD_VERSION=v0.44.0
 FROM cosmwasm/wasmd:${WASMD_VERSION}
 
 # Increase the amount of ucosm given to accounts
-RUN sed -i  's/1000000000/12000000000000/g' /opt/setup_wasmd.sh
+RUN <<EOF
+sed -i 's/keyring-backend = "os"/keyring-backend = "test"/g' /root/.wasmd/config/client.toml
+sed -i  's/1000000000/12000000000000/g' /opt/setup_wasmd.sh
+EOF
 
 # Set up wasmd. The account numbers correspond to those in the ./accounts/
 # folder.
