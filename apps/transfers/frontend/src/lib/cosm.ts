@@ -11,7 +11,9 @@ const typeUrl = '/cosmwasm.wasm.v1.MsgExecuteContract'
 const registry = new Registry([[typeUrl, MsgExecuteContract]])
 
 // Cosm variables declaration. They will be set upon initialization.
-let signingCosmClient: SigningCosmWasmClient
+let signingCosmClient: SigningCosmWasmClient;
+
+
 
 // Setup the CosmWasm client.
 const init = async () => {
@@ -19,12 +21,16 @@ const init = async () => {
     process.env.NEXT_PUBLIC_CHAIN_RPC_URL,
     'NEXT_PUBLIC_CHAIN_RPC_URL must be defined',
   )
+
+
   // Initialize Cosm client.
   signingCosmClient = await SigningCosmWasmClient.connectWithSigner(
-    process.env.NEXT_PUBLIC_CHAIN_RPC_URL,
+    process.env.NEXT_PUBLIC_CHAIN_RPC_URL as string,
     wallet.getSigner(),
     { registry },
-  )
+ )
+ console.log("error on signer ", signingCosmClient);
+
 }
 // Transfer contract execution message
 const executeTransferContract = ({
@@ -49,7 +55,7 @@ const executeTransferContract = ({
         contract: process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS,
         msg: toUtf8(JSON.stringify(messageBuilder())),
         ...(fundsAmount && {
-          funds: [{ denom: 'ucosm', amount: fundsAmount }],
+          funds: [{ denom: 'untrn', amount: fundsAmount }],
         }),
       }),
     },
@@ -60,7 +66,7 @@ const executeTransferContract = ({
     sender,
     executeTransferContractMsgs,
     {
-      amount: coins(1, 'ucosm'),
+      amount: coins(1, 'untrn'),
       gas: '200000',
     },
   )
