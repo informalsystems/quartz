@@ -180,36 +180,27 @@ if [ -z "$TX_HASH" ] || [ "$TX_HASH" == "null" ]; then
 fi
 print_message $CYAN "Transaction hash: $TX_HASH"
 
-print_waiting "Waiting for transaction to commit..."
+print_waiting "Waiting for transaction to be included in a block..."
 ATTEMPTS=0
 MAX_ATTEMPTS=30
 while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
-    if $CMD query tx "$TX_HASH" &> /dev/null; then
-        print_success "Transaction committed successfully"
+    TX_RESULT=$($CMD query tx "$TX_HASH" --output json 2>/dev/null || echo '{"code": 1}')
+    TX_CODE=$(echo "$TX_RESULT" | jq -r '.code // .tx_result.code // 1')
+    if [[ $TX_CODE == "0" ]]; then
+        print_success "Transaction processed successfully."
         break
+    elif [[ $TX_CODE != "1" ]]; then
+        print_error "Error processing transaction. Code: $TX_CODE"
     fi
-    print_waiting "Waiting for tx (Attempt $((ATTEMPTS+1))/$MAX_ATTEMPTS)"
+    print_waiting "Transaction not yet processed. Waiting... (Attempt $((ATTEMPTS+1))/$MAX_ATTEMPTS)"
     sleep 2
     ATTEMPTS=$((ATTEMPTS+1))
 done
 
 if [ $ATTEMPTS -eq $MAX_ATTEMPTS ]; then
-    print_error "Transaction failed to commit after $MAX_ATTEMPTS attempts"
+    print_error "Failed to retrieve transaction after $MAX_ATTEMPTS attempts."
 fi
 
-print_waiting "Waiting for two additional blocks..."
-INITIAL_HEIGHT=$($CMD status | jq -r '.sync_info.latest_block_height')
-TARGET_HEIGHT=$((INITIAL_HEIGHT + 2))
-
-while true; do
-    CURRENT_HEIGHT=$($CMD status | jq -r '.sync_info.latest_block_height')
-    if [ "$CURRENT_HEIGHT" -ge "$TARGET_HEIGHT" ]; then
-        print_success "Two additional blocks have been produced."
-        break
-    fi
-    print_waiting "Current height: $CURRENT_HEIGHT, waiting for height: $TARGET_HEIGHT"
-    sleep 2
-done
 
 print_success "Handshake process completed"
 
@@ -222,19 +213,25 @@ rm -f "$PROOF_FILE"
 
 print_message $BLUE "Removed old $PROOF_FILE"
 
-print_waiting "Waiting for new blocks to be produced..."
-INITIAL_HEIGHT=$($CMD status | jq -r '.sync_info.latest_block_height')
-TARGET_HEIGHT=$((INITIAL_HEIGHT + 2))
-
-while true; do
-    CURRENT_HEIGHT=$($CMD status | jq -r '.sync_info.latest_block_height')
-    if [ "$CURRENT_HEIGHT" -ge "$TARGET_HEIGHT" ]; then
-        print_success "Two additional blocks have been produced."
+# print_waiting "Waiting for new blocks to be produced..."
+print_waiting "Waiting for transaction to be included in a block..."
+ATTEMPTS=0
+MAX_ATTEMPTS=30
+while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
+    TX_RESULT=$($CMD query tx "$TX_HASH" --output json 2>/dev/null || echo '{"code": 1}')
+    TX_CODE=$(echo "$TX_RESULT" | jq -r '.code // .tx_result.code // 1')
+    if [[ $TX_CODE == "0" ]]; then
+        print_success "Transaction processed successfully."
         break
+    elif [[ $TX_CODE != "1" ]]; then
+        print_error "Error processing transaction. Code: $TX_CODE"
     fi
-    print_waiting "Current height: $CURRENT_HEIGHT, waiting for height: $TARGET_HEIGHT"
+    print_waiting "Transaction not yet processed. Waiting... (Attempt $((ATTEMPTS+1))/$MAX_ATTEMPTS)"
     sleep 2
+    ATTEMPTS=$((ATTEMPTS+1))
 done
+
+
 print_success "Required blocks produced. Proceeding with tm-prover..."
 
 cd "$HOME/cycles-quartz/apps/transfers"
@@ -345,7 +342,7 @@ cat << "EOF"
  ██ ▄▄ ██ ██    ██ ██   ██ ██   ██    ██    ██      
   ██████   ██████  ██   ██ ██   ██    ██    ███████ 
      ▀▀                                             
-
+                        POWERED BY INFORMAL.SYSTEMMS
 EOF
 
-print_message $MAGENTA "Thank you for using the Quartz deployment script!"
+print_message $MAGENTA "We hope you'll enjoy developing Quartz Apps!"
