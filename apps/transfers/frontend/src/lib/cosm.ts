@@ -25,11 +25,10 @@ const init = async () => {
 
   // Initialize Cosm client.
   signingCosmClient = await SigningCosmWasmClient.connectWithSigner(
-    process.env.NEXT_PUBLIC_CHAIN_RPC_URL as string,
+    process.env.NEXT_PUBLIC_CHAIN_RPC_URL,
     wallet.getSigner(),
     { registry },
  )
- console.log("error on signer ", signingCosmClient);
 
 }
 // Transfer contract execution message
