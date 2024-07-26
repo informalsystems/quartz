@@ -122,8 +122,7 @@ async fn main() -> Result<(), anyhow::Error> {
     config.contract_address = cli.contract.clone();
     config.storage_key = "quartz_session".to_owned();
 
-    if let Err(report) = prove(config).await
-    {
+    if let Err(report) = prove(config).await {
         return Err(anyhow!("Tendermint prover failed. Report: {}", report));
     }
 

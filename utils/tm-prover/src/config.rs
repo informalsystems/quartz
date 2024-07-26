@@ -51,9 +51,7 @@ impl Verbosity {
     }
 
     fn default() -> Self {
-        Self {
-            verbose: 0
-        }
+        Self { verbose: 0 }
     }
 }
 
@@ -72,7 +70,7 @@ pub struct ProofOutput {
     pub merkle_proof: RawCwProof,
 }
 
-// TODO: Investigate if it's possible to derive default using Clap's default values 
+// TODO: Investigate if it's possible to derive default using Clap's default values
 impl Default for Config {
     fn default() -> Self {
         Config {
