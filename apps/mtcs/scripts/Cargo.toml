@@ -16,10 +16,6 @@ path = "src/bin/handshake.rs"
 name = "deploy"
 path = "src/bin/deploy.rs"
 
-[[bin]]
-name = "mc"
-path = "src/bin/deploy-mc.rs"
-
 [dependencies]
 clap.workspace = true
 color-eyre.workspace = true
@@ -58,6 +54,5 @@ cycles-sync = { workspace = true}
 tm-prover = { workspace = true}
 quartz-common = { workspace = true, features=["contract"]}
 quartz-tee-ra = { workspace = true}
-mtcs-overdraft = { path = "../../../../cycles-protocol/contracts/overdraft"}
 mtcs-enclave = { path = "../enclave", optional = false}
 regex = "1.10.5"

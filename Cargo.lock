@@ -988,21 +988,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw-controllers"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50c1804013d21060b994dea28a080f9eab78a3bcb6b617f05e7634b0600bf7b1"
-dependencies = [
- "cosmwasm-schema 2.1.0",
- "cosmwasm-std 2.1.0",
- "cw-storage-plus 2.0.0",
- "cw-utils 2.0.0",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "cw-multi-test"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1142,18 +1127,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw0"
-version = "0.10.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ae676b6cced78a3d38ad4b01ab4ed66fc78ac191c3c0d6bfd5372cb2efd473b"
-dependencies = [
- "cosmwasm-std 1.5.2",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "cw2"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1209,37 +1182,6 @@ dependencies = [
  "cw20",
  "schemars",
  "semver",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "cw4"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d33f5c8a6b6cd1bd24e212d7f44967697bfa3c4f9cc3f9a8e1c58f5fe5db032d"
-dependencies = [
- "cosmwasm-schema 2.1.0",
- "cosmwasm-std 2.1.0",
- "cw-storage-plus 2.0.0",
- "schemars",
- "serde",
-]
-
-[[package]]
-name = "cw4-group"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e60083d0aec9f6d6191c797bb3605835289fd3d875fe516ae5a164c7f8a0ba4e"
-dependencies = [
- "cosmwasm-schema 2.1.0",
- "cosmwasm-std 2.1.0",
- "cw-controllers",
- "cw-storage-plus 2.0.0",
- "cw-utils 2.0.0",
- "cw2 2.0.0",
- "cw4",
- "schemars",
  "serde",
  "thiserror",
 ]
@@ -2470,20 +2412,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mtcs-overdraft"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema 2.1.0",
- "cosmwasm-std 2.1.0",
- "cw-storage-plus 2.0.0",
- "cw-utils 2.0.0",
- "cw0",
- "cw4",
- "cw4-group",
- "thiserror",
-]
-
-[[package]]
 name = "multimap"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3570,7 +3498,6 @@ dependencies = [
  "k256",
  "mtcs",
  "mtcs-enclave",
- "mtcs-overdraft",
  "once_cell",
  "prost",
  "quartz-common",
