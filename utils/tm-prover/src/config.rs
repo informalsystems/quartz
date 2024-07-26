@@ -58,7 +58,7 @@ pub struct ProofOutput {
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
-pub struct Cli {
+pub struct Config {
     /// Identifier of the chain
     #[clap(long)]
     pub chain_id: String,

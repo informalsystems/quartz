@@ -38,7 +38,7 @@ use tracing_subscriber::{util::SubscriberInitExt, EnvFilter};
 
 const WASM_STORE_KEY: &str = "/store/wasm/key";
 
-use crate::cli::{Cli as TmProverCli, ProofOutput, Verbosity};
+use crate::config::{Config as TmProverConfig, ProofOutput, Verbosity};
 
 pub async fn proof_parse_with_defaults(
     chain_id: String,
@@ -51,7 +51,7 @@ pub async fn proof_parse_with_defaults(
     contract_address: AccountId,
     storage_key: &str,
 ) -> Result<()> {
-    proof(TmProverCli {
+    proof(TmProverConfig {
         chain_id,
         primary: primary.parse()?,
         witnesses: witnesses.parse()?,
@@ -70,7 +70,7 @@ pub async fn proof_parse_with_defaults(
 }
 
 pub async fn proof(
-    TmProverCli {
+    TmProverConfig {
         chain_id,
         primary,
         witnesses,
@@ -84,7 +84,7 @@ pub async fn proof(
         verbose,
         contract_address,
         storage_key,
-    }: TmProverCli,
+    }: TmProverConfig,
 ) -> Result<()> {
     let env_filter = EnvFilter::builder()
         .with_default_directive(verbose.to_level_filter().into())
