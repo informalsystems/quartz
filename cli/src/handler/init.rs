@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use tracing::trace;
 
 use crate::{
@@ -5,11 +6,12 @@ use crate::{
     response::init::InitResponse,
 };
 
+#[async_trait]
 impl Handler for InitRequest {
     type Error = Error;
     type Response = InitResponse;
 
-    fn handle(self, _verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, _verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
         todo!()
     }

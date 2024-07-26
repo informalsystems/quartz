@@ -1,22 +1,27 @@
+use async_trait::async_trait;
 use crate::{cli::Verbosity, error::Error, request::Request, response::Response};
 
 pub mod init;
+pub mod handshake;
+pub mod utils;
 
+#[async_trait]
 pub trait Handler {
     type Error;
     type Response;
 
-    fn handle(self, verbosity: Verbosity) -> Result<Self::Response, Self::Error>;
+    async fn handle(self, verbosity: Verbosity) -> Result<Self::Response, Self::Error>;
 }
 
+#[async_trait]
 impl Handler for Request {
     type Error = Error;
     type Response = Response;
 
-    fn handle(self, verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
         match self {
-            Request::Init(request) => request.handle(verbosity),
+            Request::Init(request) => request.handle(verbosity).await.map(Into::into),
+            Request::Handshake(request) => request.handle(verbosity).await.map(Into::into)
         }
-        .map(Into::into)
     }
 }
