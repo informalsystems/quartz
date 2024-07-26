@@ -28,7 +28,7 @@ use crate::{
 const CONTRACT_NAME: &str = "crates.io:cw-tee-mtcs";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn instantiate(
     mut deps: DepsMut,
     env: Env,
@@ -72,7 +72,7 @@ pub fn instantiate(
         .add_attribute("owner", info.sender))
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn execute(
     mut deps: DepsMut,
     env: Env,
@@ -242,7 +242,7 @@ pub mod execute {
     }
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetAllSetoffs => to_json_binary(&query::get_all_setoffs(deps)?),
