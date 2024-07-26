@@ -1,10 +1,11 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{num::ParseIntError, path::PathBuf, str::FromStr};
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
 use cosmrs::AccountId;
 use cw_proof::proof::cw::RawCwProof;
 use serde::{Deserialize, Serialize};
+use tendermint::crypto::default;
 use tendermint_light_client::types::{Hash, Height, LightBlock, TrustThreshold};
 use tendermint_rpc::HttpClientUrl;
 use tracing::metadata::LevelFilter;
@@ -48,12 +49,48 @@ impl Verbosity {
             _ => LevelFilter::TRACE,
         }
     }
+
+    fn default() -> Self {
+        Self {
+            verbose: 0
+        }
+    }
+}
+
+impl FromStr for Verbosity {
+    type Err = ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let verbose: u8 = s.parse()?;
+        Ok(Self { verbose })
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ProofOutput {
     pub light_client_proof: Vec<LightBlock>,
     pub merkle_proof: RawCwProof,
+}
+
+// TODO: Investigate if it's possible to derive default using Clap's default values 
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            chain_id: String::default(),
+            primary: "http://127.0.0.1:26657".parse().unwrap(),
+            witnesses: "[]".parse().unwrap(),
+            trusted_height: Height::default(),
+            trusted_hash: Hash::default(),
+            trust_threshold: TrustThreshold::TWO_THIRDS,
+            trusting_period: 1209600u64,
+            max_clock_drift: 5u64,
+            max_block_lag: 5u64,
+            trace_file: None,
+            verbose: Verbosity::default(),
+            contract_address: "".parse().unwrap(),
+            storage_key: String::default(),
+        }
+    }
 }
 
 #[derive(Debug, Parser)]

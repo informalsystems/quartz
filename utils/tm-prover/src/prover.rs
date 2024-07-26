@@ -18,7 +18,6 @@ use color_eyre::{
     eyre::{eyre, Result},
     Report,
 };
-use cosmrs::AccountId;
 use cw_proof::{
     error::ProofError,
     proof::{cw::CwProof, key::CwAbciKey, Proof},
@@ -29,7 +28,7 @@ use tendermint_light_client::{
     builder::LightClientBuilder,
     light_client::Options,
     store::memory::MemoryStore,
-    types::{Height, LightBlock, TrustThreshold},
+    types::{Height, LightBlock},
 };
 use tendermint_light_client_detector::{detect_divergence, Error, Provider, Trace};
 use tendermint_rpc::{client::HttpClient, Client, HttpClientUrl};
@@ -38,38 +37,9 @@ use tracing_subscriber::{util::SubscriberInitExt, EnvFilter};
 
 const WASM_STORE_KEY: &str = "/store/wasm/key";
 
-use crate::config::{Config as TmProverConfig, ProofOutput, Verbosity};
+use crate::config::{Config as TmProverConfig, ProofOutput};
 
-pub async fn proof_parse_with_defaults(
-    chain_id: String,
-    primary: &str,
-    witnesses: &str,
-    trusted_height: Height,
-    trusted_hash: Hash,
-    trace_file: &str,
-    verbose: u8,
-    contract_address: AccountId,
-    storage_key: &str,
-) -> Result<()> {
-    proof(TmProverConfig {
-        chain_id,
-        primary: primary.parse()?,
-        witnesses: witnesses.parse()?,
-        trusted_height,
-        trusted_hash,
-        trust_threshold: TrustThreshold::TWO_THIRDS, // default
-        trusting_period: 1209600u64,                 // default
-        max_clock_drift: 5u64,                       // default
-        max_block_lag: 5u64,                         // default
-        trace_file: Some(trace_file.parse()?),
-        verbose: Verbosity { verbose },
-        contract_address,
-        storage_key: storage_key.to_owned(),
-    })
-    .await
-}
-
-pub async fn proof(
+pub async fn prove(
     TmProverConfig {
         chain_id,
         primary,

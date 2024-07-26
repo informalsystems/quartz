@@ -1,6 +1,6 @@
 use clap::Parser;
 use color_eyre::eyre::Result;
-use tm_prover::{config::Config, prover::proof};
+use tm_prover::{config::Config, prover::prove};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -8,5 +8,5 @@ async fn main() -> Result<()> {
 
     let args = Config::parse();
 
-    proof(args).await
+    prove(args).await
 }

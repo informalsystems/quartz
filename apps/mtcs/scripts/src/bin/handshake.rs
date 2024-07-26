@@ -17,7 +17,7 @@ use serde::Serialize;
 use serde_json::json;
 use tendermint::{block::Height, Hash};
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
-use tm_prover::prover::proof_parse_with_defaults;
+use tm_prover::{config::Config as TmProverConfig, prover::prove};
 
 #[derive(Serialize)]
 struct Message<'a> {
@@ -111,18 +111,18 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // run tm prover cargo binary with trusted hash and height
     // TODO: decouple logic in tm_prover
-    if let Err(report) = proof_parse_with_defaults(
-        "testing".to_string(),
-        httpurl.as_str(),
-        httpurl.as_str(),
-        trusted_height,
-        trusted_hash,
-        proof_path.to_str().unwrap(), // potentially dangerous
-        1,
-        cli.contract.clone(),
-        "quartz_session",
-    )
-    .await
+    let mut config = TmProverConfig::default();
+    config.chain_id = "testing".parse()?;
+    config.primary = httpurl.as_str().parse()?;
+    config.witnesses = httpurl.as_str().parse()?;
+    config.trusted_height = trusted_height;
+    config.trusted_hash = trusted_hash;
+    config.trace_file = Some(proof_path.clone());
+    config.verbose = "1".parse()?;
+    config.contract_address = cli.contract.clone();
+    config.storage_key = "quartz_session".to_owned();
+
+    if let Err(report) = prove(config).await
     {
         return Err(anyhow!("Tendermint prover failed. Report: {}", report));
     }
