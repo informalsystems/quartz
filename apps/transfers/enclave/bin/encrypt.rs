@@ -1,14 +1,10 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
-use anyhow;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
-use ecies::{decrypt, encrypt};
-use k256::{
-    ecdsa::{SigningKey, VerifyingKey},
-    pkcs8::DecodePublicKey,
-};
+use ecies::encrypt;
+use k256::ecdsa::VerifyingKey;
 use serde::{Deserialize, Serialize};
-use transfers_contracts::msg::execute::ClearTextTransferRequestMsg;
+use transfers_contract::msg::execute::ClearTextTransferRequestMsg;
 
 pub type RawCipherText = HexBinary;
 
@@ -45,7 +41,7 @@ fn main() {
     let msg = ClearTextTransferRequestMsg {
         sender: Addr::unchecked("alice"),
         receiver: Addr::unchecked("bob"),
-        amount: Uint128::from(100 as u32),
+        amount: Uint128::from(100_u32),
     };
 
     let decoded: Vec<u8> =

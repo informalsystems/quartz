@@ -1,38 +1,47 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_common::contract::{
-    msg::execute::attested::{RawAttested, RawEpidAttestation},
+    msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation},
     prelude::*,
 };
+use serde::{Deserialize, Serialize};
+
+type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
 
 #[cw_serde]
-pub struct InstantiateMsg {
-    pub quartz: QuartzInstantiateMsg,
+pub struct InstantiateMsg<RA = RawDefaultAttestation> {
+    pub quartz: QuartzInstantiateMsg<RA>,
     pub denom: String,
 }
 
 #[cw_serde]
+pub enum QueryMsg {
+    GetBalance { address: String },
+}
+
+#[cw_serde]
 #[allow(clippy::large_enum_variant)]
-pub enum ExecuteMsg {
+pub enum ExecuteMsg<RA = RawDefaultAttestation> {
     // quartz initialization
     Quartz(QuartzExecuteMsg),
 
-    // ----- user txs
+    // User msgs
     // clear text
     Deposit,
     Withdraw,
-
+    ClearTextTransferRequest(execute::ClearTextTransferRequestMsg),
     // ciphertext
     TransferRequest(execute::TransferRequestMsg),
-    // ---- end user txs
-    ClearTextTransferRequest(execute::ClearTextTransferRequestMsg),
+    QueryRequest(execute::QueryRequestMsg),
 
-    // enclave msg
-    Update(RawAttested<execute::RawUpdateMsg, RawEpidAttestation>),
+    // Enclave msgs
+    Update(AttestedMsg<execute::UpdateMsg, RA>),
+    QueryResponse(AttestedMsg<execute::QueryResponseMsg, RA>),
 }
 
 pub mod execute {
-    use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError};
+    use cosmwasm_schema::cw_serde;
+    use cosmwasm_std::{Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdError, Uint128};
     use quartz_common::contract::{
         error::Error,
         handler::Handler,
@@ -40,15 +49,6 @@ pub mod execute {
         state::UserData,
     };
     use sha2::{Digest, Sha256};
-
-    use super::*;
-
-    #[cw_serde]
-    pub struct TransferRequestMsg {
-        pub ciphertext: HexBinary,
-        pub digest: HexBinary,
-        // pub proof: π
-    }
 
     #[cw_serde]
     pub struct ClearTextTransferRequestMsg {
@@ -58,7 +58,18 @@ pub mod execute {
         // pub proof: π
     }
 
-    // Ciphertext of a transfer request
+    #[cw_serde]
+    pub struct QueryRequestMsg {
+        pub emphemeral_pubkey: HexBinary,
+    }
+
+    #[cw_serde]
+    pub struct TransferRequestMsg {
+        pub ciphertext: HexBinary,
+        pub digest: HexBinary,
+        // pub proof: π
+    }
+
     #[cw_serde]
     pub enum Request {
         Transfer(HexBinary),
@@ -67,20 +78,17 @@ pub mod execute {
     }
 
     #[cw_serde]
-    pub struct RawUpdateMsg {
+    pub struct UpdateMsg {
         pub ciphertext: HexBinary,
         pub quantity: u32,
         pub withdrawals: Vec<(Addr, Uint128)>,
         // pub proof: π
     }
 
-    #[derive(Clone, Debug, PartialEq)]
-    pub struct UpdateMsg(pub RawUpdateMsg);
-
     impl HasUserData for UpdateMsg {
         fn user_data(&self) -> UserData {
             let mut hasher = Sha256::new();
-            hasher.update(serde_json::to_string(&self.0).expect("infallible serializer"));
+            hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
             let digest: [u8; 32] = hasher.finalize().into();
 
             let mut user_data = [0u8; 64];
@@ -89,33 +97,22 @@ pub mod execute {
         }
     }
 
-    impl HasDomainType for RawUpdateMsg {
-        type DomainType = UpdateMsg;
+    #[cw_serde]
+    pub struct QueryResponseMsg {
+        pub address: Addr,
+        pub encrypted_bal: HexBinary,
+        // pub proof: π
     }
 
-    impl TryFrom<RawUpdateMsg> for UpdateMsg {
-        type Error = StdError;
+    impl HasUserData for QueryResponseMsg {
+        fn user_data(&self) -> UserData {
+            let mut hasher = Sha256::new();
+            hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
+            let digest: [u8; 32] = hasher.finalize().into();
 
-        fn try_from(value: RawUpdateMsg) -> Result<Self, Self::Error> {
-            Ok(Self(value))
-        }
-    }
-
-    impl From<UpdateMsg> for RawUpdateMsg {
-        fn from(value: UpdateMsg) -> Self {
-            value.0
-        }
-    }
-
-    impl Handler for UpdateMsg {
-        fn handle(
-            self,
-            _deps: DepsMut<'_>,
-            _env: &Env,
-            _info: &MessageInfo,
-        ) -> Result<Response, Error> {
-            // basically handle `transfer_request` here
-            Ok(Response::default())
+            let mut user_data = [0u8; 64];
+            user_data[0..32].copy_from_slice(&digest);
+            user_data
         }
     }
 }

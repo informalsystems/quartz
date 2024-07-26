@@ -1,5 +1,14 @@
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::{Addr, HexBinary};
 use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ContractObligation {
+    pub debtor: Addr,
+    pub creditor: Addr,
+    pub amount: u64,
+    #[serde(default)]
+    pub salt: HexBinary,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RawObligation {
@@ -24,7 +33,7 @@ pub struct SubmitObligationsMsg {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SubmitObligationsMsgInner {
     pub obligations: Vec<RawEncryptedObligation>,
-    pub liquidity_sources: Vec<HexBinary>,
+    pub liquidity_sources: Vec<Addr>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

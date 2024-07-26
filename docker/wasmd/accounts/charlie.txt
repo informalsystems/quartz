@@ -1,0 +1,11 @@
+
+- address: wasm1jn34x50hy3my0a2mxwcx8fttgfxu2n5gpvu0ty
+  name: charlie
+  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A9LnFBufvSFCF+aRd3eIB9sSLcguFHOsGJZsaN9D/zx7"}'
+  type: local
+
+
+**Important** write this mnemonic phrase in a safe place.
+It is the only way to recover your account if you ever forget your password.
+
+wrestle garage wrist bread woman depart service butter sorry soup tunnel gorilla absurd mansion obtain since security hair okay sense fly keep door inject

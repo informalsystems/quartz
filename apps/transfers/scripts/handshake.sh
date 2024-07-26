@@ -24,6 +24,7 @@ CMD="wasmd --node http://$NODE_URL"
 
 cd "$ROOT/cycles-quartz/apps/transfers"
 export TRUSTED_HASH=$(cat trusted.hash)
+export TRUSTED_HEIGHT=$(cat trusted.height)
 
 echo "using CMD: $CMD"
 echo "--------------------------------------------------------"
@@ -35,6 +36,7 @@ cd $ROOT/cycles-quartz/relayer
 
 # execute SessionCreate on enclave
 export EXECUTE_CREATE=$(./scripts/relay.sh SessionCreate)
+echo $EXECUTE_CREATE
 
 # submit SessionCreate to contract
 RES=$($CMD tx wasm execute "$CONTRACT" "$EXECUTE_CREATE" --from admin --chain-id testing -y --output json)
@@ -42,14 +44,14 @@ TX_HASH=$(echo $RES | jq -r '.["txhash"]')
 
 # wait for tx to commit
 while ! $CMD query tx $TX_HASH &> /dev/null; do
-    echo "... 🕐 waiting for tx"
+    echo "... 🕐 waiting for tx $TX_HASH"
     sleep 1 
 done 
 
 # need to wait another block for light client proof
 BLOCK_HEIGHT=$($CMD query block | jq .block.header.height)
 
-echo "at heigh $BLOCK_HEIGHT. need to wait for a block"
+echo "at height $BLOCK_HEIGHT. need to wait for a block"
 while [[ $BLOCK_HEIGHT == $($CMD query block | jq .block.header.height) ]]; do
     echo "... 🕐 waiting for another block"
     sleep 1
@@ -57,7 +59,7 @@ done
 
 # need to wait another block for light client proof
 BLOCK_HEIGHT=$($CMD query block | jq .block.header.height)
-echo "at heigh $BLOCK_HEIGHT. need to wait for a block"
+echo "at height $BLOCK_HEIGHT. need to wait for a block"
 while [[ $BLOCK_HEIGHT == $($CMD query block | jq .block.header.height) ]]; do
     echo "... 🕐 waiting for another block"
     sleep 1
@@ -77,15 +79,16 @@ fi
 
 # TODO: pass this in?
 echo "trusted hash $TRUSTED_HASH"
+echo "trusted hash $TRUSTED_HEIGHT"
 echo "contract $CONTRACT"
 
 # run prover to get light client proof
 # TODO: assume this binary is pre-built?
 # TODO: pass in addresses and chain id 
-cargo run -vvv -- --chain-id testing \
+cargo run -- --chain-id testing \
     --primary "http://$NODE_URL" \
     --witnesses "http://$NODE_URL" \
-    --trusted-height 1 \
+    --trusted-height $TRUSTED_HEIGHT \
     --trusted-hash $TRUSTED_HASH \
     --contract-address $CONTRACT \
     --storage-key "quartz_session" \
@@ -103,7 +106,7 @@ TX_HASH=$(echo $RES | jq -r '.["txhash"]')
 
 # wait for tx to commit
 while ! $CMD query tx $TX_HASH &> /dev/null; do
-    echo "... 🕐 waiting for tx"
+    echo "... 🕐 waiting for tx $TX_HASH"
     sleep 1 
 done 
 

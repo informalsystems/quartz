@@ -14,6 +14,8 @@ contract = ["dep:quartz-cw"]
 enclave = ["dep:quartz-enclave", "proto"]
 proto = ["dep:quartz-proto"]
 macro = ["dep:cosmrs", "dep:color-eyre", "dep:clap", "dep:tendermint-light-client"]
+mock-sgx-cw = ["quartz-cw/mock-sgx"]
+mock-sgx-enclave = ["quartz-enclave/mock-sgx"]
 
 [dependencies]
 quartz-cw = { workspace = true, optional = true }

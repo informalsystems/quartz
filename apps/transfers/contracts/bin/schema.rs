@@ -1,5 +1,5 @@
 use cosmwasm_schema::write_api;
-use transfers_contracts::msg::{ExecuteMsg, InstantiateMsg};
+use transfers_contract::msg::{ExecuteMsg, InstantiateMsg};
 
 fn main() {
     write_api! {

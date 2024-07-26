@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use base64::prelude::*;
 use clap::Parser;
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
-use cosmwasm_std::{Binary, HexBinary};
+use cosmwasm_std::{Binary, HexBinary, Uint64};
 use futures_util::stream::StreamExt;
 use reqwest::Url;
 use scripts::utils::wasmaddr_to_id;
@@ -20,10 +20,10 @@ use cw_tee_mtcs::{
     state::LiquiditySource,
 };
 use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
-use enclave::proto::{clearing_client::ClearingClient, RunClearingRequest};
 use mtcs_overdraft::msg::{QueryMembersResp, QueryMsg::DumpMembers};
 use quartz_tee_ra::{intel_sgx::epid::types::ReportBody, IASReport};
 use quartz_common::contract::msg::execute::attested::{EpidAttestation, RawAttested, RawAttestedMsgSansHandler};
+use mtcs_enclave::proto::{clearing_client::ClearingClient, RunClearingRequest};
 
 use std::{
     collections::{BTreeMap, BTreeSet}, env, process::Command, str::FromStr
@@ -134,7 +134,7 @@ async fn handler(
     let attestation = gramine_ias_request(quote.attestation, &user).await?;
     let msg = RawAttestedMsgSansHandler(quote.msg);
 
-    let setoffs_msg = ExecuteMsg::SubmitSetoffs(AttestedMsg {msg, attestation: attestation.into()});
+    let setoffs_msg = ExecuteMsg::SubmitSetoffs::<EpidAttestation>(AttestedMsg {msg, attestation: attestation.into()});
 
     // Send setoffs to mtcs contract on chain
     let output =
@@ -181,7 +181,7 @@ async fn query_chain(
         .query_smart(
             contract,
             json!(GetLiquiditySources {
-                epoch: Some(epoch_counter)
+                epoch: Some(Uint64::new(epoch_counter as u64))
             }),
         )
         .map_err(|e| anyhow!("Problem querying liquidity sources: {}", e))?;

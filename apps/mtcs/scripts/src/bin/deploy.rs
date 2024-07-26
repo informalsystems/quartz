@@ -27,9 +27,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     println!("\n🚀 Communicating with Relay to Instantiate...\n");
     let init_msg: RawInstantiateMsg = run_relay(base_path.as_path(), "Instantiate", None)?; // need to define the return type
-    let init_msg: MtcsInstantiateMsg = MtcsInstantiateMsg {
-        quartz: init_msg
-    };
+    let init_msg: MtcsInstantiateMsg = MtcsInstantiateMsg(init_msg);
 
     let httpurl = Url::parse(&format!("http://{}", cli.node_url))?;
     let tmrpc_client = HttpClient::new(httpurl.as_str()).unwrap();

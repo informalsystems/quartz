@@ -4,7 +4,6 @@
     clippy::checked_conversions,
     clippy::panic,
     clippy::panic_in_result_fn,
-    missing_docs,
     trivial_casts,
     trivial_numeric_casts,
     rust_2018_idioms,
@@ -18,16 +17,63 @@ mod mtcs_server;
 mod proto;
 mod types;
 
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+
+use clap::Parser;
 use cli::Cli;
 use mtcs_server::MtcsService;
 use proto::clearing_server::ClearingServer as MtcsServer;
-use quartz_common::quartz_server;
+use quartz_common::{
+    contract::state::{Config, LightClientOpts},
+    enclave::{
+        attestor::{Attestor, DefaultAttestor},
+        server::CoreService
+    },
+    proto::core_server::CoreServer
+};
+use tonic::transport::Server;
 
-// Passing a custom clap Cli is optional
-quartz_server!(Cli, MtcsServer, |sk| MtcsServer::new(MtcsService::new(
-    sk,
-    EpidAttestor
-)));
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Cli::parse();
 
-// With default Cli:
-// quartz_server!(MtcsServer, |sk| MtcsServer::new(MtcsService::new(sk, EpidAttestor)));
+    let light_client_opts = LightClientOpts::new(
+        args.chain_id,
+        args.trusted_height.into(),
+        Vec::from(args.trusted_hash)
+            .try_into()
+            .expect("invalid trusted hash"),
+        (
+            args.trust_threshold.numerator(),
+            args.trust_threshold.denominator(),
+        ),
+        args.trusting_period,
+        args.max_clock_drift,
+        args.max_block_lag,
+    )?;
+
+    let attestor = DefaultAttestor::default();
+
+    let config = Config::new(
+        attestor.mr_enclave()?,
+        Duration::from_secs(30 * 24 * 60),
+        light_client_opts,
+    );
+
+    let sk = Arc::new(Mutex::new(None));
+
+    Server::builder()
+        .add_service(CoreServer::new(CoreService::new(
+            config.clone(),
+            sk.clone(),
+            attestor.clone(),
+        )))
+        .add_service(MtcsServer::new(MtcsService::new(config, sk, attestor)))
+        .serve(args.rpc_addr)
+        .await?;
+
+    Ok(())
+}
