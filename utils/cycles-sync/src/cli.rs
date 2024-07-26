@@ -8,7 +8,7 @@ use subtle_encoding::{bech32::decode as bech32_decode, Error as Bech32DecodeErro
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::ADDRESS_PREFIX;
+const ADDRESS_PREFIX: &str = "wasm";
 
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about)]

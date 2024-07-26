@@ -27,8 +27,8 @@ impl SessionSetPubKey {
 
 #[cw_serde]
 pub struct RawSessionSetPubKey {
-    nonce: HexBinary,
-    pub_key: HexBinary,
+    pub nonce: HexBinary,
+    pub pub_key: HexBinary,
 }
 
 impl TryFrom<RawSessionSetPubKey> for SessionSetPubKey {

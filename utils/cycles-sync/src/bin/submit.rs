@@ -1,5 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
+    env,
     error::Error,
     fs::File,
     io::{BufReader, BufWriter, Write},
@@ -7,6 +8,7 @@ use std::{
     str::FromStr,
 };
 
+use anyhow::anyhow;
 use bip32::{
     secp256k1::{
         ecdsa::VerifyingKey,
@@ -15,27 +17,27 @@ use bip32::{
     Error as Bip32Error, Language, Mnemonic, Prefix, PrivateKey, Seed, XPrv,
 };
 use clap::Parser;
-use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
-use cosmwasm_std::HexBinary;
+use cosmrs::{
+    tendermint::account::Id as TmAccountId, tendermint::chain::Id as TmChainId, AccountId,
+};
+use cosmwasm_std::{Addr, HexBinary, StdError};
+use cw_tee_mtcs::state::{LiquiditySource, LiquiditySourceType};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use subtle_encoding::{bech32::decode as bech32_decode, Error as Bech32DecodeError};
 use tracing::{debug, Level};
 use uuid::Uuid;
 
-use crate::{
-    cli::{Cli, CliCommand},
+use cycles_sync::{
     obligato_client::{http::HttpClient, Client},
     types::{
-        Obligation, ObligatoObligation, ObligatoSetOff, RawEncryptedObligation, RawObligation,
-        RawOffset, RawSetOff, SubmitObligatioMsg, SubmitObligatoObligationsMsgInner,
+        ContractObligation, Obligation, ObligatoObligation, ObligatoSetOff, RawEncryptedObligation,
+        RawObligation, RawOffset, RawSetOff, SubmitObligationsMsg, SubmitObligationsMsgInner,
     },
     wasmd_client::{CliWasmdClient, QueryResult, WasmdClient},
 };
 
-mod cli;
-mod obligato_client;
-mod types;
-mod wasmd_client;
+use reqwest::Url;
 
 const MNEMONIC_PHRASE: &str = "clutch debate vintage foster barely primary clown leader sell manual leopard ladder wet must embody story oyster imitate cable alien six square rice wedding";
 
@@ -43,40 +45,123 @@ const ADDRESS_PREFIX: &str = "wasm";
 
 type Sha256Digest = [u8; 32];
 
-type DynError = Box<dyn Error>;
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct QueryAllSetoffsResponse {
     setoffs: Vec<(HexBinary, RawSetOff)>,
 }
 
+#[derive(Clone, Debug, Parser)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    #[arg(short, long, value_parser = wasmaddr_to_id)]
+    mtcs: AccountId,
+
+    #[arg(short, long)]
+    epoch_pk: String,
+
+    #[arg(short, long)]
+    overdraft: String,
+
+    #[clap(long)]
+    flip: bool,
+
+    #[arg(
+        short,
+        long,
+        default_value = "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"
+    )]
+    admin: String,
+}
+
 #[tokio::main]
-async fn main() -> Result<(), DynError> {
+async fn main() -> Result<(), anyhow::Error> {
     let cli = Cli::parse();
+    let mut alice = Addr::unchecked("wasm124tuy67a9dcvfgcr4gjmz60syd8ddaugl33v0n");
+    let mut bob = Addr::unchecked("wasm1ctkqmg45u85jnf5ur9796h7ze4hj6ep5y7m7l6");
+    let overdraft = Addr::unchecked(cli.overdraft);
 
-    tracing_subscriber::fmt()
-        .with_max_level(if cli.verbose {
-            Level::DEBUG
-        } else {
-            Level::ERROR
-        })
-        .with_level(true)
-        .with_writer(std::io::stderr)
-        .init();
-
-    match cli.command {
-        CliCommand::SyncObligations {
-            ref epoch_pk,
-            ref liquidity_sources,
-        } => sync_obligations(cli.clone(), epoch_pk, liquidity_sources).await?,
-        CliCommand::SyncSetOffs => sync_setoffs(cli).await?,
-        CliCommand::GetAddress { uuid } => address_from_uuid(uuid)?,
+    if cli.flip {
+        let temp = alice.clone();
+        alice = bob;
+        bob = temp;
     }
+
+    let alice_to_bob: ContractObligation = ContractObligation {
+        debtor: alice.clone(),
+        creditor: bob.clone(),
+        amount: 10,
+        salt: HexBinary::from([0; 64]),
+    };
+
+    let bob_acceptance: ContractObligation = ContractObligation {
+        debtor: bob.clone(),
+        creditor: overdraft.clone(),
+        amount: 10,
+        salt: HexBinary::from([0; 64]),
+    };
+
+    let alice_tender: ContractObligation = ContractObligation {
+        debtor: overdraft.clone(),
+        creditor: alice.clone(),
+        amount: 10,
+        salt: HexBinary::from([0; 64]),
+    };
+
+    let intents = vec![alice_to_bob, bob_acceptance, alice_tender];
+    let epoch_pk = VerifyingKey::from_sec1_bytes(&hex::decode(cli.epoch_pk).unwrap()).unwrap();
+
+    let intents_enc = encrypt_overdraft_intents(intents, &epoch_pk);
+
+    let liquidity_sources: Vec<LiquiditySource> = vec![LiquiditySource {
+        address: overdraft,
+        source_type: LiquiditySourceType::Overdraft,
+    }];
+
+    let msg = create_wasm_msg(intents_enc, liquidity_sources)?;
+
+    let node_url = Url::parse("http://143.244.186.205:26657")?;
+    let chain_id = TmChainId::from_str("testing")?;
+
+    let wasmd_client = CliWasmdClient::new(node_url);
+
+    wasmd_client.tx_execute(&cli.mtcs, &chain_id, 3000000, cli.admin.to_string(), msg)?;
 
     Ok(())
 }
 
-fn address_from_uuid(uuid: Uuid) -> Result<(), DynError> {
+pub struct OverdraftObligation {
+    pub debtor: Addr,
+    pub creditor: Addr,
+    pub amount: u64,
+}
+
+fn encrypt_overdraft_intents(
+    intents: Vec<ContractObligation>,
+    epoch_pk: &VerifyingKey,
+) -> Vec<(Sha256Digest, Vec<u8>)> {
+    let mut intents_enc = vec![];
+
+    for i in intents {
+        // serialize intent
+        let i_ser = serde_json::to_string(&i).unwrap();
+
+        // encrypt intent
+        let i_cipher = ecies::encrypt(&epoch_pk.to_sec1_bytes(), i_ser.as_bytes()).unwrap();
+
+        // hash intent
+        let i_digest: Sha256Digest = {
+            let mut hasher = Sha256::new();
+            hasher.update(i_ser);
+            hasher.finalize().into()
+        };
+
+        intents_enc.push((i_digest, i_cipher));
+    }
+
+    intents_enc
+}
+
+fn address_from_uuid(uuid: Uuid) -> anyhow::Result<()> {
     let seed = global_seed()?;
     let sk = derive_child_xprv(&seed, uuid);
     let pk_b = sk.public_key().public_key().to_sec1_bytes();
@@ -97,97 +182,10 @@ fn global_seed() -> Result<Seed, Bip32Error> {
     Ok(mnemonic.to_seed("password"))
 }
 
-async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
-    let wasmd_client = CliWasmdClient::new(cli.node);
-    let query_result: QueryResult<QueryAllSetoffsResponse> =
-        wasmd_client.query_smart(&cli.contract, json!("get_all_setoffs"))?;
-    let setoffs = query_result.data.setoffs;
-
-    // read keys
-    let keys = read_keys_file(cli.keys_file)?;
-    let obligation_user_map = read_obligation_user_map_file(cli.obligation_user_map_file)?;
-
-    let setoffs: Vec<ObligatoSetOff> = setoffs
-        .iter()
-        .flat_map(|(obligation_digest, so)| match so {
-            RawSetOff::SetOff(sos_enc) => {
-                let so_enc = sos_enc.first().unwrap();
-                let (debtor_id, creditor_id) = obligation_user_map
-                    .get(obligation_digest)
-                    .map(Clone::clone)
-                    .unwrap();
-
-                let sk = |id| keys[&id].private_key().to_bytes();
-                let so_ser = if let Ok(so) = ecies::decrypt(&sk(debtor_id), so_enc.as_slice()) {
-                    so
-                } else if let Ok(so) = ecies::decrypt(&sk(creditor_id), so_enc.as_slice()) {
-                    so
-                } else {
-                    unreachable!()
-                };
-
-                let so: RawOffset = serde_json::from_slice(&so_ser).unwrap();
-                Some(ObligatoSetOff {
-                    debtor_id,
-                    creditor_id,
-                    amount: so.set_off,
-                })
-            }
-            RawSetOff::Transfer(_) => None,
-        })
-        .collect();
-
-    debug!("setoffs: {setoffs:?}");
-
-    // send to Obligato
-    let client = HttpClient::new(cli.obligato_url, cli.obligato_key);
-    client.set_setoffs(setoffs).await?;
-
-    Ok(())
-}
-
-async fn sync_obligations(
-    cli: Cli,
-    epoch_pk: &str,
-    liquidity_sources: &[Uuid],
-) -> Result<(), DynError> {
-    let mut intents = {
-        let client = HttpClient::new(cli.obligato_url.clone(), cli.obligato_key);
-        client
-            .get_obligations()
-            .await
-            .map_err(|_| cli.obligato_url.to_string())?
-    };
-
-    let keys = derive_keys(&mut intents, liquidity_sources)?;
-    write_keys_to_file(cli.keys_file, &keys);
-
-    add_default_acceptances(&mut intents, liquidity_sources);
-
-    debug!("intents: {intents:?}");
-
-    let intents_enc = {
-        let epoch_pk = VerifyingKey::from_sec1_bytes(&hex::decode(epoch_pk).unwrap()).unwrap();
-        encrypt_intents(intents, &keys, &epoch_pk, cli.obligation_user_map_file)
-    };
-    debug!("Encrypted {} intents", intents_enc.len());
-
-    let liquidity_sources = liquidity_sources
-        .iter()
-        .map(|id| keys[id].private_key().public_key())
-        .collect();
-
-    let msg = create_wasm_msg(intents_enc, liquidity_sources)?;
-    let wasmd_client = CliWasmdClient::new(cli.node);
-    wasmd_client.tx_execute(&cli.contract, &cli.chain_id, 3000000, cli.user, msg)?;
-
-    Ok(())
-}
-
 fn create_wasm_msg(
     obligations_enc: Vec<(Sha256Digest, Vec<u8>)>,
-    liquidity_sources: Vec<VerifyingKey>,
-) -> Result<serde_json::Value, DynError> {
+    liquidity_sources: Vec<LiquiditySource>,
+) -> anyhow::Result<serde_json::Value> {
     let obligations_enc: Vec<_> = obligations_enc
         .into_iter()
         .map(|(digest, ciphertext)| {
@@ -197,13 +195,8 @@ fn create_wasm_msg(
         })
         .collect();
 
-    let liquidity_sources = liquidity_sources
-        .into_iter()
-        .map(|pk| HexBinary::from(pk.to_sec1_bytes().as_ref()))
-        .collect();
-
-    let msg = SubmitObligatioMsg {
-        submit_obligations: SubmitObligatoObligationsMsgInner {
+    let msg = SubmitObligationsMsg {
+        submit_obligations: SubmitObligationsMsgInner {
             obligations: obligations_enc,
             liquidity_sources,
         },
@@ -215,7 +208,6 @@ fn encrypt_intents(
     intents: Vec<ObligatoObligation>,
     keys: &HashMap<Uuid, XPrv>,
     epoch_pk: &VerifyingKey,
-    obligation_user_map_file: PathBuf,
 ) -> Vec<(Sha256Digest, Vec<u8>)> {
     let mut intents_enc = vec![];
     let mut intent_user_map = HashMap::new();
@@ -249,8 +241,6 @@ fn encrypt_intents(
         intent_user_map.insert(HexBinary::from(i_digest), (i.debtor_id, i.creditor_id));
     }
 
-    write_obligation_user_map_to_file(obligation_user_map_file, &intent_user_map);
-
     intents_enc
 }
 
@@ -273,7 +263,7 @@ fn add_default_acceptances(obligations: &mut Vec<ObligatoObligation>, liquidity_
     obligations.extend(acceptances.into_iter().collect::<Vec<_>>());
 }
 
-fn read_keys_file(keys_file: PathBuf) -> Result<HashMap<Uuid, XPrv>, DynError> {
+fn read_keys_file(keys_file: PathBuf) -> anyhow::Result<HashMap<Uuid, XPrv>> {
     let keys_file = File::open(keys_file)?;
     let keys_reader = BufReader::new(keys_file);
     let keys: HashMap<Uuid, String> = serde_json::from_reader(keys_reader)?;
@@ -298,7 +288,7 @@ fn write_keys_to_file(output_file: PathBuf, keys: &HashMap<Uuid, XPrv>) {
 
 fn read_obligation_user_map_file(
     file: PathBuf,
-) -> Result<HashMap<HexBinary, (Uuid, Uuid)>, DynError> {
+) -> anyhow::Result<HashMap<HexBinary, (Uuid, Uuid)>> {
     let map_file = File::open(file)?;
     let map_reader = BufReader::new(map_file);
     serde_json::from_reader(map_reader).map_err(Into::into)
@@ -322,7 +312,7 @@ fn write_obligation_user_map_to_file(
 fn derive_keys(
     obligations: &mut Vec<ObligatoObligation>,
     liquidity_sources: &[Uuid],
-) -> Result<HashMap<Uuid, XPrv>, DynError> {
+) -> anyhow::Result<HashMap<Uuid, XPrv>> {
     // Derive a BIP39 seed value using the given password
     let seed = global_seed()?;
 
@@ -409,4 +399,13 @@ mod tests {
 
         Ok(())
     }
+}
+
+fn wasmaddr_to_id(address_str: &str) -> anyhow::Result<AccountId> {
+    let (hr, _) = bech32_decode(address_str).map_err(|e| anyhow!(e))?;
+    if hr != ADDRESS_PREFIX {
+        return Err(anyhow!(hr));
+    }
+
+    Ok(address_str.parse().unwrap())
 }
