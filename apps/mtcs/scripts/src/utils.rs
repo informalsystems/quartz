@@ -1,11 +1,14 @@
+use std::{path::Path, process::Command, time::Duration};
+
 use anyhow::anyhow;
 use cosmrs::AccountId;
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use subtle_encoding::bech32::decode as bech32_decode;
-use std::{path::Path, process::Command, time::Duration};
-use tendermint_rpc::{error::ErrorDetail, Client, HttpClient, endpoint::tx::Response as TmTxResponse};
 use tendermint::Hash;
+use tendermint_rpc::{
+    endpoint::tx::Response as TmTxResponse, error::ErrorDetail, Client, HttpClient,
+};
 
 pub fn wasmaddr_to_id(address_str: &str) -> anyhow::Result<AccountId> {
     let (hr, _) = bech32_decode(address_str).map_err(|e| anyhow!(e))?;
@@ -52,7 +55,7 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
         match client.tx(tx, false).await {
             Ok(resp) => {
                 return Ok(resp);
-            }, 
+            }
             Err(e) => {
                 // If error, make sure it is only because of a not yet committed tx
                 match e.0 {

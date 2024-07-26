@@ -1,16 +1,21 @@
-use std::{env::{self, current_dir}, str::FromStr};
+use std::{
+    env::{self, current_dir},
+    str::FromStr,
+};
 
 use clap::Parser;
+use cosmrs::tendermint::chain::Id as ChainId;
+use cw_tee_mtcs::msg::InstantiateMsg as MtcsInstantiateMsg;
+use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use quartz_common::contract::msg::RawInstantiateMsg;
 use reqwest::Url;
-use cosmrs::tendermint::chain::Id as ChainId;
+use scripts::{
+    types::{Log, WasmdTxResponse},
+    utils::{block_tx_commit, run_relay},
+};
+use serde_json::json;
 use tendermint::Hash;
 use tendermint_rpc::HttpClient;
-use serde_json::json;
-
-use scripts::{types::{WasmdTxResponse, Log}, utils::{run_relay, block_tx_commit}};
-use cw_tee_mtcs::msg::{InstantiateMsg as MtcsInstantiateMsg};
-use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 
 #[derive(Clone, Debug, Parser)]
 #[command(version, about, long_about = None)]
@@ -34,40 +39,39 @@ async fn main() -> Result<(), anyhow::Error> {
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
     println!("\n🚀 Deploying MTCS Contract\n");
-    let contract_path = base_path.join("quartz-app/contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm");
+    let contract_path = base_path.join(
+        "quartz-app/contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm",
+    );
     // TODO: uncertain about the path -> string conversion
-    let deploy_output: WasmdTxResponse = serde_json::from_str(
-        &wasmd_client.deploy(
-            &ChainId::from_str("testing")?, 
-            String::from("wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"), 
-            contract_path.as_path().to_string_lossy()
-        )?
-    )?;
-    
-    let tx_hash = Hash::from_str(&deploy_output.txhash).expect("Invalid hex string for transaction hash");
+    let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
+        &ChainId::from_str("testing")?,
+        String::from("wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"),
+        contract_path.as_path().to_string_lossy(),
+    )?)?;
+
+    let tx_hash =
+        Hash::from_str(&deploy_output.txhash).expect("Invalid hex string for transaction hash");
     let res = block_tx_commit(&tmrpc_client, tx_hash).await?;
 
     let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-    let code_id: usize = log[0].events[1].attributes[1].value.parse()?; 
+    let code_id: usize = log[0].events[1].attributes[1].value.parse()?;
 
     println!("\n🚀 Instantiating MTCS Contract\n");
 
-    let deploy_output: WasmdTxResponse = serde_json::from_str(
-        &wasmd_client.init(
-            &ChainId::from_str("testing")?, 
-            String::from("wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"), 
-            code_id,
-            json!(init_msg),
-            format!("MTCS Contract V{}", code_id)
-        )?
-    )?;
+    let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.init(
+        &ChainId::from_str("testing")?,
+        String::from("wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"),
+        code_id,
+        json!(init_msg),
+        format!("MTCS Contract V{}", code_id),
+    )?)?;
 
-    let tx_hash = Hash::from_str(&deploy_output.txhash).expect("Invalid hex string for transaction hash");
+    let tx_hash =
+        Hash::from_str(&deploy_output.txhash).expect("Invalid hex string for transaction hash");
     let res = block_tx_commit(&tmrpc_client, tx_hash).await?;
     let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-    let contract_addr: &String = &log[0].events[1].attributes[0].value; 
+    let contract_addr: &String = &log[0].events[1].attributes[0].value;
 
-    
     println!("\n🚀 Successfully deployed and instantiated contract!");
     println!("🆔 Code ID: {}", code_id);
     println!("📌 Contract Address: {}", contract_addr);
@@ -76,9 +80,4 @@ async fn main() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-
-
-
-
-
-    //RES=$($CMD tx wasm instantiate "$CODE_ID" "$INSTANTIATE_MSG" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin --output json)
+//RES=$($CMD tx wasm instantiate "$CODE_ID" "$INSTANTIATE_MSG" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin --output json)

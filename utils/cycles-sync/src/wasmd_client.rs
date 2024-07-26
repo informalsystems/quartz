@@ -47,7 +47,7 @@ pub trait WasmdClient {
         sender: String,
         code_id: usize,
         init_msg: M,
-        label: String
+        label: String,
     ) -> Result<String, Self::Error>;
 }
 
@@ -149,7 +149,7 @@ impl WasmdClient for CliWasmdClient {
     }
 
     fn deploy<M: ToString>(
-    &self,
+        &self,
         chain_id: &Id,
         sender: String,
         wasm_path: M,
@@ -165,7 +165,6 @@ impl WasmdClient for CliWasmdClient {
             .args(&["--gas-adjustment", "1.3"])
             .args(&["-o", "json"])
             .arg("-y");
-    
 
         let output = command.output()?;
 
@@ -181,9 +180,9 @@ impl WasmdClient for CliWasmdClient {
         &self,
         chain_id: &Id,
         sender: String,
-        code_id: usize, 
+        code_id: usize,
         init_msg: M,
-        label: String
+        label: String,
     ) -> Result<String, Self::Error> {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd

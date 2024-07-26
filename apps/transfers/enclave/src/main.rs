@@ -29,7 +29,7 @@ use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{Attestor, DefaultAttestor},
-        server::CoreService,    
+        server::CoreService,
     },
     proto::core_server::CoreServer,
 };

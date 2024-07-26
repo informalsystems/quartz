@@ -55,15 +55,15 @@ pub async fn proof_parse_with_defaults(
         chain_id,
         primary: primary.parse()?,
         witnesses: witnesses.parse()?,
-        trusted_height: trusted_height,
-        trusted_hash: trusted_hash,
+        trusted_height,
+        trusted_hash,
         trust_threshold: TrustThreshold::TWO_THIRDS, // default
         trusting_period: 1209600u64,                 // default
         max_clock_drift: 5u64,                       // default
         max_block_lag: 5u64,                         // default
         trace_file: Some(trace_file.parse()?),
         verbose: Verbosity { verbose },
-        contract_address: contract_address,
+        contract_address,
         storage_key: storage_key.to_owned(),
     })
     .await
@@ -97,7 +97,7 @@ pub async fn proof(
         .init();
 
     let options = Options {
-        trust_threshold: trust_threshold,
+        trust_threshold,
         trusting_period: Duration::from_secs(trusting_period),
         clock_drift: Duration::from_secs(max_clock_drift),
     };

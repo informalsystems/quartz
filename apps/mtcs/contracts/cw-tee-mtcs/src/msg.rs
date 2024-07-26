@@ -63,9 +63,8 @@ pub mod execute {
     use quartz_common::contract::{msg::execute::attested::HasUserData, state::UserData};
     use sha2::{Digest, Sha256};
 
-    use crate::state::LiquiditySource;
-
     use super::*;
+    use crate::state::LiquiditySource;
 
     #[cw_serde]
     pub struct FaucetMintMsg {

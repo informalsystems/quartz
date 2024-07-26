@@ -1,23 +1,23 @@
-use anyhow::anyhow;
-use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
-use clap::Parser;
-use cosmrs::AccountId;
-use futures_util::stream::StreamExt;
-use reqwest::Url;
-use serde::Serialize;
-use serde_json::json;
-use std::{env, fs::File, io::Read, path::Path, str::FromStr};
-use tendermint::{block::Height, Hash};
-use tendermint_rpc::query::EventType;
-use tendermint_rpc::{HttpClient, SubscriptionClient, WebSocketClient};
+use std::{env, env::current_dir, fs::File, io::Read, path::Path, str::FromStr};
 
+use anyhow::anyhow;
+use clap::Parser;
+use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
+use cosmrs::AccountId;
 use cw_tee_mtcs::msg::ExecuteMsg as MtcsExecuteMsg;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
+use futures_util::stream::StreamExt;
 use quartz_common::contract::prelude::QuartzExecuteMsg;
-use scripts::{types::WasmdTxResponse, utils::{wasmaddr_to_id, run_relay, block_tx_commit}};
+use reqwest::Url;
+use scripts::{
+    types::WasmdTxResponse,
+    utils::{block_tx_commit, run_relay, wasmaddr_to_id},
+};
+use serde::Serialize;
+use serde_json::json;
+use tendermint::{block::Height, Hash};
+use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tm_prover::prover::proof_parse_with_defaults;
-
-use std::env::current_dir;
 
 #[derive(Serialize)]
 struct Message<'a> {

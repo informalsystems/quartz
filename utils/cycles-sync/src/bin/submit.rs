@@ -18,16 +18,11 @@ use bip32::{
 };
 use clap::Parser;
 use cosmrs::{
-    tendermint::account::Id as TmAccountId, tendermint::chain::Id as TmChainId, AccountId,
+    tendermint::{account::Id as TmAccountId, chain::Id as TmChainId},
+    AccountId,
 };
 use cosmwasm_std::{Addr, HexBinary, StdError};
 use cw_tee_mtcs::state::{LiquiditySource, LiquiditySourceType};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use subtle_encoding::{bech32::decode as bech32_decode, Error as Bech32DecodeError};
-use tracing::{debug, Level};
-use uuid::Uuid;
-
 use cycles_sync::{
     obligato_client::{http::HttpClient, Client},
     types::{
@@ -36,8 +31,12 @@ use cycles_sync::{
     },
     wasmd_client::{CliWasmdClient, QueryResult, WasmdClient},
 };
-
 use reqwest::Url;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use subtle_encoding::{bech32::decode as bech32_decode, Error as Bech32DecodeError};
+use tracing::{debug, Level};
+use uuid::Uuid;
 
 const MNEMONIC_PHRASE: &str = "clutch debate vintage foster barely primary clown leader sell manual leopard ladder wet must embody story oyster imitate cable alien six square rice wedding";
 

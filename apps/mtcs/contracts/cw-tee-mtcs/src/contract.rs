@@ -4,7 +4,6 @@ use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
     Uint128, Uint64,
 };
-
 use cw2::set_contract_version;
 use cw20_base::contract::query_balance as cw20_query_balance;
 use quartz_common::contract::{handler::RawHandler, state::EPOCH_COUNTER};
@@ -12,7 +11,10 @@ use quartz_common::contract::{handler::RawHandler, state::EPOCH_COUNTER};
 use crate::{
     error::ContractError,
     msg::{
-        execute::{Cw20Transfer, FaucetMintMsg, SetLiquiditySourcesMsg, SubmitObligationMsg, SubmitObligationsMsg, SubmitSetoffsMsg},
+        execute::{
+            Cw20Transfer, FaucetMintMsg, SetLiquiditySourcesMsg, SubmitObligationMsg,
+            SubmitObligationsMsg, SubmitSetoffsMsg,
+        },
         ExecuteMsg, InstantiateMsg, QueryMsg,
     },
     state::{
@@ -68,7 +70,7 @@ pub fn execute(
         ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
         ExecuteMsg::FaucetMint(FaucetMintMsg { recipient, amount }) => {
             execute::faucet_mint(deps, env, recipient, amount)
-        },
+        }
         ExecuteMsg::Transfer(Cw20Transfer { recipient, amount }) => Ok(
             cw20_base::contract::execute_transfer(deps, env, info, recipient, amount.into())?,
         ),
@@ -105,13 +107,14 @@ pub mod execute {
     use std::{collections::BTreeMap, ops::DerefMut};
 
     use cosmwasm_std::{
-        to_json_binary, Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult, Storage, SubMsg, Uint128, Uint64, WasmMsg
+        to_json_binary, Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult, Storage,
+        SubMsg, Uint128, Uint64, WasmMsg,
     };
     use cw20_base::contract::{execute_burn, execute_mint};
     use quartz_common::contract::state::{Hash, EPOCH_COUNTER};
+
     // use mtcs_overdraft::msg::ExecuteMsg as OverdraftExecuteMsg;
     use crate::msg::OverdraftExecuteMsg; // TODO: change when dependency issue fiexed
-
     use crate::{
         msg::execute::EscrowExecuteMsg,
         state::{
@@ -152,8 +155,8 @@ pub mod execute {
         let _: Hash = digest.to_array()?;
 
         // store the `(digest, ciphertext)` tuple
-        let obligs_key = ObligationsItem::new_dyn(
-                current_epoch_key(OBLIGATIONS_KEY, deps.storage)?);
+        let obligs_key =
+            ObligationsItem::new_dyn(current_epoch_key(OBLIGATIONS_KEY, deps.storage)?);
 
         let mut epoch_obligation = obligs_key.may_load(deps.storage)?.unwrap_or_default();
 
@@ -223,12 +226,12 @@ pub mod execute {
                         // Payer is a liquidity source
                         let msg = create_transfer_message(&source, &t, true)?;
                         messages.push(msg);
-                    },
+                    }
                     (None, Some(source)) => {
                         // Payee is a liquidity source
                         let msg = create_transfer_message(&source, &t, false)?;
                         messages.push(msg);
-                    },
+                    }
                     (_, _) => {
                         // As of now, transfers should only be between a user and liquidity source.
                         return Err(ContractError::LiquiditySourceNotFound {});
@@ -348,8 +351,8 @@ pub mod query {
     use crate::{
         msg::{GetAllSetoffsResponse, GetLiquiditySourcesResponse},
         state::{
-            current_epoch_key, epoch_key, previous_epoch_key, SetoffsItem,
-            LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, SETOFFS_KEY,
+            current_epoch_key, epoch_key, previous_epoch_key, SetoffsItem, LIQUIDITY_SOURCES,
+            LIQUIDITY_SOURCES_KEY, SETOFFS_KEY,
         },
     };
 

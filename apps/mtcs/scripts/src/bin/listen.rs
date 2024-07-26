@@ -1,9 +1,30 @@
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    env,
+    process::Command,
+    str::FromStr,
+};
+
 use anyhow::anyhow;
 use base64::prelude::*;
 use clap::Parser;
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Binary, HexBinary, Uint64};
+use cw_tee_mtcs::{
+    msg::{
+        execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
+        QueryMsg::GetLiquiditySources,
+    },
+    state::LiquiditySource,
+};
+use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use futures_util::stream::StreamExt;
+use mtcs_enclave::proto::{clearing_client::ClearingClient, RunClearingRequest};
+use mtcs_overdraft::msg::{QueryMembersResp, QueryMsg::DumpMembers};
+use quartz_common::contract::msg::execute::attested::{
+    EpidAttestation, RawAttested, RawAttestedMsgSansHandler,
+};
+use quartz_tee_ra::{intel_sgx::epid::types::ReportBody, IASReport};
 use reqwest::Url;
 use scripts::utils::wasmaddr_to_id;
 use serde::{Deserialize, Serialize};
@@ -12,22 +33,11 @@ use tendermint_rpc::{
     query::{EventType, Query},
     SubscriptionClient, WebSocketClient,
 };
-use tokio::{fs::{self, File}, io::AsyncWriteExt};
+use tokio::{
+    fs::{self, File},
+    io::AsyncWriteExt,
+};
 use tonic::Request;
-
-use cw_tee_mtcs::{
-    msg::{AttestedMsg, execute::{SubmitSetoffsMsg}, ExecuteMsg, GetLiquiditySourcesResponse, QueryMsg::GetLiquiditySources},
-    state::LiquiditySource,
-};
-use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
-use mtcs_overdraft::msg::{QueryMembersResp, QueryMsg::DumpMembers};
-use quartz_tee_ra::{intel_sgx::epid::types::ReportBody, IASReport};
-use quartz_common::contract::msg::execute::attested::{EpidAttestation, RawAttested, RawAttestedMsgSansHandler};
-use mtcs_enclave::proto::{clearing_client::ClearingClient, RunClearingRequest};
-
-use std::{
-    collections::{BTreeMap, BTreeSet}, env, process::Command, str::FromStr
-};
 
 // TODO: import this from enclave or somewhere shared
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -60,7 +70,7 @@ struct Cli {
     rpc_addr: String,
 
     #[arg(short, long, default_value = "dangush")]
-    user: String // The filesys user for gramine filepaths. TODO: improve this 
+    user: String, // The filesys user for gramine filepaths. TODO: improve this
 }
 
 fn default_rpc_addr() -> String {
@@ -88,7 +98,7 @@ async fn main() -> Result<(), anyhow::Error> {
             cli.sender.clone(),
             format!("{}:{}", cli.rpc_addr, cli.port),
             &cli.node_url,
-            &cli.user
+            &cli.user,
         )
         .await
         {
@@ -109,7 +119,7 @@ async fn handler(
     sender: String,
     rpc_addr: String,
     node_url: &str,
-    user: &str, 
+    user: &str,
 ) -> Result<(), anyhow::Error> {
     let chain_id = &ChainId::from_str("testing")?;
     let httpurl = Url::parse(&format!("http://{}", node_url))?;
@@ -122,19 +132,27 @@ async fn handler(
     let request = Request::new(RunClearingRequest {
         message: json!(clearing_contents).to_string(),
     });
-    
+
     let mut client = ClearingClient::connect(rpc_addr).await?;
-    let clearing_response = client.run(request).await.map_err(|e| anyhow!("Failed to communicate to relayer. {e}"))?.into_inner();
-    
+    let clearing_response = client
+        .run(request)
+        .await
+        .map_err(|e| anyhow!("Failed to communicate to relayer. {e}"))?
+        .into_inner();
+
     // Extract json from the Protobuf message
-    let quote: RawAttested<SubmitSetoffsMsg, Vec<u8>> = serde_json::from_str(&clearing_response.message)
-                                        .map_err(|e| anyhow!("Error serializing SubmitSetoffs: {}", e))?;
-    
+    let quote: RawAttested<SubmitSetoffsMsg, Vec<u8>> =
+        serde_json::from_str(&clearing_response.message)
+            .map_err(|e| anyhow!("Error serializing SubmitSetoffs: {}", e))?;
+
     // Get IAS report and build attested message
     let attestation = gramine_ias_request(quote.attestation, &user).await?;
     let msg = RawAttestedMsgSansHandler(quote.msg);
 
-    let setoffs_msg = ExecuteMsg::SubmitSetoffs::<EpidAttestation>(AttestedMsg {msg, attestation: attestation.into()});
+    let setoffs_msg = ExecuteMsg::SubmitSetoffs::<EpidAttestation>(AttestedMsg {
+        msg,
+        attestation: attestation.into(),
+    });
 
     // Send setoffs to mtcs contract on chain
     let output =
@@ -175,7 +193,7 @@ async fn query_chain(
         serde_json::from_slice(&decoded_obligs).unwrap_or_default();
     // println!("obligations \n {:?}", obligations_map);
     // TODO: replace with tracer log here
-    
+
     // Get liquidity sources
     let resp: QueryResult<GetLiquiditySourcesResponse> = wasmd_client
         .query_smart(
@@ -197,7 +215,10 @@ async fn query_chain(
 }
 
 // Request the IAS report for EPID attestations
-async fn gramine_ias_request(attested_msg: Vec<u8>, user: &str) -> Result<EpidAttestation, anyhow::Error> {
+async fn gramine_ias_request(
+    attested_msg: Vec<u8>,
+    user: &str,
+) -> Result<EpidAttestation, anyhow::Error> {
     let ias_api_key = String::from("669244b3e6364b5888289a11d2a1726d");
     let ra_client_spid = String::from("51CAF5A48B450D624AEFE3286D314894");
     let quote_file = format!("/tmp/{}_test.quote", user);
@@ -206,7 +227,9 @@ async fn gramine_ias_request(attested_msg: Vec<u8>, user: &str) -> Result<EpidAt
 
     // Write the binary data to a file
     let mut file = File::create(&quote_file).await?;
-    file.write_all(&attested_msg).await.map_err(|e| anyhow!("Couldn't write to file. {e}"))?;
+    file.write_all(&attested_msg)
+        .await
+        .map_err(|e| anyhow!("Couldn't write to file. {e}"))?;
 
     let mut gramine = Command::new("gramine-sgx-ias-request");
     let command = gramine
@@ -226,10 +249,5 @@ async fn gramine_ias_request(attested_msg: Vec<u8>, user: &str) -> Result<EpidAt
     let report_sig_str = fs::read_to_string(report_sig_file).await?.replace('\r', "");
     let report_sig: Binary = Binary::from_base64(report_sig_str.trim())?;
 
-    Ok(EpidAttestation::new(
-        IASReport {
-            report,
-            report_sig
-        }
-    ))
+    Ok(EpidAttestation::new(IASReport { report, report_sig }))
 }

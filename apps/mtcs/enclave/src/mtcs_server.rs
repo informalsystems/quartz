@@ -16,7 +16,10 @@ use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
-use quartz_common::{contract::{msg::execute::attested::RawAttested, state::Config}, enclave::{attestor::Attestor, server::ProofOfPublication}};
+use quartz_common::{
+    contract::{msg::execute::attested::RawAttested, state::Config},
+    enclave::{attestor::Attestor, server::ProofOfPublication},
+};
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
@@ -110,7 +113,12 @@ fn into_settle_offs(
     println!("\nliq sources: {:?}", liquidity_sources);
 
     // TODO: temporary patch, fix issue with liquidity sources becoming type External
-    if liquidity_sources.iter().map(|lqs| lqs.address.clone()).collect::<Vec<Addr>>().contains(&&so.debtor.address) {
+    if liquidity_sources
+        .iter()
+        .map(|lqs| lqs.address.clone())
+        .collect::<Vec<Addr>>()
+        .contains(&&so.debtor.address)
+    {
         // A setoff on a tender should result in the creditor's (i.e. the tender receiver) balance
         // decreasing by the setoff amount
         SettleOff::Transfer(Transfer {
@@ -119,7 +127,12 @@ fn into_settle_offs(
             // TODO: Include denominations
             amount: ("peppicoin".to_owned(), Uint128::from(so.set_off as u128)),
         })
-    } else if liquidity_sources.iter().map(|lqs| lqs.address.clone()).collect::<Vec<Addr>>().contains(&&so.creditor.address) {
+    } else if liquidity_sources
+        .iter()
+        .map(|lqs| lqs.address.clone())
+        .collect::<Vec<Addr>>()
+        .contains(&&so.creditor.address)
+    {
         // A setoff on an acceptance should result in the debtor's (i.e. the acceptance initiator)
         // balance increasing by the setoff amount
         SettleOff::Transfer(Transfer {
