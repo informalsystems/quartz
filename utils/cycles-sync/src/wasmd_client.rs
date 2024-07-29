@@ -107,7 +107,7 @@ impl WasmdClient for CliWasmdClient {
             .args(["--node", self.url.as_str()])
             .args(["query", "wasm"])
             .args(["contract-state", "raw", contract.as_ref()])
-            .arg(query.to_string())
+            .arg(&query)
             .args(["--output", "json"]);
 
         let output = command.output()?;
@@ -145,7 +145,7 @@ impl WasmdClient for CliWasmdClient {
         }
 
         // TODO: find the rust type for the tx output and return that
-        Ok(format!("{}", String::from_utf8(output.stdout)?))
+        Ok((String::from_utf8(output.stdout)?).to_string())
     }
 
     fn deploy<M: ToString>(
@@ -156,14 +156,14 @@ impl WasmdClient for CliWasmdClient {
     ) -> Result<String, Self::Error> {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd
-            .args(&["--node", self.url.as_str()])
-            .args(&["tx", "wasm", "store", &wasm_path.to_string()])
-            .args(&["--from", sender.as_ref()])
-            .args(&["--chain-id", chain_id.as_ref()])
-            .args(&["--gas-prices", "0.0025ucosm"])
-            .args(&["--gas", "auto"])
-            .args(&["--gas-adjustment", "1.3"])
-            .args(&["-o", "json"])
+            .args(["--node", self.url.as_str()])
+            .args(["tx", "wasm", "store", &wasm_path.to_string()])
+            .args(["--from", sender.as_ref()])
+            .args(["--chain-id", chain_id.as_ref()])
+            .args(["--gas-prices", "0.0025ucosm"])
+            .args(["--gas", "auto"])
+            .args(["--gas-adjustment", "1.3"])
+            .args(["-o", "json"])
             .arg("-y");
 
         let output = command.output()?;
@@ -173,7 +173,7 @@ impl WasmdClient for CliWasmdClient {
         }
 
         // TODO: find the rust type for the tx output and return that
-        Ok(format!("{}", String::from_utf8(output.stdout)?))
+        Ok((String::from_utf8(output.stdout)?).to_string())
     }
 
     fn init<M: ToString>(
@@ -186,17 +186,17 @@ impl WasmdClient for CliWasmdClient {
     ) -> Result<String, Self::Error> {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd
-            .args(&["--node", self.url.as_str()])
-            .args(&["tx", "wasm", "instantiate"])
-            .args(&[&code_id.to_string(), &init_msg.to_string()])
-            .args(&["--label", label.as_ref()])
-            .args(&["--from", sender.as_ref()])
+            .args(["--node", self.url.as_str()])
+            .args(["tx", "wasm", "instantiate"])
+            .args([&code_id.to_string(), &init_msg.to_string()])
+            .args(["--label", label.as_ref()])
+            .args(["--from", sender.as_ref()])
             .arg("--no-admin")
-            .args(&["--chain-id", chain_id.as_ref()])
-            .args(&["--gas-prices", "0.0025ucosm"])
-            .args(&["--gas", "auto"])
-            .args(&["--gas-adjustment", "1.3"])
-            .args(&["-o", "json"])
+            .args(["--chain-id", chain_id.as_ref()])
+            .args(["--gas-prices", "0.0025ucosm"])
+            .args(["--gas", "auto"])
+            .args(["--gas-adjustment", "1.3"])
+            .args(["-o", "json"])
             .arg("-y");
 
         let output = command.output()?;
@@ -206,6 +206,6 @@ impl WasmdClient for CliWasmdClient {
         }
 
         // TODO: find the rust type for the tx output and return that
-        Ok(format!("{}", String::from_utf8(output.stdout)?))
+        Ok((String::from_utf8(output.stdout)?).to_string())
     }
 }

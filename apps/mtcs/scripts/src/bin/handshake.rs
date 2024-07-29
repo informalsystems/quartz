@@ -109,18 +109,17 @@ async fn main() -> Result<(), anyhow::Error> {
     let proof_path = current_dir()?.join("../../../packages/tm-prover/light-client-proof.json");
     println!("Proof path: {:?}", proof_path.to_str());
 
-    // run tm prover cargo binary with trusted hash and height
-    // TODO: decouple logic in tm_prover
-    let mut config = TmProverConfig::default();
-    config.chain_id = "testing".parse()?;
-    config.primary = httpurl.as_str().parse()?;
-    config.witnesses = httpurl.as_str().parse()?;
-    config.trusted_height = trusted_height;
-    config.trusted_hash = trusted_hash;
-    config.trace_file = Some(proof_path.clone());
-    config.verbose = "1".parse()?;
-    config.contract_address = cli.contract.clone();
-    config.storage_key = "quartz_session".to_owned();
+    let config = TmProverConfig {
+        primary: httpurl.as_str().parse()?,
+        witnesses: httpurl.as_str().parse()?,
+        trusted_height,
+        trusted_hash,
+        trace_file: Some(proof_path.clone()),
+        verbose: "1".parse()?,
+        contract_address: cli.contract.clone(),
+        storage_key: "quartz_session".to_string(),
+        ..Default::default()
+    };
 
     if let Err(report) = prove(config).await {
         return Err(anyhow!("Tendermint prover failed. Report: {}", report));
