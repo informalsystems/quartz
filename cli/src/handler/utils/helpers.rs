@@ -1,7 +1,7 @@
 use std::{path::Path, process::Command, time::Duration};
 
 use anyhow::anyhow;
-use cosmrs::AccountId;
+use cosmrs::{AccountId, ErrorReport};
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use subtle_encoding::bech32::decode as bech32_decode;
@@ -10,13 +10,13 @@ use tendermint_rpc::{
     endpoint::tx::Response as TmTxResponse, error::ErrorDetail, Client, HttpClient,
 };
 
-pub fn wasmaddr_to_id(address_str: &str) -> anyhow::Result<AccountId> {
+pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
     let (hr, _) = bech32_decode(address_str).map_err(|e| anyhow!(e))?;
     if hr != "wasm" {
         return Err(anyhow!(hr));
     }
 
-    Ok(address_str.parse().unwrap())
+    address_str.parse().map_err(|e: ErrorReport| anyhow!(e))
 }
 
 // TODO: move wrapping result with "quartz:" struct into here
@@ -48,7 +48,7 @@ pub fn run_relay<R: DeserializeOwned>(
 
 // Note: time until tx commit is empiraclly 800ms on DO wasmd chain.
 pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxResponse, anyhow::Error> {
-    let re = Regex::new(r"tx \([A-F0-9]{64}\) not found").unwrap();
+    let re = Regex::new(r"tx \([A-F0-9]{64}\) not found")?;
 
     tokio::time::sleep(Duration::from_millis(400)).await;
     loop {

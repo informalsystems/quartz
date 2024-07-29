@@ -76,7 +76,7 @@ pub enum Command {
         /// Port enclave is listening on
         #[arg(short, long, default_value = "11090")]
         port: u16,
-    
+
         #[arg(
             short,
             long,
@@ -86,16 +86,16 @@ pub enum Command {
 
         #[arg(long, default_value = "testing")]
         chain_id: ChainId,
-    
+
         #[clap(long, default_value = "143.244.186.205:26657")]
         node_url: String,
-    
+
         #[clap(long, default_value_t = default_rpc_addr())]
         rpc_addr: String,
-    
+
         #[clap(long)]
         path: Option<PathBuf>,
-    }
+    },
 }
 
 fn default_rpc_addr() -> String {

@@ -12,7 +12,7 @@ pub struct HandshakeRequest {
     pub chain_id: ChainId,
     pub node_url: String,
     pub rpc_addr: String,
-    pub path: PathBuf
+    pub path: PathBuf,
 }
 
 // TODO: Would I ever need this?

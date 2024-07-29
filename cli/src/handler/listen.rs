@@ -1,9 +1,7 @@
 use async_trait::async_trait;
 use tracing::trace;
 
-use std::{
-    collections::BTreeMap, path::Path, process::Command
-};
+use std::{collections::BTreeMap, path::Path, process::Command};
 
 use anyhow::anyhow;
 use base64::prelude::*;
@@ -15,7 +13,10 @@ use cw_tee_mtcs::msg::{
 };
 use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use futures_util::stream::StreamExt;
-use mtcs_enclave::{proto::{clearing_client::ClearingClient, RunClearingRequest}, types::RunClearingMessage};
+use mtcs_enclave::{
+    proto::{clearing_client::ClearingClient, RunClearingRequest},
+    types::RunClearingMessage,
+};
 use quartz_common::contract::msg::execute::attested::{
     EpidAttestation, RawAttested, RawAttestedMsgSansHandler,
 };
@@ -33,10 +34,7 @@ use tokio::{
 use tonic::Request;
 
 use crate::{
-    cli::Verbosity,
-    error::Error,
-    handler::Handler,
-    request::listen::ListenRequest,
+    cli::Verbosity, error::Error, handler::Handler, request::listen::ListenRequest,
     response::listen::ListenResponse,
 };
 
@@ -52,20 +50,19 @@ impl Handler for ListenRequest {
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-        Ok(Self::Response::from(ListenResponse::default()))
+        Ok(ListenResponse)
     }
 }
 
 async fn listen(args: ListenRequest) -> Result<(), anyhow::Error> {
     // Subscribe to "init_clearing" events
     let wsurl = format!("ws://{}/websocket", args.node_url);
-    let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
+    let (client, driver) = WebSocketClient::new(wsurl.as_str()).await?;
     let driver_handle = tokio::spawn(async move { driver.run().await });
 
     let mut subs = client
         .subscribe(Query::from(EventType::Tx).and_contains("wasm.action", "init_clearing"))
-        .await
-        .unwrap();
+        .await?;
 
     while subs.next().await.is_some() {
         // On init_clearing, run process
@@ -85,8 +82,8 @@ async fn listen(args: ListenRequest) -> Result<(), anyhow::Error> {
 
     // Close connection
     // Await the driver's termination to ensure proper connection closure.
-    client.close().unwrap();
-    let _ = driver_handle.await.unwrap();
+    client.close()?;
+    let _ = driver_handle.await?;
 
     Ok(())
 }
@@ -197,9 +194,9 @@ async fn gramine_ias_request(
 ) -> Result<EpidAttestation, anyhow::Error> {
     let ias_api_key = String::from("669244b3e6364b5888289a11d2a1726d");
     let ra_client_spid = String::from("51CAF5A48B450D624AEFE3286D314894");
-    let quote_file = path.join("/tmp/test.quote");
-    let report_file = path.join("/tmp/datareport");
-    let report_sig_file = path.join("/tmp/datareportsig");
+    let quote_file = path.join("tmp/test.quote");
+    let report_file = path.join("tmp/datareport");
+    let report_sig_file = path.join("tmp/datareportsig");
 
     // Write the binary data to a file
     let mut file = File::create(&quote_file).await?;

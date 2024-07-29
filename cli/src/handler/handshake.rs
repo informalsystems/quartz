@@ -37,7 +37,7 @@ impl Handler for HandshakeRequest {
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-        Ok(HandshakeResponse::default())
+        Ok(HandshakeResponse)
     }
 }
 
@@ -50,7 +50,7 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
     let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
     let wsurl = format!("ws://{}/websocket", args.node_url);
 
-    let tmrpc_client = HttpClient::new(httpurl.as_str()).unwrap();
+    let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
     // TODO: dir logic issue #125
@@ -142,18 +142,18 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
 }
 
 async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {
-    let (client, driver) = WebSocketClient::new(wsurl).await.unwrap();
+    let (client, driver) = WebSocketClient::new(wsurl).await?;
 
     let driver_handle = tokio::spawn(async move { driver.run().await });
 
     // Subscription functionality
-    let mut subs = client.subscribe(EventType::NewBlock.into()).await.unwrap();
+    let mut subs = client.subscribe(EventType::NewBlock.into()).await?;
 
     // Wait 2 NewBlock events
     let mut ev_count = 5_i32;
 
     while let Some(res) = subs.next().await {
-        let ev = res.unwrap();
+        let ev = res?;
         println!("Got event: {:?}", ev);
         ev_count -= 1;
         if ev_count < 0 {
@@ -162,9 +162,9 @@ async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {
     }
 
     // Signal to the driver to terminate.
-    client.close().unwrap();
+    client.close()?;
     // Await the driver's termination to ensure proper connection closure.
-    let _ = driver_handle.await.unwrap();
+    let _ = driver_handle.await?;
 
     Ok(())
 }

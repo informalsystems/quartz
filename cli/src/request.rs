@@ -30,7 +30,7 @@ impl TryFrom<Command> for Request {
                 chain_id,
                 node_url,
                 rpc_addr,
-                path
+                path,
             } => Ok(Request::Handshake(HandshakeRequest {
                 contract,
                 port,
@@ -38,7 +38,7 @@ impl TryFrom<Command> for Request {
                 chain_id,
                 node_url,
                 rpc_addr,
-                path: Self::path_checked(path)?
+                path: Self::path_checked(path)?,
             })),
             Command::Listen {
                 contract,
@@ -47,7 +47,7 @@ impl TryFrom<Command> for Request {
                 chain_id,
                 node_url,
                 rpc_addr,
-                path
+                path,
             } => Ok(Request::Listen(ListenRequest {
                 contract,
                 port,
@@ -55,7 +55,7 @@ impl TryFrom<Command> for Request {
                 chain_id,
                 node_url,
                 rpc_addr,
-                path: Self::path_checked(path)?
+                path: Self::path_checked(path)?,
             })),
         }
     }
