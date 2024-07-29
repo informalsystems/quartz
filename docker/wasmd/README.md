@@ -51,6 +51,43 @@ make
 
 This will, by default, build a Docker image tagged `informaldev/wasmd:v0.44.0`.
 
+## Transacting on behalf of the accounts
+
+The accounts listed in the [`accounts`](./accounts/) folder are all already
+imported into the `test` keyring within the Docker image. Once the container is
+running, you can run the following to list them:
+
+```bash
+# Assumes the container is called "wasmd"
+docker exec -it wasmd \
+  wasmd keys list --keyring-backend=test
+```
+
+## Importing the account keys
+
+As previously mentioned, the [`accounts`](./accounts/) folder contains all of
+the necessary material to construct the public/private keypairs of the accounts.
+
+A convenient helper target is provided in [`Makefile`](./Makefile) to facilitate
+importing of these accounts into a local `wasmd` configuration (i.e. on your
+host machine, outside of the Docker container). This will allow you to transact
+on behalf of any of those accounts from outside of the Docker container.
+
+**NB**: For this to work, you will need the same version of `wasmd` installed on
+your local machine as what is built into the `wasmd` Docker image.
+
+```bash
+make import-accounts
+```
+
+To check that the accounts have been imported correctly, on your host machine
+run:
+
+```bash
+# List all keys available in your local wasmd configuration
+wasmd keys list --keyring-backend=test
+```
+
 ## Querying accounts in the container
 
 To query, for example, the `admin` account's balance, where the `admin`
