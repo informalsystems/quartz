@@ -3,7 +3,6 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 //TODO: get rid of this
 use cw_tee_mtcs::{
@@ -11,7 +10,7 @@ use cw_tee_mtcs::{
     state::{LiquiditySource, LiquiditySourceType, RawHash, SettleOff, Transfer},
 };
 use ecies::{decrypt, encrypt};
-use k256::ecdsa::{SigningKey, VerifyingKey};
+use k256::ecdsa::SigningKey;
 use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
@@ -32,7 +31,7 @@ pub type RawCipherText = HexBinary;
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
-    config: Config,
+    config: Config, // TODO: this config is not used anywhere
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
 }

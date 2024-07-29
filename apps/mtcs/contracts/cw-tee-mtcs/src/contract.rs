@@ -1,8 +1,6 @@
-use std::collections::BTreeSet;
-
 use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    Uint128, Uint64,
+    Uint64,
 };
 use cw2::set_contract_version;
 use cw20_base::contract::query_balance as cw20_query_balance;
@@ -18,8 +16,8 @@ use crate::{
         ExecuteMsg, InstantiateMsg, QueryMsg,
     },
     state::{
-        current_epoch_key, LiquiditySource, LiquiditySourceType, ObligationsItem, State,
-        LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY, OBLIGATIONS_KEY, STATE,
+        current_epoch_key, ObligationsItem, State, LIQUIDITY_SOURCES, LIQUIDITY_SOURCES_KEY,
+        OBLIGATIONS_KEY, STATE,
     },
 };
 
@@ -104,13 +102,13 @@ pub fn execute(
 }
 
 pub mod execute {
-    use std::{collections::BTreeMap, ops::DerefMut};
+    use std::collections::BTreeMap;
 
     use cosmwasm_std::{
         to_json_binary, Addr, DepsMut, Env, HexBinary, MessageInfo, Response, StdResult, Storage,
-        SubMsg, Uint128, Uint64, WasmMsg,
+        SubMsg, Uint64, WasmMsg,
     };
-    use cw20_base::contract::{execute_burn, execute_mint};
+    use cw20_base::contract::execute_mint;
     use quartz_common::contract::state::{Hash, EPOCH_COUNTER};
 
     // use mtcs_overdraft::msg::ExecuteMsg as OverdraftExecuteMsg;
@@ -327,7 +325,7 @@ pub mod execute {
 
     pub fn init_clearing(deps: DepsMut) -> Result<Response, ContractError> {
         EPOCH_COUNTER.update(deps.storage, |counter| -> StdResult<_> {
-            counter.checked_add(Uint64::new(1));
+            counter.checked_add(Uint64::new(1))?;
             Ok(counter)
         })?;
         Ok(Response::new().add_attribute("action", "init_clearing"))

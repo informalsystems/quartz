@@ -164,7 +164,7 @@ async fn main() -> Result<(), anyhow::Error> {
     block_tx_commit(&tmrpc_client, tx_hash).await?;
 
     if let MtcsExecuteMsg::Quartz(QuartzExecuteMsg::RawSessionSetPubKey(quartz)) = res {
-        println!("\n\n\n{}", quartz.msg.pub_key); // TODO: return this instead later
+        println!("\n\n\n{}", quartz.msg.pub_key()); // TODO: return this instead later
     } else {
         return Err(anyhow!("Invalid relay response from SessionSetPubKey"));
     }

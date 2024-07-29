@@ -5,7 +5,6 @@ use color_eyre::eyre::{eyre, Result};
 use cosmrs::AccountId;
 use cw_proof::proof::cw::RawCwProof;
 use serde::{Deserialize, Serialize};
-use tendermint::crypto::default;
 use tendermint_light_client::types::{Hash, Height, LightBlock, TrustThreshold};
 use tendermint_rpc::HttpClientUrl;
 use tracing::metadata::LevelFilter;
