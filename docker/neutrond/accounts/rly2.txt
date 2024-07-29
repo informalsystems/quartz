@@ -1,0 +1,11 @@
+
+- address: neutron152zj7nyksf7dgrt4tpcf64t92k4ar9c2c97wxz
+  name: rly2
+  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A9jd2NZ40ZkD0TqBMmco6ejP1EzR1AnYIqSNm5m/Y997"}'
+  type: local
+
+
+**Important** write this mnemonic phrase in a safe place.
+It is the only way to recover your account if you ever forget your password.
+
+run snack expand version flag foil used session name lift mouse repeat bunker pencil orchard lens kitchen prevent emerge alien outdoor else cat brass

@@ -1,6 +1,9 @@
+# Docker setups for wasmd and neutron
+We have 2 docker setups that can be easily run to get a local network with a single node running, so we can easily test contracts for Quartz Apps
+
 # Quartz app wasmd image
 
-This folder contains a `Dockerfile` that helps build a single-node [wasmd]
+The `wasmd` folder contains a `Dockerfile` that helps build a single-node [wasmd]
 validator for use in testing your Quartz application.
 
 It facilitates the creation of a Docker image with 4 accounts pre-loaded, each
@@ -77,7 +80,7 @@ on behalf of any of those accounts from outside of the Docker container.
 your local machine as what is built into the `wasmd` Docker image.
 
 ```bash
-make import-accounts
+make import-local-accounts
 ```
 
 To check that the accounts have been imported correctly, on your host machine
@@ -88,7 +91,9 @@ run:
 wasmd keys list --keyring-backend=test
 ```
 
-## Querying accounts in the container
+> Note - You don't need to run `make create-local-accounts` because that was already done, hence why the text files (i.e. `alice.txt`) are included on git. However, they won't be in your local keyring until you run `make import-local-accounts`. If we ever have to reset the accounts, you'd run `make delete-local-accounts` followed by `make create-local-accounts` and push the updated accounts to github.
+
+## Querying accounts in the wasmd container
 
 To query, for example, the `admin` account's balance, where the `admin`
 account's address is `wasm1mkrm9m8g0dzv5z73xg8yzlj6srqc72qru5xfv3`, once the
@@ -116,3 +121,78 @@ pagination:
 ```
 
 [wasmd]: https://github.com/CosmWasm/wasmd
+
+# Setting up a Single Node Neutron Testnet
+
+This guide provides instructions for setting up a single node Neutron testnet using Docker and local installation.
+
+> Note - For more detailed instructions, refer to the [official Neutron documentation](https://docs.neutron.org/neutron/build-and-run/neutron-docker).
+
+## Setup Steps
+
+Clone the Neutron repository:
+```
+git clone -b v4.0.1 https://github.com/neutron-org/neutron.git
+cd neutron
+```
+
+Build the Docker image:
+```
+make build-docker-image
+```
+
+Start the Docker container:
+```
+make start-docker-container
+```
+
+Monitor the logs:
+```
+docker ps  # Get the container ID
+docker logs -f <neutron-node-container-id>
+```
+
+Verify the Docker keyring setup:
+```
+docker exec -it neutron neutrond query bank balances neutron1qnk2n4nlkpw9xfqntladh74w6ujtulwn6dwq8z --chain-id test-1
+```
+This should return:
+```
+balances:
+- amount: "100000000000000"
+denom: untrn
+pagination:
+total: "1"
+```
+
+Install neutrond locally:
+```
+make install
+```
+
+Setup the local keyring:
+```
+make create-local-accounts
+```
+
+Verify local keyring setup:
+```
+neutrond query bank balances neutron1qnk2n4nlkpw9xfqntladh74w6ujtulwn6dwq8z --chain-id test-1
+```
+
+This should return:
+```
+balances:
+- amount: "100000000000000"
+denom: untrn
+pagination:
+total: "1"
+```
+
+To stop and reset the chain:
+```
+make stop-docker-container
+```
+
+## How accounts are setup on neutron
+We use the standard 7 accounts that come from the neutron base docker setup. We have imported those to `docker/neutrond/accounts`. These accounts already exist in the container running the node, and we get them locally by running `make import-local-accounts`. We don't have functions to create or delete accounts, since we want to strickly follow their base docker setup, and thus keep the accounts the excact same.
