@@ -14,6 +14,12 @@ pub type AttestedMsg<M, RA> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
 #[cw_serde]
 pub struct InstantiateMsg<RA = RawDefaultAttestation>(pub QuartzInstantiateMsg<RA>);
 
+impl From<QuartzInstantiateMsg<RawDefaultAttestation>> for InstantiateMsg {
+    fn from(msg: QuartzInstantiateMsg<RawDefaultAttestation>) -> Self {
+        InstantiateMsg(msg)
+    }
+}
+
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg<RA = RawDefaultAttestation> {

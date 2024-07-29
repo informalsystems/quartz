@@ -1,8 +1,10 @@
-use crate::{cli::Verbosity, error::Error, request::Request, response::Response};
 use async_trait::async_trait;
+
+use crate::{cli::Verbosity, error::Error, request::Request, response::Response};
 
 pub mod utils;
 // commands
+pub mod deploy;
 pub mod handshake;
 pub mod init;
 pub mod listen;
@@ -25,6 +27,7 @@ impl Handler for Request {
             Request::Init(request) => request.handle(verbosity).await.map(Into::into),
             Request::Handshake(request) => request.handle(verbosity).await.map(Into::into),
             Request::Listen(request) => request.handle(verbosity).await.map(Into::into),
+            Request::Deploy(request) => request.handle(verbosity).await.map(Into::into),
         }
     }
 }

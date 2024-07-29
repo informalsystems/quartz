@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use tendermint::Hash;
 
 // Rust libraries don't seem to implement this type from the wasmd go implementation
 // TODO: Replace String with types from Rust libraries
@@ -6,7 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Debug)]
 pub struct WasmdTxResponse {
     pub height: String,
-    pub txhash: String,
+    pub txhash: Hash,
     pub codespace: String,
     pub code: u32,
     pub data: String,

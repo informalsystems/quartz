@@ -25,7 +25,7 @@ pub fn run_relay<R: DeserializeOwned>(
     msg: &str,
     arg: Option<&str>,
 ) -> Result<R, anyhow::Error> {
-    let relayer_path = base_path.join("packages/relayer/scripts/relay.sh");
+    let relayer_path = base_path.join("relayer/scripts/relay.sh");
 
     let mut bash = Command::new("bash");
     let command = bash.arg(relayer_path).arg(msg);

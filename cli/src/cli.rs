@@ -96,6 +96,26 @@ pub enum Command {
         #[clap(long)]
         path: Option<PathBuf>,
     },
+    Deploy {
+        #[clap(long, default_value = "143.244.186.205:26657")]
+        node_url: String,
+
+        #[arg(
+            short,
+            long,
+            default_value = "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"
+        )]
+        sender: String,
+
+        #[arg(long, default_value = "testing")]
+        chain_id: ChainId,
+
+        #[arg(long, default_value = "MTCS")]
+        label: String,
+
+        #[clap(long)]
+        path: Option<PathBuf>,
+    },
 }
 
 fn default_rpc_addr() -> String {

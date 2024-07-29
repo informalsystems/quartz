@@ -43,7 +43,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
         &ChainId::from_str("testing")?,
         String::from("wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"),
-        contract_path.as_path().to_string_lossy(),
+        contract_path.display().to_string(),
     )?)?;
 
     let tx_hash =

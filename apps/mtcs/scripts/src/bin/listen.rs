@@ -1,9 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    env,
-    process::Command,
-    str::FromStr,
-};
+use std::{collections::BTreeMap, env, process::Command, str::FromStr};
 
 use anyhow::anyhow;
 use base64::prelude::*;
@@ -11,12 +6,15 @@ use clap::Parser;
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Binary, HexBinary, Uint64};
 use cw_tee_mtcs::msg::{
-        execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
-        QueryMsg::GetLiquiditySources,
+    execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
+    QueryMsg::GetLiquiditySources,
 };
 use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use futures_util::stream::StreamExt;
-use mtcs_enclave::{proto::{clearing_client::ClearingClient, RunClearingRequest}, types::RunClearingMessage};
+use mtcs_enclave::{
+    proto::{clearing_client::ClearingClient, RunClearingRequest},
+    types::RunClearingMessage,
+};
 use quartz_common::contract::msg::execute::attested::{
     EpidAttestation, RawAttested, RawAttestedMsgSansHandler,
 };

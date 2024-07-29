@@ -3,9 +3,13 @@ use std::{env::current_dir, path::PathBuf};
 use crate::{
     cli::Command,
     error::Error,
-    request::{handshake::HandshakeRequest, init::InitRequest, listen::ListenRequest},
+    request::{
+        deploy::DeployRequest, handshake::HandshakeRequest, init::InitRequest,
+        listen::ListenRequest,
+    },
 };
 
+pub mod deploy;
 pub mod handshake;
 pub mod init;
 pub mod listen;
@@ -15,6 +19,7 @@ pub enum Request {
     Init(InitRequest),
     Handshake(HandshakeRequest),
     Listen(ListenRequest),
+    Deploy(DeployRequest),
 }
 
 impl TryFrom<Command> for Request {
@@ -56,6 +61,19 @@ impl TryFrom<Command> for Request {
                 node_url,
                 rpc_addr,
                 path: Self::path_checked(path)?,
+            })),
+            Command::Deploy {
+                node_url,
+                chain_id,
+                sender,
+                label,
+                path,
+            } => Ok(Request::Deploy(DeployRequest {
+                node_url,
+                chain_id,
+                sender,
+                label,
+                directory: Self::path_checked(path)?,
             })),
         }
     }

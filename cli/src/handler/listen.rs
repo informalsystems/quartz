@@ -1,9 +1,7 @@
-use async_trait::async_trait;
-use tracing::trace;
-
 use std::{collections::BTreeMap, path::Path, process::Command};
 
 use anyhow::anyhow;
+use async_trait::async_trait;
 use base64::prelude::*;
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Binary, HexBinary, Uint64};
@@ -32,6 +30,7 @@ use tokio::{
     io::AsyncWriteExt,
 };
 use tonic::Request;
+use tracing::trace;
 
 use crate::{
     cli::Verbosity, error::Error, handler::Handler, request::listen::ListenRequest,

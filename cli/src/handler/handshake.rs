@@ -1,9 +1,4 @@
-use tracing::trace;
-
-use crate::{
-    cli::Verbosity, error::Error, handler::Handler, request::handshake::HandshakeRequest,
-    response::handshake::HandshakeResponse,
-};
+use std::{env::current_dir, fs::File, io::Read, path::Path, str::FromStr};
 
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -15,14 +10,18 @@ use quartz_common::contract::prelude::QuartzExecuteMsg;
 use reqwest::Url;
 use serde::Serialize;
 use serde_json::json;
-use std::{env::current_dir, fs::File, io::Read, path::Path, str::FromStr};
 use tendermint::{block::Height, Hash};
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tm_prover::{config::Config as TmProverConfig, prover::prove};
+use tracing::trace;
 
-use crate::handler::utils::{
+use super::utils::{
     helpers::{block_tx_commit, run_relay},
     types::WasmdTxResponse,
+};
+use crate::{
+    cli::Verbosity, error::Error, handler::Handler, request::handshake::HandshakeRequest,
+    response::handshake::HandshakeResponse,
 };
 
 #[async_trait]
@@ -75,8 +74,7 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
     println!("\n\n SessionCreate tx output: {:?}", output);
 
     // Wait for tx to commit
-    let tx_hash = Hash::from_str(&output.txhash).expect("Invalid hex string for transaction hash");
-    block_tx_commit(&tmrpc_client, tx_hash).await?;
+    block_tx_commit(&tmrpc_client, output.txhash).await?;
 
     // Wait 2 blocks
     two_block_waitoor(&wsurl).await?;
@@ -129,8 +127,7 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
     println!("\n\n SessionSetPubKey tx output: {:?}", output);
 
     // Wait for tx to commit
-    let tx_hash = Hash::from_str(&output.txhash).expect("Invalid hex string for transaction hash");
-    block_tx_commit(&tmrpc_client, tx_hash).await?;
+    block_tx_commit(&tmrpc_client, output.txhash).await?;
 
     if let MtcsExecuteMsg::Quartz(QuartzExecuteMsg::RawSessionSetPubKey(quartz)) = res {
         println!("\n\n\n{}", quartz.msg.pub_key()); // TODO: return this instead later
