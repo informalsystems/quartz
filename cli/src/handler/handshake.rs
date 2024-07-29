@@ -1,8 +1,12 @@
 use tracing::trace;
-use std::{env::current_dir, fs::File, io::Read, path::Path, str::FromStr};
 
-use async_trait::async_trait;
+use crate::{
+    cli::Verbosity, error::Error, handler::Handler, request::handshake::HandshakeRequest,
+    response::handshake::HandshakeResponse,
+};
+
 use anyhow::anyhow;
+use async_trait::async_trait;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
 use cw_tee_mtcs::msg::ExecuteMsg as MtcsExecuteMsg;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
@@ -11,15 +15,14 @@ use quartz_common::contract::prelude::QuartzExecuteMsg;
 use reqwest::Url;
 use serde::Serialize;
 use serde_json::json;
+use std::{env::current_dir, fs::File, io::Read, path::Path, str::FromStr};
 use tendermint::{block::Height, Hash};
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tm_prover::{config::Config as TmProverConfig, prover::prove};
 
-use crate::handler::utils::{helpers::{run_relay, block_tx_commit}, types::WasmdTxResponse};
-
-use crate::{
-    cli::Verbosity, error::Error, handler::Handler, request::handshake::HandshakeRequest,
-    response::handshake::HandshakeResponse,
+use crate::handler::utils::{
+    helpers::{block_tx_commit, run_relay},
+    types::WasmdTxResponse,
 };
 
 #[async_trait]
@@ -30,9 +33,11 @@ impl Handler for HandshakeRequest {
     async fn handle(self, _verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
         trace!("starting handshake...");
 
-        handshake(self).await.map_err(|e| Error::GenericErr(e.to_string()))?;
+        handshake(self)
+            .await
+            .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-        Ok(Self::Response::from(HandshakeResponse::default()))
+        Ok(HandshakeResponse::default())
     }
 }
 
@@ -81,16 +86,17 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
     println!("Proof path: {:?}", proof_path.to_str());
 
     // Call tm prover with trusted hash and height
-    let mut config = TmProverConfig::default();
-    config.chain_id = "testing".parse()?;
-    config.primary = httpurl.as_str().parse()?;
-    config.witnesses = httpurl.as_str().parse()?;
-    config.trusted_height = trusted_height;
-    config.trusted_hash = trusted_hash;
-    config.trace_file = Some(proof_path.clone());
-    config.verbose = "1".parse()?;
-    config.contract_address = args.contract.clone();
-    config.storage_key = "quartz_session".to_owned();
+    let config = TmProverConfig {
+        primary: httpurl.as_str().parse()?,
+        witnesses: httpurl.as_str().parse()?,
+        trusted_height,
+        trusted_hash,
+        trace_file: Some(proof_path.clone()),
+        verbose: "1".parse()?,
+        contract_address: args.contract.clone(),
+        storage_key: "quartz_session".to_string(),
+        ..Default::default()
+    };
 
     if let Err(report) = prove(config).await {
         return Err(anyhow!("Tendermint prover failed. Report: {}", report));
@@ -127,7 +133,7 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
     block_tx_commit(&tmrpc_client, tx_hash).await?;
 
     if let MtcsExecuteMsg::Quartz(QuartzExecuteMsg::RawSessionSetPubKey(quartz)) = res {
-        println!("\n\n\n{}", quartz.msg.pub_key); // TODO: return this instead later
+        println!("\n\n\n{}", quartz.msg.pub_key()); // TODO: return this instead later
     } else {
         return Err(anyhow!("Invalid relay response from SessionSetPubKey"));
     }

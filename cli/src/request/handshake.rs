@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 
 use crate::request::Request;
@@ -9,7 +11,8 @@ pub struct HandshakeRequest {
     pub sender: String,
     pub chain_id: ChainId,
     pub node_url: String,
-    pub rpc_addr: String
+    pub rpc_addr: String,
+    pub path: PathBuf
 }
 
 // TODO: Would I ever need this?

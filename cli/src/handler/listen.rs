@@ -1,18 +1,17 @@
+use async_trait::async_trait;
+use tracing::trace;
+
 use std::{
-    collections::BTreeMap,
-    env,
-    process::Command,
-    str::FromStr,
+    collections::BTreeMap, path::Path, process::Command
 };
 
 use anyhow::anyhow;
 use base64::prelude::*;
-use clap::Parser;
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Binary, HexBinary, Uint64};
 use cw_tee_mtcs::msg::{
-        execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
-        QueryMsg::GetLiquiditySources,
+    execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
+    QueryMsg::GetLiquiditySources,
 };
 use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use futures_util::stream::StreamExt;
@@ -22,7 +21,6 @@ use quartz_common::contract::msg::execute::attested::{
 };
 use quartz_tee_ra::{intel_sgx::epid::types::ReportBody, IASReport};
 use reqwest::Url;
-use scripts::utils::wasmaddr_to_id;
 use serde_json::json;
 use tendermint_rpc::{
     query::{EventType, Query},
@@ -34,43 +32,33 @@ use tokio::{
 };
 use tonic::Request;
 
-#[derive(Clone, Debug, Parser)]
-#[command(version, about, long_about = None)]
-struct Cli {
-    /// Contract to listen to
-    #[arg(short, long, value_parser = wasmaddr_to_id)]
-    contract: AccountId,
-    /// Port enclave is listening on
-    #[arg(short, long, default_value = "11090")]
-    port: u16,
+use crate::{
+    cli::Verbosity,
+    error::Error,
+    handler::Handler,
+    request::listen::ListenRequest,
+    response::listen::ListenResponse,
+};
 
-    #[arg(
-        short,
-        long,
-        default_value = "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"
-    )]
-    sender: String,
+#[async_trait]
+impl Handler for ListenRequest {
+    type Error = Error;
+    type Response = ListenResponse;
 
-    #[clap(long, default_value = "143.244.186.205:26657")]
-    node_url: String,
+    async fn handle(self, _verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
+        trace!("initializing directory structure...");
 
-    #[clap(long, default_value_t = default_rpc_addr())]
-    rpc_addr: String,
+        listen(self)
+            .await
+            .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-    #[arg(short, long, default_value = "dangush")]
-    user: String, // The filesys user for gramine filepaths. TODO: improve this
+        Ok(Self::Response::from(ListenResponse::default()))
+    }
 }
 
-fn default_rpc_addr() -> String {
-    env::var("RPC_URL").unwrap_or_else(|_| "http://127.0.0.1".to_string())
-}
-
-#[tokio::main]
-async fn main() -> Result<(), anyhow::Error> {
-    let cli = Cli::parse();
-
+async fn listen(args: ListenRequest) -> Result<(), anyhow::Error> {
     // Subscribe to "init_clearing" events
-    let wsurl = format!("ws://{}/websocket", cli.node_url);
+    let wsurl = format!("ws://{}/websocket", args.node_url);
     let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
     let driver_handle = tokio::spawn(async move { driver.run().await });
 
@@ -82,11 +70,12 @@ async fn main() -> Result<(), anyhow::Error> {
     while subs.next().await.is_some() {
         // On init_clearing, run process
         if let Err(e) = handler(
-            &cli.contract,
-            cli.sender.clone(),
-            format!("{}:{}", cli.rpc_addr, cli.port),
-            &cli.node_url,
-            &cli.user,
+            &args.contract,
+            args.sender.clone(),
+            args.chain_id.clone(),
+            format!("{}:{}", args.rpc_addr, args.port),
+            &args.node_url,
+            args.path.as_path(),
         )
         .await
         {
@@ -105,11 +94,11 @@ async fn main() -> Result<(), anyhow::Error> {
 async fn handler(
     contract: &AccountId,
     sender: String,
+    chain_id: ChainId,
     rpc_addr: String,
     node_url: &str,
-    user: &str,
+    path: &Path,
 ) -> Result<(), anyhow::Error> {
-    let chain_id = &ChainId::from_str("testing")?;
     let httpurl = Url::parse(&format!("http://{}", node_url))?;
     let wasmd_client = CliWasmdClient::new(httpurl);
 
@@ -134,7 +123,7 @@ async fn handler(
             .map_err(|e| anyhow!("Error serializing SubmitSetoffs: {}", e))?;
 
     // Get IAS report and build attested message
-    let attestation = gramine_ias_request(quote.attestation, user).await?;
+    let attestation = gramine_ias_request(quote.attestation, path).await?;
     let msg = RawAttestedMsgSansHandler(quote.msg);
 
     let setoffs_msg =
@@ -142,7 +131,7 @@ async fn handler(
 
     // Send setoffs to mtcs contract on chain
     let output =
-        wasmd_client.tx_execute(contract, chain_id, 2000000, sender, json!(setoffs_msg))?;
+        wasmd_client.tx_execute(contract, &chain_id, 2000000, sender, json!(setoffs_msg))?;
 
     println!("output: {}", output);
     Ok(())
@@ -200,16 +189,17 @@ async fn query_chain(
     })
 }
 
+// TODO: Utilize relay rust package
 // Request the IAS report for EPID attestations
 async fn gramine_ias_request(
     attested_msg: Vec<u8>,
-    user: &str,
+    path: &Path,
 ) -> Result<EpidAttestation, anyhow::Error> {
     let ias_api_key = String::from("669244b3e6364b5888289a11d2a1726d");
     let ra_client_spid = String::from("51CAF5A48B450D624AEFE3286D314894");
-    let quote_file = format!("/tmp/{}_test.quote", user);
-    let report_file = format!("/tmp/{}_datareport", user);
-    let report_sig_file = format!("/tmp/{}_datareportsig", user);
+    let quote_file = path.join("/tmp/test.quote");
+    let report_file = path.join("/tmp/datareport");
+    let report_sig_file = path.join("/tmp/datareportsig");
 
     // Write the binary data to a file
     let mut file = File::create(&quote_file).await?;
@@ -222,9 +212,9 @@ async fn gramine_ias_request(
         .arg("report")
         .args(["-g", &ra_client_spid])
         .args(["-k", &ias_api_key])
-        .args(["-q", &quote_file])
-        .args(["-r", &report_file])
-        .args(["-s", &report_sig_file]);
+        .args(["-q", &quote_file.display().to_string()])
+        .args(["-r", &report_file.display().to_string()])
+        .args(["-s", &report_sig_file.display().to_string()]);
 
     let output = command.output()?;
     if !output.status.success() {

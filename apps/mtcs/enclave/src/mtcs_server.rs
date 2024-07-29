@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::BTreeMap,
     sync::{Arc, Mutex},
 };
 
@@ -19,12 +19,11 @@ use quartz_common::{
     contract::{msg::execute::attested::RawAttested, state::Config},
     enclave::attestor::Attestor,
 };
-use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
 use crate::{
     proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
-    types::ContractObligation,
+    types::{ContractObligation, RunClearingMessage},
 };
 
 pub type RawCipherText = HexBinary;
@@ -34,12 +33,6 @@ pub struct MtcsService<A> {
     config: Config, // TODO: this config is not used anywhere
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RunClearingMessage {
-    intents: BTreeMap<RawHash, RawCipherText>,
-    liquidity_sources: BTreeSet<LiquiditySource>,
 }
 
 impl<A> MtcsService<A>
