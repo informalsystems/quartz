@@ -1,7 +1,4 @@
-use std::{
-    env::{self, current_dir},
-    str::FromStr,
-};
+use std::{env::current_dir, str::FromStr};
 
 use clap::Parser;
 use cosmrs::tendermint::chain::Id as ChainId;

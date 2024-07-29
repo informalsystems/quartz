@@ -3,22 +3,21 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use cosmrs::{tendermint::account::Id as TmAccountId, AccountId};
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 //TODO: get rid of this
 use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
     state::{LiquiditySource, LiquiditySourceType, RawHash, SettleOff, Transfer},
 };
-use ecies::{decrypt, encrypt};
-use k256::ecdsa::{SigningKey, VerifyingKey};
+use ecies::decrypt;
+use k256::ecdsa::SigningKey;
 use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
     obligation::SimpleObligation, prelude::DefaultMtcs, setoff::SimpleSetoff, Mtcs,
 };
 use quartz_common::{
     contract::{msg::execute::attested::RawAttested, state::Config},
-    enclave::{attestor::Attestor, server::ProofOfPublication},
+    enclave::attestor::Attestor,
 };
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
@@ -32,7 +31,7 @@ pub type RawCipherText = HexBinary;
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
-    config: Config,
+    config: Config, // TODO: this config is not used anywhere
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
 }
@@ -117,7 +116,7 @@ fn into_settle_offs(
         .iter()
         .map(|lqs| lqs.address.clone())
         .collect::<Vec<Addr>>()
-        .contains(&&so.debtor.address)
+        .contains(&so.debtor.address)
     {
         // A setoff on a tender should result in the creditor's (i.e. the tender receiver) balance
         // decreasing by the setoff amount
@@ -131,7 +130,7 @@ fn into_settle_offs(
         .iter()
         .map(|lqs| lqs.address.clone())
         .collect::<Vec<Addr>>()
-        .contains(&&so.creditor.address)
+        .contains(&so.creditor.address)
     {
         // A setoff on an acceptance should result in the debtor's (i.e. the acceptance initiator)
         // balance increasing by the setoff amount

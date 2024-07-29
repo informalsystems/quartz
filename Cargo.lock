@@ -684,7 +684,6 @@ version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d184abb7b0039cc64f282dfa5b34165e4c5a7410ab46804636d53f4d09aee44"
 dependencies = [
- "bip32",
  "cosmos-sdk-proto",
  "ecdsa",
  "eyre",

@@ -3,7 +3,10 @@ ARG WASMD_VERSION=v0.44.0
 FROM cosmwasm/wasmd:${WASMD_VERSION}
 
 # Increase the amount of ucosm given to accounts
-RUN sed -i  's/1000000000/12000000000000/g' /opt/setup_wasmd.sh
+RUN <<EOF
+sed -i 's/keyring-backend = "os"/keyring-backend = "test"/g' /root/.wasmd/config/client.toml
+sed -i  's/1000000000/12000000000000/g' /opt/setup_wasmd.sh
+EOF
 
 # Set up wasmd. The account numbers correspond to those in the ./accounts/
 # folder.
@@ -12,6 +15,17 @@ RUN /opt/setup_wasmd.sh \
         wasm19azg82cx3qx88gar8nl08rz7x0p27amtmadfep \
         wasm1adcnk7lt6qst7p5d0g5607e28k77um7nxwxuqy \
         wasm1jn34x50hy3my0a2mxwcx8fttgfxu2n5gpvu0ty
+
+# Import the accounts' private keys into the image such that they can be used to
+# initiate transactions from within the container.
+COPY accounts /tmp/accounts
+RUN <<EOF
+tail -n 1 /tmp/accounts/admin.txt | wasmd keys add admin --recover --keyring-backend=test
+tail -n 1 /tmp/accounts/alice.txt | wasmd keys add alice --recover --keyring-backend=test
+tail -n 1 /tmp/accounts/bob.txt | wasmd keys add bob --recover --keyring-backend=test
+tail -n 1 /tmp/accounts/charlie.txt | wasmd keys add charlie --recover --keyring-backend=test
+rm -rf /tmp/accounts
+EOF
 
 # Configure the validator for single-node operation within a Docker container
 RUN <<EOF

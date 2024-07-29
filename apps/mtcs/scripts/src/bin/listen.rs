@@ -90,7 +90,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .await
         .unwrap();
 
-    while let Some(_) = subs.next().await {
+    while subs.next().await.is_some() {
         // On init_clearing, run process
         if let Err(e) = handler(
             &cli.contract,
@@ -145,17 +145,15 @@ async fn handler(
             .map_err(|e| anyhow!("Error serializing SubmitSetoffs: {}", e))?;
 
     // Get IAS report and build attested message
-    let attestation = gramine_ias_request(quote.attestation, &user).await?;
+    let attestation = gramine_ias_request(quote.attestation, user).await?;
     let msg = RawAttestedMsgSansHandler(quote.msg);
 
-    let setoffs_msg = ExecuteMsg::SubmitSetoffs::<EpidAttestation>(AttestedMsg {
-        msg,
-        attestation: attestation.into(),
-    });
+    let setoffs_msg =
+        ExecuteMsg::SubmitSetoffs::<EpidAttestation>(AttestedMsg { msg, attestation });
 
     // Send setoffs to mtcs contract on chain
     let output =
-        wasmd_client.tx_execute(&contract, chain_id, 2000000, sender, json!(setoffs_msg))?;
+        wasmd_client.tx_execute(contract, chain_id, 2000000, sender, json!(setoffs_msg))?;
 
     println!("output: {}", output);
     Ok(())

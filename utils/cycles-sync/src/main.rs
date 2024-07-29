@@ -112,10 +112,8 @@ async fn sync_setoffs(cli: Cli) -> Result<(), DynError> {
         .flat_map(|(obligation_digest, so)| match so {
             RawSetOff::SetOff(sos_enc) => {
                 let so_enc = sos_enc.first().unwrap();
-                let (debtor_id, creditor_id) = obligation_user_map
-                    .get(obligation_digest)
-                    .map(Clone::clone)
-                    .unwrap();
+                let (debtor_id, creditor_id) =
+                    obligation_user_map.get(obligation_digest).copied().unwrap();
 
                 let sk = |id| keys[&id].private_key().to_bytes();
                 let so_ser = if let Ok(so) = ecies::decrypt(&sk(debtor_id), so_enc.as_slice()) {
@@ -377,7 +375,7 @@ mod tests {
     #[test]
     fn test_create_mnemonic() {
         // Generate random Mnemonic using the default language (English)
-        let mnemonic = Mnemonic::random(&mut OsRng, Default::default());
+        let mnemonic = Mnemonic::random(OsRng, Default::default());
         println!("{}", mnemonic.phrase());
     }
 
