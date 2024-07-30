@@ -1,6 +1,6 @@
 # Quartz app wasmd image
 
-The `wasmd` folder contains a `Dockerfile` that helps build a single-node [wasmd]
+This folder contains a `Dockerfile` that helps build a single-node [wasmd]
 validator for use in testing your Quartz application.
 
 It facilitates the creation of a Docker image with 4 accounts pre-loaded, each
@@ -18,7 +18,7 @@ folder.
 
 ## Running the image
 
-From the `/wasmd` directory, simply run:
+From this directory, simply run:
 
 ```bash
 make run
