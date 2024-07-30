@@ -19,7 +19,7 @@ use cw_tee_mtcs::{
 };
 use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use futures_util::stream::StreamExt;
-use mtcs_enclave::proto::{clearing_client::ClearingClient, RunClearingRequest};
+use quartz_app_mtcs_enclave::proto::{clearing_client::ClearingClient, RunClearingRequest};
 use quartz_common::contract::msg::execute::attested::{
     EpidAttestation, RawAttested, RawAttestedMsgSansHandler,
 };

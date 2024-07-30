@@ -2368,32 +2368,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mtcs-enclave"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "cosmrs",
- "cosmwasm-std 2.1.0",
- "cw-multi-test 2.1.0",
- "cw-tee-mtcs",
- "ecies",
- "hex",
- "k256",
- "mtcs",
- "prost",
- "quartz-common",
- "serde",
- "serde_json",
- "tendermint 0.36.0",
- "tendermint-light-client",
- "thiserror",
- "tokio",
- "tonic",
- "tonic-build",
-]
-
-[[package]]
 name = "mtcs-intent"
 version = "0.1.0"
 dependencies = [
@@ -2840,6 +2814,32 @@ dependencies = [
  "thiserror",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "quartz-app-mtcs-enclave"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "color-eyre",
+ "cosmrs",
+ "cosmwasm-std 2.1.0",
+ "cw-multi-test 2.1.0",
+ "cw-tee-mtcs",
+ "ecies",
+ "hex",
+ "k256",
+ "mtcs",
+ "prost",
+ "quartz-common",
+ "serde",
+ "serde_json",
+ "tendermint 0.36.0",
+ "tendermint-light-client",
+ "thiserror",
+ "tokio",
+ "tonic",
+ "tonic-build",
 ]
 
 [[package]]
@@ -3492,9 +3492,9 @@ dependencies = [
  "hex",
  "k256",
  "mtcs",
- "mtcs-enclave",
  "once_cell",
  "prost",
+ "quartz-app-mtcs-enclave",
  "quartz-common",
  "quartz-tee-ra",
  "regex",
