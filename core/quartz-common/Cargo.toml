@@ -9,11 +9,10 @@ repository.workspace = true
 authors.workspace = true
 
 [features]
-full = ["contract", "enclave", "proto", "macro"]
+full = ["contract", "enclave", "proto"]
 contract = ["dep:quartz-cw"]
 enclave = ["dep:quartz-enclave", "proto"]
 proto = ["dep:quartz-proto"]
-macro = ["dep:cosmrs", "dep:color-eyre", "dep:clap", "dep:tendermint-light-client"]
 mock-sgx-cw = ["quartz-cw/mock-sgx"]
 mock-sgx-enclave = ["quartz-enclave/mock-sgx"]
 
@@ -21,7 +20,3 @@ mock-sgx-enclave = ["quartz-enclave/mock-sgx"]
 quartz-cw = { workspace = true, optional = true }
 quartz-proto = { workspace = true, optional = true }
 quartz-enclave = { workspace = true, optional = true }
-cosmrs = { workspace = true, optional = true }
-color-eyre = { workspace = true, default-features = false, optional = true}
-clap = { workspace = true, default-features = false, features = ["derive", "std"], optional = true}
-tendermint-light-client = { workspace = true, default-features = false, features = ["rust-crypto"], optional = true}
