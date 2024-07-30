@@ -1,15 +1,15 @@
 use std::collections::BTreeMap;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{HexBinary, Uint64};
-use quartz_cw::{
+use cosmwasm_std::{Addr, HexBinary, Uint128, Uint64};
+use quartz_common::contract::{
     msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation},
     prelude::*,
 };
 
-use crate::state::{RawHash, SettleOff};
+use crate::state::{LiquiditySource, RawHash, SettleOff};
 
-type AttestedMsg<M, RA> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
+pub type AttestedMsg<M, RA> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
 
 #[cw_serde]
 pub struct InstantiateMsg<RA = RawDefaultAttestation>(pub QuartzInstantiateMsg<RA>);
@@ -27,11 +27,44 @@ pub enum ExecuteMsg<RA = RawDefaultAttestation> {
     SetLiquiditySources(execute::SetLiquiditySourcesMsg),
 }
 
+// TODO: Added this back here because adding overdraft contract as a dependency is causing errors. Overdraft isn't correctly disabling entrypoints when acting as a dependency
+#[cw_serde]
+pub enum OverdraftExecuteMsg {
+    DrawCredit {
+        receiver: Addr,
+        amount: Uint128,
+    },
+    DrawCreditFromTender {
+        debtor: Addr,
+        amount: Uint128,
+    },
+    TransferCreditFromTender {
+        sender: Addr,
+        receiver: Addr,
+        amount: Uint128,
+    },
+    IncreaseBalance {
+        receiver: Addr,
+        amount: Uint128,
+    },
+    DecreaseBalance {
+        receiver: Addr,
+        amount: Uint128,
+    },
+    Lock {},
+    Unlock {},
+    AddOwner {
+        new: Addr,
+    },
+}
+
 pub mod execute {
-    use quartz_cw::{msg::execute::attested::HasUserData, state::UserData};
+    use cosmwasm_std::Uint128;
+    use quartz_common::contract::{msg::execute::attested::HasUserData, state::UserData};
     use sha2::{Digest, Sha256};
 
     use super::*;
+    use crate::state::LiquiditySource;
 
     #[cw_serde]
     pub struct FaucetMintMsg {
@@ -56,7 +89,7 @@ pub mod execute {
     #[cw_serde]
     pub struct SubmitObligationsMsg {
         pub obligations: Vec<SubmitObligationMsg>,
-        pub liquidity_sources: Vec<HexBinary>,
+        pub liquidity_sources: Vec<LiquiditySource>,
     }
 
     #[cw_serde]
@@ -86,7 +119,16 @@ pub mod execute {
 
     #[cw_serde]
     pub struct SetLiquiditySourcesMsg {
-        pub liquidity_sources: Vec<HexBinary>,
+        pub liquidity_sources: Vec<LiquiditySource>,
+    }
+
+    #[cw_serde]
+    pub enum EscrowExecuteMsg {
+        ExecuteSetoff {
+            payer: String,
+            payee: String,
+            amount: Vec<(String, Uint128)>,
+        },
     }
 }
 
@@ -109,7 +151,7 @@ pub struct GetAllSetoffsResponse {
 
 #[cw_serde]
 pub struct GetLiquiditySourcesResponse {
-    pub liquidity_sources: Vec<HexBinary>,
+    pub liquidity_sources: Vec<LiquiditySource>,
 }
 
 #[cfg(test)]

@@ -6,11 +6,13 @@ use std::{
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
-use quartz_cw::{
-    msg::execute::attested::{HasUserData, RawAttested},
-    state::{Config, UserData},
+use quartz_common::{
+    contract::{
+        msg::execute::attested::{HasUserData, RawAttested},
+        state::{Config, UserData},
+    },
+    enclave::{attestor::Attestor, server::ProofOfPublication},
 };
-use quartz_enclave::{attestor::Attestor, server::ProofOfPublication};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tonic::{Request, Response, Result as TonicResult, Status};

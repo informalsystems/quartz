@@ -1,9 +1,8 @@
 use cosmwasm_schema::cw_serde;
-use quartz_cw::{
+use quartz_common::contract::{
     msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation},
     prelude::*,
 };
-use serde::{Deserialize, Serialize};
 
 type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
 
@@ -41,7 +40,7 @@ pub enum ExecuteMsg<RA = RawDefaultAttestation> {
 pub mod execute {
     use cosmwasm_schema::cw_serde;
     use cosmwasm_std::{Addr, HexBinary, Uint128};
-    use quartz_cw::{msg::execute::attested::HasUserData, state::UserData};
+    use quartz_common::contract::{msg::execute::attested::HasUserData, state::UserData};
     use sha2::{Digest, Sha256};
 
     #[cw_serde]

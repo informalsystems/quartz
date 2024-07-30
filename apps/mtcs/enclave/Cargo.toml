@@ -1,11 +1,22 @@
 [package]
-name = "quartz-app-mtcs-enclave"
+name = "mtcs-enclave"
 version = "0.1.0"
 edition = "2021"
 authors = ["Informal Systems <hello@informal.systems>"]
 
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
+
 [features]
-mock-sgx = ["quartz-cw/mock-sgx", "quartz-enclave/mock-sgx"]
+mock-sgx = ["quartz-common/mock-sgx-cw", "quartz-common/mock-sgx-enclave"]
 
 [dependencies]
 # external
@@ -28,17 +39,14 @@ tendermint.workspace = true
 tendermint-light-client.workspace = true
 
 # quartz
-cw-proof.workspace = true
 cw-tee-mtcs.workspace = true
-cycles-sync.workspace = true
 mtcs.workspace = true
-quartz-cw.workspace = true
-quartz-enclave.workspace = true
-quartz-proto.workspace = true
+
+# quartz
+quartz-common = { workspace = true, features = ["full"]}
 
 [dev-dependencies]
 cw-multi-test = "2.0.0"
-serde_json = "1.0.113"
 
 [build-dependencies]
 tonic-build.workspace = true
