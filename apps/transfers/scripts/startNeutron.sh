@@ -36,11 +36,10 @@ print_error() {
 }
 
 # Set up variables
-ROOT=${HOME}
-DIR_QUARTZ="$ROOT/cycles-quartz"
-DIR_QUARTZ_APP="$DIR_QUARTZ/apps/transfers"
+ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
+DIR_QUARTZ_APP="$ROOT/apps/transfers"
 DIR_QUARTZ_ENCLAVE="$DIR_QUARTZ_APP/enclave"
-DIR_QUARTZ_TM_PROVER="$DIR_QUARTZ/utils/tm-prover"
+DIR_QUARTZ_TM_PROVER="$ROOT/utils/tm-prover"
 
 NODE_URL=${NODE_URL:-127.0.0.1:26657}
 CMD="neutrond --node http://$NODE_URL"
@@ -64,7 +63,7 @@ print_success "Trusted hash and height saved"
 if [ -n "$MOCK_SGX" ]; then
     print_header "Running in MOCK_SGX mode"
     cd $DIR_QUARTZ_ENCLAVE
-    print_message $BLUE "Launching enclave without Gramine..."
+    print_message $BLUE "Running enclave without Gramine..."
     ./target/release/quartz-app-transfers-enclave --chain-id "test-1" --trusted-height "$TRUSTED_HEIGHT" --trusted-hash "$TRUSTED_HASH"
     exit
 fi
@@ -93,5 +92,5 @@ print_message $BLUE "Signing manifest"
 gramine-sgx-sign --manifest quartz.manifest --output quartz.manifest.sgx
 
 print_header "Starting Gramine"
-print_message $GREEN "Launching Quartz with Gramine-SGX..."
+print_message $GREEN "Running Quartz with Gramine-SGX..."
 gramine-sgx ./quartz

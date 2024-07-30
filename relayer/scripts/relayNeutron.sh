@@ -2,15 +2,16 @@
 
 set -eo pipefail
 
+
 usage() {
     echo "Usage: $0 <REQUEST> <REQUEST_MSG>"
     echo "    <REQUEST>: Instantiate | SessionCreate | SessionSetPubKey"
     exit 1
 }
 
-ROOT=${HOME}
-DIR_QUARTZ="$ROOT/cycles-quartz"
-DIR_PROTO="$DIR_QUARTZ/core/quartz-proto/proto"
+
+ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
+DIR_PROTO="$ROOT/core/quartz-proto/proto"
 IAS_API_KEY="669244b3e6364b5888289a11d2a1726d"
 RA_CLIENT_SPID="51CAF5A48B450D624AEFE3286D314894"
 QUOTE_FILE="/tmp/${USER}_test.quote"
@@ -23,12 +24,15 @@ REQUEST_MSG=${2:-"{}"}
 # Use the QUARTZ_PORT environment variable if set, otherwise default to 11090
 QUARTZ_PORT="${QUARTZ_PORT:-11090}"
 
+
 # query the gRPC quartz enclave service
 ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto quartz.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" quartz.Core/"$REQUEST" | jq -c '.message | fromjson')
 
 # parse out the quote and the message
 QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')
 MSG=$(echo "$ATTESTED_MSG" | jq 'del(.quote)')
+
+
 
 if [ -n "$MOCK_SGX" ]; then
     case "$REQUEST" in
@@ -47,6 +51,9 @@ if [ -n "$MOCK_SGX" ]; then
     esac
     exit
 fi
+
+echo quartz.Core/"$REQUEST"
+
 
 # clear tmp files from previous runs
 rm -f "$QUOTE_FILE" "$REPORT_FILE" "$REPORT_SIG_FILE"

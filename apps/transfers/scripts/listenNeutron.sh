@@ -38,7 +38,7 @@ print_error() {
 }
 
 # Set up variables
-ROOT=${HOME}
+ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
 NODE_URL=${NODE_URL:-127.0.0.1:26657}
 QUARTZ_PORT="${QUARTZ_PORT:-11090}"
 
@@ -52,29 +52,34 @@ CMD="neutrond --node http://$NODE_URL"
 WSURL="ws://$NODE_URL/websocket"
 
 # Subscription messages
-SUBSCRIBE_TRANSFER=$(cat <<EOF
-{
-  "jsonrpc": "2.0",
-  "method": "subscribe",
-  "id": 1,
-  "params": {
-    "query": "tm.event='Tx' AND execute._contract_address='$CONTRACT' AND wasm-transfer.action='user'"
-  }
-}
-EOF
-)
+# SUBSCRIBE_TRANSFER=$(cat <<EOF
+# {
+#   "jsonrpc": "2.0",
+#   "method": "subscribe",
+#   "id": 1,
+#   "params": {
+#     "query": "tm.event='Tx' AND execute._contract_address='$CONTRACT' AND wasm-transfer.action='user'"
+#   }
+# }
+# EOF
+# )
 
-SUBSCRIBE_QUERY=$(cat <<EOF
-{
-  "jsonrpc": "2.0",
-  "method": "subscribe",
-  "id": 2,
-  "params": {
-    "query": "tm.event='Tx' AND execute._contract_address='$CONTRACT' AND wasm-query_balance.query='user'"
-  }
-}
-EOF
-)
+# SUBSCRIBE_QUERY=$(cat <<EOF
+# {
+#   "jsonrpc": "2.0",
+#   "method": "subscribe",
+#   "id": 2,
+#   "params": {
+#     "query": "tm.event='Tx' AND execute._contract_address='$CONTRACT' AND wasm-store_balance.query='user'"
+#   }
+# }
+# EOF
+# )
+
+SUBSCRIBE_TRANSFER="{\"jsonrpc\":\"2.0\",\"method\":\"subscribe\",\"params\":[\"execute._contract_address = '$CONTRACT' AND wasm-transfer.action = 'user'\"],\"id\":1}"
+SUBSCRIBE_QUERY="{\"jsonrpc\":\"2.0\",\"method\":\"subscribe\",\"params\":[\"execute._contract_address = '$CONTRACT' AND wasm-query_balance.query = 'user'\"],\"id\":2}"
+
+
 
 # Attestation constants
 IAS_API_KEY="669244b3e6364b5888289a11d2a1726d"
@@ -131,11 +136,11 @@ handle_transfer_event() {
     STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | \
         hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
 
-    cd "$ROOT/cycles-quartz/apps/transfers"
+    cd "$ROOT/apps/transfers"
     export TRUSTED_HASH=$(cat trusted.hash)
     export TRUSTED_HEIGHT=$(cat trusted.height)
 
-    cd $ROOT/cycles-quartz/utils/tm-prover
+    cd $ROOT/utils/tm-prover
     export PROOF_FILE="light-client-proof.json"
     [ -f "$PROOF_FILE" ] && rm "$PROOF_FILE"
 
@@ -154,7 +159,7 @@ handle_transfer_event() {
     export REQUEST_MSG=$(jq --argjson msg "$ENCLAVE_REQUEST" '. + {msg: $msg}' <<< "$POP")
     export PROTO_MSG=$(jq -nc --arg message "$REQUEST_MSG" '$ARGS.named')
 
-    cd $ROOT/cycles-quartz/apps/transfers/enclave
+    cd $ROOT/apps/transfers/enclave
 
     export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto \
         -d "$PROTO_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Run | \
@@ -193,13 +198,13 @@ handle_query_balance_event() {
         jq -r '.result.events["message.sender"]'[0])
 
     EPHEMERAL_PUBKEY=$(echo "$msg" | sed 's/"log":"\[.*\]"/"log":"<invalid_json>"/' | \
-        jq -r '.result.events["wasm-query_balance.emphemeral_pubkey"]'[0])
+        jq -r '.result.events["wasm-store_balance.emphemeral_pubkey"]'[0])
 
     export ENCLAVE_REQUEST=$(jq -nc --argjson state "$STATE" --arg address "$ADDRESS" \
         --arg ephemeral_pubkey "$EPHEMERAL_PUBKEY" '$ARGS.named')
     export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
 
-    cd $ROOT/cycles-quartz/apps/transfers/enclave
+    cd $ROOT/apps/transfers/enclave
 
     ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto \
         -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" transfers.Settlement/Query | jq -r '.message | fromjson')

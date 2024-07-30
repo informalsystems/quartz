@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-ROOT=${ROOT:-$HOME}
+ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
 
 # Color definitions
 RED='\033[0;31m'
@@ -50,12 +50,12 @@ print_waiting() {
 print_header "Instantianting relayer"
 print_success "Relayer instantiated successfully."
 
-cd  $ROOT/Dev/cycles-quartz/relayer/
+cd  $ROOT/relayer/
+echo $ROOT/apps/transfers/contracts/
 
 INSTANTIATE_MSG=$(./scripts/relayNeutron.sh Instantiate | jq -c '.')
 
-
-cd $HOME/cycles-quartz/apps/transfers/contracts/
+cd $ROOT/apps/transfers/contracts/
 
 bash deploy-contract-Neutrond.sh target/wasm32-unknown-unknown/release/transfers_contract.wasm  "$INSTANTIATE_MSG" | tee output
 export CONTRACT=$(cat output | grep Address | awk '{print $NF}' | sed 's/\x1b\[[0-9;]*m//g')

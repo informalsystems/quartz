@@ -2,8 +2,6 @@
 
 set -eo pipefail
 
-set -eo pipefail
-
 # Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -56,7 +54,7 @@ update_progress() {
 
 
 # Set up variables
-ROOT=${HOME}
+ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
 WASMD_HOME=${WASMD_HOME:-"/home/peppi/.neutrond"}
 USER_ADDR=$(neutrond keys show -a "val1" --keyring-backend test --home "$WASMD_HOME" --keyring-dir "/home/peppi/.neutrond/")
 
@@ -73,6 +71,9 @@ COUNT=${COUNT:-0}
 QUARTZ_PORT="${QUARTZ_PORT:-11090}"
 TXFLAG="--chain-id ${CHAIN_ID} --gas-prices 0.0025untrn --gas auto --gas-adjustment 1.3"
 CMD="neutrond --node http://$NODE_URL"
+
+
+
 
 TOTAL_STEPS=7
 CURRENT_STEP=0
@@ -162,7 +163,7 @@ fi
 
 print_message $CYAN "CONTRACT: $CONTRACT"
 
-cd $ROOT/cycles-quartz/relayer
+cd $ROOT/relayer
 
 update_progress $((++CURRENT_STEP)) $TOTAL_STEPS
 print_header "Executing SessionCreate on Enclave"
@@ -207,7 +208,7 @@ print_success "Handshake process completed"
 update_progress $((++CURRENT_STEP)) $TOTAL_STEPS
 print_header "Setting Session PK"
 
-cd $ROOT/cycles-quartz/utils/tm-prover
+cd $ROOT/utils/tm-prover
 export PROOF_FILE="light-client-proof.json"
 rm -f "$PROOF_FILE"
 
@@ -234,14 +235,14 @@ done
 
 print_success "Required blocks produced. Proceeding with tm-prover..."
 
-cd "$HOME/cycles-quartz/apps/transfers"
+cd "$ROOT/apps/transfers"
 export TRUSTED_HASH=$(cat trusted.hash)
 export TRUSTED_HEIGHT=$(cat trusted.height)
 
 print_message $CYAN "Trusted hash: $TRUSTED_HASH"
 print_message $CYAN "Trusted height: $TRUSTED_HEIGHT"
 
-cd $ROOT/cycles-quartz/utils/tm-prover
+cd $ROOT/utils/tm-prover
 export QUARTZ_SESSION=$($CMD query wasm contract-state raw $CONTRACT $(echo -n "quartz_session" | xxd -p -c 20) --node "http://$NODE_URL")
 print_message $CYAN "Quartz Session before prover: $QUARTZ_SESSION"
 
@@ -271,8 +272,9 @@ export POP=$(cat $PROOF_FILE)
 export POP_MSG=$(jq -nc --arg message "$POP" '$ARGS.named')
 
 update_progress $((++CURRENT_STEP)) $TOTAL_STEPS
+
 print_header "Executing SessionSetPubKey on Enclave"
-cd $ROOT/cycles-quartz/relayer
+cd $ROOT/relayer
 export EXECUTE_SETPUB=$(QUARTZ_PORT=$QUARTZ_PORT ./scripts/relayNeutron.sh SessionSetPubKey "$POP_MSG")
 
 RES=$($CMD tx wasm execute "$CONTRACT" "$EXECUTE_SETPUB" --from "$USER_ADDR"  $TXFLAG --keyring-backend test --keyring-dir "/home/peppi/.neutrond/" --chain-id test-1 -y --output json)
