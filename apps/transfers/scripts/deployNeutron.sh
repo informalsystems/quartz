@@ -51,7 +51,6 @@ print_header "Instantianting relayer"
 print_success "Relayer instantiated successfully."
 
 cd  $ROOT/relayer/
-echo $ROOT/apps/transfers/contracts/
 
 INSTANTIATE_MSG=$(./scripts/relayNeutron.sh Instantiate | jq -c '.')
 

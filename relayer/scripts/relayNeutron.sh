@@ -52,9 +52,6 @@ if [ -n "$MOCK_SGX" ]; then
     exit
 fi
 
-echo quartz.Core/"$REQUEST"
-
-
 # clear tmp files from previous runs
 rm -f "$QUOTE_FILE" "$REPORT_FILE" "$REPORT_SIG_FILE"
 

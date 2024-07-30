@@ -55,8 +55,8 @@ update_progress() {
 
 # Set up variables
 ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
-WASMD_HOME=${WASMD_HOME:-"/home/peppi/.neutrond"}
-USER_ADDR=$(neutrond keys show -a "val1" --keyring-backend test --home "$WASMD_HOME" --keyring-dir "/home/peppi/.neutrond/")
+WASMD_HOME=${WASMD_HOME:-"$HOME/.neutrond"}
+USER_ADDR=$(neutrond keys show -a "val1" --keyring-backend test --home "$WASMD_HOME" --keyring-dir "$WASMD_HOME")
 
 if [ -z "$USER_ADDR" ]; then
     print_error "User address not found. Please ensure the key exists in the keyring."
@@ -86,7 +86,7 @@ print_message $CYAN "User Address: ${USER_ADDR}"
 print_message $CYAN "Command: $CMD"
 
 print_message $BLUE "Storing WASM contract..."
-RES=$($CMD tx wasm store "$WASM_BIN" --from "$USER_ADDR" --keyring-backend "test" $TXFLAG -y --output json --keyring-dir "/home/peppi/.neutrond/")
+RES=$($CMD tx wasm store "$WASM_BIN" --from "$USER_ADDR" --keyring-backend "test" $TXFLAG -y --output json --keyring-dir "$WASMD_HOME")
 TX_HASH=$(echo "$RES" | jq -r '.txhash')
 print_message $CYAN "Transaction hash: $TX_HASH"
 
@@ -127,7 +127,7 @@ print_message $CYAN "Code ID: ${CODE_ID}"
 INSTANTIATE_MSG_PARSED=$(echo "$INSTANTIATE_MSG" | jq -r '.')
 INSTANTIATE_MSG_ONELINE=$(echo "$INSTANTIATE_MSG_PARSED" | jq '{quartz: .} + {denom: "untrn"}'  )
 
-INSTANTIATE_CMD="$CMD tx wasm instantiate $CODE_ID '$INSTANTIATE_MSG_ONELINE' --from $USER_ADDR --keyring-backend test --keyring-dir /home/peppi/.neutrond/ --label $LABEL $TXFLAG -y --no-admin --output json"
+INSTANTIATE_CMD="$CMD tx wasm instantiate $CODE_ID '$INSTANTIATE_MSG_ONELINE' --from $USER_ADDR --keyring-backend "test" --keyring-dir "$WASMD_HOME" --label $LABEL $TXFLAG -y --no-admin --output json"
 
 print_message $BLUE "Executing instantiate command..."
 RES=$(eval "$INSTANTIATE_CMD")
@@ -174,7 +174,7 @@ fi
 print_success "SessionCreate execution successful"
 
 print_message $BLUE "Submitting SessionCreate to contract..."
-RES=$($CMD tx wasm execute "$CONTRACT" "$EXECUTE_CREATE" --from "$USER_ADDR"  $TXFLAG --keyring-backend test --keyring-dir "/home/peppi/.neutrond/" --chain-id test-1 -y --output json)
+RES=$($CMD tx wasm execute "$CONTRACT" "$EXECUTE_CREATE" --from "$USER_ADDR"  $TXFLAG --keyring-backend "test" --keyring-dir "$WASMD_HOME"  -y --output json)
 TX_HASH=$(echo "$RES" | jq -r '.txhash')
 if [ -z "$TX_HASH" ] || [ "$TX_HASH" == "null" ]; then
     print_error "Failed to retrieve transaction hash"
@@ -277,7 +277,7 @@ print_header "Executing SessionSetPubKey on Enclave"
 cd $ROOT/relayer
 export EXECUTE_SETPUB=$(QUARTZ_PORT=$QUARTZ_PORT ./scripts/relayNeutron.sh SessionSetPubKey "$POP_MSG")
 
-RES=$($CMD tx wasm execute "$CONTRACT" "$EXECUTE_SETPUB" --from "$USER_ADDR"  $TXFLAG --keyring-backend test --keyring-dir "/home/peppi/.neutrond/" --chain-id test-1 -y --output json)
+RES=$($CMD tx wasm execute "$CONTRACT" "$EXECUTE_SETPUB" --from "$USER_ADDR"  $TXFLAG --keyring-backend "test" --keyring-dir "$WASMD_HOME" -y --output json)
 TX_HASH=$(echo $RES | jq -r '.txhash')
 
 if [ -z "$TX_HASH" ] || [ "$TX_HASH" == "null" ]; then
