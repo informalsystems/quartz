@@ -11,7 +11,7 @@ having a small amount of `ucosm` preloaded from genesis for experimentation.
 - `bob`
 - `charlie`
 
-These accounts' details are stored in clear text in the [/wasmd/accounts](./wasmd/accounts/)
+These accounts' details are stored in clear text in the [/accounts](./accounts/)
 folder.
 
 **Note: this image is _not_ intended to be used in production.**
@@ -53,7 +53,7 @@ This will, by default, build a Docker image tagged `informaldev/wasmd:v0.44.0`.
 
 ## Transacting on behalf of the accounts
 
-The accounts listed in the [`/wasmd/accounts`](./wasmd/accounts/) folder are all already
+The accounts listed in the [`/accounts`](./accounts/) folder are all already
 imported into the `test` keyring within the Docker image. Once the container is
 running, you can run the following to list them:
 
@@ -65,7 +65,7 @@ docker exec -it wasmd \
 
 ## Importing the account keys
 
-As previously mentioned, the [`/wasmd/accounts`](./wasmd/accounts/) folder contains all of
+As previously mentioned, the [`/accounts`](./accounts/) folder contains all of
 the necessary material to construct the public/private keypairs of the accounts.
 
 A convenient helper target is provided in [`/wasmd/Makefile`](./wasmd/Makefile) to facilitate
