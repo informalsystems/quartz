@@ -3,7 +3,6 @@ use quartz_cw::{
     msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation},
     prelude::*,
 };
-use serde::{Deserialize, Serialize};
 
 type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
 
