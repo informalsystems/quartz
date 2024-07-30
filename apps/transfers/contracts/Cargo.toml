@@ -25,6 +25,7 @@ overflow-checks = true
 
 [features]
 mock-sgx = ["quartz-cw/mock-sgx"]
+library = []
 
 [dependencies]
 # external
