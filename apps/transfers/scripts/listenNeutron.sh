@@ -36,9 +36,6 @@ print_error() {
     local message=$1
     echo -e "${RED}${BOLD}❌ Error: $message${NC}" >&2
 }
-#!/bin/bash
-
-set -e
 
 # Configuration
 DEFAULT_NODE="127.0.0.1:26657"
