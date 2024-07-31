@@ -19,7 +19,7 @@ pub fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct List<T>(pub Vec<T>);
 
 impl<E, T: FromStr<Err = E>> FromStr for List<T> {
