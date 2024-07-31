@@ -42,24 +42,22 @@ impl TryFrom<Command> for Request {
                 rpc_addr,
                 path: Self::path_checked(path)?,
             })),
-            Command::Contract { contract_command } => {
-                match contract_command {
-                    ContractCommand::Deploy {
-                        node_url,
-                        chain_id,
-                        sender,
-                        label,
-                        path,
-                    } => Ok(Request::ContractDeploy(ContractDeployRequest {
-                        node_url,
-                        chain_id,
-                        sender,
-                        label,
-                        directory: Self::path_checked(path)?,
-                    })),
-                    _ => todo!()
-                }
-            }
+            Command::Contract { contract_command } => match contract_command {
+                ContractCommand::Deploy {
+                    node_url,
+                    chain_id,
+                    sender,
+                    label,
+                    path,
+                } => Ok(Request::ContractDeploy(ContractDeployRequest {
+                    node_url,
+                    chain_id,
+                    sender,
+                    label,
+                    directory: Self::path_checked(path)?,
+                })),
+                _ => todo!(),
+            },
         }
     }
 }

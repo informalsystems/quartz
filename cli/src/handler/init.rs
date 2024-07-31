@@ -2,7 +2,10 @@ use async_trait::async_trait;
 use tracing::trace;
 
 use crate::{
-    cli::Verbosity, error::Error, handler::Handler, request::init::InitRequest,
+    cli::Verbosity,
+    error::Error,
+    handler::Handler,
+    request::init::InitRequest,
     response::{init::InitResponse, Response},
 };
 

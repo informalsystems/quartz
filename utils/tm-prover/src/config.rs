@@ -84,7 +84,9 @@ impl Default for Config {
             max_block_lag: 5u64,
             trace_file: None,
             verbose: Verbosity::default(),
-            contract_address: "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70".parse().unwrap(),
+            contract_address: "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"
+                .parse()
+                .unwrap(),
             storage_key: String::default(),
         }
     }

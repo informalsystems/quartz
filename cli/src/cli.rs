@@ -51,11 +51,7 @@ pub enum Command {
         #[arg(short, long, default_value = "11090")]
         port: u16,
 
-        #[arg(
-            short,
-            long,
-            default_value = "admin"
-        )]
+        #[arg(short, long, default_value = "admin")]
         sender: String,
 
         #[arg(long, default_value = "testing")]
@@ -73,8 +69,8 @@ pub enum Command {
     /// Create an empty Quartz app from a template
     Contract {
         #[command(subcommand)]
-        contract_command: ContractCommand
-    }    
+        contract_command: ContractCommand,
+    },
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -87,11 +83,7 @@ pub enum ContractCommand {
         #[clap(long, default_value_t = default_node_url())]
         node_url: String,
 
-        #[arg(
-            short,
-            long,
-            default_value = "admin"
-        )]
+        #[arg(short, long, default_value = "admin")]
         sender: String,
 
         #[arg(long, default_value = "testing")]

@@ -15,7 +15,10 @@ use super::utils::{
     types::{Log, WasmdTxResponse},
 };
 use crate::{
-    cli::Verbosity, error::Error, handler::Handler, request::contract_deploy::ContractDeployRequest,
+    cli::Verbosity,
+    error::Error,
+    handler::Handler,
+    request::contract_deploy::ContractDeployRequest,
     response::{contract_deploy::ContractDeployResponse, Response},
 };
 
@@ -45,7 +48,7 @@ async fn deploy<IM: Serialize + From<RawInstantiateMsg<RA>>>(
 
     println!("\n🚀 Communicating with Relay to Instantiate...\n");
     let init_msg: RawInstantiateMsg = run_relay(relay_path.as_path(), "Instantiate", None)?;
-    let init_msg: IM = IM::from(init_msg.into());
+    let init_msg: IM = IM::from(init_msg);
 
     let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;

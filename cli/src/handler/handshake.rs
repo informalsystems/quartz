@@ -20,7 +20,10 @@ use super::utils::{
     types::WasmdTxResponse,
 };
 use crate::{
-    cli::Verbosity, error::Error, handler::Handler, request::handshake::HandshakeRequest,
+    cli::Verbosity,
+    error::Error,
+    handler::Handler,
+    request::handshake::HandshakeRequest,
     response::{handshake::HandshakeResponse, Response},
 };
 
@@ -106,7 +109,9 @@ async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), 
 
     // Read proof file
     let proof = fs::read_to_string(proof_path.as_path())?;
-    let proof_json = serde_json::to_string(&Message { message: proof.trim() })?;
+    let proof_json = serde_json::to_string(&Message {
+        message: proof.trim(),
+    })?;
 
     // Execute SessionSetPubKey on enclave
     println!("Running SessionSetPubKey");
