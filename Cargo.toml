@@ -6,7 +6,8 @@ members = [
     "apps/transfers/enclave",
     "cli",
     "core/light-client-proofs/*",
-    "core/quartz", "core/quartz-common",
+    "core/quartz", 
+    "core/quartz-common",
     "cosmwasm/packages/*",
     "utils/*",
 ]
@@ -87,8 +88,8 @@ quartz-enclave = { path = "core/quartz", default-features = false }
 quartz-proto = { path = "core/quartz-proto", default-features = false }
 quartz-relayer = { path = "relayer", default-features = false }
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
-tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
 tm-prover = { path = "utils/tm-prover", default-features = false }
+tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
 transfers-contract = { path = "apps/transfers/contracts", default-features = false }
 mtcs-enclave = { path = "apps/mtcs/enclave" }
 

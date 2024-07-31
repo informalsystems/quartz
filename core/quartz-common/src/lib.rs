@@ -1,8 +1,3 @@
-#[cfg(feature = "macro")]
-mod cli;
-#[cfg(feature = "macro")]
-mod quartz_macro;
-
 #[cfg(feature = "contract")]
 pub use quartz_cw as contract;
 #[cfg(feature = "enclave")]

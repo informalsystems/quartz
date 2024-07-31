@@ -24,6 +24,7 @@ incremental = false
 overflow-checks = true
 
 [features]
+library = []
 mock-sgx = ["quartz-common/mock-sgx-cw"]
 
 [dependencies]
