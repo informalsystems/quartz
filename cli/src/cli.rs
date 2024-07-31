@@ -27,6 +27,9 @@ pub struct Cli {
     #[clap(flatten)]
     pub verbose: Verbosity,
 
+    #[clap(long)]
+    pub mock_sgx: bool,
+
     /// Main command
     #[command(subcommand)]
     pub command: Command,
@@ -40,4 +43,21 @@ pub enum Command {
         #[clap(long)]
         path: Option<PathBuf>,
     },
+    /// Create an empty Quartz app from a template
+    Enclave {
+        #[command(subcommand)]
+        enclave_command: EnclaveCommand
+    }
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum EnclaveCommand {
+    Build {
+        #[clap(long)]
+        path: Option<PathBuf>,
+    },
+    Start {
+        #[clap(long)]
+        path: Option<PathBuf>,
+    }
 }
