@@ -1,5 +1,4 @@
 use cosmwasm_schema::write_api;
-
 use tcbinfo::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {

@@ -3,9 +3,7 @@ use std::collections::{BTreeMap, HashMap};
 use anyhow;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
-use k256::{
-    ecdsa::{SigningKey, VerifyingKey},
-};
+use k256::ecdsa::{SigningKey, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use transfers_contract::msg::execute::ClearTextTransferRequestMsg;
 

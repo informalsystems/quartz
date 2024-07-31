@@ -1,18 +1,20 @@
-use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg};
-use crate::state::{TcbInfo, DATABASE, ROOT_CERTIFICATE};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 use cw2::set_contract_version;
-use der::DateTime;
-use der::DecodePem;
+use der::{DateTime, DecodePem};
 use mc_attestation_verifier::SignedTcbInfo;
 use p256::ecdsa::VerifyingKey;
 use quartz_tee_ra::intel_sgx::dcap::certificate_chain::TlsCertificateChainVerifier;
 use x509_cert::Certificate;
+
+use crate::{
+    error::ContractError,
+    msg::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg},
+    state::{TcbInfo, DATABASE, ROOT_CERTIFICATE},
+};
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:tcbinfo";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -128,9 +130,12 @@ pub mod query {
 
 #[cfg(test)]
 mod tests {
+    use cosmwasm_std::{
+        coins,
+        testing::{mock_dependencies, mock_env, mock_info},
+    };
+
     use super::*;
-    use cosmwasm_std::coins;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     const TCB_SIGNER: &str = include_str!("../data/tcb_signer.pem");
     const ROOT_CA: &str = include_str!("../data/root_ca.pem");
     const TCB_INFO: &str = include_str!("../data/tcbinfo.json");
@@ -153,8 +158,15 @@ mod tests {
         let info = mock_info("creator", &coins(1000, "earth"));
         let exec = execute(deps.as_mut(), mock_env(), info, exec_msg);
         assert!(exec.is_ok());
-        let query = query(deps.as_ref(), mock_env(),  QueryMsg::GetTcbInfo { fmspc: hex::decode("00606a000000").unwrap().try_into().unwrap(), time: "2024-07-15T15:19:13Z"});
-    assert!(query.is_ok());
+        let query = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetTcbInfo {
+                fmspc: hex::decode("00606a000000").unwrap().try_into().unwrap(),
+                time: "2024-07-15T15:19:13Z",
+            },
+        );
+        assert!(query.is_ok());
         println!("{:?}", query.unwrap());
     }
 }
