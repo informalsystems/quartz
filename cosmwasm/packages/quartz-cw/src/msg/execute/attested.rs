@@ -2,8 +2,13 @@ use std::{convert::Into, default::Default};
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError};
-use quartz_tee_ra::IASReport;
+use quartz_tee_ra::{
+    intel_sgx::dcap::{Collateral, Quote3, Quote3Error},
+    IASReport,
+};
 use serde::Serialize;
+
+pub type Quote = Quote3<Vec<u8>>;
 
 #[cfg(not(feature = "mock-sgx"))]
 pub type DefaultAttestation = EpidAttestation;
@@ -146,6 +151,80 @@ pub trait Attestation {
 impl Attestation for EpidAttestation {
     fn mr_enclave(&self) -> MrEnclave {
         self.report.report.isv_enclave_quote_body.mrenclave()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct DcapAttestation {
+    quote: Quote,
+    collateral: Collateral,
+}
+
+impl DcapAttestation {
+    pub fn new(quote: Quote, collateral: Collateral) -> Self {
+        Self { quote, collateral }
+    }
+
+    pub fn into_tuple(self) -> (Quote, Collateral) {
+        (self.quote, self.collateral)
+    }
+}
+
+#[cw_serde]
+pub struct RawDcapAttestation {
+    quote: HexBinary,
+    collateral: serde_json::Value,
+}
+
+impl TryFrom<RawDcapAttestation> for DcapAttestation {
+    type Error = StdError;
+
+    fn try_from(value: RawDcapAttestation) -> Result<Self, Self::Error> {
+        let quote_bytes: Vec<u8> = value.quote.into();
+        let quote = quote_bytes
+            .try_into()
+            .map_err(|e: Quote3Error| StdError::parse_err("Quote", e.to_string()))?;
+        let collateral = serde_json::from_value(value.collateral)
+            .map_err(|e| StdError::parse_err("Collateral", e.to_string()))?;
+
+        Ok(Self { quote, collateral })
+    }
+}
+
+impl From<DcapAttestation> for RawDcapAttestation {
+    fn from(value: DcapAttestation) -> Self {
+        Self {
+            quote: value.quote.as_ref().to_vec().into(),
+            collateral: serde_json::to_vec(&value.collateral)
+                .expect("infallible serializer")
+                .into(),
+        }
+    }
+}
+
+impl HasDomainType for RawDcapAttestation {
+    type DomainType = DcapAttestation;
+}
+
+impl HasUserData for DcapAttestation {
+    fn user_data(&self) -> UserData {
+        let report_data = self.quote.app_report_body().report_data();
+        let report_data_slice: &[u8] = report_data.as_ref();
+        report_data_slice
+            .to_owned()
+            .try_into()
+            .expect("fixed size array")
+    }
+}
+
+impl Attestation for DcapAttestation {
+    fn mr_enclave(&self) -> MrEnclave {
+        let mr_enclave = self.quote.app_report_body().mr_enclave();
+        let mr_enclave_slice: &[u8] = mr_enclave.as_ref();
+        mr_enclave_slice
+            .to_owned()
+            .try_into()
+            .expect("fixed size array")
     }
 }
 
