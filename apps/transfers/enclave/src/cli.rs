@@ -51,8 +51,9 @@ pub struct Cli {
     pub max_block_lag: u64,
 }
 
-
 fn default_rpc_addr() -> SocketAddr {
     let port = env::var("QUARTZ_PORT").unwrap_or_else(|_| "11090".to_string());
-    format!("127.0.0.1:{}", port).parse().expect("Invalid socket address")
+    format!("127.0.0.1:{}", port)
+        .parse()
+        .expect("Invalid socket address")
 }

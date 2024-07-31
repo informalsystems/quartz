@@ -1,5 +1,6 @@
 use bip32::secp256k1::ecdsa::VerifyingKey;
-use cosmwasm_std::HexBinary;
+use cosmwasm_std::{Addr, HexBinary};
+use cw_tee_mtcs::state::LiquiditySource;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -9,6 +10,15 @@ pub struct ObligatoObligation {
     pub debtor_id: Uuid,
     pub creditor_id: Uuid,
     pub amount: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ContractObligation {
+    pub debtor: Addr,
+    pub creditor: Addr,
+    pub amount: u64,
+    #[serde(default)]
+    pub salt: HexBinary,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -52,6 +62,17 @@ pub struct SubmitObligationsMsg {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SubmitObligationsMsgInner {
+    pub obligations: Vec<RawEncryptedObligation>,
+    pub liquidity_sources: Vec<LiquiditySource>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SubmitObligatioMsg {
+    pub submit_obligations: SubmitObligatoObligationsMsgInner,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SubmitObligatoObligationsMsgInner {
     pub obligations: Vec<RawEncryptedObligation>,
     pub liquidity_sources: Vec<HexBinary>,
 }

@@ -19,6 +19,10 @@ panic = 'abort'
 incremental = false
 overflow-checks = true
 
+[features]
+library = []
+mock-sgx = ["quartz-common/mock-sgx-cw"]
+
 [dependencies]
 # external
 hex = { version = "0.4.3", default-features = false }
@@ -37,7 +41,7 @@ cw20 = "2.0.0"
 cw2 = "2.0.0"
 
 # quartz
-quartz-cw = { path = "../../../../cosmwasm/packages/quartz-cw" }
+quartz-common = { path = "../../../../core/quartz-common/", features = ["contract"]}
 
 # patch indirect deps
 getrandom = { version = "0.2.15", features = ["js"] }

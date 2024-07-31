@@ -7,7 +7,7 @@ use cosmwasm_std::StdError;
 
 use crate::msg::{
     execute::{
-        attested::{Attested, EpidAttestation, RawAttested, RawEpidAttestation},
+        attested::{Attested, DefaultAttestation, RawAttested, RawDefaultAttestation},
         session_create::{RawSessionCreate, SessionCreate},
         session_set_pub_key::{RawSessionSetPubKey, SessionSetPubKey},
     },
@@ -15,13 +15,13 @@ use crate::msg::{
 };
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Execute<Attestation = EpidAttestation> {
+pub enum Execute<Attestation = DefaultAttestation> {
     SessionCreate(Attested<SessionCreate, Attestation>),
     SessionSetPubKey(Attested<SessionSetPubKey, Attestation>),
 }
 
 #[cw_serde]
-pub enum RawExecute<RawAttestation = RawEpidAttestation> {
+pub enum RawExecute<RawAttestation = RawDefaultAttestation> {
     #[serde(rename = "session_create")]
     RawSessionCreate(RawAttested<RawSessionCreate, RawAttestation>),
     #[serde(rename = "session_set_pub_key")]

@@ -1,11 +1,6 @@
 mod cli;
 
-use std::{
-    error::Error,
-    fs::{read_to_string, File},
-    io::{Read, Write},
-    process::Command,
-};
+use std::{error::Error, fs::File, io::Read};
 
 use clap::Parser;
 use cosmos_sdk_proto::{
@@ -30,14 +25,12 @@ use cosmrs::{
 };
 use ecies::{PublicKey, SecretKey};
 use quartz_cw::msg::{
-    execute::attested::{Attested, EpidAttestation},
+    execute::attested::Attested,
     instantiate::{CoreInstantiate, RawInstantiate},
     InstantiateMsg,
 };
 use quartz_proto::quartz::{core_client::CoreClient, InstantiateRequest};
 use quartz_relayer::types::InstantiateResponse;
-use quartz_tee_ra::IASReport;
-use serde_json::{json, Value};
 use subtle_encoding::base64;
 use tendermint::public_key::Secp256k1 as TmPublicKey;
 
@@ -50,16 +43,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = CoreClient::connect(args.enclave_addr.uri().to_string()).await?;
     let response = client.instantiate(InstantiateRequest {}).await?;
     let response: InstantiateResponse = response.into_inner().try_into()?;
-    let (config, quote) = response.into_message().into_tuple();
 
-    let ias_report = gramine_sgx_ias_report(&quote)?;
-    println!(
-        "{}",
-        serde_json::to_string(&ias_report).expect("infallible serializer")
+    #[cfg(feature = "mock-sgx")]
+    let attestation = {
+        use quartz_cw::msg::execute::attested::MockAttestation;
+
+        MockAttestation::default()
+    };
+
+    #[cfg(not(feature = "mock-sgx"))]
+    let attestation = {
+        use quartz_cw::msg::execute::attested::EpidAttestation;
+        use quartz_tee_ra::IASReport;
+
+        let ias_report = gramine_sgx_ias_report(response.quote())?;
+        println!(
+            "{}",
+            serde_json::to_string(&ias_report).expect("infallible serializer")
+        );
+        let ias_report: IASReport = serde_json::from_str(&ias_report.to_string())?;
+        EpidAttestation::new(ias_report)
+    };
+
+    let cw_instantiate_msg = Attested::new(
+        CoreInstantiate::new(response.into_message().into_tuple().0),
+        attestation,
     );
-    let ias_report: IASReport = serde_json::from_str(&ias_report.to_string())?;
-    let attestation = EpidAttestation::new(ias_report);
-    let cw_instantiate_msg = Attested::new(CoreInstantiate::new(config), attestation);
 
     // Read the TSP secret
     let secret = {
@@ -152,7 +161,14 @@ pub async fn send_tx(node: impl ToString, tx_bytes: Vec<u8>) -> Result<(), Box<d
     Ok(())
 }
 
-fn gramine_sgx_ias_report(quote: &[u8]) -> Result<Value, Box<dyn Error>> {
+#[cfg(not(feature = "mock-sgx"))]
+fn gramine_sgx_ias_report(quote: &[u8]) -> Result<serde_json::Value, Box<dyn Error>> {
+    use std::{
+        fs::{read_to_string, File},
+        io::Write,
+        process::Command,
+    };
+
     let dir = tempfile::tempdir()?;
     let quote_file_path = dir.path().join("test.quote");
     let datareport_file_path = dir.path().join("datareport");
@@ -173,6 +189,6 @@ fn gramine_sgx_ias_report(quote: &[u8]) -> Result<Value, Box<dyn Error>> {
 
     let report = read_to_string(datareport_file_path)?;
     let report_sig = read_to_string(datareportsig_file_path)?;
-    let ias_report = json!({"report": report, "reportsig": report_sig});
+    let ias_report = serde_json::json!({"report": report, "reportsig": report_sig});
     Ok(ias_report)
 }

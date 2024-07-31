@@ -2,9 +2,12 @@
 resolver = "2"
 members = [
     "apps/mtcs/enclave",
+    "apps/mtcs/scripts",
     "apps/transfers/enclave",
+    "cli",
     "core/light-client-proofs/*",
-    "core/quartz",
+    "core/quartz", 
+    "core/quartz-common",
     "cosmwasm/packages/*",
     "utils/*",
 ]
@@ -39,7 +42,7 @@ rand = { version = "0.8.5", default-features = false, features = ["getrandom"] }
 rand_core = { version = "0.6", default-features = false, features = ["std"] }
 reqwest = { version = "0.12.2", default-features = false, features = ["json", "rustls-tls"] }
 serde = { version = "1.0.203", default-features = false, features = ["derive"] }
-serde_json = { version = "1.0.94", default-features = false }
+serde_json = { version = "1.0.94", default-features = false, features = ["alloc"] }
 serde_with = { version = "3.4.0", default-features = false, features = ["hex", "macros"] }
 sha2 = { version = "0.10.8", default-features = false }
 subtle-encoding = { version = "0.5.1", default-features = false, features = ["bech32-preview"] }
@@ -75,15 +78,20 @@ mc-attestation-verifier = { git = "https://github.com/informalsystems/attestatio
 
 # quartz
 cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = false }
-cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
 cycles-sync = { path = "utils/cycles-sync", default-features = false }
-mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
+quartz-common = { path = "core/quartz-common" }
 quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
 quartz-enclave = { path = "core/quartz", default-features = false }
 quartz-proto = { path = "core/quartz-proto", default-features = false }
 quartz-relayer = { path = "relayer", default-features = false }
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
+tm-prover = { path = "utils/tm-prover", default-features = false }
 tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
+
+# quartz apps
+cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
+mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
+mtcs-enclave = { path = "apps/mtcs/enclave" }
 transfers-contract = { path = "apps/transfers/contracts", default-features = false }
 
 [profile.release]

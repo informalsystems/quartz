@@ -9,6 +9,9 @@ repository.workspace = true
 keywords = ["blockchain", "cosmos", "cosmwasm", "cycles", "quartz"]
 readme = "README.md"
 
+[features]
+mock-sgx = []
+
 [dependencies]
 # external
 k256.workspace = true

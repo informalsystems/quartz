@@ -1,7 +1,7 @@
 use cosmwasm_std::StdError;
 use cw20_base::ContractError as Cw20ContractError;
 use cw_utils::PaymentError;
-use quartz_cw::error::Error as QuartzError;
+use quartz_common::contract::error::Error as QuartzError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

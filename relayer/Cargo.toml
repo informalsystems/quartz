@@ -9,6 +9,9 @@ repository.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 
+[features]
+mock-sgx = ["quartz-cw/mock-sgx"]
+
 [dependencies]
 # external
 clap.workspace = true

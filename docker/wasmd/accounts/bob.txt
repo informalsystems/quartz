@@ -1,0 +1,11 @@
+
+- address: wasm1adcnk7lt6qst7p5d0g5607e28k77um7nxwxuqy
+  name: bob
+  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A7IHJ0ihzXP/pQqhCQxH7+qsMEvarKWaVsYqzPeblAn+"}'
+  type: local
+
+
+**Important** write this mnemonic phrase in a safe place.
+It is the only way to recover your account if you ever forget your password.
+
+inmate surface cement any mule sweet what hamster rent ridge series equip equal supply plunge mango mystery chase other economy build pool coyote enter

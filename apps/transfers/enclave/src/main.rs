@@ -4,7 +4,6 @@
     clippy::checked_conversions,
     clippy::panic,
     clippy::panic_in_result_fn,
-    missing_docs,
     trivial_casts,
     trivial_numeric_casts,
     rust_2018_idioms,
@@ -26,12 +25,14 @@ use std::{
 use clap::Parser;
 use cli::Cli;
 use proto::settlement_server::SettlementServer as TransfersServer;
-use quartz_cw::state::{Config, LightClientOpts};
-use quartz_enclave::{
-    attestor::{Attestor, EpidAttestor},
-    server::CoreService,
+use quartz_common::{
+    contract::state::{Config, LightClientOpts},
+    enclave::{
+        attestor::{Attestor, DefaultAttestor},
+        server::CoreService,
+    },
+    proto::core_server::CoreServer,
 };
-use quartz_proto::quartz::core_server::CoreServer;
 use tonic::transport::Server;
 use transfers_server::TransfersService;
 
@@ -54,8 +55,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.max_block_lag,
     )?;
 
+    let attestor = DefaultAttestor::default();
+
     let config = Config::new(
-        EpidAttestor.mr_enclave()?,
+        attestor.mr_enclave()?,
         Duration::from_secs(30 * 24 * 60),
         light_client_opts,
     );
@@ -64,13 +67,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Server::builder()
         .add_service(CoreServer::new(CoreService::new(
-            config,
+            config.clone(),
             sk.clone(),
-            EpidAttestor,
+            attestor.clone(),
         )))
-        .add_service(TransfersServer::new(TransfersService::<EpidAttestor>::new(
-            sk.clone(),
-            EpidAttestor,
+        .add_service(TransfersServer::new(TransfersService::new(
+            config, sk, attestor,
         )))
         .serve(args.rpc_addr)
         .await?;

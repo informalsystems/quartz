@@ -9,8 +9,8 @@ repository.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 
-[lib]
-path = "src/lib.rs"
+[features]
+mock-sgx = ["quartz-cw/mock-sgx"]
 
 [dependencies]
 # external
@@ -33,8 +33,6 @@ tendermint-light-client.workspace = true
 
 # quartz
 cw-proof.workspace = true
-cw-tee-mtcs.workspace = true
-cycles-sync.workspace = true
 mtcs.workspace = true
 quartz-cw.workspace = true
 quartz-proto.workspace = true
