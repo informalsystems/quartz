@@ -1,7 +1,7 @@
 use crate::{cli::Verbosity, error::Error, request::Request, response::Response};
 
-pub mod init;
 pub mod contract_build;
+pub mod init;
 
 pub trait Handler {
     type Error;

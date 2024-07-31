@@ -1,8 +1,7 @@
 use tracing::trace;
 
 use crate::{
-    cli::Verbosity, error::Error, handler::Handler, request::init::InitRequest,
-    response::Response
+    cli::Verbosity, error::Error, handler::Handler, request::init::InitRequest, response::Response,
 };
 
 impl Handler for InitRequest {

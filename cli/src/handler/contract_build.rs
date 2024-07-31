@@ -1,7 +1,12 @@
 use std::process::Command;
 
 use crate::{
-    cli::Verbosity, error::Error, handler::Handler, request::contract_build::ContractBuildRequest, response::{contract_build::ContractBuildResponse, Response}};
+    cli::Verbosity,
+    error::Error,
+    handler::Handler,
+    request::contract_build::ContractBuildRequest,
+    response::{contract_build::ContractBuildResponse, Response},
+};
 
 impl Handler for ContractBuildRequest {
     type Error = Error;
@@ -13,17 +18,22 @@ impl Handler for ContractBuildRequest {
             .arg("wasm")
             .args(["--manifest-path", &self.manifest_path.display().to_string()])
             .env("RUSTFLAGS", "-C link-arg=-s");
-        
+
         if mock_sgx {
             command.arg("--features=mock-sgx");
         }
 
         println!("🚧 Building contract binary ...");
-        let output = command.output().map_err(|e| Error::GenericErr(format!("{}", e.to_string())))?;
+        let output = command
+            .output()
+            .map_err(|e| Error::GenericErr(e.to_string()))?;
         if !output.status.success() {
-            return Err(Error::GenericErr(format!("Couldn't build contract. \n{:?}", output)));
+            return Err(Error::GenericErr(format!(
+                "Couldn't build contract. \n{:?}",
+                output
+            )));
         }
-    
+
         Ok(ContractBuildResponse.into())
     }
 }

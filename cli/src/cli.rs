@@ -46,8 +46,8 @@ pub enum Command {
     /// Create an empty Quartz app from a template
     Contract {
         #[command(subcommand)]
-        contract_command: ContractCommand
-    }
+        contract_command: ContractCommand,
+    },
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -59,5 +59,5 @@ pub enum ContractCommand {
     Deploy {
         #[clap(long)]
         path: Option<PathBuf>,
-    }
+    },
 }
