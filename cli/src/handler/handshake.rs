@@ -1,4 +1,4 @@
-use std::{env::current_dir, fs::File, io::Read, path::Path, str::FromStr};
+use std::{env::current_dir, fs, path::Path, str::FromStr};
 
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -105,15 +105,15 @@ async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), 
     }
 
     // Read proof file
-    let proof = read_file(proof_path.as_path()).await?;
-    let json_msg = serde_json::to_string(&Message { message: &proof })?;
+    let proof = fs::read_to_string(proof_path.as_path())?;
+    let proof_json = serde_json::to_string(&Message { message: proof.trim() })?;
 
     // Execute SessionSetPubKey on enclave
     println!("Running SessionSetPubKey");
     let res: MtcsExecuteMsg = run_relay(
         base_path.as_path(),
         "SessionSetPubKey",
-        Some(json_msg.as_str()),
+        Some(proof_json.as_str()),
     )?;
 
     // Submit SessionSetPubKey to contract
@@ -175,28 +175,10 @@ async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {
 
 async fn read_hash_height(base_path: &Path) -> Result<(Height, Hash), anyhow::Error> {
     let height_path = base_path.join("trusted.height");
-    let trusted_height: Height = read_file(height_path.as_path()).await?.parse()?;
+    let trusted_height: Height = fs::read_to_string(height_path.as_path())?.trim().parse()?;
 
     let hash_path = base_path.join("trusted.hash");
-    let trusted_hash: Hash = read_file(hash_path.as_path()).await?.parse()?;
+    let trusted_hash: Hash = fs::read_to_string(hash_path.as_path())?.trim().parse()?;
 
     Ok((trusted_height, trusted_hash))
-}
-
-async fn read_file(path: &Path) -> Result<String, anyhow::Error> {
-    // Open the file
-    let mut file = match File::open(path) {
-        Ok(file) => file,
-        Err(e) => {
-            return Err(anyhow!(format!("Error opening file {:?}: {:?}", path, e)));
-        }
-    };
-
-    // Read the file contents into a string
-    let mut value = String::new();
-    if let Err(e) = file.read_to_string(&mut value) {
-        return Err(anyhow!(format!("Error reading file {:?}: {:?}", file, e)));
-    }
-
-    Ok(value.trim().to_owned())
 }
