@@ -5,7 +5,7 @@ use cosmrs::tendermint::chain::Id as ChainId;
 use crate::request::Request;
 
 #[derive(Clone, Debug)]
-pub struct DeployRequest {
+pub struct ContractDeployRequest {
     pub node_url: String,
     pub chain_id: ChainId,
     pub sender: String,
@@ -13,8 +13,8 @@ pub struct DeployRequest {
     pub directory: PathBuf,
 }
 
-impl From<DeployRequest> for Request {
-    fn from(request: DeployRequest) -> Self {
-        Self::Deploy(request)
+impl From<ContractDeployRequest> for Request {
+    fn from(request: ContractDeployRequest) -> Self {
+        Self::ContractDeploy(request)
     }
 }

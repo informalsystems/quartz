@@ -70,6 +70,19 @@ pub enum Command {
         #[clap(long)]
         path: Option<PathBuf>,
     },
+    /// Create an empty Quartz app from a template
+    Contract {
+        #[command(subcommand)]
+        contract_command: ContractCommand
+    }    
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum ContractCommand {
+    Build {
+        #[clap(long)]
+        path: Option<PathBuf>,
+    },
     Deploy {
         #[clap(long, default_value = "143.244.186.205:26657")]
         node_url: String,

@@ -21,13 +21,13 @@ use super::utils::{
 };
 use crate::{
     cli::Verbosity, error::Error, handler::Handler, request::handshake::HandshakeRequest,
-    response::handshake::HandshakeResponse,
+    response::{handshake::HandshakeResponse, Response},
 };
 
 #[async_trait]
 impl Handler for HandshakeRequest {
     type Error = Error;
-    type Response = HandshakeResponse;
+    type Response = Response;
 
     async fn handle(self, verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
         trace!("starting handshake...");
@@ -36,7 +36,7 @@ impl Handler for HandshakeRequest {
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-        Ok(HandshakeResponse)
+        Ok(HandshakeResponse.into())
     }
 }
 

@@ -1,14 +1,14 @@
 use std::{env::current_dir, path::PathBuf};
 
 use crate::{
-    cli::Command,
+    cli::{Command, ContractCommand},
     error::Error,
     request::{
-        deploy::DeployRequest, handshake::HandshakeRequest, init::InitRequest,
+        contract_deploy::ContractDeployRequest, handshake::HandshakeRequest, init::InitRequest,
     },
 };
 
-pub mod deploy;
+pub mod contract_deploy;
 pub mod handshake;
 pub mod init;
 
@@ -16,7 +16,7 @@ pub mod init;
 pub enum Request {
     Init(InitRequest),
     Handshake(HandshakeRequest),
-    Deploy(DeployRequest),
+    ContractDeploy(ContractDeployRequest),
 }
 
 impl TryFrom<Command> for Request {
@@ -42,19 +42,24 @@ impl TryFrom<Command> for Request {
                 rpc_addr,
                 path: Self::path_checked(path)?,
             })),
-            Command::Deploy {
-                node_url,
-                chain_id,
-                sender,
-                label,
-                path,
-            } => Ok(Request::Deploy(DeployRequest {
-                node_url,
-                chain_id,
-                sender,
-                label,
-                directory: Self::path_checked(path)?,
-            })),
+            Command::Contract { contract_command } => {
+                match contract_command {
+                    ContractCommand::Deploy {
+                        node_url,
+                        chain_id,
+                        sender,
+                        label,
+                        path,
+                    } => Ok(Request::ContractDeploy(ContractDeployRequest {
+                        node_url,
+                        chain_id,
+                        sender,
+                        label,
+                        directory: Self::path_checked(path)?,
+                    })),
+                    _ => todo!()
+                }
+            }
         }
     }
 }

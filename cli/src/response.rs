@@ -1,10 +1,10 @@
 use serde::Serialize;
 
 use crate::response::{
-    deploy::DeployResponse, handshake::HandshakeResponse, init::InitResponse,
+    contract_deploy::ContractDeployResponse, handshake::HandshakeResponse, init::InitResponse,
 };
 
-pub mod deploy;
+pub mod contract_deploy;
 pub mod handshake;
 pub mod init;
 
@@ -12,5 +12,5 @@ pub mod init;
 pub enum Response {
     Init(InitResponse),
     Handshake(HandshakeResponse),
-    Deploy(DeployResponse),
+    ContractDeploy(ContractDeployResponse),
 }

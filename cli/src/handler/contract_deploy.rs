@@ -15,14 +15,14 @@ use super::utils::{
     types::{Log, WasmdTxResponse},
 };
 use crate::{
-    cli::Verbosity, error::Error, handler::Handler, request::deploy::DeployRequest,
-    response::deploy::DeployResponse,
+    cli::Verbosity, error::Error, handler::Handler, request::contract_deploy::ContractDeployRequest,
+    response::{contract_deploy::ContractDeployResponse, Response},
 };
 
 #[async_trait]
-impl Handler for DeployRequest {
+impl Handler for ContractDeployRequest {
     type Error = Error;
-    type Response = DeployResponse;
+    type Response = Response;
 
     async fn handle(self, _verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
@@ -31,14 +31,14 @@ impl Handler for DeployRequest {
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-        Ok(DeployResponse)
+        Ok(ContractDeployResponse.into())
     }
 }
 
 type RA = RawDefaultAttestation;
 
 async fn deploy<IM: Serialize + From<RawInstantiateMsg<RA>>>(
-    args: DeployRequest,
+    args: ContractDeployRequest,
 ) -> Result<(), anyhow::Error> {
     // TODO: Replace with call to Rust package
     let relay_path = current_dir()?.join("../");

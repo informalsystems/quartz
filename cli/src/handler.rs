@@ -4,7 +4,7 @@ use crate::{cli::Verbosity, error::Error, request::Request, response::Response};
 
 pub mod utils;
 // commands
-pub mod deploy;
+pub mod contract_deploy;
 pub mod handshake;
 pub mod init;
 
@@ -23,9 +23,10 @@ impl Handler for Request {
 
     async fn handle(self, verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
         match self {
-            Request::Init(request) => request.handle(verbosity).await.map(Into::into),
-            Request::Handshake(request) => request.handle(verbosity).await.map(Into::into),
-            Request::Deploy(request) => request.handle(verbosity).await.map(Into::into),
+            Request::Init(request) => request.handle(verbosity).await,
+            Request::Handshake(request) => request.handle(verbosity).await,
+            Request::ContractDeploy(request) => request.handle(verbosity).await,
         }
+        .map(Into::into)
     }
 }
