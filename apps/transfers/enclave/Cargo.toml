@@ -35,7 +35,7 @@ tendermint.workspace = true
 tendermint-light-client.workspace = true
 
 # quartz
-cycles-sync.workspace = true
+# cycles-sync.workspace = true
 quartz-cw.workspace = true
 quartz-proto.workspace = true
 quartz-enclave.workspace = true

@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-ROOT=${ROOT:-$HOME}
+ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
 FEATURES=
 
 if [ -n "$MOCK_SGX" ]; then
@@ -13,12 +13,12 @@ fi
 echo "--------------------------------------------------------"
 echo "building enclave binary"
 
-cd $ROOT/cycles-quartz/apps/transfers/enclave
+cd $ROOT/apps/transfers/enclave
 CARGO_TARGET_DIR=./target cargo build --release $FEATURES
 
 echo "--------------------------------------------------------"
 echo "building cosmwasm contract binary"
 
 
-cd $ROOT/cycles-quartz/apps/transfers/contracts
+cd $ROOT/apps/transfers/contracts
 bash build.sh $FEATURES

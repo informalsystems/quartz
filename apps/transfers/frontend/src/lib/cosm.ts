@@ -66,7 +66,7 @@ const executeTransferContract = ({
     executeTransferContractMsgs,
     {
       amount: coins(1, 'untrn'),
-      gas: '200000',
+      gas: '400000',
     },
   )
 }
