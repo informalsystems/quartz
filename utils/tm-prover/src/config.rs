@@ -19,7 +19,7 @@ pub fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct List<T>(pub Vec<T>);
 
 impl<E, T: FromStr<Err = E>> FromStr for List<T> {
@@ -69,13 +69,13 @@ pub struct ProofOutput {
     pub merkle_proof: RawCwProof,
 }
 
-// TODO: Investigate if it's possible to derive default using Clap's default values
+// TODO: Investigate if it's possible to derive default using Clap's default values, or otherwise find better default values
 impl Default for Config {
     fn default() -> Self {
         Config {
             chain_id: String::default(),
             primary: "http://127.0.0.1:26657".parse().unwrap(),
-            witnesses: "[]".parse().unwrap(),
+            witnesses: "http://127.0.0.1:26657".parse().unwrap(),
             trusted_height: Height::default(),
             trusted_hash: Hash::default(),
             trust_threshold: TrustThreshold::TWO_THIRDS,
@@ -84,7 +84,7 @@ impl Default for Config {
             max_block_lag: 5u64,
             trace_file: None,
             verbose: Verbosity::default(),
-            contract_address: "".parse().unwrap(),
+            contract_address: "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70".parse().unwrap(),
             storage_key: String::default(),
         }
     }

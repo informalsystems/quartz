@@ -29,10 +29,10 @@ impl Handler for HandshakeRequest {
     type Error = Error;
     type Response = HandshakeResponse;
 
-    async fn handle(self, _verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
         trace!("starting handshake...");
 
-        handshake(self)
+        handshake(self, verbosity)
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
@@ -45,7 +45,7 @@ struct Message<'a> {
     message: &'a str,
 }
 
-async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
+async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), anyhow::Error> {
     let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
     let wsurl = format!("ws://{}/websocket", args.node_url);
 
@@ -58,6 +58,7 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
     let trusted_files_path = base_path.join("apps/mtcs/");
     let (trusted_height, trusted_hash) = read_hash_height(trusted_files_path.as_path()).await?;
 
+    println!("Running SessionCreate");
     let res: MtcsExecuteMsg = run_relay(base_path.as_path(), "SessionCreate", None)?;
 
     let output: WasmdTxResponse = serde_json::from_str(
@@ -71,12 +72,14 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
             )?
             .as_str(),
     )?;
-    println!("\n\n SessionCreate tx output: {:?}", output);
+    // println!("\n\n SessionCreate tx output: {:?}", output);
 
     // Wait for tx to commit
     block_tx_commit(&tmrpc_client, output.txhash).await?;
+    println!("SessionCreate tx committed");
 
     // Wait 2 blocks
+    println!("Waiting 2 blocks for light client proof");
     two_block_waitoor(&wsurl).await?;
 
     // TODO: dir logic issue #125
@@ -90,12 +93,13 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
         trusted_height,
         trusted_hash,
         trace_file: Some(proof_path.clone()),
-        verbose: "1".parse()?,
+        verbose: "1".parse()?, // TODO: both tm-prover and cli define the same Verbosity struct. Need to define this once and import
         contract_address: args.contract.clone(),
         storage_key: "quartz_session".to_string(),
+        chain_id: args.chain_id.to_string(),
         ..Default::default()
     };
-
+    println!("config: {:?}", config);
     if let Err(report) = prove(config).await {
         return Err(anyhow!("Tendermint prover failed. Report: {}", report));
     }
@@ -105,6 +109,7 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
     let json_msg = serde_json::to_string(&Message { message: &proof })?;
 
     // Execute SessionSetPubKey on enclave
+    println!("Running SessionSetPubKey");
     let res: MtcsExecuteMsg = run_relay(
         base_path.as_path(),
         "SessionSetPubKey",
@@ -124,10 +129,11 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
             .as_str(),
     )?;
 
-    println!("\n\n SessionSetPubKey tx output: {:?}", output);
+    // println!("\n\n SessionSetPubKey tx output: {:?}", output);
 
     // Wait for tx to commit
     block_tx_commit(&tmrpc_client, output.txhash).await?;
+    println!("SessionSetPubKey tx committed");
 
     if let MtcsExecuteMsg::Quartz(QuartzExecuteMsg::RawSessionSetPubKey(quartz)) = res {
         println!("\n\n\n{}", quartz.msg.pub_key()); // TODO: return this instead later
@@ -147,13 +153,14 @@ async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {
     let mut subs = client.subscribe(EventType::NewBlock.into()).await?;
 
     // Wait 2 NewBlock events
-    let mut ev_count = 5_i32;
+    let mut ev_count = 2_i32;
+    println!("Blocks left: {ev_count} ...");
 
     while let Some(res) = subs.next().await {
-        let ev = res?;
-        println!("Got event: {:?}", ev);
+        let _ev = res?;
         ev_count -= 1;
-        if ev_count < 0 {
+        println!("Blocks left: {ev_count} ...");
+        if ev_count == 0 {
             break;
         }
     }
