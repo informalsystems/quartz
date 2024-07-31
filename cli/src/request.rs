@@ -5,20 +5,17 @@ use crate::{
     error::Error,
     request::{
         deploy::DeployRequest, handshake::HandshakeRequest, init::InitRequest,
-        listen::ListenRequest,
     },
 };
 
 pub mod deploy;
 pub mod handshake;
 pub mod init;
-pub mod listen;
 
 #[derive(Clone, Debug)]
 pub enum Request {
     Init(InitRequest),
     Handshake(HandshakeRequest),
-    Listen(ListenRequest),
     Deploy(DeployRequest),
 }
 
@@ -37,23 +34,6 @@ impl TryFrom<Command> for Request {
                 rpc_addr,
                 path,
             } => Ok(Request::Handshake(HandshakeRequest {
-                contract,
-                port,
-                sender,
-                chain_id,
-                node_url,
-                rpc_addr,
-                path: Self::path_checked(path)?,
-            })),
-            Command::Listen {
-                contract,
-                port,
-                sender,
-                chain_id,
-                node_url,
-                rpc_addr,
-                path,
-            } => Ok(Request::Listen(ListenRequest {
                 contract,
                 port,
                 sender,

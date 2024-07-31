@@ -70,32 +70,6 @@ pub enum Command {
         #[clap(long)]
         path: Option<PathBuf>,
     },
-    Listen {
-        #[arg(short, long, value_parser = wasmaddr_to_id)]
-        contract: AccountId,
-        /// Port enclave is listening on
-        #[arg(short, long, default_value = "11090")]
-        port: u16,
-
-        #[arg(
-            short,
-            long,
-            default_value = "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"
-        )]
-        sender: String,
-
-        #[arg(long, default_value = "testing")]
-        chain_id: ChainId,
-
-        #[clap(long, default_value = "143.244.186.205:26657")]
-        node_url: String,
-
-        #[clap(long, default_value_t = default_rpc_addr())]
-        rpc_addr: String,
-
-        #[clap(long)]
-        path: Option<PathBuf>,
-    },
     Deploy {
         #[clap(long, default_value = "143.244.186.205:26657")]
         node_url: String,

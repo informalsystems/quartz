@@ -7,7 +7,6 @@ pub mod utils;
 pub mod deploy;
 pub mod handshake;
 pub mod init;
-pub mod listen;
 
 #[async_trait]
 pub trait Handler {
@@ -26,7 +25,6 @@ impl Handler for Request {
         match self {
             Request::Init(request) => request.handle(verbosity).await.map(Into::into),
             Request::Handshake(request) => request.handle(verbosity).await.map(Into::into),
-            Request::Listen(request) => request.handle(verbosity).await.map(Into::into),
             Request::Deploy(request) => request.handle(verbosity).await.map(Into::into),
         }
     }
