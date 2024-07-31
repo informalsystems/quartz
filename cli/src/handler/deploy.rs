@@ -44,8 +44,8 @@ async fn deploy<IM: Serialize + From<RawInstantiateMsg<RA>>>(
     let relay_path = current_dir()?.join("../");
 
     println!("\n🚀 Communicating with Relay to Instantiate...\n");
-    let init_msg: RawInstantiateMsg = run_relay(relay_path.as_path(), "Instantiate", None)?; // need to define the return type
-    let init_msg: IM = IM::from(init_msg);
+    let init_msg: RawInstantiateMsg = run_relay(relay_path.as_path(), "Instantiate", None)?;
+    let init_msg: IM = IM::from(init_msg.into());
 
     let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
