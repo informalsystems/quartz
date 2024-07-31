@@ -45,6 +45,28 @@ impl Attestor for EpidAttestor {
 }
 
 #[derive(Clone, PartialEq, Debug, Default)]
+pub struct DcapAttestor;
+
+impl Attestor for DcapAttestor {
+    type Error = IoError;
+
+    fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
+        let user_data = user_data.user_data();
+        let mut user_report_data = File::create("/dev/attestation/user_report_data")?;
+        user_report_data.write_all(user_data.as_slice())?;
+        user_report_data.flush()?;
+        read("/dev/attestation/quote")
+    }
+
+    fn mr_enclave(&self) -> Result<MrEnclave, Self::Error> {
+        let quote = self.quote(NullUserData)?;
+        Ok(quote[112..(112 + 32)]
+            .try_into()
+            .expect("hardcoded array size"))
+    }
+}
+
+#[derive(Clone, PartialEq, Debug, Default)]
 pub struct MockAttestor;
 
 impl Attestor for MockAttestor {
