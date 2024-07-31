@@ -54,14 +54,14 @@ pub enum Command {
         #[arg(
             short,
             long,
-            default_value = "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"
+            default_value = "admin"
         )]
         sender: String,
 
         #[arg(long, default_value = "testing")]
         chain_id: ChainId,
 
-        #[clap(long, default_value = "143.244.186.205:26657")]
+        #[clap(long, default_value_t = default_node_url())]
         node_url: String,
 
         #[clap(long, default_value_t = default_rpc_addr())]
@@ -84,13 +84,13 @@ pub enum ContractCommand {
         path: Option<PathBuf>,
     },
     Deploy {
-        #[clap(long, default_value = "143.244.186.205:26657")]
+        #[clap(long, default_value_t = default_node_url())]
         node_url: String,
 
         #[arg(
             short,
             long,
-            default_value = "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"
+            default_value = "admin"
         )]
         sender: String,
 
@@ -107,4 +107,8 @@ pub enum ContractCommand {
 
 fn default_rpc_addr() -> String {
     env::var("RPC_URL").unwrap_or_else(|_| "http://127.0.0.1".to_string())
+}
+
+fn default_node_url() -> String {
+    env::var("NODE_URL").unwrap_or_else(|_| "143.244.186.205:26657".to_string())
 }

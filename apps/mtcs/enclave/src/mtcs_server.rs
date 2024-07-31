@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::BTreeMap,
     sync::{Arc, Mutex},
 };
 
@@ -19,7 +19,6 @@ use quartz_common::{
     contract::{msg::execute::attested::RawAttested, state::Config},
     enclave::attestor::Attestor,
 };
-use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
 use crate::{
