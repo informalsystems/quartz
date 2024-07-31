@@ -54,7 +54,7 @@ pub enum Command {
 pub enum ContractCommand {
     Build {
         #[clap(long)]
-        path: Option<PathBuf>,
+        manifest_path: PathBuf,
     },
     Deploy {
         #[clap(long)]

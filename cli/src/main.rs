@@ -48,7 +48,7 @@ fn main() -> Result<()> {
 
     // Each `Request` defines an associated `Handler` (i.e. logic) and `Response`. All handlers are
     // free to log to the terminal and these logs are sent to `stderr`.
-    let response = request.handle(args.verbose)?;
+    let response = request.handle(args.verbose, args.mock_sgx)?;
 
     // `Handlers` must use `Responses` to output to `stdout`.
     println!(

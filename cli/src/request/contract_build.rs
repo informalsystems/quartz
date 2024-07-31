@@ -4,9 +4,7 @@ use crate::request::Request;
 
 #[derive(Clone, Debug)]
 pub struct  ContractBuildRequest {
-    // TODO(hu55a1n1): remove `allow(unused)` here once init handler is implemented
-    #[allow(unused)]
-    pub directory: PathBuf,
+    pub manifest_path: PathBuf,
 }
 
 
