@@ -5,7 +5,6 @@ use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
 use k256::{
     ecdsa::{SigningKey, VerifyingKey},
-    pkcs8::DecodePublicKey,
 };
 use serde::{Deserialize, Serialize};
 use transfers_contract::msg::execute::ClearTextTransferRequestMsg;
