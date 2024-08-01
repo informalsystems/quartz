@@ -27,7 +27,9 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let root = Certificate::from_pem(&msg.root).expect("could not parse PEM");
     let verifier = TlsCertificateChainVerifier::new(&msg.root);
-     verifier.verify_certificate_chain(vec![&root], vec![], None).map_err(|_| ContractError::CertificateVerificationError)?;
+    verifier
+        .verify_certificate_chain(vec![&root], vec![], None)
+        .map_err(|_| ContractError::CertificateVerificationError)?;
     ROOT_CERTIFICATE
         .save(deps.storage, &msg.root.to_string())
         .map_err(ContractError::Std)?;
@@ -53,9 +55,15 @@ pub fn execute(
         .time
         .parse::<DateTime>()
         .map_err(|_| ContractError::DateTimeReadError)?;
-    
-    assert!(execute::check_certificate_validity(&root, time), "On-chain root certificate validity check failed");
-    assert!(execute::check_certificate_validity(&certificate, time), "Certificate validity check failed");
+
+    assert!(
+        execute::check_certificate_validity(&root, time),
+        "On-chain root certificate validity check failed"
+    );
+    assert!(
+        execute::check_certificate_validity(&certificate, time),
+        "Certificate validity check failed"
+    );
 
     let key = VerifyingKey::from_sec1_bytes(
         certificate
@@ -65,10 +73,12 @@ pub fn execute(
             .as_bytes()
             .expect("Failed to parse public key"),
     )
-        .expect("Failed to decode public key");
+    .expect("Failed to decode public key");
 
-    verifier.verify_certificate_chain(vec![&certificate, &root], vec![], None).map_err(|_| ContractError::CertificateVerificationError)?;
-    
+    verifier
+        .verify_certificate_chain(vec![&certificate, &root], vec![], None)
+        .map_err(|_| ContractError::CertificateVerificationError)?;
+
     signed_tcb_info
         .verify(Some(&key), Some(time))
         .map_err(|_| ContractError::TcbInfoVerificationError)?;
@@ -89,16 +99,25 @@ pub fn execute(
 
 pub mod execute {
     use super::*;
-    
-    pub fn get_fmspc<'a>(tcbinfo: &'a str) -> [u8;6] {
+
+    pub fn get_fmspc(tcbinfo: &str) -> [u8; 6] {
         let tcbinfo_raw: Value = serde_json::from_str(tcbinfo).expect("could not read tcbinfo");
-    let fmspc_raw = hex::decode(tcbinfo_raw.get("tcbInfo").unwrap().get("fmspc").unwrap().as_str().expect("could not find fmspc string")).expect("failed to decode fmspc hex string");
+        let fmspc_raw = hex::decode(
+            tcbinfo_raw
+                .get("tcbInfo")
+                .unwrap()
+                .get("fmspc")
+                .unwrap()
+                .as_str()
+                .expect("could not find fmspc string"),
+        )
+        .expect("failed to decode fmspc hex string");
         fmspc_raw.try_into().unwrap()
     }
-    
-    pub fn check_certificate_validity (cert: &Certificate, time: DateTime) -> bool {
+
+    pub fn check_certificate_validity(cert: &Certificate, time: DateTime) -> bool {
         let validity = cert.tbs_certificate.validity;
-        let start =  validity.not_before.to_date_time();
+        let start = validity.not_before.to_date_time();
         let end = validity.not_after.to_date_time();
         time >= start && time <= end
     }
@@ -124,7 +143,7 @@ pub mod query {
         })
     }
 
-    fn verify_tcb_info<'a>(tcb_info: &'a TcbInfo, time: String) -> StdResult<()> {
+    fn verify_tcb_info(tcb_info: &TcbInfo, time: String) -> StdResult<()> {
         let signed_tcb_info: SignedTcbInfo =
             SignedTcbInfo::try_from(tcb_info.info.as_ref()).unwrap();
         let certificate = Certificate::from_pem(&tcb_info.certificate).unwrap();
@@ -132,8 +151,11 @@ pub mod query {
             .parse::<DateTime>()
             .map_err(|_| StdError::generic_err("Invalid timestamp"))?;
         // TODO: Does it matter that this uses a function from the execute module?
-        assert!(execute::check_certificate_validity(&certificate, time), "Certificate corresponding to this TCBInfo is invalid");
-        
+        assert!(
+            execute::check_certificate_validity(&certificate, time),
+            "Certificate corresponding to this TCBInfo is invalid"
+        );
+
         let key = VerifyingKey::from_sec1_bytes(
             certificate
                 .tbs_certificate
@@ -143,7 +165,7 @@ pub mod query {
                 .expect("Failed to parse public key"),
         )
         .expect("Failed to decode public key");
-        
+
         signed_tcb_info
             .verify(Some(&key), Some(time))
             .map_err(|_| StdError::generic_err("TCBInfo verification failed"))
@@ -152,11 +174,11 @@ pub mod query {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use cosmwasm_std::{
         coins,
         testing::{mock_dependencies, mock_env, mock_info},
     };
-    use super::*;
     const TCB_SIGNER: &str = include_str!("../data/tcb_signer.pem");
     const ROOT_CA: &str = include_str!("../data/root_ca.pem");
     const TCB_INFO: &str = include_str!("../data/tcbinfo.json");
@@ -166,7 +188,9 @@ mod tests {
     fn verify_init_and_exec() {
         let time = "2024-07-11T15:19:13Z";
         let info = mock_info("creator", &coins(1000, "earth"));
-        let init_msg = InstantiateMsg { root: ROOT_CA.to_string() };
+        let init_msg = InstantiateMsg {
+            root: ROOT_CA.to_string(),
+        };
         let mut deps = mock_dependencies();
         let res = instantiate(deps.as_mut(), mock_env(), info, init_msg);
         assert!(res.is_ok());
@@ -179,8 +203,15 @@ mod tests {
         let info = mock_info("creator", &coins(1000, "earth"));
         let exec = execute(deps.as_mut(), mock_env(), info, exec_msg);
         assert!(exec.is_ok());
-        let query = query(deps.as_ref(), mock_env(),  QueryMsg::GetTcbInfo { fmspc: hex::decode(FMSPC).unwrap().try_into().unwrap(), time: TIME.to_string()});
-    assert!(query.is_ok());
+        let query = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetTcbInfo {
+                fmspc: hex::decode(FMSPC).unwrap().try_into().unwrap(),
+                time: TIME.to_string(),
+            },
+        );
+        assert!(query.is_ok());
         println!("{:?}", query.unwrap());
     }
 }
