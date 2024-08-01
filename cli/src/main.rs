@@ -26,7 +26,7 @@ use tracing_subscriber::{util::SubscriberInitExt, EnvFilter};
 use crate::{cli::Cli, handler::Handler, request::Request};
 
 pub struct Config {
-    pub mock_sgx: bool
+    pub mock_sgx: bool,
 }
 
 fn main() -> Result<()> {
@@ -52,7 +52,9 @@ fn main() -> Result<()> {
 
     // Each `Request` defines an associated `Handler` (i.e. logic) and `Response`. All handlers are
     // free to log to the terminal and these logs are sent to `stderr`.
-    let response = request.handle(Config { mock_sgx: args.mock_sgx })?;
+    let response = request.handle(Config {
+        mock_sgx: args.mock_sgx,
+    })?;
 
     // `Handlers` must use `Responses` to output to `stdout`.
     println!(

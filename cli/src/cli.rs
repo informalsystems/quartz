@@ -66,8 +66,6 @@ pub enum EnclaveCommand {
 
 fn default_mocksgx_flag() -> bool {
     let flag = env::var("MOCK_SGX").unwrap_or_else(|_| "0".to_string());
-    return match flag.as_str() {
-        "0" => false,
-        _ => true,
-    }
+
+    !matches!(flag.as_str(), "0")
 }

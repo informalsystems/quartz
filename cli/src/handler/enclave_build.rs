@@ -6,7 +6,8 @@ use crate::{
     error::Error,
     handler::Handler,
     request::enclave_build::EnclaveBuildRequest,
-    response::{enclave_build::EnclaveBuildResponse, Response}, Config,
+    response::{enclave_build::EnclaveBuildResponse, Response},
+    Config,
 };
 
 impl Handler for EnclaveBuildRequest {
