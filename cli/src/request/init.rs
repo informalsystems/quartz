@@ -12,9 +12,11 @@ impl TryFrom<Option<PathBuf>> for InitRequest {
 
     fn try_from(path: Option<PathBuf>) -> Result<Self, Self::Error> {
         if let Some(path) = path {
-            Ok(InitRequest {directory: path})
+            Ok(InitRequest { directory: path })
         } else {
-            Ok(InitRequest {directory: current_dir().map_err(|e| Error::GenericErr(e.to_string()))?})
+            Ok(InitRequest {
+                directory: current_dir().map_err(|e| Error::GenericErr(e.to_string()))?,
+            })
         }
     }
 }
