@@ -47,12 +47,16 @@ pub fn execute(
     let raw_root = ROOT_CERTIFICATE.load(deps.storage).unwrap();
     let root = Certificate::from_pem(raw_root.clone()).expect("could not parse PEM");
     let verifier = TlsCertificateChainVerifier::new(&raw_root);
-     let tcbinfo_raw: Value = serde_json::from_str(&msg.tcb_info).map_err(|_| ContractError::TcbInfoReadError)?;
-    let fmspc_raw = hex::decode(tcbinfo_raw.get("tcbInfo").unwrap().get("fmspc").unwrap().as_str().expect("could not find fmspc string")).map_err(|_| ContractError::TcbInfoReadError)?;
-     let fmspc: [u8; 6] = fmspc_raw.try_into().unwrap();
-
+    let fmspc = execute::get_fmspc(&msg.tcb_info);
     let certificate = Certificate::from_pem(msg.certificate.clone()).expect("failed to parse PEM");
-    verifier.verify_certificate_chain(vec![&certificate, &root], vec![], None).map_err(|_| ContractError::CertificateVerificationError)?;
+    let time = msg
+        .time
+        .parse::<DateTime>()
+        .map_err(|_| ContractError::DateTimeReadError)?;
+    
+    assert!(execute::check_certificate_validity(&root, time), "On-chain root certificate validity check failed");
+    assert!(execute::check_certificate_validity(&certificate, time), "Certificate validity check failed");
+
     let key = VerifyingKey::from_sec1_bytes(
         certificate
             .tbs_certificate
@@ -62,10 +66,9 @@ pub fn execute(
             .expect("Failed to parse public key"),
     )
         .expect("Failed to decode public key");
-    let time = msg
-        .time
-        .parse::<DateTime>()
-        .map_err(|_| ContractError::DateTimeReadError)?;
+
+    verifier.verify_certificate_chain(vec![&certificate, &root], vec![], None).map_err(|_| ContractError::CertificateVerificationError)?;
+    
     signed_tcb_info
         .verify(Some(&key), Some(time))
         .map_err(|_| ContractError::TcbInfoVerificationError)?;
@@ -82,6 +85,23 @@ pub fn execute(
         .map_err(ContractError::Std);
 
     Ok(Response::default())
+}
+
+pub mod execute {
+    use super::*;
+    
+    pub fn get_fmspc<'a>(tcbinfo: &'a str) -> [u8;6] {
+        let tcbinfo_raw: Value = serde_json::from_str(tcbinfo).expect("could not read tcbinfo");
+    let fmspc_raw = hex::decode(tcbinfo_raw.get("tcbInfo").unwrap().get("fmspc").unwrap().as_str().expect("could not find fmspc string")).expect("failed to decode fmspc hex string");
+        fmspc_raw.try_into().unwrap()
+    }
+    
+    pub fn check_certificate_validity (cert: &Certificate, time: DateTime) -> bool {
+        let validity = cert.tbs_certificate.validity;
+        let start =  validity.not_before.to_date_time();
+        let end = validity.not_after.to_date_time();
+        time >= start && time <= end
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -108,6 +128,12 @@ pub mod query {
         let signed_tcb_info: SignedTcbInfo =
             SignedTcbInfo::try_from(tcb_info.info.as_ref()).unwrap();
         let certificate = Certificate::from_pem(&tcb_info.certificate).unwrap();
+        let time = time
+            .parse::<DateTime>()
+            .map_err(|_| StdError::generic_err("Invalid timestamp"))?;
+        // TODO: Does it matter that this uses a function from the execute module?
+        assert!(execute::check_certificate_validity(&certificate, time), "Certificate corresponding to this TCBInfo is invalid");
+        
         let key = VerifyingKey::from_sec1_bytes(
             certificate
                 .tbs_certificate
@@ -117,9 +143,7 @@ pub mod query {
                 .expect("Failed to parse public key"),
         )
         .expect("Failed to decode public key");
-        let time = time
-            .parse::<DateTime>()
-            .map_err(|_| StdError::generic_err("Invalid timestamp"))?;
+        
         signed_tcb_info
             .verify(Some(&key), Some(time))
             .map_err(|_| StdError::generic_err("TCBInfo verification failed"))
