@@ -21,7 +21,7 @@ impl TryFrom<Command> for Request {
             Command::Init { path } => InitRequest::try_from(path).map(Into::into),
             Command::Enclave { enclave_command } => match enclave_command {
                 EnclaveCommand::Build { manifest_path } => {
-                    Ok(Request::EnclaveBuild(EnclaveBuildRequest { manifest_path }))
+                    Ok(EnclaveBuildRequest { manifest_path }.into())
                 }
                 _ => todo!(),
             },
