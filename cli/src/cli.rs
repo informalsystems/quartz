@@ -46,8 +46,8 @@ pub enum Command {
     /// Create an empty Quartz app from a template
     Enclave {
         #[command(subcommand)]
-        enclave_command: EnclaveCommand
-    }
+        enclave_command: EnclaveCommand,
+    },
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -59,5 +59,5 @@ pub enum EnclaveCommand {
     Start {
         #[clap(long)]
         path: Option<PathBuf>,
-    }
+    },
 }

@@ -1,7 +1,12 @@
 use std::process::Command;
 
 use crate::{
-    cli::Verbosity, error::Error, handler::Handler, request::enclave_build::EnclaveBuildRequest, response::{enclave_build::EnclaveBuildResponse, Response}};
+    cli::Verbosity,
+    error::Error,
+    handler::Handler,
+    request::enclave_build::EnclaveBuildRequest,
+    response::{enclave_build::EnclaveBuildResponse, Response},
+};
 
 impl Handler for EnclaveBuildRequest {
     type Error = Error;
@@ -19,11 +24,16 @@ impl Handler for EnclaveBuildRequest {
         }
 
         println!("🚧 Building enclave ...");
-        let output = command.output().map_err(|e| Error::GenericErr(e.to_string()))?;
+        let output = command
+            .output()
+            .map_err(|e| Error::GenericErr(e.to_string()))?;
         if !output.status.success() {
-            return Err(Error::GenericErr(format!("Couldn't build enclave. {:?}", output)));
+            return Err(Error::GenericErr(format!(
+                "Couldn't build enclave. {:?}",
+                output
+            )));
         }
-    
+
         Ok(EnclaveBuildResponse.into())
     }
 }

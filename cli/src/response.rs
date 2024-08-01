@@ -1,12 +1,12 @@
 use serde::Serialize;
 
-use crate::response::{init::InitResponse, enclave_build::EnclaveBuildResponse};
+use crate::response::{enclave_build::EnclaveBuildResponse, init::InitResponse};
 
-pub mod init;
 pub mod enclave_build;
+pub mod init;
 
 #[derive(Clone, Debug, Serialize)]
 pub enum Response {
     Init(InitResponse),
-    EnclaveBuild(EnclaveBuildResponse)
+    EnclaveBuild(EnclaveBuildResponse),
 }
