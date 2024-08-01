@@ -1,0 +1,11 @@
+
+- address: neutron1zmr7dfc325907tvj8jl2p2p4cx84clk5aflstl
+  name: rly1
+  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"Ak3alwik1L65ujlKbgQP//JL3LUlJmvA0zn8rt4eeoHG"}'
+  type: local
+
+
+**Important** write this mnemonic phrase in a safe place.
+It is the only way to recover your account if you ever forget your password.
+
+garage advice weekend this dose mango sign horse tool torch mosquito repeat sentence valid scheme pull punch need prosper build actor say cancel allow
