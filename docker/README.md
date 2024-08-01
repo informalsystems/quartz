@@ -1,4 +1,4 @@
-# Docker setups for testnets
+# Docker Images
 
 | Setup | Description | Link |
 |-------|-------------|------|
