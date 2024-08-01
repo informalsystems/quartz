@@ -54,7 +54,7 @@ pub enum Command {
 pub enum EnclaveCommand {
     Build {
         #[clap(long)]
-        path: Option<PathBuf>,
+        manifest_path: PathBuf,
     },
     Start {
         #[clap(long)]
