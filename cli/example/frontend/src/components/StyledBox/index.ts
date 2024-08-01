@@ -1,0 +1,1 @@
+export { StyledBox } from './StyledBox'
