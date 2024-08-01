@@ -64,11 +64,11 @@ fi
 
 WASM_BIN="$1"
 INSTANTIATE_MSG="$2"
-CHAIN_ID=${CHAIN_ID:-test-1}
 NODE_URL=${NODE_URL:-127.0.0.1:26657}
 LABEL=${LABEL:-quartz-transfers-app}
 COUNT=${COUNT:-0}
 QUARTZ_PORT="${QUARTZ_PORT:-11090}"
+CHAIN_ID=${CHAIN_ID:-test-1}
 TXFLAG="--chain-id ${CHAIN_ID} --gas-prices 0.0025untrn --gas auto --gas-adjustment 1.3"
 CMD="neutrond --node http://$NODE_URL"
 

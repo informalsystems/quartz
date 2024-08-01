@@ -88,7 +88,6 @@ export default function Home() {
   useEffect(() => {
     return wasmEventHandler(
       `execute._contract_address='${process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS}' AND wasm-store_balance.address='${walletAddress}'`,
-      // `execute._contract_address='${process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS}' `,
       {
         next: (event) => {
           console.log(event)
