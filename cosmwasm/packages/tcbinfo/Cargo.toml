@@ -49,7 +49,7 @@ x509-cert = { version = "0.2.5", default-features = false, features = ["pem"] }
 x509-parser = {version = "0.16.0", features = ["verify"] }
 der = { version = "0.7.9" }
 quartz-tee-ra = { path = "../quartz-tee-ra" }
-mc-attestation-verifier = {version = "0.4.3"}
+mc-attestation-verifier = {git = "https://github.com/informalsystems/attestation", default-features = false}
 p256 = "0.13.2"
 serde_json = { version = "1.0", default-features = false }
 hashbrown = {version = "0.14.5", features = ["serde"]}

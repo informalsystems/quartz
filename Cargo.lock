@@ -433,29 +433,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d965446196e3b7decd44aa7ee49e31d630118f90ef12f97900f262eb915c951d"
 
 [[package]]
-name = "bindgen"
-version = "0.66.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2b84e06fc203107bfbad243f4aba2af864eb7db3b1cf46ea0a023b0b433d2a7"
-dependencies = [
- "bitflags 2.6.0",
- "cexpr",
- "clang-sys",
- "lazy_static",
- "lazycell",
- "log",
- "peeking_take_while",
- "prettyplease",
- "proc-macro2",
- "quote",
- "regex",
- "rustc-hash",
- "shlex",
- "syn 2.0.71",
- "which",
-]
-
-[[package]]
 name = "bip32"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -568,25 +545,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cargo-emit"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1582e1c9e755dd6ad6b224dcffb135d199399a4568d454bd89fe515ca8425695"
-
-[[package]]
 name = "cc"
 version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "324c74f2155653c90b04f25b2a47a8a631360cb908f92a772695f430c7e31052"
-
-[[package]]
-name = "cexpr"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766"
-dependencies = [
- "nom",
-]
 
 [[package]]
 name = "cfg-if"
@@ -612,17 +574,6 @@ checksum = "773f3b9af64447d2ce9850330c473515014aa235e6a783b02db81ff39e4a3dad"
 dependencies = [
  "crypto-common",
  "inout",
-]
-
-[[package]]
-name = "clang-sys"
-version = "1.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b023947811758c97c59bf9d1c188fd619ad4718dcaa767947df1cadb14f39f4"
-dependencies = [
- "glob",
- "libc",
- "libloading",
 ]
 
 [[package]]
@@ -1755,12 +1706,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4271d37baee1b8c7e4b708028c57d816cf9d2434acb33a549475f78c181f6253"
 
 [[package]]
-name = "glob"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
-
-[[package]]
 name = "group"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1868,15 +1813,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
 dependencies = [
  "digest 0.10.7",
-]
-
-[[package]]
-name = "home"
-version = "0.5.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3d1354bf6b7235cb4a0576c2619fd4ed18183f689b12b006a0ee7329eeff9a5"
-dependencies = [
- "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2209,26 +2145,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
-name = "lazycell"
-version = "1.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
-
-[[package]]
 name = "libc"
 version = "0.2.155"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97b3888a4aecf77e811145cadf6eef5901f4782c53886191b2f693f24761847c"
-
-[[package]]
-name = "libloading"
-version = "0.8.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4979f22fdb869068da03c9f7528f8297c6fd2606bc3a4affe42e6a823fdb8da4"
-dependencies = [
- "cfg-if",
- "windows-targets 0.48.5",
-]
 
 [[package]]
 name = "libsecp256k1"
@@ -2315,33 +2235,14 @@ checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 [[package]]
 name = "mc-attestation-verifier"
 version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcf39fb1af41156ec868564ab53156d6dd75f1dc8a7a073acdfb217b6140d9e4"
-dependencies = [
- "der",
- "displaydoc",
- "hex",
- "mc-sgx-core-sys-types 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mc-sgx-core-types 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mc-sgx-dcap-types 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "p256",
- "serde",
- "serde_json",
- "subtle",
- "x509-cert",
-]
-
-[[package]]
-name = "mc-attestation-verifier"
-version = "0.4.3"
 source = "git+https://github.com/informalsystems/attestation#ae86e2804abed218f4fd2fd4aec5e39408898cd8"
 dependencies = [
  "der",
  "displaydoc",
  "hex",
- "mc-sgx-core-sys-types 0.11.0 (git+https://github.com/informalsystems/sgx)",
- "mc-sgx-core-types 0.11.0 (git+https://github.com/informalsystems/sgx)",
- "mc-sgx-dcap-types 0.11.0 (git+https://github.com/informalsystems/sgx)",
+ "mc-sgx-core-sys-types",
+ "mc-sgx-core-types",
+ "mc-sgx-dcap-types",
  "p256",
  "serde",
  "serde_json",
@@ -2350,29 +2251,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mc-sgx-core-build"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94420a570e76dfc39924b4ec712c2df21a8d77e61ca5ba0857300b1c59889a5d"
-dependencies = [
- "bindgen",
- "cargo-emit",
-]
-
-[[package]]
-name = "mc-sgx-core-sys-types"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c5c33323d0f2855e63efaa538bdd7094104ff79f963734b4122f23302cff581"
-dependencies = [
- "bindgen",
- "cargo-emit",
- "mc-sgx-core-build",
- "serde",
- "serde_with",
-]
-
-[[package]]
 name = "mc-sgx-core-sys-types"
 version = "0.11.0"
 source = "git+https://github.com/informalsystems/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
@@ -2384,32 +2262,14 @@ dependencies = [
 [[package]]
 name = "mc-sgx-core-types"
 version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1191b0bb2868ff5bdf7766d3b3e9fa9bb94c23149ae21a82485e6f5f44074106"
-dependencies = [
- "bitflags 2.6.0",
- "displaydoc",
- "getrandom",
- "hex",
- "mc-sgx-core-sys-types 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mc-sgx-util 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "nom",
- "rand_core 0.6.4",
- "serde",
- "subtle",
-]
-
-[[package]]
-name = "mc-sgx-core-types"
-version = "0.11.0"
 source = "git+https://github.com/informalsystems/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
 dependencies = [
  "bitflags 2.6.0",
  "displaydoc",
  "getrandom",
  "hex",
- "mc-sgx-core-sys-types 0.11.0 (git+https://github.com/informalsystems/sgx)",
- "mc-sgx-util 0.11.0 (git+https://github.com/informalsystems/sgx)",
+ "mc-sgx-core-sys-types",
+ "mc-sgx-util",
  "nom",
  "rand_core 0.6.4",
  "serde",
@@ -2419,41 +2279,9 @@ dependencies = [
 [[package]]
 name = "mc-sgx-dcap-sys-types"
 version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2dd3e93a316a5c142de6fb9179970abc04ca4767732b90d118c90d531db47e89"
-dependencies = [
- "bindgen",
- "mc-sgx-core-build",
- "mc-sgx-core-sys-types 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "mc-sgx-dcap-sys-types"
-version = "0.11.0"
 source = "git+https://github.com/informalsystems/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
 dependencies = [
- "mc-sgx-core-sys-types 0.11.0 (git+https://github.com/informalsystems/sgx)",
-]
-
-[[package]]
-name = "mc-sgx-dcap-types"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42c618d93a3f9561bdc27231fa7965ebe855c8d74f5cd5467da194042e0671a9"
-dependencies = [
- "const-oid",
- "displaydoc",
- "hex",
- "mc-sgx-core-types 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mc-sgx-dcap-sys-types 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mc-sgx-util 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "nom",
- "p256",
- "serde",
- "sha2 0.10.8",
- "static_assertions",
- "subtle",
- "x509-cert",
+ "mc-sgx-core-sys-types",
 ]
 
 [[package]]
@@ -2464,9 +2292,9 @@ dependencies = [
  "const-oid",
  "displaydoc",
  "hex",
- "mc-sgx-core-types 0.11.0 (git+https://github.com/informalsystems/sgx)",
- "mc-sgx-dcap-sys-types 0.11.0 (git+https://github.com/informalsystems/sgx)",
- "mc-sgx-util 0.11.0 (git+https://github.com/informalsystems/sgx)",
+ "mc-sgx-core-types",
+ "mc-sgx-dcap-sys-types",
+ "mc-sgx-util",
  "nom",
  "p256",
  "serde",
@@ -2475,12 +2303,6 @@ dependencies = [
  "subtle",
  "x509-cert",
 ]
-
-[[package]]
-name = "mc-sgx-util"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3c237bec3e33530c4b1a171c8c078ad5d525d5fae177ac9d62e8e454b3fffb7"
 
 [[package]]
 name = "mc-sgx-util"
@@ -2798,12 +2620,6 @@ dependencies = [
  "digest 0.10.7",
  "hmac",
 ]
-
-[[package]]
-name = "peeking_take_while"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 
 [[package]]
 name = "peg"
@@ -3150,10 +2966,10 @@ dependencies = [
  "displaydoc",
  "hex",
  "hex-literal",
- "mc-attestation-verifier 0.4.3 (git+https://github.com/informalsystems/attestation)",
- "mc-sgx-core-types 0.11.0 (git+https://github.com/informalsystems/sgx)",
- "mc-sgx-dcap-sys-types 0.11.0 (git+https://github.com/informalsystems/sgx)",
- "mc-sgx-dcap-types 0.11.0 (git+https://github.com/informalsystems/sgx)",
+ "mc-attestation-verifier",
+ "mc-sgx-core-types",
+ "mc-sgx-dcap-sys-types",
+ "mc-sgx-dcap-types",
  "num-bigint",
  "serde",
  "serde_json",
@@ -3945,12 +3761,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "shlex"
-version = "1.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
-
-[[package]]
 name = "signature"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4113,7 +3923,7 @@ dependencies = [
  "getrandom",
  "hashbrown 0.14.5",
  "hex",
- "mc-attestation-verifier 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mc-attestation-verifier",
  "p256",
  "quartz-tee-ra",
  "schemars",
@@ -4955,18 +4765,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd7c23921eeb1713a4e851530e9b9756e4fb0e89978582942612524cf09f01cd"
 dependencies = [
  "rustls-pki-types",
-]
-
-[[package]]
-name = "which"
-version = "4.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87ba24419a2078cd2b0f2ede2691b6c66d8e47836da3b6db8265ebad47afbfc7"
-dependencies = [
- "either",
- "home",
- "once_cell",
- "rustix",
 ]
 
 [[package]]

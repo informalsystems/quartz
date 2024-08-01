@@ -1,3 +1,6 @@
+use crate::error::ContractError;
+use crate::msg::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg};
+use crate::state::{TcbInfo, DATABASE, ROOT_CERTIFICATE};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -5,16 +8,11 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use der::{DateTime, DecodePem};
-use mc_attestation_verifier::SignedTcbInfo;
+use mc_attestation_verifier::{CertificateChainVerifier, SignedTcbInfo};
 use p256::ecdsa::VerifyingKey;
 use quartz_tee_ra::intel_sgx::dcap::certificate_chain::TlsCertificateChainVerifier;
+use serde_json::Value;
 use x509_cert::Certificate;
-
-use crate::{
-    error::ContractError,
-    msg::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg},
-    state::{TcbInfo, DATABASE, ROOT_CERTIFICATE},
-};
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:tcbinfo";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -27,9 +25,9 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    let _root = Certificate::from_pem(msg.root).expect("could not parse PEM");
-    let _verifier = TlsCertificateChainVerifier::new(msg.root);
-    // verifier.verify_certificate_chain(vec![root]).map_err(|_| ContractError::CertificateVerificationError)?;
+    let root = Certificate::from_pem(&msg.root).expect("could not parse PEM");
+    let verifier = TlsCertificateChainVerifier::new(&msg.root);
+     verifier.verify_certificate_chain(vec![&root], vec![], None).map_err(|_| ContractError::CertificateVerificationError)?;
     ROOT_CERTIFICATE
         .save(deps.storage, &msg.root.to_string())
         .map_err(ContractError::Std)?;
@@ -45,16 +43,16 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     let signed_tcb_info: SignedTcbInfo =
-        SignedTcbInfo::try_from(msg.tcb_info).expect("failed to parse TCBInfo");
+        SignedTcbInfo::try_from(msg.tcb_info.as_ref()).expect("failed to parse TCBInfo");
     let raw_root = ROOT_CERTIFICATE.load(deps.storage).unwrap();
-    let _root = Certificate::from_pem(raw_root.clone()).expect("could not parse PEM");
+    let root = Certificate::from_pem(raw_root.clone()).expect("could not parse PEM");
+    let verifier = TlsCertificateChainVerifier::new(&raw_root);
+     let tcbinfo_raw: Value = serde_json::from_str(&msg.tcb_info).map_err(|_| ContractError::TcbInfoReadError)?;
+    let fmspc_raw = hex::decode(tcbinfo_raw.get("tcbInfo").unwrap().get("fmspc").unwrap().as_str().expect("could not find fmspc string")).map_err(|_| ContractError::TcbInfoReadError)?;
+     let fmspc: [u8; 6] = fmspc_raw.try_into().unwrap();
 
-    let _verifier = TlsCertificateChainVerifier::new(&raw_root);
-    //  verifier.verify_certificate_chain(vec![certificate, root]).map_err(|_| ContractError::CertificateVerificationError)?;
-
-    // TODO: check msg.fmspc == tcb_info.fmspc (use Shoaib's hack)
-
-    let certificate = Certificate::from_pem(msg.certificate).expect("failed to parse PEM");
+    let certificate = Certificate::from_pem(msg.certificate.clone()).expect("failed to parse PEM");
+    verifier.verify_certificate_chain(vec![&certificate, &root], vec![], None).map_err(|_| ContractError::CertificateVerificationError)?;
     let key = VerifyingKey::from_sec1_bytes(
         certificate
             .tbs_certificate
@@ -63,7 +61,7 @@ pub fn execute(
             .as_bytes()
             .expect("Failed to parse public key"),
     )
-    .expect("Failed to decode public key");
+        .expect("Failed to decode public key");
     let time = msg
         .time
         .parse::<DateTime>()
@@ -75,7 +73,7 @@ pub fn execute(
     let _ = DATABASE
         .save(
             deps.storage,
-            msg.fmspc,
+            fmspc,
             &TcbInfo {
                 info: msg.tcb_info.to_string(),
                 certificate: msg.certificate.to_string(),
@@ -98,7 +96,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub mod query {
     use super::*;
 
-    pub fn get_info(deps: Deps, fmspc: [u8; 6], time: &str) -> StdResult<GetTcbInfoResponse> {
+    pub fn get_info(deps: Deps, fmspc: [u8; 6], time: String) -> StdResult<GetTcbInfoResponse> {
         let tcb_info = DATABASE.load(deps.storage, fmspc)?;
         verify_tcb_info(&tcb_info, time)?;
         Ok(GetTcbInfoResponse {
@@ -106,7 +104,7 @@ pub mod query {
         })
     }
 
-    fn verify_tcb_info<'a>(tcb_info: &'a TcbInfo, time: &'a str) -> StdResult<()> {
+    fn verify_tcb_info<'a>(tcb_info: &'a TcbInfo, time: String) -> StdResult<()> {
         let signed_tcb_info: SignedTcbInfo =
             SignedTcbInfo::try_from(tcb_info.info.as_ref()).unwrap();
         let certificate = Certificate::from_pem(&tcb_info.certificate).unwrap();
@@ -134,39 +132,31 @@ mod tests {
         coins,
         testing::{mock_dependencies, mock_env, mock_info},
     };
-
     use super::*;
     const TCB_SIGNER: &str = include_str!("../data/tcb_signer.pem");
     const ROOT_CA: &str = include_str!("../data/root_ca.pem");
     const TCB_INFO: &str = include_str!("../data/tcbinfo.json");
-
+    const FMSPC: &str = "00606a000000";
+    const TIME: &str = "2024-07-15T15:19:13Z";
     #[test]
     fn verify_init_and_exec() {
         let time = "2024-07-11T15:19:13Z";
         let info = mock_info("creator", &coins(1000, "earth"));
-        let init_msg = InstantiateMsg { root: ROOT_CA };
+        let init_msg = InstantiateMsg { root: ROOT_CA.to_string() };
         let mut deps = mock_dependencies();
         let res = instantiate(deps.as_mut(), mock_env(), info, init_msg);
         assert!(res.is_ok());
 
         let exec_msg = ExecuteMsg {
-            fmspc: hex::decode("00606a000000").unwrap().try_into().unwrap(),
-            tcb_info: TCB_INFO,
-            certificate: TCB_SIGNER,
-            time,
+            tcb_info: TCB_INFO.to_string(),
+            certificate: TCB_SIGNER.to_string(),
+            time: time.to_string(),
         };
         let info = mock_info("creator", &coins(1000, "earth"));
         let exec = execute(deps.as_mut(), mock_env(), info, exec_msg);
         assert!(exec.is_ok());
-        let query = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetTcbInfo {
-                fmspc: hex::decode("00606a000000").unwrap().try_into().unwrap(),
-                time: "2024-07-15T15:19:13Z",
-            },
-        );
-        assert!(query.is_ok());
+        let query = query(deps.as_ref(), mock_env(),  QueryMsg::GetTcbInfo { fmspc: hex::decode(FMSPC).unwrap().try_into().unwrap(), time: TIME.to_string()});
+    assert!(query.is_ok());
         println!("{:?}", query.unwrap());
     }
 }

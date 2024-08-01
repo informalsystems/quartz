@@ -18,4 +18,6 @@ pub enum ContractError {
     PublicKeyReadError,
     #[error("invalid date and time")]
     DateTimeReadError,
+    #[error("invalid tcbinfo")]
+    TcbInfoReadError,
 }
