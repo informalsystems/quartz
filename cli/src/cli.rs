@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use tracing::metadata::LevelFilter;
@@ -27,7 +27,7 @@ pub struct Cli {
     #[clap(flatten)]
     pub verbose: Verbosity,
 
-    #[clap(long)]
+    #[clap(long, default_value_t = default_mocksgx_flag())]
     pub mock_sgx: bool,
 
     /// Main command
@@ -43,7 +43,7 @@ pub enum Command {
         #[clap(long)]
         path: Option<PathBuf>,
     },
-    /// Create an empty Quartz app from a template
+    /// Subcommands for handling the quartz app enclave
     Enclave {
         #[command(subcommand)]
         enclave_command: EnclaveCommand,
@@ -52,12 +52,22 @@ pub enum Command {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum EnclaveCommand {
+    /// Build the Quartz app's enclave
     Build {
-        #[clap(long)]
+        #[arg(long, default_value = "./enclave/Cargo.toml")]
         manifest_path: PathBuf,
     },
+    // Run the Quartz app's enclave
     Start {
         #[clap(long)]
         path: Option<PathBuf>,
     },
+}
+
+fn default_mocksgx_flag() -> bool {
+    let flag = env::var("MOCK_SGX").unwrap_or_else(|_| "0".to_string());
+    return match flag.as_str() {
+        "0" => false,
+        _ => true,
+    }
 }
