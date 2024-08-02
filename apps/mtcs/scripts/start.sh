@@ -2,8 +2,7 @@
 
 #set -eo pipefail
 
-ROOT=${ROOT:-$HOME}
-DIR_QUARTZ="$ROOT/cycles-quartz"
+DIR_QUARTZ=${ROOT:-$(git rev-parse --show-toplevel)}
 DIR_QUARTZ_APP="$DIR_QUARTZ/apps/mtcs"
 DIR_QUARTZ_ENCLAVE="$DIR_QUARTZ_APP/enclave"
 DIR_QUARTZ_TM_PROVER="$DIR_QUARTZ/utils/tm-prover"
@@ -55,6 +54,7 @@ echo "$TRUSTED_HEIGHT" > trusted.height
 if [ -n "$MOCK_SGX" ]; then
     echo "MOCK_SGX is set. Running enclave without gramine..."
     cd $DIR_QUARTZ
+
     RUST_BACKTRACE=full ./target/release/mtcs-enclave --chain-id "testing" --trusted-height "$TRUSTED_HEIGHT" --trusted-hash "$TRUSTED_HASH"
     exit
 fi

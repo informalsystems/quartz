@@ -26,13 +26,15 @@ QUARTZ_PORT="${QUARTZ_PORT:-11090}"
 # clear tmp files from previous runs
 rm -f "$QUOTE_FILE" "$REPORT_FILE" "$REPORT_SIG_FILE"
 
+# query the gRPC quartz enclave service
+ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto quartz.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" quartz.Core/"$REQUEST" | jq -c '.message | fromjson')
+
+# parse out the quote and the message
+QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')
+MSG=$(echo "$ATTESTED_MSG" | jq 'del(.quote)')
+
+
 if [ -n "$MOCK_SGX" ]; then
-    # query the gRPC quartz enclave service
-    ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto quartz.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" quartz.Core/"$REQUEST" | jq -c '.message | fromjson')
-    
-    # parse out the quote and the message
-    QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')
-    MSG=$(echo "$ATTESTED_MSG" | jq 'del(.quote)')
 
     case "$REQUEST" in
         "Instantiate")

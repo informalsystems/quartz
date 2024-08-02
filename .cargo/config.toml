@@ -1,6 +1,5 @@
 [alias]
 wasm = "build --release --target wasm32-unknown-unknown --lib"
-wasm-release = "RUSTFLAGS='-C link-arg=-s' cargo build --release --target wasm32-unknown-unknown --lib"
 unit-test = "test --lib"
 schema = "run --bin schema"
 

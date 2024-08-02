@@ -3,7 +3,6 @@ use std::{env::current_dir, fs, path::Path, str::FromStr};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
-use cw_tee_mtcs::msg::ExecuteMsg as MtcsExecuteMsg;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use futures_util::stream::StreamExt;
 use quartz_common::contract::prelude::QuartzExecuteMsg;
@@ -62,7 +61,7 @@ async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), 
     let (trusted_height, trusted_hash) = read_hash_height(trusted_files_path.as_path()).await?;
 
     println!("Running SessionCreate");
-    let res: MtcsExecuteMsg = run_relay(base_path.as_path(), "SessionCreate", None)?;
+    let res: serde_json::Value = run_relay(base_path.as_path(), "SessionCreate", None)?;
 
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client
@@ -115,7 +114,7 @@ async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), 
 
     // Execute SessionSetPubKey on enclave
     println!("Running SessionSetPubKey");
-    let res: MtcsExecuteMsg = run_relay(
+    let mut res: serde_json::Value = run_relay(
         base_path.as_path(),
         "SessionSetPubKey",
         Some(proof_json.as_str()),
@@ -139,8 +138,11 @@ async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), 
     // Wait for tx to commit
     block_tx_commit(&tmrpc_client, output.txhash).await?;
     println!("SessionSetPubKey tx committed");
+    println!("res: \n{:?}", res);
 
-    if let MtcsExecuteMsg::Quartz(QuartzExecuteMsg::RawSessionSetPubKey(quartz)) = res {
+    if let QuartzExecuteMsg::RawSessionSetPubKey(quartz) =
+        serde_json::from_value::<QuartzExecuteMsg>(res["quartz"].take())?
+    {
         println!("\n\n\n{}", quartz.msg.pub_key()); // TODO: return this instead later
     } else {
         return Err(anyhow!("Invalid relay response from SessionSetPubKey"));
