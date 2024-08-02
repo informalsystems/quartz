@@ -11,7 +11,7 @@ having a small amount of `ucosm` preloaded from genesis for experimentation.
 - `bob`
 - `charlie`
 
-These accounts' details are stored in clear text in the [accounts](./accounts/)
+These accounts' details are stored in clear text in the [/accounts](./accounts/)
 folder.
 
 **Note: this image is _not_ intended to be used in production.**
@@ -53,7 +53,7 @@ This will, by default, build a Docker image tagged `informaldev/wasmd:v0.44.0`.
 
 ## Transacting on behalf of the accounts
 
-The accounts listed in the [`accounts`](./accounts/) folder are all already
+The accounts listed in the [`/accounts`](./accounts/) folder are all already
 imported into the `test` keyring within the Docker image. Once the container is
 running, you can run the following to list them:
 
@@ -65,10 +65,10 @@ docker exec -it wasmd \
 
 ## Importing the account keys
 
-As previously mentioned, the [`accounts`](./accounts/) folder contains all of
+As previously mentioned, the [`/accounts`](./accounts/) folder contains all of
 the necessary material to construct the public/private keypairs of the accounts.
 
-A convenient helper target is provided in [`Makefile`](./Makefile) to facilitate
+A convenient helper target is provided in [`/wasmd/Makefile`](./wasmd/Makefile) to facilitate
 importing of these accounts into a local `wasmd` configuration (i.e. on your
 host machine, outside of the Docker container). This will allow you to transact
 on behalf of any of those accounts from outside of the Docker container.
@@ -77,7 +77,7 @@ on behalf of any of those accounts from outside of the Docker container.
 your local machine as what is built into the `wasmd` Docker image.
 
 ```bash
-make import-accounts
+make import-local-accounts
 ```
 
 To check that the accounts have been imported correctly, on your host machine
@@ -88,7 +88,9 @@ run:
 wasmd keys list --keyring-backend=test
 ```
 
-## Querying accounts in the container
+> Note - You don't need to run `make create-local-accounts` because that was already done, hence why the text files (i.e. `alice.txt`) are included on git. However, they won't be in your local keyring until you run `make import-local-accounts`. If we ever have to reset the accounts, you'd run `make delete-local-accounts` followed by `make create-local-accounts` and push the updated accounts to github.
+
+## Querying accounts in the wasmd container
 
 To query, for example, the `admin` account's balance, where the `admin`
 account's address is `wasm1mkrm9m8g0dzv5z73xg8yzlj6srqc72qru5xfv3`, once the
