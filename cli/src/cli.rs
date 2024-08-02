@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf};
+use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use tracing::metadata::LevelFilter;
@@ -29,7 +29,7 @@ pub struct Cli {
 
     /// Enable mock SGX mode for testing purposes.
     /// This flag disables the use of an Intel SGX processor and allows the system to run without remote attestations.
-    #[clap(long, default_value_t = default_mocksgx_flag())]
+    #[clap(long, env)]
     pub mock_sgx: bool,
 
     /// Main command
@@ -65,10 +65,4 @@ pub enum EnclaveCommand {
         #[clap(long)]
         path: Option<PathBuf>,
     },
-}
-
-fn default_mocksgx_flag() -> bool {
-    let flag = env::var("MOCK_SGX").unwrap_or_else(|_| "0".to_string());
-
-    !matches!(flag.as_str(), "0")
 }
