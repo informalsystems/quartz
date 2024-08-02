@@ -14,6 +14,7 @@ pub type DefaultAttestor = EpidAttestor;
 #[cfg(feature = "mock-sgx")]
 pub type DefaultAttestor = MockAttestor;
 
+/// The trait defines the interface for generating attestations from within an enclave.
 pub trait Attestor {
     type Error: ToString;
 
@@ -22,6 +23,7 @@ pub trait Attestor {
     fn mr_enclave(&self) -> Result<MrEnclave, Self::Error>;
 }
 
+/// An `Attestor` for generating EPID attestations for Gramine based enclaves.
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct EpidAttestor;
 
@@ -44,6 +46,7 @@ impl Attestor for EpidAttestor {
     }
 }
 
+/// An `Attestor` for generating DCAP attestations for Gramine based enclaves.
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct DcapAttestor;
 
@@ -66,6 +69,8 @@ impl Attestor for DcapAttestor {
     }
 }
 
+/// A mock `Attestor` that creates a quote consisting of just the user report data. (only meant for
+/// testing purposes)
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct MockAttestor;
 
