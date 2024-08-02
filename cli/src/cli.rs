@@ -27,6 +27,8 @@ pub struct Cli {
     #[clap(flatten)]
     pub verbose: Verbosity,
 
+    /// Enable mock SGX mode for testing purposes.
+    /// This flag disables the use of an Intel SGX processor and allows the system to run without remote attestations.
     #[clap(long, default_value_t = default_mocksgx_flag())]
     pub mock_sgx: bool,
 
@@ -39,11 +41,11 @@ pub struct Cli {
 pub enum Command {
     /// Create an empty Quartz app from a template
     Init {
-        /// path to create & init a quartz app, defaults to current path if unspecified
+        /// path to create & init a Quartz app, defaults to current path if unspecified
         #[clap(long)]
         path: Option<PathBuf>,
     },
-    /// Subcommands for handling the quartz app enclave
+    /// Subcommands for handling the Quartz app enclave
     Enclave {
         #[command(subcommand)]
         enclave_command: EnclaveCommand,
@@ -54,6 +56,7 @@ pub enum Command {
 pub enum EnclaveCommand {
     /// Build the Quartz app's enclave
     Build {
+        /// path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
         #[arg(long, default_value = "./enclave/Cargo.toml")]
         manifest_path: PathBuf,
     },

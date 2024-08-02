@@ -26,14 +26,14 @@ impl Handler for EnclaveBuildRequest {
         }
 
         trace!("🚧 Building enclave ...");
-        let child = command
+        let status = command
             .status()
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-        if !child.success() {
+        if !status.success() {
             return Err(Error::GenericErr(format!(
                 "Couldn't build enclave. {:?}",
-                child
+                status
             )));
         }
 
