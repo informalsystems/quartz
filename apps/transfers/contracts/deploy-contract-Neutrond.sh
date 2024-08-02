@@ -69,7 +69,7 @@ LABEL=${LABEL:-quartz-transfers-app}
 COUNT=${COUNT:-0}
 QUARTZ_PORT="${QUARTZ_PORT:-11090}"
 CHAIN_ID=${CHAIN_ID:-test-1}
-TXFLAG="--chain-id ${CHAIN_ID} --gas-prices 0.0025untrn --gas auto --gas-adjustment 1.3"
+TXFLAG="--chain-id ${CHAIN_ID} --gas-prices 0.0025untrn --gas auto --gas-adjustment 1.3  --keyring-dir "$WASMD_HOME" --keyring-backend "test" "
 CMD="neutrond --node http://$NODE_URL"
 
 
@@ -86,7 +86,7 @@ print_message $CYAN "User Address: ${USER_ADDR}"
 print_message $CYAN "Command: $CMD"
 
 print_message $BLUE "Storing WASM contract..."
-RES=$($CMD tx wasm store "$WASM_BIN" --from "$USER_ADDR" --keyring-backend "test" $TXFLAG -y --output json --keyring-dir "$WASMD_HOME")
+RES=$($CMD tx wasm store "$WASM_BIN" --from "$USER_ADDR"  $TXFLAG -y --output json )
 TX_HASH=$(echo "$RES" | jq -r '.txhash')
 print_message $CYAN "Transaction hash: $TX_HASH"
 
@@ -127,7 +127,12 @@ print_message $CYAN "Code ID: ${CODE_ID}"
 INSTANTIATE_MSG_PARSED=$(echo "$INSTANTIATE_MSG" | jq -r '.')
 INSTANTIATE_MSG_ONELINE=$(echo "$INSTANTIATE_MSG_PARSED" | jq '{quartz: .} + {denom: "untrn"}'  )
 
-INSTANTIATE_CMD="$CMD tx wasm instantiate $CODE_ID '$INSTANTIATE_MSG_ONELINE' --from $USER_ADDR --keyring-backend "test" --keyring-dir "$WASMD_HOME" --label $LABEL $TXFLAG -y --no-admin --output json"
+
+
+# Print the instantiate message for debugging
+echo "Instantiate message: $INSTANTIATE_MSG_ONELINE"
+
+INSTANTIATE_CMD="$CMD tx wasm instantiate $CODE_ID '$INSTANTIATE_MSG_ONELINE' --from "$USER_ADDR"  $TXFLAG --label $LABEL -y --no-admin --output json"
 
 print_message $BLUE "Executing instantiate command..."
 RES=$(eval "$INSTANTIATE_CMD")

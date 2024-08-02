@@ -9,14 +9,17 @@ repository.workspace = true
 authors.workspace = true
 
 [features]
+default = []
 full = ["contract", "enclave", "proto"]
 contract = ["dep:quartz-cw"]
 enclave = ["dep:quartz-enclave", "proto"]
 proto = ["dep:quartz-proto"]
 mock-sgx-cw = ["quartz-cw/mock-sgx"]
 mock-sgx-enclave = ["quartz-enclave/mock-sgx"]
+std = ["quartz-cw?/std", "quartz-proto?/std"]
 
 [dependencies]
-quartz-cw = { workspace = true, optional = true }
-quartz-proto = { workspace = true, optional = true }
-quartz-enclave = { workspace = true, optional = true }
+quartz-cw = { workspace = true, optional = true, default-features = false }
+quartz-proto = { workspace = true, optional = true, default-features = false, features = ["std"] }
+
+quartz-enclave = { workspace = true, optional = true, default-features = false }

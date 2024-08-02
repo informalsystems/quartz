@@ -11,6 +11,7 @@ path = "bin/encrypt.rs"
 
 [features]
 mock-sgx = ["quartz-common/mock-sgx-cw", "quartz-common/mock-sgx-enclave"]
+default = []
 
 [dependencies]
 # external
@@ -39,10 +40,10 @@ cycles-sync.workspace = true
 transfers-contract.workspace = true
 
 # quartz
-quartz-common = { workspace=true, features=["full"]}
+quartz-common = { workspace=true, default-features = false, features=["full"]}
 
 [dev-dependencies]
-cw-multi-test = "0.17.0"
+cw-multi-test = "2.1.0"
 
 [build-dependencies]
 tonic-build.workspace = true
