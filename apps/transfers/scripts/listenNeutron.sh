@@ -72,7 +72,6 @@ REPORT_FILE="/tmp/${USER}_datareport"
 REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
 
 process_json() {
-    echo "Raw message: $msg" >&2
     local json_input="$1"
     local result
     result=$(echo "$json_input" | jq -r '.result // empty' 2>&1) || {
@@ -81,7 +80,6 @@ process_json() {
         return
     }
     echo "$result"
-   
 }
 
 wait_for_next_block() {
