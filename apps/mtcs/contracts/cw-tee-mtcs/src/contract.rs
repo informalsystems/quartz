@@ -182,9 +182,7 @@ pub mod execute {
         let mut new_sources = vec![];
         for liquidity_source in new_liquidity_sources {
             // Validate the Cosmos address
-            let address = deps
-                .api
-                .addr_validate(liquidity_source.address.as_ref())?;
+            let address = deps.api.addr_validate(liquidity_source.address.as_ref())?;
 
             let liquidity_source = LiquiditySource {
                 address: address.clone(),
@@ -292,8 +290,6 @@ pub mod execute {
             }
             LiquiditySourceType::Overdraft => {
                 if is_payer {
-                    
-
                     WasmMsg::Execute {
                         contract_addr: source.address.to_string(),
                         msg: to_json_binary(&OverdraftExecuteMsg::IncreaseBalance {
@@ -303,8 +299,6 @@ pub mod execute {
                         funds: vec![],
                     }
                 } else {
-                    
-
                     WasmMsg::Execute {
                         contract_addr: source.address.to_string(),
                         msg: to_json_binary(&OverdraftExecuteMsg::DecreaseBalance {
