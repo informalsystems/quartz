@@ -41,7 +41,7 @@ pub struct Cli {
 pub enum Command {
     /// Create an empty Quartz app from a template
     Init {
-        /// path to create & init a quartz app, defaults to current path if unspecified
+        /// path to create & init a Quartz app, defaults to current path if unspecified
         #[clap(long)]
         path: Option<PathBuf>,
     },
@@ -49,6 +49,11 @@ pub enum Command {
     Contract {
         #[command(subcommand)]
         contract_command: ContractCommand,
+    },
+     /// Subcommands for handling the Quartz app enclave
+    Enclave {
+        #[command(subcommand)]
+        enclave_command: EnclaveCommand,
     },
 }
 
@@ -62,6 +67,20 @@ pub enum ContractCommand {
     },
     /// Deploy the Quartz app's smart contract
     Deploy {
+        #[clap(long)]
+        path: Option<PathBuf>,
+}
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum EnclaveCommand {
+    /// Build the Quartz app's enclave
+    Build {
+        /// path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
+        #[arg(long, default_value = "./enclave/Cargo.toml")]
+        manifest_path: PathBuf,
+    },
+    // Run the Quartz app's enclave
+    Start {
         #[clap(long)]
         path: Option<PathBuf>,
     },

@@ -1,6 +1,7 @@
 use crate::{error::Error, request::Request, response::Response, Config};
 
 pub mod contract_build;
+pub mod enclave_build;
 pub mod init;
 
 pub trait Handler {
@@ -18,6 +19,7 @@ impl Handler for Request {
         match self {
             Request::Init(request) => request.handle(config),
             Request::ContractBuild(request) => request.handle(config),
+            Request::EnclaveBuild(request) => request.handle(config),
         }
         .map(Into::into)
     }

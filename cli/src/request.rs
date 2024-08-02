@@ -1,16 +1,18 @@
 use crate::{
     cli::{Command, ContractCommand},
     error::Error,
-    request::{contract_build::ContractBuildRequest, init::InitRequest},
+    request::{contract_build::ContractBuildRequest, enclave_build::EnclaveBuildRequest, init::InitRequest},
 };
 
 pub mod contract_build;
+pub mod enclave_build;
 pub mod init;
 
 #[derive(Clone, Debug)]
 pub enum Request {
     Init(InitRequest),
     ContractBuild(ContractBuildRequest),
+    EnclaveBuild(EnclaveBuildRequest),
 }
 
 impl TryFrom<Command> for Request {
@@ -21,12 +23,17 @@ impl TryFrom<Command> for Request {
             Command::Init { path } => InitRequest::try_from(path).map(Into::into),
             Command::Contract { contract_command } => match contract_command {
                 ContractCommand::Build { manifest_path } => {
-                    Ok(Request::ContractBuild(ContractBuildRequest {
-                        manifest_path,
-                    }))
+                    Ok(ContractBuildRequest { manifest_path }.into())
+                },
+                _ => todo!(),
+            },
+            Command::Enclave { enclave_command } => match enclave_command {
+                EnclaveCommand::Build { manifest_path } => {
+                    Ok(EnclaveBuildRequest { manifest_path }.into())
                 }
                 _ => todo!(),
             },
+            _ => todo!(),
         }
     }
 }
