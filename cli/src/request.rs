@@ -14,10 +14,7 @@ impl TryFrom<Command> for Request {
 
     fn try_from(cmd: Command) -> Result<Self, Self::Error> {
         match cmd {
-            Command::Init { name, path } => Ok(Request::Init(InitRequest {
-                name,
-                directory: Self::path_checked(path)?,
-            })),
+            Command::Init { name } => Ok(Request::Init(InitRequest { name })),
         }
     }
 }

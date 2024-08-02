@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use tracing::metadata::LevelFilter;
@@ -39,9 +38,5 @@ pub enum Command {
         /// the name of your quartz app directory, defaults to quartz_app
         #[clap(long, default_value = "quartz_app")]
         name: String,
-
-        /// path to create & init a quartz app, defaults to current path if unspecified
-        #[clap(long)]
-        path: Option<PathBuf>,
     },
 }
