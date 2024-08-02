@@ -24,8 +24,8 @@ incremental = false
 overflow-checks = true
 
 [features]
-mock-sgx = ["quartz-cw/mock-sgx"]
 library = []
+mock-sgx = ["quartz-common/mock-sgx-cw"]
 
 [dependencies]
 # external
@@ -43,7 +43,4 @@ cw20-base = { version = "2.0.0", features = ["library"] }
 cw-utils = "2.0.0"
 
 # quartz
-quartz-cw = { path = "../../../cosmwasm/packages/quartz-cw", features = ["mock-sgx"] }
-
-# patch indirect deps
-getrandom = { version = "0.2.15", features = ["js"] }
+quartz-common = { path = "../../../core/quartz-common", features=["contract"]}

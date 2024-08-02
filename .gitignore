@@ -9,3 +9,5 @@
 .idea/
 target/
 artifacts/
+.vscode/
+.DS_Store

@@ -10,7 +10,7 @@ name = "encrypt"
 path = "bin/encrypt.rs"
 
 [features]
-mock-sgx = ["quartz-cw/mock-sgx", "quartz-enclave/mock-sgx"]
+mock-sgx = ["quartz-common/mock-sgx-cw", "quartz-common/mock-sgx-enclave"]
 
 [dependencies]
 # external
@@ -34,12 +34,15 @@ cosmwasm-std.workspace = true
 tendermint.workspace = true
 tendermint-light-client.workspace = true
 
-# quartz
-# cycles-sync.workspace = true
-quartz-cw.workspace = true
-quartz-proto.workspace = true
-quartz-enclave.workspace = true
+
+cycles-sync.workspace = true
 transfers-contract.workspace = true
+
+# quartz
+quartz-common = { workspace=true, features=["full"]}
+
+[dev-dependencies]
+cw-multi-test = "0.17.0"
 
 [build-dependencies]
 tonic-build.workspace = true

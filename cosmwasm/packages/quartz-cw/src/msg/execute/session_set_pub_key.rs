@@ -31,6 +31,12 @@ pub struct RawSessionSetPubKey {
     pub_key: HexBinary,
 }
 
+impl RawSessionSetPubKey {
+    pub fn pub_key(&self) -> &HexBinary {
+        &self.pub_key
+    }
+}
+
 impl TryFrom<RawSessionSetPubKey> for SessionSetPubKey {
     type Error = StdError;
 

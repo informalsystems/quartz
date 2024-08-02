@@ -2,7 +2,7 @@ use cosmwasm_std::StdError;
 use cw20_base::ContractError as Cw20ContractError;
 use hex::FromHexError;
 use k256::ecdsa::Error as K256Error;
-use quartz_cw::error::Error as QuartzError;
+use quartz_common::contract::error::Error as QuartzError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -16,8 +16,14 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized,
 
+    #[error("Liquidity source not found")]
+    LiquiditySourceNotFound,
+
     #[error("Duplicate entry found")]
     DuplicateEntry,
+
+    #[error("No entry found")]
+    NoLiquiditySourcesFound,
 
     #[error("Not Secp256K1")]
     K256(K256Error),
@@ -30,6 +36,9 @@ pub enum ContractError {
 
     #[error("Cw20 error: {0}")]
     Cw20(Cw20ContractError),
+
+    #[error("Unsupported liquidity source")]
+    UnsupportedLiquiditySource,
 }
 
 impl From<K256Error> for ContractError {

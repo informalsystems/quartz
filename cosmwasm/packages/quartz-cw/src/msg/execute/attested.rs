@@ -3,6 +3,7 @@ use std::{convert::Into, default::Default};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError};
 use quartz_tee_ra::IASReport;
+use serde::Serialize;
 
 #[cfg(not(feature = "mock-sgx"))]
 pub type DefaultAttestation = EpidAttestation;
@@ -90,7 +91,7 @@ pub trait HasUserData {
     fn user_data(&self) -> UserData;
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct EpidAttestation {
     report: IASReport,
 }

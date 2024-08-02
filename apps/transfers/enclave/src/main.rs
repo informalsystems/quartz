@@ -25,12 +25,14 @@ use std::{
 use clap::Parser;
 use cli::Cli;
 use proto::settlement_server::SettlementServer as TransfersServer;
-use quartz_cw::state::{Config, LightClientOpts};
-use quartz_enclave::{
-    attestor::{Attestor, DefaultAttestor},
-    server::CoreService,
+use quartz_common::{
+    contract::state::{Config, LightClientOpts},
+    enclave::{
+        attestor::{Attestor, DefaultAttestor},
+        server::CoreService,
+    },
+    proto::core_server::CoreServer,
 };
-use quartz_proto::quartz::core_server::CoreServer;
 use tonic::transport::Server;
 use transfers_server::TransfersService;
 

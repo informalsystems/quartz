@@ -1,20 +1,28 @@
-use std::{error::Error, process::Command};
+use std::process::Command;
 
+use anyhow::anyhow;
 use cosmrs::{tendermint::chain::Id, AccountId};
+use hex::ToHex;
 use reqwest::Url;
-use serde::{Deserialize, Serialize};
-use tracing::debug;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub trait WasmdClient {
     type Address: AsRef<str>;
     type Query: ToString;
+    type RawQuery: ToHex;
     type ChainId: AsRef<str>;
     type Error;
 
-    fn query_smart<R: FromVec>(
+    fn query_smart<R: DeserializeOwned>(
         &self,
         contract: &Self::Address,
         query: Self::Query,
+    ) -> Result<R, Self::Error>;
+
+    fn query_raw<R: DeserializeOwned + Default>(
+        &self,
+        contract: &Self::Address,
+        query: Self::RawQuery,
     ) -> Result<R, Self::Error>;
 
     fn tx_execute<M: ToString>(
@@ -24,22 +32,28 @@ pub trait WasmdClient {
         gas: u64,
         sender: String,
         msg: M,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<String, Self::Error>;
+
+    fn deploy<M: ToString>(
+        &self,
+        chain_id: &Id,
+        sender: String, // what should this type be
+        wasm_path: M,
+    ) -> Result<String, Self::Error>;
+
+    fn init<M: ToString>(
+        &self,
+        chain_id: &Id,
+        sender: String,
+        code_id: usize,
+        init_msg: M,
+        label: String,
+    ) -> Result<String, Self::Error>;
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct QueryResult<T> {
     pub data: T,
-}
-
-pub trait FromVec: Sized {
-    fn from_vec(value: Vec<u8>) -> Self;
-}
-
-impl<T: for<'any> Deserialize<'any>> FromVec for T {
-    fn from_vec(value: Vec<u8>) -> Self {
-        serde_json::from_slice(&value).unwrap()
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -56,10 +70,11 @@ impl CliWasmdClient {
 impl WasmdClient for CliWasmdClient {
     type Address = AccountId;
     type Query = serde_json::Value;
+    type RawQuery = String;
     type ChainId = Id;
-    type Error = Box<dyn Error>;
+    type Error = anyhow::Error;
 
-    fn query_smart<R: FromVec>(
+    fn query_smart<R: DeserializeOwned>(
         &self,
         contract: &Self::Address,
         query: Self::Query,
@@ -73,9 +88,34 @@ impl WasmdClient for CliWasmdClient {
             .args(["--output", "json"]);
 
         let output = command.output()?;
-        debug!("{:?} => {:?}", command, output);
+        if !output.status.success() {
+            return Err(anyhow!("{:?}", output));
+        }
 
-        let query_result = R::from_vec(output.stdout);
+        let query_result: R = serde_json::from_slice(&output.stdout)
+            .map_err(|e| anyhow!("Error deserializing: {}", e))?;
+        Ok(query_result)
+    }
+
+    fn query_raw<R: DeserializeOwned + Default>(
+        &self,
+        contract: &Self::Address,
+        query: Self::RawQuery,
+    ) -> Result<R, Self::Error> {
+        let mut wasmd = Command::new("wasmd");
+        let command = wasmd
+            .args(["--node", self.url.as_str()])
+            .args(["query", "wasm"])
+            .args(["contract-state", "raw", contract.as_ref()])
+            .arg(&query)
+            .args(["--output", "json"]);
+
+        let output = command.output()?;
+        if !output.status.success() {
+            return Err(anyhow!("{:?}", output));
+        }
+
+        let query_result: R = serde_json::from_slice(&output.stdout).unwrap_or_default();
         Ok(query_result)
     }
 
@@ -86,7 +126,7 @@ impl WasmdClient for CliWasmdClient {
         gas: u64,
         sender: String,
         msg: M,
-    ) -> Result<(), Self::Error> {
+    ) -> Result<String, Self::Error> {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd
             .args(["--node", self.url.as_str()])
@@ -99,12 +139,73 @@ impl WasmdClient for CliWasmdClient {
             .arg("-y");
 
         let output = command.output()?;
-        debug!("{:?} => {:?}", command, output);
 
-        if output.status.success() {
-            println!("{}", String::from_utf8(output.stdout).unwrap());
+        if !output.status.success() {
+            return Err(anyhow!("{:?}", output));
         }
 
-        Ok(())
+        // TODO: find the rust type for the tx output and return that
+        Ok((String::from_utf8(output.stdout)?).to_string())
+    }
+
+    fn deploy<M: ToString>(
+        &self,
+        chain_id: &Id,
+        sender: String,
+        wasm_path: M,
+    ) -> Result<String, Self::Error> {
+        let mut wasmd = Command::new("wasmd");
+        let command = wasmd
+            .args(["--node", self.url.as_str()])
+            .args(["tx", "wasm", "store", &wasm_path.to_string()])
+            .args(["--from", sender.as_ref()])
+            .args(["--chain-id", chain_id.as_ref()])
+            .args(["--gas-prices", "0.0025ucosm"])
+            .args(["--gas", "auto"])
+            .args(["--gas-adjustment", "1.3"])
+            .args(["-o", "json"])
+            .arg("-y");
+
+        let output = command.output()?;
+
+        if !output.status.success() {
+            return Err(anyhow!("{:?}", output));
+        }
+
+        // TODO: find the rust type for the tx output and return that
+        Ok((String::from_utf8(output.stdout)?).to_string())
+    }
+
+    fn init<M: ToString>(
+        &self,
+        chain_id: &Id,
+        sender: String,
+        code_id: usize,
+        init_msg: M,
+        label: String,
+    ) -> Result<String, Self::Error> {
+        let mut wasmd = Command::new("wasmd");
+        let command = wasmd
+            .args(["--node", self.url.as_str()])
+            .args(["tx", "wasm", "instantiate"])
+            .args([&code_id.to_string(), &init_msg.to_string()])
+            .args(["--label", label.as_ref()])
+            .args(["--from", sender.as_ref()])
+            .arg("--no-admin")
+            .args(["--chain-id", chain_id.as_ref()])
+            .args(["--gas-prices", "0.0025ucosm"])
+            .args(["--gas", "auto"])
+            .args(["--gas-adjustment", "1.3"])
+            .args(["-o", "json"])
+            .arg("-y");
+
+        let output = command.output()?;
+
+        if !output.status.success() {
+            return Err(anyhow!("{:?}", output));
+        }
+
+        // TODO: find the rust type for the tx output and return that
+        Ok((String::from_utf8(output.stdout)?).to_string())
     }
 }

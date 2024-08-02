@@ -15,6 +15,7 @@
 mod cli;
 mod mtcs_server;
 mod proto;
+mod types;
 
 use std::{
     sync::{Arc, Mutex},
@@ -25,12 +26,14 @@ use clap::Parser;
 use cli::Cli;
 use mtcs_server::MtcsService;
 use proto::clearing_server::ClearingServer as MtcsServer;
-use quartz_cw::state::{Config, LightClientOpts};
-use quartz_enclave::{
-    attestor::{Attestor, DefaultAttestor},
-    server::CoreService,
+use quartz_common::{
+    contract::state::{Config, LightClientOpts},
+    enclave::{
+        attestor::{Attestor, DefaultAttestor},
+        server::CoreService,
+    },
+    proto::core_server::CoreServer,
 };
-use quartz_proto::quartz::core_server::CoreServer;
 use tonic::transport::Server;
 
 #[tokio::main(flavor = "current_thread")]
