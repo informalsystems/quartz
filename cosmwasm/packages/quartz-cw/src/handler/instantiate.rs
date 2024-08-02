@@ -5,23 +5,20 @@ use crate::{
     error::Error,
     handler::Handler,
     msg::{
-        execute::attested::{Attestation, EpidAttestation, MockAttestation},
+        execute::attested::{Attestation, HasUserData},
         instantiate::{CoreInstantiate, Instantiate},
     },
     state::{RawConfig, CONFIG, EPOCH_COUNTER},
 };
 
-impl Handler for Instantiate<EpidAttestation> {
+impl<A> Handler for Instantiate<A>
+where
+    A: Attestation + Handler + HasUserData,
+{
     fn handle(self, deps: DepsMut<'_>, env: &Env, info: &MessageInfo) -> Result<Response, Error> {
         if self.0.msg().config().mr_enclave() != self.0.attestation().mr_enclave() {
             return Err(RaVerificationError::MrEnclaveMismatch.into());
         }
-        self.0.handle(deps, env, info)
-    }
-}
-
-impl Handler for Instantiate<MockAttestation> {
-    fn handle(self, deps: DepsMut<'_>, env: &Env, info: &MessageInfo) -> Result<Response, Error> {
         self.0.handle(deps, env, info)
     }
 }

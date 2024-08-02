@@ -11,4 +11,6 @@ pub enum Error {
     MrEnclaveMismatch,
     #[error("EPID specific error: {0}")]
     Epid(#[from] epid::Error),
+    #[error("DCAP specific error: {0:?}")]
+    Dcap(dcap::VerificationOutput<dcap::DcapVerifierOutput>),
 }
