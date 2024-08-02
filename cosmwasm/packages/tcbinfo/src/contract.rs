@@ -1,6 +1,3 @@
-use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg};
-use crate::state::{TcbInfo, DATABASE, ROOT_CERTIFICATE};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -13,6 +10,12 @@ use p256::ecdsa::VerifyingKey;
 use quartz_tee_ra::intel_sgx::dcap::certificate_chain::TlsCertificateChainVerifier;
 use serde_json::Value;
 use x509_cert::Certificate;
+
+use crate::{
+    error::ContractError,
+    msg::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg},
+    state::{TcbInfo, DATABASE, ROOT_CERTIFICATE},
+};
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:tcbinfo";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -174,11 +177,12 @@ pub mod query {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use cosmwasm_std::{
         coins,
         testing::{mock_dependencies, mock_env, mock_info},
     };
+
+    use super::*;
     const TCB_SIGNER: &str = include_str!("../data/tcb_signer.pem");
     const ROOT_CA: &str = include_str!("../data/root_ca.pem");
     const TCB_INFO: &str = include_str!("../data/tcbinfo.json");
