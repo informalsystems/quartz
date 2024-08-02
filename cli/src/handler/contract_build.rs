@@ -1,36 +1,40 @@
 use std::process::Command;
 
+use tracing::{debug, trace};
+
 use crate::{
-    cli::Verbosity,
     error::Error,
     handler::Handler,
     request::contract_build::ContractBuildRequest,
     response::{contract_build::ContractBuildResponse, Response},
+    Config,
 };
 
 impl Handler for ContractBuildRequest {
     type Error = Error;
     type Response = Response;
 
-    fn handle(self, _verbosity: Verbosity, mock_sgx: bool) -> Result<Self::Response, Self::Error> {
+    fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         let mut cargo = Command::new("cargo");
         let command = cargo
             .arg("wasm")
             .args(["--manifest-path", &self.manifest_path.display().to_string()])
             .env("RUSTFLAGS", "-C link-arg=-s");
 
-        if mock_sgx {
+        if config.mock_sgx {
+            debug!("Building with mock-sgx enabled");
             command.arg("--features=mock-sgx");
         }
 
-        println!("🚧 Building contract binary ...");
-        let output = command
-            .output()
+        trace!("🚧 Building contract binary ...");
+        let status = command
+            .status()
             .map_err(|e| Error::GenericErr(e.to_string()))?;
-        if !output.status.success() {
+
+        if !status.success() {
             return Err(Error::GenericErr(format!(
                 "Couldn't build contract. \n{:?}",
-                output
+                status
             )));
         }
 

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use tracing::metadata::LevelFilter;
@@ -27,7 +27,9 @@ pub struct Cli {
     #[clap(flatten)]
     pub verbose: Verbosity,
 
-    #[clap(long)]
+    /// Enable mock SGX mode for testing purposes.
+    /// This flag disables the use of an Intel SGX processor and allows the system to run without remote attestations.
+    #[clap(long, default_value_t = default_mocksgx_flag())]
     pub mock_sgx: bool,
 
     /// Main command
@@ -43,7 +45,7 @@ pub enum Command {
         #[clap(long)]
         path: Option<PathBuf>,
     },
-    /// Create an empty Quartz app from a template
+    /// Subcommands for handling the quartz app contract
     Contract {
         #[command(subcommand)]
         contract_command: ContractCommand,
@@ -52,12 +54,21 @@ pub enum Command {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum ContractCommand {
+    /// Build the Quartz app's smart contract
     Build {
-        #[clap(long)]
+        /// path to Cargo.toml file of the Quartz app's contract package, defaults to './contracts/Cargo.toml' if unspecified
+        #[arg(long, default_value = "./contracts/Cargo.toml")]
         manifest_path: PathBuf,
     },
+    /// Deploy the Quartz app's smart contract
     Deploy {
         #[clap(long)]
         path: Option<PathBuf>,
     },
+}
+
+fn default_mocksgx_flag() -> bool {
+    let flag = env::var("MOCK_SGX").unwrap_or_else(|_| "0".to_string());
+
+    !matches!(flag.as_str(), "0")
 }
