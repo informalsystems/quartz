@@ -29,7 +29,6 @@ impl Handler for InitRequest {
         let example_dir = cli_manifest_dir.join("../apps/transfers");
 
         let dst = self.directory.join(self.name);
-        println!("{:?}", dst);
         copy_dir_recursive(example_dir.as_path(), dst.as_path())
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
