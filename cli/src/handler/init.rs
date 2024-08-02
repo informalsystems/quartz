@@ -21,10 +21,16 @@ impl Handler for InitRequest {
     fn handle(self, _verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
 
-        let cli_manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let example_dir = cli_manifest_dir.join("example");
+        if Path::new(&self.name).iter().count() != 1 {
+            return Err(Error::GenericErr("App name contains path".to_string()));
+        }
 
-        copy_dir_recursive(example_dir.as_path(), self.directory.as_path())
+        let cli_manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let example_dir = cli_manifest_dir.join("../apps/transfers");
+
+        let dst = self.directory.join(self.name);
+        println!("{:?}", dst);
+        copy_dir_recursive(example_dir.as_path(), dst.as_path())
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
         Ok(InitResponse.into())
