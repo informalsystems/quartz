@@ -1,10 +1,9 @@
 use std::{
-    fs, io,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use tracing::trace;
-use walkdir::WalkDir;
 
 use crate::{
     cli::Verbosity,
@@ -25,33 +24,23 @@ impl Handler for InitRequest {
             return Err(Error::GenericErr("App name contains path".to_string()));
         }
 
-        let cli_manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let example_dir = cli_manifest_dir.join("../apps/transfers");
+        let cli_manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
 
-        let dst = self.directory.join(self.name);
-        copy_dir_recursive(example_dir.as_path(), dst.as_path())
+        let status = Command::new("cargo")
+            .arg("generate")
+            .arg("--path")
+            .arg(cli_manifest_dir.display().to_string())
+            .arg("--name")
+            .arg(self.name)
+            .arg("apps/transfers")
+            .status()
             .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+        // Check the output
+        if !status.success() {
+            return Err(Error::GenericErr(status.to_string()));
+        }
 
         Ok(InitResponse.into())
     }
-}
-
-fn copy_dir_recursive(src: &Path, dst: &Path) -> io::Result<()> {
-    // Create the destination directory if it doesn't exist
-    fs::create_dir_all(dst)?;
-
-    for entry in WalkDir::new(src) {
-        let entry = entry?;
-        let path = entry.path();
-        let relative = path.strip_prefix(src).map_err(io::Error::other)?;
-        let target = dst.join(relative);
-
-        if path.is_dir() {
-            fs::create_dir_all(&target)?;
-        } else {
-            fs::copy(path, &target)?;
-        }
-    }
-
-    Ok(())
 }
