@@ -1,11 +1,9 @@
 use std::env::current_dir;
 
 use async_trait::async_trait;
-use cw_tee_mtcs::msg::InstantiateMsg as MtcsInstantiateMsg;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
-use quartz_common::contract::msg::{execute::attested::RawDefaultAttestation, RawInstantiateMsg};
+use quartz_common::contract::{msg::RawInstantiateMsg, prelude::QuartzInstantiateMsg};
 use reqwest::Url;
-use serde::Serialize;
 use serde_json::json;
 use tendermint_rpc::HttpClient;
 use tracing::trace;
@@ -30,7 +28,7 @@ impl Handler for ContractDeployRequest {
     async fn handle(self, _verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
 
-        deploy::<MtcsInstantiateMsg>(self)
+        deploy(self)
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
@@ -38,17 +36,9 @@ impl Handler for ContractDeployRequest {
     }
 }
 
-type RA = RawDefaultAttestation;
-
-async fn deploy<IM: Serialize + From<RawInstantiateMsg<RA>>>(
-    args: ContractDeployRequest,
-) -> Result<(), anyhow::Error> {
+async fn deploy(args: ContractDeployRequest) -> Result<(), anyhow::Error> {
     // TODO: Replace with call to Rust package
     let relay_path = current_dir()?.join("../");
-
-    println!("\n🚀 Communicating with Relay to Instantiate...\n");
-    let init_msg: RawInstantiateMsg = run_relay(relay_path.as_path(), "Instantiate", None)?;
-    let init_msg: IM = IM::from(init_msg);
 
     let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
@@ -70,7 +60,12 @@ async fn deploy<IM: Serialize + From<RawInstantiateMsg<RA>>>(
     let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
     let code_id: usize = log[0].events[1].attributes[1].value.parse()?;
 
+    println!("\n🚀 Communicating with Relay to Instantiate...\n");
+    let raw_init_msg: RawInstantiateMsg = run_relay(relay_path.as_path(), "Instantiate", None)?;
+
     println!("\n🚀 Instantiating {} Contract\n", args.label);
+    let mut init_msg = args.init_msg;
+    init_msg.quartz = json!(QuartzInstantiateMsg::from(raw_init_msg));
 
     let init_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.init(
         &args.chain_id,

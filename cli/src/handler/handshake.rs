@@ -5,7 +5,6 @@ use async_trait::async_trait;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use futures_util::stream::StreamExt;
-use quartz_common::contract::prelude::QuartzExecuteMsg;
 use reqwest::Url;
 use serde::Serialize;
 use serde_json::json;
@@ -114,7 +113,7 @@ async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), 
 
     // Execute SessionSetPubKey on enclave
     println!("Running SessionSetPubKey");
-    let mut res: serde_json::Value = run_relay(
+    let res: serde_json::Value = run_relay(
         base_path.as_path(),
         "SessionSetPubKey",
         Some(proof_json.as_str()),
@@ -133,19 +132,21 @@ async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), 
             .as_str(),
     )?;
 
-    // println!("\n\n SessionSetPubKey tx output: {:?}", output);
-
     // Wait for tx to commit
     block_tx_commit(&tmrpc_client, output.txhash).await?;
     println!("SessionSetPubKey tx committed");
-    println!("res: \n{:?}", res);
 
-    if let QuartzExecuteMsg::RawSessionSetPubKey(quartz) =
-        serde_json::from_value::<QuartzExecuteMsg>(res["quartz"].take())?
+    let output: WasmdTxResponse = wasmd_client.query_tx(output.txhash.to_string())?;
+
+    let wasm_event = output.events.iter().find(|e| e.kind == "wasm").unwrap();
+    if let Some(pubkey) = wasm_event
+        .attributes
+        .iter()
+        .find(|a| a.key_str().unwrap() == "pubkey")
     {
-        println!("\n\n\n{}", quartz.msg.pub_key()); // TODO: return this instead later
+        println!("\n\n\n{}", pubkey.value_str().unwrap()); // TODO: return this instead later
     } else {
-        return Err(anyhow!("Invalid relay response from SessionSetPubKey"));
+        return Err(anyhow!("Failed to find pubkey from SetPubKey message"));
     }
 
     Ok(())

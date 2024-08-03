@@ -80,6 +80,9 @@ pub enum ContractCommand {
         path: Option<PathBuf>,
     },
     Deploy {
+        #[clap(long, default_value = r#"{"quartz":""}"#)]
+        init_msg: String,
+
         #[clap(long, default_value_t = default_node_url())]
         node_url: String,
 

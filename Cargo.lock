@@ -2833,8 +2833,6 @@ dependencies = [
  "color-eyre",
  "cosmrs",
  "cosmwasm-std 2.1.1",
- "cw-proof",
- "cw-tee-mtcs",
  "cycles-sync",
  "displaydoc",
  "futures-util",

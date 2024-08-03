@@ -39,12 +39,7 @@ cosmrs.workspace = true
 cosmwasm-std.workspace = true
 tendermint.workspace = true
 tendermint-light-client.workspace = true
-tendermint-rpc = { version ="0.36.0", features=["websocket-client", "http-client"]}
-
-# quartz
-cw-proof.workspace = true
-cw-tee-mtcs.workspace = true
-# todo remove unnecessary imports
+tendermint-rpc = { workspace = true, features=["websocket-client", "http-client"]}
 
 cycles-sync = { workspace = true}
 tm-prover = { workspace = true}

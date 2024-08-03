@@ -164,7 +164,7 @@ pub async fn send_tx(node: impl ToString, tx_bytes: Vec<u8>) -> Result<(), Box<d
 #[cfg(not(feature = "mock-sgx"))]
 fn gramine_sgx_ias_report(quote: &[u8]) -> Result<serde_json::Value, Box<dyn Error>> {
     use std::{
-        fs::{read_to_string, File},
+        fs::read_to_string,
         io::Write,
         process::Command,
     };

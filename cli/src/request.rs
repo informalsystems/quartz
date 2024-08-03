@@ -44,12 +44,14 @@ impl TryFrom<Command> for Request {
             })),
             Command::Contract { contract_command } => match contract_command {
                 ContractCommand::Deploy {
+                    init_msg,
                     node_url,
                     chain_id,
                     sender,
                     label,
                     path,
                 } => Ok(Request::ContractDeploy(ContractDeployRequest {
+                    init_msg: ContractDeployRequest::checked_init(init_msg)?,
                     node_url,
                     chain_id,
                     sender,

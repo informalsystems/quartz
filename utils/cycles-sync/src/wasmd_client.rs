@@ -25,6 +25,11 @@ pub trait WasmdClient {
         query: Self::RawQuery,
     ) -> Result<R, Self::Error>;
 
+    fn query_tx<R: DeserializeOwned + Default>(
+        &self,
+        txhash: String,
+    ) -> Result<R, Self::Error>;
+
     fn tx_execute<M: ToString>(
         &self,
         contract: &Self::Address,
@@ -108,6 +113,26 @@ impl WasmdClient for CliWasmdClient {
             .args(["query", "wasm"])
             .args(["contract-state", "raw", contract.as_ref()])
             .arg(&query)
+            .args(["--output", "json"]);
+
+        let output = command.output()?;
+        if !output.status.success() {
+            return Err(anyhow!("{:?}", output));
+        }
+
+        let query_result: R = serde_json::from_slice(&output.stdout).unwrap_or_default();
+        Ok(query_result)
+    }
+
+    fn query_tx<R: DeserializeOwned + Default>(
+        &self,
+        txhash: String,
+    ) -> Result<R, Self::Error> {
+        let mut wasmd = Command::new("wasmd");
+        let command = wasmd
+            .args(["--node", self.url.as_str()])
+            .args(["query", "tx"])
+            .arg(&txhash.to_string())
             .args(["--output", "json"]);
 
         let output = command.output()?;

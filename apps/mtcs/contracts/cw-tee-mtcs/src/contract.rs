@@ -1,10 +1,9 @@
 use cosmwasm_std::{
-    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    Uint64,
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint64
 };
 use cw2::set_contract_version;
 use cw20_base::contract::query_balance as cw20_query_balance;
-use quartz_common::contract::{handler::RawHandler, state::EPOCH_COUNTER};
+use quartz_common::contract::{prelude::QuartzExecuteMsg, handler::RawHandler, state::EPOCH_COUNTER};
 
 use crate::{
     error::ContractError,
@@ -33,7 +32,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     // must be the handled first!
-    msg.0.handle_raw(deps.branch(), &env, &info)?;
+    msg.quartz.handle_raw(deps.branch(), &env, &info)?;
 
     let state = State {
         owner: info.sender.to_string(),
@@ -65,7 +64,23 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
+        ExecuteMsg::Quartz(msg) => {
+            let pub_key = match &msg {
+                QuartzExecuteMsg::RawSessionSetPubKey(quartz) 
+                    => Some(quartz.msg.pub_key().to_string()),
+                _ => None
+            };
+
+            let mut res = msg.handle_raw(deps, &env, &info)?;
+
+            if let Some(pub_key) = pub_key {
+                res = res
+                    .add_attribute("quartz_message", "SessionSetPubkey")
+                    .add_attribute("pub_key", pub_key);
+                }
+        
+            Ok(res)
+        }
         ExecuteMsg::FaucetMint(FaucetMintMsg { recipient, amount }) => {
             execute::faucet_mint(deps, env, recipient, amount)
         }

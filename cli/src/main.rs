@@ -25,9 +25,23 @@ use tracing_subscriber::{util::SubscriberInitExt, EnvFilter};
 
 use crate::{cli::Cli, handler::Handler, request::Request};
 
+const BANNER: &str = r"
+ ________       ___  ___      ________      ________     _________     ________     
+|\   __  \     |\  \|\  \    |\   __  \    |\   __  \   |\___   ___\  |\_____  \    
+\ \  \|\  \    \ \  \\\  \   \ \  \|\  \   \ \  \|\  \  \|___ \  \_|   \|___/  /|   
+ \ \  \\\  \    \ \  \\\  \   \ \   __  \   \ \   _  _\      \ \  \        /  / /   
+  \ \  \\\  \    \ \  \\\  \   \ \  \ \  \   \ \  \\  \|      \ \  \      /  /_/__  
+   \ \_____  \    \ \_______\   \ \__\ \__\   \ \__\\ _\       \ \__\    |\________\
+    \|___| \__\    \|_______|    \|__|\|__|    \|__|\|__|       \|__|     \|_______|
+          \|__|                                                                     
+                                                                                    
+";
+
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
+    
+    println!("{BANNER}");
 
     let args = Cli::parse();
 

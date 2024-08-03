@@ -12,11 +12,13 @@ use crate::state::{LiquiditySource, RawHash, SettleOff};
 pub type AttestedMsg<M, RA> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
 
 #[cw_serde]
-pub struct InstantiateMsg<RA = RawDefaultAttestation>(pub QuartzInstantiateMsg<RA>);
+pub struct InstantiateMsg<RA = RawDefaultAttestation> {
+    pub quartz: QuartzInstantiateMsg<RA>
+}
 
 impl From<QuartzInstantiateMsg<RawDefaultAttestation>> for InstantiateMsg {
     fn from(msg: QuartzInstantiateMsg<RawDefaultAttestation>) -> Self {
-        InstantiateMsg(msg)
+        InstantiateMsg { quartz: msg }
     }
 }
 
