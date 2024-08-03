@@ -142,7 +142,7 @@ async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), 
     if let Some(pubkey) = wasm_event
         .attributes
         .iter()
-        .find(|a| a.key_str().unwrap() == "pubkey")
+        .find(|a| a.key_str().unwrap() == "pub_key")
     {
         println!("\n\n\n{}", pubkey.value_str().unwrap()); // TODO: return this instead later
     } else {
