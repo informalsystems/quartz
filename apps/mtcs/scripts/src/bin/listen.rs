@@ -10,7 +10,7 @@ use anyhow::anyhow;
 use base64::prelude::*;
 use clap::Parser;
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
-use cosmwasm_std::{Binary, HexBinary, Uint64};
+use cosmwasm_std::{HexBinary, Uint64};
 use cw_tee_mtcs::{
     msg::{
         execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
