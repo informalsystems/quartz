@@ -1,12 +1,15 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
-use quartz_tee_ra::{verify_epid_attestation, Error as RaVerificationError};
+use quartz_tee_ra::{
+    intel_sgx::dcap::TrustedMrEnclaveIdentity, verify_dcap_attestation, verify_epid_attestation,
+    Error as RaVerificationError,
+};
 
 use crate::{
     error::Error,
     handler::Handler,
     msg::execute::attested::{
-        Attestation, Attested, AttestedMsgSansHandler, EpidAttestation, HasUserData,
-        MockAttestation,
+        Attestation, Attested, AttestedMsgSansHandler, DcapAttestation, EpidAttestation,
+        HasUserData, MockAttestation,
     },
     state::CONFIG,
 };
@@ -26,6 +29,28 @@ impl Handler for EpidAttestation {
         )
         .map(|_| Response::default())
         .map_err(Error::RaVerification)
+    }
+}
+
+impl Handler for DcapAttestation {
+    fn handle(
+        self,
+        _deps: DepsMut<'_>,
+        _env: &Env,
+        _info: &MessageInfo,
+    ) -> Result<Response, Error> {
+        let (quote, collateral) = self.clone().into_tuple();
+        let mr_enclave = TrustedMrEnclaveIdentity::new(self.mr_enclave().into(), [""; 0], [""; 0]);
+
+        // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
+        let verification_output = verify_dcap_attestation(quote, collateral, &[mr_enclave.into()]);
+        if verification_output.is_success().into() {
+            Ok(Response::default())
+        } else {
+            Err(Error::RaVerification(RaVerificationError::Dcap(
+                verification_output,
+            )))
+        }
     }
 }
 

@@ -1,14 +1,15 @@
 use std::{env::current_dir, path::PathBuf};
 
 use crate::{
-    cli::{Command, ContractCommand},
+    cli::{Command, ContractCommand, EnclaveCommand},
     error::Error,
     request::{
-        contract_deploy::ContractDeployRequest, handshake::HandshakeRequest, init::InitRequest,
+        contract_deploy::ContractDeployRequest, enclave_build::EnclaveBuildRequest, handshake::HandshakeRequest, init::InitRequest
     },
 };
 
 pub mod contract_deploy;
+pub mod enclave_build;
 pub mod handshake;
 pub mod init;
 
@@ -17,6 +18,7 @@ pub enum Request {
     Init(InitRequest),
     Handshake(HandshakeRequest),
     ContractDeploy(ContractDeployRequest),
+    EnclaveBuild(EnclaveBuildRequest),
 }
 
 impl TryFrom<Command> for Request {
@@ -58,6 +60,12 @@ impl TryFrom<Command> for Request {
                     label,
                     directory: Self::path_checked(path)?,
                 })),
+                _ => todo!(),
+            },
+            Command::Enclave { enclave_command } => match enclave_command {
+                EnclaveCommand::Build { manifest_path } => {
+                    Ok(EnclaveBuildRequest { manifest_path }.into())
+                }
                 _ => todo!(),
             },
         }

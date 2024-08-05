@@ -37,10 +37,14 @@ const BANNER: &str = r"
                                                                                     
 ";
 
+pub struct Config {
+    pub mock_sgx: bool,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
-    
+
     println!("{BANNER}");
 
     let args = Cli::parse();
@@ -63,7 +67,11 @@ async fn main() -> Result<()> {
 
     // Each `Request` defines an associated `Handler` (i.e. logic) and `Response`. All handlers are
     // free to log to the terminal and these logs are sent to `stderr`.
-    let response = request.handle(args.verbose).await?;
+    let response = request
+        .handle(Config {
+            mock_sgx: args.mock_sgx,
+        })
+        .await?;
 
     // `Handlers` must use `Responses` to output to `stdout`.
     println!(

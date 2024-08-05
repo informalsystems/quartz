@@ -2,7 +2,7 @@ use std::env::current_dir;
 
 use async_trait::async_trait;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
-use quartz_common::contract::{msg::RawInstantiateMsg, prelude::QuartzInstantiateMsg};
+use quartz_common::contract::prelude::QuartzInstantiateMsg;
 use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::HttpClient;
@@ -13,11 +13,10 @@ use super::utils::{
     types::{Log, WasmdTxResponse},
 };
 use crate::{
-    cli::Verbosity,
     error::Error,
     handler::Handler,
     request::contract_deploy::ContractDeployRequest,
-    response::{contract_deploy::ContractDeployResponse, Response},
+    response::{contract_deploy::ContractDeployResponse, Response}, Config,
 };
 
 #[async_trait]
@@ -25,7 +24,7 @@ impl Handler for ContractDeployRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, _verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, _config: Config) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
 
         deploy(self)

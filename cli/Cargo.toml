@@ -14,7 +14,7 @@ mock-sgx = ["quartz-common/mock-sgx-cw", "quartz-common/mock-sgx-enclave"]
 
 [dependencies]
 async-trait.workspace = true
-clap.workspace = true
+clap = { workspace = true, features=["env"] }
 color-eyre.workspace = true
 displaydoc.workspace = true
 serde.workspace = true

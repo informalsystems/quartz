@@ -18,11 +18,10 @@ use super::utils::{
     types::WasmdTxResponse,
 };
 use crate::{
-    cli::Verbosity,
     error::Error,
     handler::Handler,
     request::handshake::HandshakeRequest,
-    response::{handshake::HandshakeResponse, Response},
+    response::{handshake::HandshakeResponse, Response}, Config,
 };
 
 #[async_trait]
@@ -30,10 +29,11 @@ impl Handler for HandshakeRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, _config: Config) -> Result<Self::Response, Self::Error> {
         trace!("starting handshake...");
 
-        handshake(self, verbosity)
+        // TODO: may need to import verbosity here
+        handshake(self)
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
@@ -46,7 +46,7 @@ struct Message<'a> {
     message: &'a str,
 }
 
-async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), anyhow::Error> {
+async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
     let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
     let wsurl = format!("ws://{}/websocket", args.node_url);
 
@@ -138,11 +138,11 @@ async fn handshake(args: HandshakeRequest, _verbosity: Verbosity) -> Result<(), 
 
     let output: WasmdTxResponse = wasmd_client.query_tx(output.txhash.to_string())?;
 
-    let wasm_event = output.events.iter().find(|e| e.kind == "wasm").unwrap();
+    let wasm_event = output.events.iter().find(|e| e.kind == "wasm").expect("Wasm transactions should always contain wasm event");
     if let Some(pubkey) = wasm_event
         .attributes
         .iter()
-        .find(|a| a.key_str().unwrap() == "pub_key")
+        .find(|a| a.key_str().expect("SessionSetPubkey tx is expected to have pub_key attribute") == "pub_key")
     {
         println!("\n\n\n{}", pubkey.value_str().unwrap()); // TODO: return this instead later
     } else {

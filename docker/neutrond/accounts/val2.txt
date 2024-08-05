@@ -1,0 +1,11 @@
+
+- address: neutron1efkh8rpul8v6km98cuaejz0a5zczvvvz4ps82r
+  name: val2
+  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A0owhBMbRQ2jwJ7dKqwRA2fFyqSMpRmI2aefEdBIT/td"}'
+  type: local
+
+
+**Important** write this mnemonic phrase in a safe place.
+It is the only way to recover your account if you ever forget your password.
+
+photo mobile lady place outdoor camp fruit mouse spell feel service oval draw essay expect tuition fade drip riot manage aunt idle weather clap
