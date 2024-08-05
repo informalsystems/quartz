@@ -9,7 +9,7 @@ use quartz_cw::{
 };
 
 #[cfg(not(feature = "mock-sgx"))]
-pub type DefaultAttestor = EpidAttestor;
+pub type DefaultAttestor = DcapAttestor;
 
 #[cfg(feature = "mock-sgx")]
 pub type DefaultAttestor = MockAttestor;

@@ -3,11 +3,11 @@ pub mod mc_attest_verifier;
 
 /// Root anchor PEM file for use with DCAP
 pub const DCAP_ROOT_ANCHOR: &str = include_str!("../../data/DcapRootCACert.pem");
-
 use mc_attestation_verifier::Evidence;
 pub use mc_attestation_verifier::{
     TrustedIdentity, TrustedMrEnclaveIdentity, TrustedMrSignerIdentity, VerificationOutput,
 };
+pub use mc_sgx_dcap_sys_types::sgx_ql_qve_collateral_t;
 pub use mc_sgx_dcap_types::{Collateral, Quote3, Quote3Error};
 
 use self::mc_attest_verifier::dcap::DcapVerifier;

@@ -1,3 +1,4 @@
+use core::fmt;
 use std::{
     collections::{BTreeMap, BTreeSet},
     env,
@@ -21,9 +22,9 @@ use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use futures_util::stream::StreamExt;
 use mtcs_enclave::proto::{clearing_client::ClearingClient, RunClearingRequest};
 use quartz_common::contract::msg::execute::attested::{
-    EpidAttestation, RawAttested, RawAttestedMsgSansHandler,
+    DcapAttestation, Quote, RawAttested, RawAttestedMsgSansHandler,
 };
-use quartz_tee_ra::{intel_sgx::epid::types::ReportBody, IASReport};
+use quartz_tee_ra::intel_sgx::dcap::{sgx_ql_qve_collateral_t, Collateral, Quote3, Quote3Error};
 use reqwest::Url;
 use scripts::utils::wasmaddr_to_id;
 use serde::{Deserialize, Serialize};
@@ -37,6 +38,23 @@ use tokio::{
     io::AsyncWriteExt,
 };
 use tonic::Request;
+
+#[derive(Debug)]
+struct Quote3ErrorWrapper(Quote3Error);
+
+impl fmt::Display for Quote3ErrorWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Quote3Error: {:?}", self.0)
+    }
+}
+
+impl std::error::Error for Quote3ErrorWrapper {}
+
+impl From<Quote3Error> for Quote3ErrorWrapper {
+    fn from(error: Quote3Error) -> Self {
+        Quote3ErrorWrapper(error)
+    }
+}
 
 // TODO: import this from enclave or somewhere shared
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -149,7 +167,7 @@ async fn handler(
     let msg = RawAttestedMsgSansHandler(quote.msg);
 
     let setoffs_msg =
-        ExecuteMsg::SubmitSetoffs::<EpidAttestation>(AttestedMsg { msg, attestation });
+        ExecuteMsg::SubmitSetoffs::<DcapAttestation>(AttestedMsg { msg, attestation });
 
     // Send setoffs to mtcs contract on chain
     let output =
@@ -215,7 +233,7 @@ async fn query_chain(
 async fn gramine_ias_request(
     attested_msg: Vec<u8>,
     user: &str,
-) -> Result<EpidAttestation, anyhow::Error> {
+) -> Result<DcapAttestation, anyhow::Error> {
     let ias_api_key = String::from("669244b3e6364b5888289a11d2a1726d");
     let ra_client_spid = String::from("51CAF5A48B450D624AEFE3286D314894");
     let quote_file = format!("/tmp/{}_test.quote", user);
@@ -242,9 +260,42 @@ async fn gramine_ias_request(
         return Err(anyhow!("Couldn't run gramine. {:?}", output));
     }
 
-    let report: ReportBody = serde_json::from_str(&fs::read_to_string(report_file).await?)?;
-    let report_sig_str = fs::read_to_string(report_sig_file).await?.replace('\r', "");
-    let report_sig: Binary = Binary::from_base64(report_sig_str.trim())?;
+    let quote: Quote = Quote3::try_from(fs::read(quote_file).await?).map_err(Quote3ErrorWrapper)?;
+    let report = fs::read_to_string(&report_file).await?;
+    let report_sig = fs::read_to_string(&report_sig_file).await?;
 
-    Ok(EpidAttestation::new(IASReport { report, report_sig }))
+    // Parse the collateral from the report and report_sig
+    let mut sgx_collateral = sgx_ql_qve_collateral_t::default();
+    #[allow(unsafe_code)]
+    let version = unsafe { sgx_collateral.__bindgen_anon_1.__bindgen_anon_1.as_mut() };
+    version.major_version = 3;
+    version.minor_version = 1;
+
+    // Set other fields of sgx_collateral
+    sgx_collateral.pck_crl_issuer_chain = report.as_ptr() as *mut i8;
+    sgx_collateral.root_ca_crl = report_sig.as_ptr() as *mut i8;
+    sgx_collateral.pck_crl = report_sig.as_ptr() as *mut i8;
+    sgx_collateral.tcb_info_issuer_chain = report.as_ptr() as *mut i8;
+    sgx_collateral.tcb_info = report.as_ptr() as *mut i8;
+    sgx_collateral.qe_identity_issuer_chain = report.as_ptr() as *mut i8;
+    sgx_collateral.qe_identity = report.as_ptr() as *mut i8;
+    sgx_collateral.pck_crl_issuer_chain_size = report.len() as u32;
+    sgx_collateral.root_ca_crl_size = report_sig.len() as u32;
+    sgx_collateral.pck_crl_size = report_sig.len() as u32;
+    sgx_collateral.tcb_info_issuer_chain_size = report.len() as u32;
+    sgx_collateral.tcb_info_size = report.len() as u32;
+    sgx_collateral.qe_identity_issuer_chain_size = report.len() as u32;
+    sgx_collateral.qe_identity_size = report.len() as u32;
+    sgx_collateral.pck_crl_issuer_chain = report.as_ptr() as *mut i8;
+    sgx_collateral.root_ca_crl = report_sig.as_ptr() as *mut i8;
+    sgx_collateral.pck_crl = report_sig.as_ptr() as *mut i8;
+    sgx_collateral.tcb_info_issuer_chain = report.as_ptr() as *mut i8;
+    sgx_collateral.tcb_info = report.as_ptr() as *mut i8;
+    sgx_collateral.qe_identity_issuer_chain = report.as_ptr() as *mut i8;
+    sgx_collateral.qe_identity = report.as_ptr() as *mut i8;
+
+    // Try to create Collateral from sgx_collateral
+    let collateral = Collateral::try_from(&sgx_collateral).expect("msg");
+
+    Ok(DcapAttestation::new(quote, collateral))
 }

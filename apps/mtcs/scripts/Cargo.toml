@@ -53,6 +53,6 @@ mtcs.workspace = true
 cycles-sync = { workspace = true}
 tm-prover = { workspace = true}
 quartz-common = { workspace = true, features=["contract"]}
-quartz-tee-ra = { workspace = true}
+quartz-tee-ra = { workspace = true, features = ["dcap"] }
 mtcs-enclave = { path = "../enclave", optional = false}
 regex = "1.10.5"

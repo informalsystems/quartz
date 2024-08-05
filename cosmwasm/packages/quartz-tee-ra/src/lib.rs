@@ -17,7 +17,6 @@
 // #![forbid(unsafe_code)]
 
 pub mod intel_sgx;
-
 pub use intel_sgx::{
     dcap::verify as verify_dcap_attestation,
     epid::{types::IASReport, verifier::verify as verify_epid_attestation},
