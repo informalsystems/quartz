@@ -6,7 +6,7 @@ pub type Fmspc = [u8; 6];
 #[cw_serde]
 pub struct TcbInfo {
     pub info: String,
-   //  pub certificate: String,
+    //  pub certificate: String,
 }
 
 pub const DATABASE: Map<Fmspc, TcbInfo> = Map::new("state");

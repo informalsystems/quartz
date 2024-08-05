@@ -85,14 +85,14 @@ pub fn execute(
     signed_tcb_info
         .verify(Some(&key), time)
         .map_err(|_| ContractError::TcbInfoVerificationError)?;
- 
+
     let _ = DATABASE
         .save(
             deps.storage,
             fmspc,
             &TcbInfo {
                 info: msg.tcb_info.to_string(),
-               //  certificate: msg.certificate.to_string(),
+                //  certificate: msg.certificate.to_string(),
             },
         )
         .map_err(ContractError::Std);
@@ -164,7 +164,7 @@ mod tests {
     const ROOT_CA: &str = include_str!("../data/root_ca.pem");
     const TCB_INFO: &str = include_str!("../data/tcbinfo.json");
     const FMSPC: &str = "00606a000000";
-   // const TIME: &str = "2024-07-15T15:19:13Z";
+    // const TIME: &str = "2024-07-15T15:19:13Z";
     #[test]
     fn verify_init_and_exec() {
         let time = "2024-07-11T15:19:13Z";
