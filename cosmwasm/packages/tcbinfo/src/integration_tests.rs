@@ -48,7 +48,7 @@ mod tests {
         );
 
         let msg = InstantiateMsg {
-            root: ROOT_CA.to_string(),
+            root_cert: ROOT_CA.to_string(),
         };
         let cw_template_contract_addr = app
             .instantiate_contract(
@@ -77,7 +77,7 @@ mod tests {
             let msg = ExecuteMsg {
                 tcb_info: TCB_INFO.to_string(),
                 certificate: TCB_SIGNER.to_string(),
-                time: TIME.to_string(),
+                time: Some(TIME.to_string()),
             };
             let cosmos_msg = cw_template_contract.call(msg).unwrap();
             app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();

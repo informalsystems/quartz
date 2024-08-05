@@ -2,24 +2,24 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub root: String,
+    pub root_cert: String,
 }
 
 #[cw_serde]
 pub struct ExecuteMsg {
     pub tcb_info: String,
     pub certificate: String,
-    pub time: String,
+    pub time: Option<String>,
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(GetTcbInfoResponse)]
-    GetTcbInfo { fmspc: [u8; 6], time: String },
+    GetTcbInfo { fmspc: [u8; 6] },
 }
 
 #[cw_serde]
 pub struct GetTcbInfoResponse {
-    pub tcb_info: String,
+    pub tcb_info: serde_json::Value,
 }

@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use crate::msg::{ExecuteMsg, GetTcbInfoResponse, QueryMsg};
 
 const FMSPC: &str = "00606a000000";
-const TIME: &str = "2024-07-15T15:19:13Z";
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
@@ -38,8 +37,7 @@ impl CwTemplateContract {
         CQ: CustomQuery,
     {
         let fmspc = hex::decode(FMSPC).unwrap().try_into().unwrap();
-        let time = TIME.to_string();
-        let msg = QueryMsg::GetTcbInfo { fmspc, time };
+        let msg = QueryMsg::GetTcbInfo { fmspc };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
             msg: to_json_binary(&msg)?,
