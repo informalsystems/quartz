@@ -21,7 +21,8 @@ use crate::{
     error::Error,
     handler::Handler,
     request::handshake::HandshakeRequest,
-    response::{handshake::HandshakeResponse, Response}, Config,
+    response::{handshake::HandshakeResponse, Response},
+    Config,
 };
 
 #[async_trait]
@@ -29,11 +30,11 @@ impl Handler for HandshakeRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, _config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         trace!("starting handshake...");
 
         // TODO: may need to import verbosity here
-        handshake(self)
+        handshake(self, config.mock_sgx)
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
@@ -46,7 +47,7 @@ struct Message<'a> {
     message: &'a str,
 }
 
-async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
+async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow::Error> {
     let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
     let wsurl = format!("ws://{}/websocket", args.node_url);
 
@@ -60,7 +61,7 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
     let (trusted_height, trusted_hash) = read_hash_height(trusted_files_path.as_path()).await?;
 
     println!("Running SessionCreate");
-    let res: serde_json::Value = run_relay(base_path.as_path(), "SessionCreate", None)?;
+    let res: serde_json::Value = run_relay(base_path.as_path(), mock_sgx, "SessionCreate", None)?;
 
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client
@@ -115,6 +116,7 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
     println!("Running SessionSetPubKey");
     let res: serde_json::Value = run_relay(
         base_path.as_path(),
+        mock_sgx,
         "SessionSetPubKey",
         Some(proof_json.as_str()),
     )?;
@@ -138,12 +140,17 @@ async fn handshake(args: HandshakeRequest) -> Result<(), anyhow::Error> {
 
     let output: WasmdTxResponse = wasmd_client.query_tx(output.txhash.to_string())?;
 
-    let wasm_event = output.events.iter().find(|e| e.kind == "wasm").expect("Wasm transactions should always contain wasm event");
-    if let Some(pubkey) = wasm_event
-        .attributes
+    let wasm_event = output
+        .events
         .iter()
-        .find(|a| a.key_str().expect("SessionSetPubkey tx is expected to have pub_key attribute") == "pub_key")
-    {
+        .find(|e| e.kind == "wasm")
+        .expect("Wasm transactions are guaranteed to contain a 'wasm' event");
+
+    if let Some(pubkey) = wasm_event.attributes.iter().find(|a| {
+        a.key_str()
+            .expect("SessionSetPubKey tx is expected to have 'pub_key' attribute")
+            == "pub_key"
+    }) {
         println!("\n\n\n{}", pubkey.value_str().unwrap()); // TODO: return this instead later
     } else {
         return Err(anyhow!("Failed to find pubkey from SetPubKey message"));

@@ -110,14 +110,6 @@ pub enum ContractCommand {
     },
 }
 
-fn default_rpc_addr() -> String {
-    env::var("RPC_URL").unwrap_or_else(|_| "http://127.0.0.1".to_string())
-}
-
-fn default_node_url() -> String {
-    env::var("NODE_URL").unwrap_or_else(|_| "143.244.186.205:26657".to_string())
-}
-
 #[derive(Debug, Clone, Subcommand)]
 pub enum EnclaveCommand {
     /// Build the Quartz app's enclave
@@ -131,4 +123,12 @@ pub enum EnclaveCommand {
         #[clap(long)]
         path: Option<PathBuf>,
     },
+}
+
+fn default_rpc_addr() -> String {
+    env::var("RPC_URL").unwrap_or_else(|_| "http://127.0.0.1".to_string())
+}
+
+fn default_node_url() -> String {
+    env::var("NODE_URL").unwrap_or_else(|_| "143.244.186.205:26657".to_string())
 }

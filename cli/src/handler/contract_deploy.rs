@@ -2,8 +2,12 @@ use std::env::current_dir;
 
 use async_trait::async_trait;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
-use quartz_common::contract::prelude::QuartzInstantiateMsg;
+use quartz_common::contract::{
+    msg::execute::attested::{EpidAttestation, MockAttestation},
+    prelude::QuartzInstantiateMsg,
+};
 use reqwest::Url;
+use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use tendermint_rpc::HttpClient;
 use tracing::trace;
@@ -16,7 +20,8 @@ use crate::{
     error::Error,
     handler::Handler,
     request::contract_deploy::ContractDeployRequest,
-    response::{contract_deploy::ContractDeployResponse, Response}, Config,
+    response::{contract_deploy::ContractDeployResponse, Response},
+    Config,
 };
 
 #[async_trait]
@@ -24,18 +29,27 @@ impl Handler for ContractDeployRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, _config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
 
-        deploy(self)
-            .await
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
+        if config.mock_sgx {
+            deploy::<MockAttestation>(self, config.mock_sgx)
+                .await
+                .map_err(|e| Error::GenericErr(e.to_string()))?;
+        } else {
+            deploy::<EpidAttestation>(self, config.mock_sgx)
+                .await
+                .map_err(|e| Error::GenericErr(e.to_string()))?;
+        }
 
         Ok(ContractDeployResponse.into())
     }
 }
 
-async fn deploy(args: ContractDeployRequest) -> Result<(), anyhow::Error> {
+async fn deploy<DA: Serialize + DeserializeOwned>(
+    args: ContractDeployRequest,
+    mock_sgx: bool,
+) -> Result<(), anyhow::Error> {
     // TODO: Replace with call to Rust package
     let relay_path = current_dir()?.join("../");
 
@@ -58,13 +72,15 @@ async fn deploy(args: ContractDeployRequest) -> Result<(), anyhow::Error> {
 
     let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
     let code_id: usize = log[0].events[1].attributes[1].value.parse()?;
+    // let code_id: usize = 25;
 
     println!("\n🚀 Communicating with Relay to Instantiate...\n");
-    let raw_init_msg: RawInstantiateMsg = run_relay(relay_path.as_path(), "Instantiate", None)?;
+    let raw_init_msg: QuartzInstantiateMsg<DA> =
+        run_relay(relay_path.as_path(), mock_sgx, "Instantiate", None)?;
 
     println!("\n🚀 Instantiating {} Contract\n", args.label);
     let mut init_msg = args.init_msg;
-    init_msg.quartz = json!(QuartzInstantiateMsg::from(raw_init_msg));
+    init_msg.quartz = json!(raw_init_msg);
 
     let init_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.init(
         &args.chain_id,

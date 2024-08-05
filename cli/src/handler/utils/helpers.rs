@@ -22,13 +22,17 @@ pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
 // TODO: move wrapping result with "quartz:" struct into here
 pub fn run_relay<R: DeserializeOwned>(
     base_path: &Path,
+    mock_sgx: bool,
     msg: &str,
     arg: Option<&str>,
 ) -> Result<R, anyhow::Error> {
     let relayer_path = base_path.join("relayer/scripts/relay.sh");
 
     let mut bash = Command::new("bash");
-    let command = bash.arg(relayer_path).arg(msg);
+    let command = bash
+        .arg(relayer_path)
+        .arg(msg)
+        .env("MOCK_SGX", mock_sgx.to_string());
 
     if let Some(arg) = arg {
         command.arg(arg);

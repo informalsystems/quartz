@@ -3,7 +3,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw20_base::contract::query_balance as cw20_query_balance;
-use quartz_common::contract::{prelude::QuartzExecuteMsg, handler::RawHandler, state::EPOCH_COUNTER};
+use quartz_common::contract::{handler::RawHandler, state::EPOCH_COUNTER};
 
 use crate::{
     error::ContractError,
@@ -64,23 +64,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Quartz(msg) => {
-            let pub_key = match &msg {
-                QuartzExecuteMsg::RawSessionSetPubKey(quartz) 
-                    => Some(quartz.msg.pub_key().to_string()),
-                _ => None
-            };
-
-            let mut res = msg.handle_raw(deps, &env, &info)?;
-
-            if let Some(pub_key) = pub_key {
-                res = res
-                    .add_attribute("quartz_message", "SessionSetPubkey")
-                    .add_attribute("pub_key", pub_key);
-                }
-        
-            Ok(res)
-        }
+        ExecuteMsg::Quartz(msg) => msg.handle_raw(deps, &env, &info).map_err(Into::into),
         ExecuteMsg::FaucetMint(FaucetMintMsg { recipient, amount }) => {
             execute::faucet_mint(deps, env, recipient, amount)
         }

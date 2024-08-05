@@ -5,8 +5,8 @@ use crate::{error::Error, request::Request, response::Response, Config};
 pub mod utils;
 // commands
 pub mod contract_deploy;
-pub mod handshake;
 pub mod enclave_build;
+pub mod handshake;
 pub mod init;
 
 #[async_trait]
@@ -14,7 +14,7 @@ pub trait Handler {
     type Error;
     type Response;
 
-     async fn handle(self, config: Config) -> Result<Self::Response, Self::Error>;
+    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error>;
 }
 
 #[async_trait]

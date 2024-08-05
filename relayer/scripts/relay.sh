@@ -34,7 +34,7 @@ QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')
 MSG=$(echo "$ATTESTED_MSG" | jq 'del(.quote)')
 
 
-if [ -n "$MOCK_SGX" ]; then
+if [ "$MOCK_SGX" = "true" ]; then
 
     case "$REQUEST" in
         "Instantiate")
