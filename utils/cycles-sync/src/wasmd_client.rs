@@ -25,10 +25,7 @@ pub trait WasmdClient {
         query: Self::RawQuery,
     ) -> Result<R, Self::Error>;
 
-    fn query_tx<R: DeserializeOwned + Default>(
-        &self,
-        txhash: String,
-    ) -> Result<R, Self::Error>;
+    fn query_tx<R: DeserializeOwned + Default>(&self, txhash: String) -> Result<R, Self::Error>;
 
     fn tx_execute<M: ToString>(
         &self,
@@ -124,10 +121,7 @@ impl WasmdClient for CliWasmdClient {
         Ok(query_result)
     }
 
-    fn query_tx<R: DeserializeOwned + Default>(
-        &self,
-        txhash: String,
-    ) -> Result<R, Self::Error> {
+    fn query_tx<R: DeserializeOwned + Default>(&self, txhash: String) -> Result<R, Self::Error> {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd
             .args(["--node", self.url.as_str()])
