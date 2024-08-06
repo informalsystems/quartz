@@ -39,6 +39,7 @@ pub struct Log {
     pub msg_index: u32,
 }
 
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum RelayMessage {
     Instantiate,
     SessionCreate,

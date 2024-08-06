@@ -70,7 +70,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
                 &args.contract.clone(),
                 &args.chain_id,
                 2000000,
-                args.sender.clone(),
+                &args.sender,
                 json!(res),
             )?
             .as_str(),
@@ -128,7 +128,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
                 &args.contract.clone(),
                 &ChainId::from_str("testing")?,
                 2000000,
-                args.sender.clone(),
+                &args.sender,
                 json!(res),
             )?
             .as_str(),
@@ -138,7 +138,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
     block_tx_commit(&tmrpc_client, output.txhash).await?;
     info!("SessionSetPubKey tx committed");
 
-    let output: WasmdTxResponse = wasmd_client.query_tx(output.txhash.to_string())?;
+    let output: WasmdTxResponse = wasmd_client.query_tx(&output.txhash.to_string())?;
 
     let wasm_event = output
         .events
@@ -167,12 +167,12 @@ async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {
 
     // Wait 2 NewBlock events
     let mut ev_count = 2_i32;
-    trace!("Blocks left: {ev_count} ...");
+    debug!("Blocks left: {ev_count} ...");
 
     while let Some(res) = subs.next().await {
         let _ev = res?;
         ev_count -= 1;
-        trace!("Blocks left: {ev_count} ...");
+        debug!("Blocks left: {ev_count} ...");
         if ev_count == 0 {
             break;
         }

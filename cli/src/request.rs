@@ -46,31 +46,8 @@ impl TryFrom<Command> for Request {
                 app_dir: Self::path_checked(app_dir)?,
             }
             .into()),
-            Command::Contract { contract_command } => match contract_command {
-                ContractCommand::Deploy {
-                    init_msg,
-                    node_url,
-                    chain_id,
-                    sender,
-                    label,
-                    wasm_bin_path,
-                } => Ok(ContractDeployRequest {
-                    init_msg: ContractDeployRequest::checked_init(init_msg)?,
-                    node_url,
-                    chain_id,
-                    sender,
-                    label,
-                    wasm_bin_path,
-                }
-                .into()),
-                _ => todo!(),
-            },
-            Command::Enclave { enclave_command } => match enclave_command {
-                EnclaveCommand::Build { manifest_path } => {
-                    Ok(EnclaveBuildRequest { manifest_path }.into())
-                }
-                _ => todo!(),
-            },
+            Command::Contract { contract_command } => contract_command.try_into(),
+            Command::Enclave { enclave_command } => Ok(enclave_command.into()),
         }
     }
 }
@@ -85,6 +62,47 @@ impl Request {
             Ok(path)
         } else {
             Ok(current_dir().map_err(|e| Error::GenericErr(e.to_string()))?)
+        }
+    }
+}
+
+impl TryFrom<ContractCommand> for Request {
+    type Error = Error;
+
+    fn try_from(cmd: ContractCommand) -> Result<Request, Error> {
+        match cmd {
+            ContractCommand::Deploy {
+                init_msg,
+                node_url,
+                chain_id,
+                sender,
+                label,
+                wasm_bin_path,
+            } => {
+                if !wasm_bin_path.exists() {
+                    return Err(Error::PathNotFile(wasm_bin_path.display().to_string()));
+                }
+                
+                Ok(ContractDeployRequest {
+                    init_msg: serde_json::from_str(&init_msg).map_err(|e| Error::GenericErr(e.to_string()))?,
+                    node_url,
+                    chain_id,
+                    sender,
+                    label,
+                    wasm_bin_path,
+                }
+                .into())
+            }
+            ContractCommand::Build { path: _ } => todo!(),
+        }
+    }
+}
+
+impl From<EnclaveCommand> for Request {
+    fn from(cmd: EnclaveCommand) -> Request {
+        match cmd {
+            EnclaveCommand::Build { manifest_path } => EnclaveBuildRequest { manifest_path }.into(),
+            EnclaveCommand::Start { path: _ } => todo!()
         }
     }
 }

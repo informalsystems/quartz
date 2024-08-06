@@ -25,31 +25,31 @@ pub trait WasmdClient {
         query: Self::RawQuery,
     ) -> Result<R, Self::Error>;
 
-    fn query_tx<R: DeserializeOwned + Default>(&self, txhash: String) -> Result<R, Self::Error>;
+    fn query_tx<R: DeserializeOwned + Default>(&self, txhash: &str) -> Result<R, Self::Error>;
 
     fn tx_execute<M: ToString>(
         &self,
         contract: &Self::Address,
         chain_id: &Id,
         gas: u64,
-        sender: String,
+        sender: &str,
         msg: M,
     ) -> Result<String, Self::Error>;
 
     fn deploy<M: ToString>(
         &self,
         chain_id: &Id,
-        sender: String, // what should this type be
+        sender: &str, // what should this type be
         wasm_path: M,
     ) -> Result<String, Self::Error>;
 
     fn init<M: ToString>(
         &self,
         chain_id: &Id,
-        sender: String,
+        sender: &str,
         code_id: usize,
         init_msg: M,
-        label: String,
+        label: &str,
     ) -> Result<String, Self::Error>;
 }
 
@@ -121,7 +121,7 @@ impl WasmdClient for CliWasmdClient {
         Ok(query_result)
     }
 
-    fn query_tx<R: DeserializeOwned + Default>(&self, txhash: String) -> Result<R, Self::Error> {
+    fn query_tx<R: DeserializeOwned + Default>(&self, txhash: &str) -> Result<R, Self::Error> {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd
             .args(["--node", self.url.as_str()])
@@ -143,7 +143,7 @@ impl WasmdClient for CliWasmdClient {
         contract: &Self::Address,
         chain_id: &Id,
         gas: u64,
-        sender: String,
+        sender: &str,
         msg: M,
     ) -> Result<String, Self::Error> {
         let mut wasmd = Command::new("wasmd");
@@ -170,7 +170,7 @@ impl WasmdClient for CliWasmdClient {
     fn deploy<M: ToString>(
         &self,
         chain_id: &Id,
-        sender: String,
+        sender: &str,
         wasm_path: M,
     ) -> Result<String, Self::Error> {
         let mut wasmd = Command::new("wasmd");
@@ -198,10 +198,10 @@ impl WasmdClient for CliWasmdClient {
     fn init<M: ToString>(
         &self,
         chain_id: &Id,
-        sender: String,
+        sender: &str,
         code_id: usize,
         init_msg: M,
-        label: String,
+        label: &str,
     ) -> Result<String, Self::Error> {
         let mut wasmd = Command::new("wasmd");
         let command = wasmd

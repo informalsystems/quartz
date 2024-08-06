@@ -5,6 +5,8 @@ use thiserror::Error;
 pub enum Error {
     /// Specified path `{0}` is not a directory
     PathNotDir(String),
+    /// Specified file `{0}` does not exist
+    PathNotFile(String),
     /// {0}
     GenericErr(String),
 }

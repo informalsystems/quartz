@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use async_trait::async_trait;
-use tracing::{debug, trace};
+use tracing::{debug, info};
 
 use crate::{
     error::Error,
@@ -27,7 +27,7 @@ impl Handler for EnclaveBuildRequest {
             command.arg("--features=mock-sgx");
         }
 
-        trace!("🚧 Building enclave ...");
+        info!("🚧 Building enclave ...");
         let status = command
             .status()
             .map_err(|e| Error::GenericErr(e.to_string()))?;

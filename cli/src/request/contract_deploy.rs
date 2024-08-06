@@ -7,7 +7,7 @@ use crate::{error::Error, request::Request};
 
 #[derive(Clone, Debug)]
 pub struct ContractDeployRequest {
-    pub init_msg: GenericQuartzInit,
+    pub init_msg: serde_json::Value,
     pub node_url: String,
     pub chain_id: ChainId,
     pub sender: String,

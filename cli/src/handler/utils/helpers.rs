@@ -9,7 +9,7 @@ use tendermint::Hash;
 use tendermint_rpc::{
     endpoint::tx::Response as TmTxResponse, error::ErrorDetail, Client, HttpClient,
 };
-use tracing::trace;
+use tracing::{debug, trace};
 
 use super::types::RelayMessage;
 
@@ -72,7 +72,7 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
                                 ErrorDetail::Response(subdetail)
                             ));
                         } else {
-                            trace!("🔗 Waiting for tx commit... (+400ms)");
+                            debug!("🔗 Waiting for tx commit... (+400ms)");
                             tokio::time::sleep(Duration::from_millis(400)).await;
                             continue;
                         }

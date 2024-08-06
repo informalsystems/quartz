@@ -92,7 +92,7 @@ pub enum ContractCommand {
     },
     Deploy {
         /// Json-formatted cosmwasm contract initialization message
-        #[clap(long, default_value = r#"{"quartz":""}"#)]
+        #[clap(long, default_value = "{}")]
         init_msg: String,
         /// <host>:<port> to tendermint rpc interface for this chain
         #[clap(long, default_value_t = default_node_url())]
