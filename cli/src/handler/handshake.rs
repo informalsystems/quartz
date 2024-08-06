@@ -151,9 +151,9 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
             .expect("SessionSetPubKey tx is expected to have 'pub_key' attribute")
             == "pub_key"
     }) {
-        return Ok(pubkey.value_str()?.to_string());
+        Ok(pubkey.value_str()?.to_string())
     } else {
-        return Err(anyhow!("Failed to find pubkey from SetPubKey message"));
+        Err(anyhow!("Failed to find pubkey from SetPubKey message"))
     }
 }
 

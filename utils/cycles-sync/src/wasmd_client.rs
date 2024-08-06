@@ -126,7 +126,7 @@ impl WasmdClient for CliWasmdClient {
         let command = wasmd
             .args(["--node", self.url.as_str()])
             .args(["query", "tx"])
-            .arg(&txhash.to_string())
+            .arg(txhash)
             .args(["--output", "json"]);
 
         let output = command.output()?;
@@ -153,7 +153,7 @@ impl WasmdClient for CliWasmdClient {
             .args(["tx", "wasm"])
             .args(["execute", contract.as_ref(), &msg.to_string()])
             .args(["--gas", &gas.to_string()])
-            .args(["--from", sender.as_ref()])
+            .args(["--from", sender])
             .args(["--output", "json"])
             .arg("-y");
 
@@ -177,7 +177,7 @@ impl WasmdClient for CliWasmdClient {
         let command = wasmd
             .args(["--node", self.url.as_str()])
             .args(["tx", "wasm", "store", &wasm_path.to_string()])
-            .args(["--from", sender.as_ref()])
+            .args(["--from", sender])
             .args(["--chain-id", chain_id.as_ref()])
             .args(["--gas-prices", "0.0025ucosm"])
             .args(["--gas", "auto"])
@@ -208,8 +208,8 @@ impl WasmdClient for CliWasmdClient {
             .args(["--node", self.url.as_str()])
             .args(["tx", "wasm", "instantiate"])
             .args([&code_id.to_string(), &init_msg.to_string()])
-            .args(["--label", label.as_ref()])
-            .args(["--from", sender.as_ref()])
+            .args(["--label", label])
+            .args(["--from", sender])
             .arg("--no-admin")
             .args(["--chain-id", chain_id.as_ref()])
             .args(["--gas-prices", "0.0025ucosm"])

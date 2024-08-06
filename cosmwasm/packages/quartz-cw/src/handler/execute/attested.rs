@@ -94,10 +94,12 @@ where
         // 2. we allow the message handler to make changes to the config so that the attestation
         //    handler can use those changes, e.g. InstantiateMsg
         // return response from msg handle to include pub_key attribute
-        let res = Handler::handle(msg, deps.branch(), env, info)?;
-        Handler::handle(attestation, deps, env, info)?;
+        let res_msg = Handler::handle(msg, deps.branch(), env, info)?;
+        let res_attest = Handler::handle(attestation, deps, env, info)?;
 
-        Ok(res)
+        Ok(res_msg
+            .add_events(res_attest.events)
+            .add_attributes(res_attest.attributes))
     }
 }
 

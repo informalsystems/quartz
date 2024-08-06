@@ -3,7 +3,7 @@ use std::env::current_dir;
 use async_trait::async_trait;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use quartz_common::contract::{
-    msg::execute::attested::{EpidAttestation, MockAttestation},
+    msg::execute::attested::{RawEpidAttestation, RawMockAttestation},
     prelude::QuartzInstantiateMsg,
 };
 use reqwest::Url;
@@ -33,11 +33,11 @@ impl Handler for ContractDeployRequest {
         trace!("initializing directory structure...");
 
         let (code_id, contract_addr) = if config.mock_sgx {
-            deploy::<MockAttestation>(self, config.mock_sgx)
+            deploy::<RawMockAttestation>(self, config.mock_sgx)
                 .await
                 .map_err(|e| Error::GenericErr(e.to_string()))?
         } else {
-            deploy::<EpidAttestation>(self, config.mock_sgx)
+            deploy::<RawEpidAttestation>(self, config.mock_sgx)
                 .await
                 .map_err(|e| Error::GenericErr(e.to_string()))?
         };
@@ -77,8 +77,11 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     let code_id: usize = log[0].events[1].attributes[1].value.parse()?;
 
     info!("\n🚀 Communicating with Relay to Instantiate...\n");
-    let raw_init_msg: QuartzInstantiateMsg<DA> =
-        run_relay(relay_path.as_path(), mock_sgx, RelayMessage::Instantiate)?;
+    let raw_init_msg = run_relay::<QuartzInstantiateMsg<DA>>(
+        relay_path.as_path(),
+        mock_sgx,
+        RelayMessage::Instantiate,
+    )?;
 
     info!("\n🚀 Instantiating {} Contract\n", args.label);
     let mut init_msg = args.init_msg;

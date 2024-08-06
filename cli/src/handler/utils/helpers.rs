@@ -9,7 +9,7 @@ use tendermint::Hash;
 use tendermint_rpc::{
     endpoint::tx::Response as TmTxResponse, error::ErrorDetail, Client, HttpClient,
 };
-use tracing::{debug, trace};
+use tracing::debug;
 
 use super::types::RelayMessage;
 

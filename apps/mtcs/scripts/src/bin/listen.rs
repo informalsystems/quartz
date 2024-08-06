@@ -16,7 +16,7 @@ use mtcs_enclave::{
     types::RunClearingMessage,
 };
 use quartz_common::contract::msg::execute::attested::{
-    EpidAttestation, RawAttested, RawAttestedMsgSansHandler,
+    EpidAttestation, RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation,
 };
 use quartz_tee_ra::{intel_sgx::epid::types::ReportBody, IASReport};
 use reqwest::Url;
@@ -135,8 +135,10 @@ async fn handler(
     let attestation = gramine_ias_request(quote.attestation, user).await?;
     let msg = RawAttestedMsgSansHandler(quote.msg);
 
-    let setoffs_msg =
-        ExecuteMsg::SubmitSetoffs::<EpidAttestation>(AttestedMsg { msg, attestation });
+    let setoffs_msg = ExecuteMsg::SubmitSetoffs::<RawEpidAttestation>(AttestedMsg {
+        msg,
+        attestation: attestation.into(),
+    });
 
     // Send setoffs to mtcs contract on chain
     let output =

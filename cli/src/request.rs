@@ -82,9 +82,10 @@ impl TryFrom<ContractCommand> for Request {
                 if !wasm_bin_path.exists() {
                     return Err(Error::PathNotFile(wasm_bin_path.display().to_string()));
                 }
-                
+
                 Ok(ContractDeployRequest {
-                    init_msg: serde_json::from_str(&init_msg).map_err(|e| Error::GenericErr(e.to_string()))?,
+                    init_msg: serde_json::from_str(&init_msg)
+                        .map_err(|e| Error::GenericErr(e.to_string()))?,
                     node_url,
                     chain_id,
                     sender,
@@ -102,7 +103,7 @@ impl From<EnclaveCommand> for Request {
     fn from(cmd: EnclaveCommand) -> Request {
         match cmd {
             EnclaveCommand::Build { manifest_path } => EnclaveBuildRequest { manifest_path }.into(),
-            EnclaveCommand::Start { path: _ } => todo!()
+            EnclaveCommand::Start { path: _ } => todo!(),
         }
     }
 }
