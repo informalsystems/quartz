@@ -1,7 +1,5 @@
-use std::{
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::path::{Path, PathBuf};
+use cargo_generate::{generate, GenerateArgs, TemplatePath, Vcs};
 
 use tracing::trace;
 
@@ -23,24 +21,23 @@ impl Handler for InitRequest {
         if Path::new(&self.name).iter().count() != 1 {
             return Err(Error::GenericErr("App name contains path".to_string()));
         }
-
+        
         let cli_manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
+        
+        let wasm_pack_args = GenerateArgs {
+            name: Some(self.name),
+            vcs: Some(Vcs::Git),
+            template_path: TemplatePath {
+                // git: Some("git@github.com:informalsystems/cycles-quartz.git".to_string()), // TODO: replace with public http address when open-sourced
+                path: Some(cli_manifest_dir.join("apps/transfers").display().to_string()),
+                subfolder: Some(String::from("apps/transfers")),
+                ..TemplatePath::default()
+            },
+            ..GenerateArgs::default()
+        };
+    
+        let result_dir = generate(wasm_pack_args).expect("something went wrong!").display().to_string();
 
-        let status = Command::new("cargo")
-            .arg("generate")
-            .arg("--path")
-            .arg(cli_manifest_dir.display().to_string())
-            .arg("--name")
-            .arg(self.name)
-            .arg("apps/transfers")
-            .status()
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
-
-        // Check the output
-        if !status.success() {
-            return Err(Error::GenericErr(status.to_string()));
-        }
-
-        Ok(InitResponse.into())
+        Ok(InitResponse { result_dir }.into())
     }
 }
