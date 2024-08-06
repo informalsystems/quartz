@@ -132,5 +132,5 @@ fn default_rpc_addr() -> String {
 }
 
 fn default_node_url() -> String {
-    env::var("NODE_URL").unwrap_or_else(|_| "143.244.186.205:26657".to_string())
+    env::var("NODE_URL").unwrap_or_else(|_| "http://127.0.0.1:26657".to_string())
 }
