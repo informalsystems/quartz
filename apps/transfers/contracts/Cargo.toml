@@ -25,11 +25,8 @@ overflow-checks = true
 
 
 [features]
-default = []
-mock-sgx = ["quartz-cw/mock-sgx"]
+mock-sgx = ["quartz-common/mock-sgx"]
 library = []
-# Explicitly disable std feature for Wasm builds
-# std = ["cosmwasm-std/std"]
 
 [dependencies]
 # external
@@ -48,7 +45,6 @@ cw-utils = { version = "2.0.0", default-features = false }
 
 # quartz
 quartz-common = { path = "../../../core/quartz-common", default-features = false, features = ["contract"] }
-quartz-cw = { path = "../../../cosmwasm/packages/quartz-cw", default-features = false, features = ["mock-sgx"] }
 
 # patch indirect deps
 getrandom = { version = "0.2.15", default-features = false, features = ["js"] }

@@ -92,7 +92,7 @@ echo "create session"
 cd $ROOT/relayer
 
 # execute SessionCreate on enclave
-export EXECUTE_CREATE=$(./scripts/relayNeutron.sh SessionCreate)
+export EXECUTE_CREATE=$(./scripts/relay.sh SessionCreate)
 echo $EXECUTE_CREATE
 
 # submit SessionCreate to contract
@@ -167,7 +167,7 @@ export POP_MSG=$(jq -nc --arg message "$POP" '$ARGS.named')
 
 # execute SessionSetPubKey on enclave
 cd $ROOT/relayer
-export EXECUTE_SETPUB=$(./scripts/relayNeutron.sh SessionSetPubKey "$POP_MSG")
+export EXECUTE_SETPUB=$(./scripts/relay.sh SessionSetPubKey "$POP_MSG")
 
 RES=$($CMD tx wasm execute "$CONTRACT" "$EXECUTE_SETPUB" --from "$USER_ADDR" --keyring-backend "test" --keyring-dir "$WASMD_ROOT" $TXFLAG -y --output json)
 TX_HASH=$(echo $RES | jq -r '.txhash')

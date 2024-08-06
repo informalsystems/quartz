@@ -52,7 +52,7 @@ print_success "Relayer instantiated successfully."
 
 cd  $ROOT/relayer/
 
-INSTANTIATE_MSG=$(./scripts/relayNeutron.sh Instantiate | jq -c '' )
+INSTANTIATE_MSG=$(./scripts/relay.sh Instantiate | jq -c '' )
 
 cd $ROOT/apps/transfers/contracts/
 

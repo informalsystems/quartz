@@ -172,7 +172,7 @@ cd $ROOT/relayer
 
 update_progress $((++CURRENT_STEP)) $TOTAL_STEPS
 print_header "Executing SessionCreate on Enclave"
-export EXECUTE_CREATE=$(QUARTZ_PORT=$QUARTZ_PORT ./scripts/relayNeutron.sh SessionCreate)
+export EXECUTE_CREATE=$(QUARTZ_PORT=$QUARTZ_PORT ./scripts/relay.sh SessionCreate)
 if [ -z "$EXECUTE_CREATE" ]; then
     print_error "Failed to execute SessionCreate on enclave"
 fi
@@ -280,7 +280,7 @@ update_progress $((++CURRENT_STEP)) $TOTAL_STEPS
 
 print_header "Executing SessionSetPubKey on Enclave"
 cd $ROOT/relayer
-export EXECUTE_SETPUB=$(QUARTZ_PORT=$QUARTZ_PORT ./scripts/relayNeutron.sh SessionSetPubKey "$POP_MSG")
+export EXECUTE_SETPUB=$(QUARTZ_PORT=$QUARTZ_PORT ./scripts/relay.sh SessionSetPubKey "$POP_MSG")
 
 RES=$($CMD tx wasm execute "$CONTRACT" "$EXECUTE_SETPUB" --from "$USER_ADDR"  $TXFLAG --keyring-backend "test" --keyring-dir "$WASMD_HOME" -y --output json)
 TX_HASH=$(echo $RES | jq -r '.txhash')
