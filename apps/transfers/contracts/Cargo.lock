@@ -1592,7 +1592,6 @@ dependencies = [
  "cw20-base",
  "getrandom",
  "quartz-common",
- "quartz-cw",
  "serde",
  "serde_json",
  "sha2",
