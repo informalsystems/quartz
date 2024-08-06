@@ -13,7 +13,7 @@ pub type AttestedMsg<M, RA> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
 
 #[cw_serde]
 pub struct InstantiateMsg<RA = RawDefaultAttestation> {
-    pub quartz: QuartzInstantiateMsg<RA>
+    pub quartz: QuartzInstantiateMsg<RA>,
 }
 
 impl From<QuartzInstantiateMsg<RawDefaultAttestation>> for InstantiateMsg {
