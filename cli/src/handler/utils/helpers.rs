@@ -9,6 +9,7 @@ use tendermint::Hash;
 use tendermint_rpc::{
     endpoint::tx::Response as TmTxResponse, error::ErrorDetail, Client, HttpClient,
 };
+use tracing::trace;
 
 pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
     let (hr, _) = bech32_decode(address_str).map_err(|e| anyhow!(e))?;
@@ -70,7 +71,7 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
                                 ErrorDetail::Response(subdetail)
                             ));
                         } else {
-                            println!("🔗 Waiting for tx commit... (+400ms)");
+                            trace!("🔗 Waiting for tx commit... (+400ms)");
                             tokio::time::sleep(Duration::from_millis(400)).await;
                             continue;
                         }

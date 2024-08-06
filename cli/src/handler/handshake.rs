@@ -11,7 +11,7 @@ use serde_json::json;
 use tendermint::{block::Height, Hash};
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tm_prover::{config::Config as TmProverConfig, prover::prove};
-use tracing::trace;
+use tracing::{debug, info, trace};
 
 use super::utils::{
     helpers::{block_tx_commit, run_relay},
@@ -60,7 +60,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow:
     let trusted_files_path = base_path.join("apps/mtcs/");
     let (trusted_height, trusted_hash) = read_hash_height(trusted_files_path.as_path()).await?;
 
-    println!("Running SessionCreate");
+    info!("Running SessionCreate");
     let res: serde_json::Value = run_relay(base_path.as_path(), mock_sgx, "SessionCreate", None)?;
 
     let output: WasmdTxResponse = serde_json::from_str(
@@ -74,19 +74,19 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow:
             )?
             .as_str(),
     )?;
-    // println!("\n\n SessionCreate tx output: {:?}", output);
+    debug!("\n\n SessionCreate tx output: {:?}", output);
 
     // Wait for tx to commit
     block_tx_commit(&tmrpc_client, output.txhash).await?;
-    println!("SessionCreate tx committed");
+    info!("SessionCreate tx committed");
 
     // Wait 2 blocks
-    println!("Waiting 2 blocks for light client proof");
+    info!("Waiting 2 blocks for light client proof");
     two_block_waitoor(&wsurl).await?;
 
     // TODO: dir logic issue #125
     let proof_path = current_dir()?.join("../utils/tm-prover/light-client-proof.json");
-    println!("Proof path: {:?}", proof_path.to_str());
+    debug!("Proof path: {:?}", proof_path.to_str());
 
     // Call tm prover with trusted hash and height
     let config = TmProverConfig {
@@ -101,7 +101,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow:
         chain_id: args.chain_id.to_string(),
         ..Default::default()
     };
-    println!("config: {:?}", config);
+    debug!("config: {:?}", config);
     if let Err(report) = prove(config).await {
         return Err(anyhow!("Tendermint prover failed. Report: {}", report));
     }
@@ -113,7 +113,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow:
     })?;
 
     // Execute SessionSetPubKey on enclave
-    println!("Running SessionSetPubKey");
+    info!("Running SessionSetPubKey");
     let res: serde_json::Value = run_relay(
         base_path.as_path(),
         mock_sgx,
@@ -136,7 +136,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow:
 
     // Wait for tx to commit
     block_tx_commit(&tmrpc_client, output.txhash).await?;
-    println!("SessionSetPubKey tx committed");
+    info!("SessionSetPubKey tx committed");
 
     let output: WasmdTxResponse = wasmd_client.query_tx(output.txhash.to_string())?;
 
@@ -151,7 +151,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow:
             .expect("SessionSetPubKey tx is expected to have 'pub_key' attribute")
             == "pub_key"
     }) {
-        println!("\n\n\n{}", pubkey.value_str().unwrap()); // TODO: return this instead later
+        debug!("\n\n\n{}", pubkey.value_str().unwrap()); // TODO: return this instead later
     } else {
         return Err(anyhow!("Failed to find pubkey from SetPubKey message"));
     }
@@ -169,12 +169,12 @@ async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {
 
     // Wait 2 NewBlock events
     let mut ev_count = 2_i32;
-    println!("Blocks left: {ev_count} ...");
+    trace!("Blocks left: {ev_count} ...");
 
     while let Some(res) = subs.next().await {
         let _ev = res?;
         ev_count -= 1;
-        println!("Blocks left: {ev_count} ...");
+        trace!("Blocks left: {ev_count} ...");
         if ev_count == 0 {
             break;
         }

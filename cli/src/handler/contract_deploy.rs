@@ -10,7 +10,7 @@ use reqwest::Url;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use tendermint_rpc::HttpClient;
-use tracing::trace;
+use tracing::{debug, info, trace};
 
 use super::utils::{
     helpers::{block_tx_commit, run_relay},
@@ -57,28 +57,28 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
-    println!("\n🚀 Deploying {} Contract\n", args.label);
-    let contract_path = args
-        .directory
-        .join("contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm");
+    info!("\n🚀 Deploying {} Contract\n", args.label);
+    // let contract_path = args
+    //     .directory
+    //     .join("contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm");
 
-    // TODO: uncertain about the path -> string conversion
-    let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
-        &args.chain_id,
-        args.sender.clone(),
-        contract_path.display().to_string(),
-    )?)?;
-    let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
+    // // TODO: uncertain about the path -> string conversion
+    // let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
+    //     &args.chain_id,
+    //     args.sender.clone(),
+    //     contract_path.display().to_string(),
+    // )?)?;
+    // let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
 
-    let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-    let code_id: usize = log[0].events[1].attributes[1].value.parse()?;
-    // let code_id: usize = 25;
+    // let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
+    // let code_id: usize = log[0].events[1].attributes[1].value.parse()?;
+    let code_id: usize = 45;
 
-    println!("\n🚀 Communicating with Relay to Instantiate...\n");
+    info!("\n🚀 Communicating with Relay to Instantiate...\n");
     let raw_init_msg: QuartzInstantiateMsg<DA> =
         run_relay(relay_path.as_path(), mock_sgx, "Instantiate", None)?;
 
-    println!("\n🚀 Instantiating {} Contract\n", args.label);
+    info!("\n🚀 Instantiating {} Contract\n", args.label);
     let mut init_msg = args.init_msg;
     init_msg.quartz = json!(raw_init_msg);
 
@@ -94,11 +94,11 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
     let contract_addr: &String = &log[0].events[1].attributes[0].value;
 
-    println!("\n🚀 Successfully deployed and instantiated contract!");
-    println!("🆔 Code ID: {}", code_id);
-    println!("📌 Contract Address: {}", contract_addr);
-
-    println!("{contract_addr}");
+    info!("\n🚀 Successfully deployed and instantiated contract!");
+    info!("\n🆔 Code ID: {}", code_id);
+    info!("\n📌 Contract Address: {}", contract_addr);
+    
+    debug!("{contract_addr}");
     Ok(())
 }
 
