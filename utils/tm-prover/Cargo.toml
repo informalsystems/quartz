@@ -13,6 +13,10 @@ readme = "README.md"
 name = "main"
 path = "src/main.rs"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+
 [dependencies]
 # external
 clap.workspace = true
