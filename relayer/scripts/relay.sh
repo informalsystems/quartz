@@ -9,7 +9,7 @@ usage() {
 }
 
 ROOT=${ROOT:-$HOME}
-DIR_QUARTZ="$ROOT/cycles-quartz"
+DIR_QUARTZ=$(git rev-parse --show-toplevel)
 DIR_PROTO="$DIR_QUARTZ/core/quartz-proto/proto"
 IAS_API_KEY="669244b3e6364b5888289a11d2a1726d"
 RA_CLIENT_SPID="51CAF5A48B450D624AEFE3286D314894"
@@ -33,7 +33,9 @@ ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto quartz.proto 
 QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')
 MSG=$(echo "$ATTESTED_MSG" | jq 'del(.quote)')
 
-if [ -n "$MOCK_SGX" ]; then
+
+if [ "$MOCK_SGX" = "true" ]; then
+
     case "$REQUEST" in
         "Instantiate")
             jq -nc --argjson msg "$MSG" --argjson "attestation" "$QUOTE" '$ARGS.named'
@@ -48,7 +50,7 @@ if [ -n "$MOCK_SGX" ]; then
             usage
             ;;
     esac
-    exit
+    exit 0
 fi
 
 # clear tmp files from previous runs

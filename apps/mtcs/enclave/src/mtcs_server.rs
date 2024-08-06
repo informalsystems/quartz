@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::BTreeMap,
     sync::{Arc, Mutex},
 };
 
@@ -19,12 +19,11 @@ use quartz_common::{
     contract::{msg::execute::attested::RawAttested, state::Config},
     enclave::{attestor::Attestor, server::ProofOfPublication},
 };
-use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Result as TonicResult, Status};
 
 use crate::{
     proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
-    types::ContractObligation,
+    types::{ContractObligation, RunClearingMessage},
 };
 
 pub type RawCipherText = HexBinary;
@@ -34,12 +33,6 @@ pub struct MtcsService<A> {
     config: Config, // TODO: this config is not used anywhere
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RunClearingMessage {
-    intents: BTreeMap<RawHash, RawCipherText>,
-    liquidity_sources: BTreeSet<LiquiditySource>,
 }
 
 impl<A> MtcsService<A>
@@ -122,32 +115,20 @@ fn into_settle_offs(
     println!("\nsetoff: {:?}", so);
     println!("\nliq sources: {:?}", liquidity_sources);
 
-    // TODO: temporary patch, fix issue with liquidity sources becoming type External
-    if liquidity_sources
+    // TODO: temporary patch, fix issue with liquidity sources becoming type External so that .contains() can be called directly
+    let liquidity_sources_addrs = liquidity_sources
         .iter()
         .map(|lqs| lqs.address.clone())
-        .collect::<Vec<Addr>>()
-        .contains(&so.debtor.address)
+        .collect::<Vec<Addr>>();
+
+    // In tenders and acceptances, the creditor's balance decreases
+    if liquidity_sources_addrs.contains(&so.debtor.address)
+        || liquidity_sources_addrs.contains(&so.creditor.address)
     {
-        // A setoff on a tender should result in the creditor's (i.e. the tender receiver) balance
-        // decreasing by the setoff amount
         SettleOff::Transfer(Transfer {
             payer: so.creditor.address.clone(),
             payee: so.debtor.address.clone(),
             // TODO: Include denominations
-            amount: ("peppicoin".to_owned(), Uint128::from(so.set_off as u128)),
-        })
-    } else if liquidity_sources
-        .iter()
-        .map(|lqs| lqs.address.clone())
-        .collect::<Vec<Addr>>()
-        .contains(&so.creditor.address)
-    {
-        // A setoff on an acceptance should result in the debtor's (i.e. the acceptance initiator)
-        // balance increasing by the setoff amount
-        SettleOff::Transfer(Transfer {
-            payer: so.creditor.address.clone(),
-            payee: so.debtor.address.clone(),
             amount: ("peppicoin".to_owned(), Uint128::from(so.set_off as u128)),
         })
     } else {
