@@ -34,7 +34,7 @@ impl TryFrom<Command> for Request {
                 sender,
                 chain_id,
                 node_url,
-                rpc_addr,
+                enclave_rpc_addr,
                 app_dir,
             } => Ok(HandshakeRequest {
                 contract,
@@ -42,7 +42,7 @@ impl TryFrom<Command> for Request {
                 sender,
                 chain_id,
                 node_url,
-                rpc_addr,
+                enclave_rpc_addr,
                 app_dir: Self::path_checked(app_dir)?,
             }
             .into()),

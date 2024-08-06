@@ -55,19 +55,20 @@ pub enum Command {
         /// Port enclave is listening on
         #[arg(short, long, default_value = "11090")]
         port: u16,
-
+        /// Name or address of private key with which to sign
         #[arg(short, long, default_value = "admin")]
         sender: String,
-
+        /// The network chain ID
         #[arg(long, default_value = "testing")]
         chain_id: ChainId,
-
+        /// <host>:<port> to tendermint rpc interface for this chain
         #[clap(long, default_value_t = default_node_url())]
         node_url: String,
-
+        /// RPC interface for the quartz enclave
         #[clap(long, default_value_t = default_rpc_addr())]
-        rpc_addr: String,
-
+        enclave_rpc_addr: String,
+        /// Path to quartz app directory
+        /// Defaults to current working dir
         #[clap(long)]
         app_dir: Option<PathBuf>,
     },
@@ -90,21 +91,22 @@ pub enum ContractCommand {
         path: Option<PathBuf>,
     },
     Deploy {
+        /// Json-formatted cosmwasm contract initialization message
         #[clap(long, default_value = r#"{"quartz":""}"#)]
         init_msg: String,
-
+        /// <host>:<port> to tendermint rpc interface for this chain
         #[clap(long, default_value_t = default_node_url())]
         node_url: String,
-
+        /// Name or address of private key with which to sign
         #[arg(short, long, default_value = "admin")]
         sender: String,
-
+        /// The network chain ID
         #[arg(long, default_value = "testing")]
         chain_id: ChainId,
-
-        #[arg(long, default_value = "Quartz App")]
+        /// A human-readable name for this contract in lists
+        #[arg(long, default_value = "Quartz App Contract")]
         label: String,
-
+        /// Path to contract wasm binary for deployment
         #[clap(long)]
         wasm_bin_path: PathBuf,
     },

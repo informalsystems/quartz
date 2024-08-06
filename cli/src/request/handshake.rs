@@ -11,7 +11,7 @@ pub struct HandshakeRequest {
     pub sender: String,
     pub chain_id: ChainId,
     pub node_url: String,
-    pub rpc_addr: String,
+    pub enclave_rpc_addr: String,
     pub app_dir: PathBuf,
 }
 
