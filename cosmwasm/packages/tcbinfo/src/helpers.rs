@@ -36,8 +36,9 @@ impl CwTemplateContract {
         T: Into<String>,
         CQ: CustomQuery,
     {
-        let fmspc = hex::decode(FMSPC).unwrap().try_into().unwrap();
-        let msg = QueryMsg::GetTcbInfo { fmspc };
+        let msg = QueryMsg::GetTcbInfo {
+            fmspc: FMSPC.to_string(),
+        };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
             msg: to_json_binary(&msg)?,

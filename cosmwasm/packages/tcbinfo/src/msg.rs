@@ -16,7 +16,7 @@ pub struct ExecuteMsg {
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(GetTcbInfoResponse)]
-    GetTcbInfo { fmspc: [u8; 6] },
+    GetTcbInfo { fmspc: String },
 }
 
 #[cw_serde]

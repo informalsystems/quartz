@@ -141,8 +141,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub mod query {
     use super::*;
 
-    pub fn get_info(deps: Deps, fmspc: [u8; 6]) -> StdResult<GetTcbInfoResponse> {
-        let tcb_info = DATABASE.load(deps.storage, fmspc)?;
+    pub fn get_info(deps: Deps, fmspc: String) -> StdResult<GetTcbInfoResponse> {
+        let key: [u8; 6] = hex::decode(fmspc)
+            .unwrap()
+            .try_into()
+            .expect("invalid fmspc");
+        let tcb_info = DATABASE.load(deps.storage, key)?;
         let tcb_info_response = serde_json::from_str(&tcb_info.info).map_err(|_| {
             StdError::parse_err(tcb_info.info, "Could not prarse on-chain TcbInfo as JSON")
         })?;
@@ -188,7 +192,7 @@ mod tests {
             deps.as_ref(),
             mock_env(),
             QueryMsg::GetTcbInfo {
-                fmspc: hex::decode(FMSPC).unwrap().try_into().unwrap(),
+                fmspc: FMSPC.to_string(),
             },
         );
         assert!(query.is_ok());
