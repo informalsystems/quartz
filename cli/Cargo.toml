@@ -9,9 +9,6 @@ repository.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 
-[features]
-mock-sgx = ["quartz-common/mock-sgx-cw", "quartz-common/mock-sgx-enclave"]
-
 [dependencies]
 async-trait.workspace = true
 clap = { workspace = true, features=["env"] }
