@@ -69,7 +69,7 @@ pub enum Command {
         rpc_addr: String,
 
         #[clap(long)]
-        path: Option<PathBuf>,
+        app_dir: Option<PathBuf>,
     },
     /// Create an empty Quartz app from a template
     Contract {
@@ -102,11 +102,11 @@ pub enum ContractCommand {
         #[arg(long, default_value = "testing")]
         chain_id: ChainId,
 
-        #[arg(long, default_value = "MTCS")]
+        #[arg(long, default_value = "Quartz App")]
         label: String,
 
         #[clap(long)]
-        path: Option<PathBuf>,
+        wasm_bin_path: PathBuf,
     },
 }
 

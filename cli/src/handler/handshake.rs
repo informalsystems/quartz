@@ -19,7 +19,7 @@ use super::utils::{
 };
 use crate::{
     error::Error,
-    handler::Handler,
+    handler::{utils::types::RelayMessage, Handler},
     request::handshake::HandshakeRequest,
     response::{handshake::HandshakeResponse, Response},
     Config,
@@ -34,11 +34,11 @@ impl Handler for HandshakeRequest {
         trace!("starting handshake...");
 
         // TODO: may need to import verbosity here
-        handshake(self, config.mock_sgx)
+        let pub_key = handshake(self, config.mock_sgx)
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-        Ok(HandshakeResponse.into())
+        Ok(HandshakeResponse { pub_key }.into())
     }
 }
 
@@ -47,7 +47,7 @@ struct Message<'a> {
     message: &'a str,
 }
 
-async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow::Error> {
+async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, anyhow::Error> {
     let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
     let wsurl = format!("ws://{}/websocket", args.node_url);
 
@@ -57,11 +57,12 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow:
     // TODO: dir logic issue #125
     // Read trusted hash and height from files
     let base_path = current_dir()?.join("../");
-    let trusted_files_path = base_path.join("apps/mtcs/");
+    let trusted_files_path = args.app_dir;
     let (trusted_height, trusted_hash) = read_hash_height(trusted_files_path.as_path()).await?;
 
     info!("Running SessionCreate");
-    let res: serde_json::Value = run_relay(base_path.as_path(), mock_sgx, "SessionCreate", None)?;
+    let res: serde_json::Value =
+        run_relay(base_path.as_path(), mock_sgx, RelayMessage::SessionCreate)?;
 
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client
@@ -117,8 +118,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow:
     let res: serde_json::Value = run_relay(
         base_path.as_path(),
         mock_sgx,
-        "SessionSetPubKey",
-        Some(proof_json.as_str()),
+        RelayMessage::SessionSetPubKey(proof_json),
     )?;
 
     // Submit SessionSetPubKey to contract
@@ -151,12 +151,10 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<(), anyhow:
             .expect("SessionSetPubKey tx is expected to have 'pub_key' attribute")
             == "pub_key"
     }) {
-        debug!("\n\n\n{}", pubkey.value_str().unwrap()); // TODO: return this instead later
+        return Ok(pubkey.value_str()?.to_string());
     } else {
         return Err(anyhow!("Failed to find pubkey from SetPubKey message"));
     }
-
-    Ok(())
 }
 
 async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {

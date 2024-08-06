@@ -12,7 +12,7 @@ pub struct ContractDeployRequest {
     pub chain_id: ChainId,
     pub sender: String,
     pub label: String,
-    pub directory: PathBuf,
+    pub wasm_bin_path: PathBuf,
 }
 
 impl From<ContractDeployRequest> for Request {

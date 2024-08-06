@@ -35,16 +35,17 @@ impl TryFrom<Command> for Request {
                 chain_id,
                 node_url,
                 rpc_addr,
-                path,
-            } => Ok(Request::Handshake(HandshakeRequest {
+                app_dir,
+            } => Ok(HandshakeRequest {
                 contract,
                 port,
                 sender,
                 chain_id,
                 node_url,
                 rpc_addr,
-                path: Self::path_checked(path)?,
-            })),
+                app_dir: Self::path_checked(app_dir)?,
+            }
+            .into()),
             Command::Contract { contract_command } => match contract_command {
                 ContractCommand::Deploy {
                     init_msg,
@@ -52,15 +53,16 @@ impl TryFrom<Command> for Request {
                     chain_id,
                     sender,
                     label,
-                    path,
-                } => Ok(Request::ContractDeploy(ContractDeployRequest {
+                    wasm_bin_path,
+                } => Ok(ContractDeployRequest {
                     init_msg: ContractDeployRequest::checked_init(init_msg)?,
                     node_url,
                     chain_id,
                     sender,
                     label,
-                    directory: Self::path_checked(path)?,
-                })),
+                    wasm_bin_path,
+                }
+                .into()),
                 _ => todo!(),
             },
             Command::Enclave { enclave_command } => match enclave_command {

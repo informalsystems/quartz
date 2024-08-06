@@ -11,6 +11,8 @@ use tendermint_rpc::{
 };
 use tracing::trace;
 
+use super::types::RelayMessage;
+
 pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
     let (hr, _) = bech32_decode(address_str).map_err(|e| anyhow!(e))?;
     if hr != "wasm" {
@@ -24,19 +26,18 @@ pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
 pub fn run_relay<R: DeserializeOwned>(
     base_path: &Path,
     mock_sgx: bool,
-    msg: &str,
-    arg: Option<&str>,
+    msg: RelayMessage,
 ) -> Result<R, anyhow::Error> {
     let relayer_path = base_path.join("relayer/scripts/relay.sh");
 
     let mut bash = Command::new("bash");
     let command = bash
         .arg(relayer_path)
-        .arg(msg)
+        .arg(msg.to_string())
         .env("MOCK_SGX", mock_sgx.to_string());
 
-    if let Some(arg) = arg {
-        command.arg(arg);
+    if let RelayMessage::SessionSetPubKey(proof) = msg {
+        command.arg(proof);
     }
 
     let output = command.output()?;

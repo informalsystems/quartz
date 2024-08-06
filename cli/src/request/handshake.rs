@@ -12,7 +12,7 @@ pub struct HandshakeRequest {
     pub chain_id: ChainId,
     pub node_url: String,
     pub rpc_addr: String,
-    pub path: PathBuf,
+    pub app_dir: PathBuf,
 }
 
 impl From<HandshakeRequest> for Request {

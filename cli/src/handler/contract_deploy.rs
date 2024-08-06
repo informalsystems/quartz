@@ -18,7 +18,7 @@ use super::utils::{
 };
 use crate::{
     error::Error,
-    handler::Handler,
+    handler::{utils::types::RelayMessage, Handler},
     request::contract_deploy::ContractDeployRequest,
     response::{contract_deploy::ContractDeployResponse, Response},
     Config,
@@ -32,24 +32,28 @@ impl Handler for ContractDeployRequest {
     async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
 
-        if config.mock_sgx {
+        let (code_id, contract_addr) = if config.mock_sgx {
             deploy::<MockAttestation>(self, config.mock_sgx)
                 .await
-                .map_err(|e| Error::GenericErr(e.to_string()))?;
+                .map_err(|e| Error::GenericErr(e.to_string()))?
         } else {
             deploy::<EpidAttestation>(self, config.mock_sgx)
                 .await
-                .map_err(|e| Error::GenericErr(e.to_string()))?;
-        }
+                .map_err(|e| Error::GenericErr(e.to_string()))?
+        };
 
-        Ok(ContractDeployResponse.into())
+        Ok(ContractDeployResponse {
+            code_id,
+            contract_addr,
+        }
+        .into())
     }
 }
 
 async fn deploy<DA: Serialize + DeserializeOwned>(
     args: ContractDeployRequest,
     mock_sgx: bool,
-) -> Result<(), anyhow::Error> {
+) -> Result<(u64, String), anyhow::Error> {
     // TODO: Replace with call to Rust package
     let relay_path = current_dir()?.join("../");
 
@@ -58,25 +62,23 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
     info!("\n🚀 Deploying {} Contract\n", args.label);
-    // let contract_path = args
-    //     .directory
-    //     .join("contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm");
+    let contract_path = args.wasm_bin_path;
+    // .join("contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm");
 
-    // // TODO: uncertain about the path -> string conversion
-    // let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
-    //     &args.chain_id,
-    //     args.sender.clone(),
-    //     contract_path.display().to_string(),
-    // )?)?;
-    // let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
+    // TODO: uncertain about the path -> string conversion
+    let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
+        &args.chain_id,
+        args.sender.clone(),
+        contract_path.display().to_string(),
+    )?)?;
+    let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
 
-    // let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-    // let code_id: usize = log[0].events[1].attributes[1].value.parse()?;
-    let code_id: usize = 45;
+    let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
+    let code_id: usize = log[0].events[1].attributes[1].value.parse()?;
 
     info!("\n🚀 Communicating with Relay to Instantiate...\n");
     let raw_init_msg: QuartzInstantiateMsg<DA> =
-        run_relay(relay_path.as_path(), mock_sgx, "Instantiate", None)?;
+        run_relay(relay_path.as_path(), mock_sgx, RelayMessage::Instantiate)?;
 
     info!("\n🚀 Instantiating {} Contract\n", args.label);
     let mut init_msg = args.init_msg;
@@ -97,9 +99,10 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     info!("\n🚀 Successfully deployed and instantiated contract!");
     info!("\n🆔 Code ID: {}", code_id);
     info!("\n📌 Contract Address: {}", contract_addr);
-    
+
     debug!("{contract_addr}");
-    Ok(())
+
+    Ok((code_id as u64, contract_addr.to_owned()))
 }
 
 //RES=$($CMD tx wasm instantiate "$CODE_ID" "$INSTANTIATE_MSG" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin --output json)
