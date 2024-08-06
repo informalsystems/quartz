@@ -16,12 +16,6 @@ pub struct InstantiateMsg<RA = RawDefaultAttestation> {
     pub quartz: QuartzInstantiateMsg<RA>,
 }
 
-impl From<QuartzInstantiateMsg<RawDefaultAttestation>> for InstantiateMsg {
-    fn from(msg: QuartzInstantiateMsg<RawDefaultAttestation>) -> Self {
-        InstantiateMsg { quartz: msg }
-    }
-}
-
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg<RA = RawDefaultAttestation> {

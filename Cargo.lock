@@ -4515,6 +4515,7 @@ dependencies = [
  "cw-utils 2.0.0",
  "cw2 2.0.0",
  "cw20-base",
+ "getrandom",
  "quartz-common",
  "serde",
  "serde_json",
