@@ -4,12 +4,13 @@ use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},
     error::Error,
     request::{
-        contract_deploy::ContractDeployRequest, enclave_build::EnclaveBuildRequest,
-        handshake::HandshakeRequest, init::InitRequest,
+        contract_deploy::ContractDeployRequest, dev::DevRequest,
+        enclave_build::EnclaveBuildRequest, handshake::HandshakeRequest, init::InitRequest,
     },
 };
 
 pub mod contract_deploy;
+pub mod dev;
 pub mod enclave_build;
 pub mod handshake;
 pub mod init;
@@ -20,6 +21,7 @@ pub enum Request {
     Handshake(HandshakeRequest),
     ContractDeploy(ContractDeployRequest),
     EnclaveBuild(EnclaveBuildRequest),
+    Dev(DevRequest),
 }
 
 impl TryFrom<Command> for Request {
@@ -48,6 +50,14 @@ impl TryFrom<Command> for Request {
             .into()),
             Command::Contract { contract_command } => contract_command.try_into(),
             Command::Enclave { enclave_command } => Ok(enclave_command.into()),
+            Command::Dev {
+                watch_contract,
+                app_dir,
+            } => Ok(DevRequest {
+                watch_contract,
+                app_dir: Self::path_checked(app_dir)?,
+            }
+            .into()),
         }
     }
 }

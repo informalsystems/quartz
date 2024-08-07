@@ -72,6 +72,16 @@ pub enum Command {
         #[clap(long)]
         app_dir: Option<PathBuf>,
     },
+    /// Build, deploy, perform handshake, and run quartz app while listening for changes
+    Dev {
+        /// Automatically deploy and instantiate new cosmwasm contract instance upon changes to contract source
+        #[clap(long)]
+        watch_contract: bool,
+        /// Path to quartz app directory
+        /// Defaults to current working dir
+        #[clap(long)]
+        app_dir: Option<PathBuf>,
+    },
     /// Create an empty Quartz app from a template
     Contract {
         #[command(subcommand)]
