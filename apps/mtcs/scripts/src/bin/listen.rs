@@ -13,7 +13,7 @@ use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use futures_util::stream::StreamExt;
 use mtcs_enclave::{
     proto::{clearing_client::ClearingClient, RunClearingRequest},
-    RunClearingMessage,
+    types::RunClearingMessage,
 };
 use quartz_common::contract::msg::execute::attested::{
     EpidAttestation, RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation,
@@ -142,7 +142,7 @@ async fn handler(
 
     // Send setoffs to mtcs contract on chain
     let output =
-        wasmd_client.tx_execute(contract, chain_id, 2000000, sender, json!(setoffs_msg))?;
+        wasmd_client.tx_execute(contract, chain_id, 2000000, &sender, json!(setoffs_msg))?;
 
     println!("output: {}", output);
     Ok(())

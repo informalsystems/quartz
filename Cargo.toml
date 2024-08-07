@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "apps/mtcs/enclave",
-    "apps/mtcs/scripts",
     "apps/transfers/enclave",
     "cli",
     "core/light-client-proofs/*",
@@ -11,7 +10,7 @@ members = [
     "cosmwasm/packages/*",
     "utils/*",
 ]
-exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers/contracts"]
+exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers/contracts", "apps/mtcs/scripts"]
 
 [workspace.package]
 version = "0.1.0"
