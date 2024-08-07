@@ -4,13 +4,14 @@ use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},
     error::Error,
     request::{
-        contract_deploy::ContractDeployRequest, enclave_build::EnclaveBuildRequest,
+        contract_deploy::ContractDeployRequest, enclave_build::EnclaveBuildRequest, enclave_start::EnclaveStartRequest,
         handshake::HandshakeRequest, init::InitRequest,
     },
 };
 
 pub mod contract_deploy;
 pub mod enclave_build;
+pub mod enclave_start;
 pub mod handshake;
 pub mod init;
 
@@ -20,6 +21,7 @@ pub enum Request {
     Handshake(HandshakeRequest),
     ContractDeploy(ContractDeployRequest),
     EnclaveBuild(EnclaveBuildRequest),
+    EnclaveStart(EnclaveStartRequest),
 }
 
 impl TryFrom<Command> for Request {
