@@ -1,4 +1,4 @@
-use std::process::Command;
+use tokio::process::Command;
 
 use async_trait::async_trait;
 use tracing::{debug, info};
@@ -19,7 +19,7 @@ impl Handler for EnclaveBuildRequest {
     async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         let mut cargo = Command::new("cargo");
         let command = cargo
-            .args(["build", "--release"])
+            .args(["build"])
             .args(["--manifest-path", &self.manifest_path.display().to_string()]);
 
         if config.mock_sgx {
@@ -27,9 +27,15 @@ impl Handler for EnclaveBuildRequest {
             command.arg("--features=mock-sgx");
         }
 
+        if self.release {
+            debug!("Targetting release");
+            command.arg("--release");
+        }
+
         info!("🚧 Building enclave ...");
         let status = command
             .status()
+            .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
         if !status.success() {

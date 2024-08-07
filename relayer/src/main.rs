@@ -33,6 +33,7 @@ use quartz_proto::quartz::{core_client::CoreClient, InstantiateRequest};
 use quartz_relayer::types::InstantiateResponse;
 use subtle_encoding::base64;
 use tendermint::public_key::Secp256k1 as TmPublicKey;
+use tokio::process::Command;
 
 use crate::cli::Cli;
 
@@ -56,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         use quartz_cw::msg::execute::attested::EpidAttestation;
         use quartz_tee_ra::IASReport;
 
-        let ias_report = gramine_sgx_ias_report(response.quote())?;
+        let ias_report = gramine_sgx_ias_report(response.quote()).await?;
         println!(
             "{}",
             serde_json::to_string(&ias_report).expect("infallible serializer")
@@ -162,8 +163,8 @@ pub async fn send_tx(node: impl ToString, tx_bytes: Vec<u8>) -> Result<(), Box<d
 }
 
 #[cfg(not(feature = "mock-sgx"))]
-fn gramine_sgx_ias_report(quote: &[u8]) -> Result<serde_json::Value, Box<dyn Error>> {
-    use std::{fs::read_to_string, io::Write, process::Command};
+async fn gramine_sgx_ias_report(quote: &[u8]) -> Result<serde_json::Value, Box<dyn Error>> {
+    use std::{fs::read_to_string, io::Write};
 
     let dir = tempfile::tempdir()?;
     let quote_file_path = dir.path().join("test.quote");
@@ -180,7 +181,8 @@ fn gramine_sgx_ias_report(quote: &[u8]) -> Result<serde_json::Value, Box<dyn Err
         .args(["-q", &quote_file_path.display().to_string()])
         .args(["-r", &datareport_file_path.display().to_string()])
         .args(["-s", &datareportsig_file_path.display().to_string()])
-        .output()?;
+        .output()
+        .await?;
     println!("{gramine_sgx_ias_request_output:?}");
 
     let report = read_to_string(datareport_file_path)?;

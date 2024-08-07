@@ -37,6 +37,7 @@ const BANNER: &str = r"
                                                                                     
 ";
 
+#[derive(Clone)]
 pub struct Config {
     pub mock_sgx: bool,
 }

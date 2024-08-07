@@ -1,4 +1,5 @@
-use std::{path::Path, process::Command, time::Duration};
+use std::{path::Path, time::Duration};
+use tokio::process::Command;
 
 use anyhow::anyhow;
 use cosmrs::{AccountId, ErrorReport};
@@ -23,7 +24,7 @@ pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
 }
 
 // TODO: move wrapping result with "quartz:" struct into here
-pub fn run_relay<R: DeserializeOwned>(
+pub async fn run_relay<R: DeserializeOwned>(
     base_path: &Path,
     mock_sgx: bool,
     msg: RelayMessage,
@@ -40,7 +41,7 @@ pub fn run_relay<R: DeserializeOwned>(
         command.arg(proof);
     }
 
-    let output = command.output()?;
+    let output = command.output().await?;
 
     if !output.status.success() {
         return Err(anyhow!("{:?}", output));

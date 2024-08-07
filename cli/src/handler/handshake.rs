@@ -62,7 +62,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
 
     info!("Running SessionCreate");
     let res: serde_json::Value =
-        run_relay(base_path.as_path(), mock_sgx, RelayMessage::SessionCreate)?;
+        run_relay(base_path.as_path(), mock_sgx, RelayMessage::SessionCreate).await?;
 
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client
@@ -119,7 +119,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
         base_path.as_path(),
         mock_sgx,
         RelayMessage::SessionSetPubKey(proof_json),
-    )?;
+    ).await?;
 
     // Submit SessionSetPubKey to contract
     let output: WasmdTxResponse = serde_json::from_str(

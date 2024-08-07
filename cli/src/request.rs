@@ -112,7 +112,7 @@ impl TryFrom<ContractCommand> for Request {
 impl From<EnclaveCommand> for Request {
     fn from(cmd: EnclaveCommand) -> Request {
         match cmd {
-            EnclaveCommand::Build { manifest_path } => EnclaveBuildRequest { manifest_path }.into(),
+            EnclaveCommand::Build { release, manifest_path } => EnclaveBuildRequest { release, manifest_path }.into(),
             EnclaveCommand::Start { path: _ } => todo!(),
         }
     }

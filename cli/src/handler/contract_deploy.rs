@@ -81,7 +81,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
         relay_path.as_path(),
         mock_sgx,
         RelayMessage::Instantiate,
-    )?;
+    ).await?;
 
     info!("\n🚀 Instantiating {} Contract\n", args.label);
     let mut init_msg = args.init_msg;

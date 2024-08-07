@@ -4,6 +4,7 @@ use crate::request::Request;
 
 #[derive(Clone, Debug)]
 pub struct EnclaveBuildRequest {
+    pub release: bool,
     pub manifest_path: PathBuf,
 }
 
