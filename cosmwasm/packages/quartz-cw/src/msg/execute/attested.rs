@@ -15,7 +15,7 @@ pub type Quote = Quote3<Vec<u8>>;
 #[cfg(not(feature = "mock-sgx"))]
 pub type DefaultAttestation = DcapAttestation;
 #[cfg(not(feature = "mock-sgx"))]
-pub type RawDefaultAttestation = RawEpidAttestation;
+pub type RawDefaultAttestation = RawDcapAttestation;
 
 #[cfg(feature = "mock-sgx")]
 pub type DefaultAttestation = MockAttestation;
