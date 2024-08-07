@@ -88,7 +88,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 &cli.contract.clone(),
                 &ChainId::from_str("testing")?,
                 2000000,
-                cli.sender.clone(),
+                &cli.sender,
                 json!(res),
             )?
             .as_str(),
@@ -149,7 +149,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 &cli.contract.clone(),
                 &ChainId::from_str("testing")?,
                 2000000,
-                cli.sender.clone(),
+                &cli.sender,
                 json!(res),
             )?
             .as_str(),

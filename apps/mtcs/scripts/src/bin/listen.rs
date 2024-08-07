@@ -1,32 +1,26 @@
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    env,
-    process::Command,
-    str::FromStr,
-};
+use std::{collections::BTreeMap, env, process::Command, str::FromStr};
 
 use anyhow::anyhow;
 use base64::prelude::*;
 use clap::Parser;
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Binary, HexBinary, Uint64};
-use cw_tee_mtcs::{
-    msg::{
-        execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
-        QueryMsg::GetLiquiditySources,
-    },
-    state::LiquiditySource,
+use cw_tee_mtcs::msg::{
+    execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
+    QueryMsg::GetLiquiditySources,
 };
 use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use futures_util::stream::StreamExt;
-use mtcs_enclave::proto::{clearing_client::ClearingClient, RunClearingRequest};
+use mtcs_enclave::{
+    proto::{clearing_client::ClearingClient, RunClearingRequest},
+    types::RunClearingMessage,
+};
 use quartz_common::contract::msg::execute::attested::{
-    EpidAttestation, RawAttested, RawAttestedMsgSansHandler,
+    EpidAttestation, RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation,
 };
 use quartz_tee_ra::{intel_sgx::epid::types::ReportBody, IASReport};
 use reqwest::Url;
 use scripts::utils::wasmaddr_to_id;
-use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tendermint_rpc::{
     query::{EventType, Query},
@@ -37,13 +31,6 @@ use tokio::{
     io::AsyncWriteExt,
 };
 use tonic::Request;
-
-// TODO: import this from enclave or somewhere shared
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RunClearingMessage {
-    intents: BTreeMap<HexBinary, HexBinary>,
-    liquidity_sources: BTreeSet<LiquiditySource>,
-}
 
 #[derive(Clone, Debug, Parser)]
 #[command(version, about, long_about = None)]
@@ -148,12 +135,14 @@ async fn handler(
     let attestation = gramine_ias_request(quote.attestation, user).await?;
     let msg = RawAttestedMsgSansHandler(quote.msg);
 
-    let setoffs_msg =
-        ExecuteMsg::SubmitSetoffs::<EpidAttestation>(AttestedMsg { msg, attestation });
+    let setoffs_msg = ExecuteMsg::SubmitSetoffs::<RawEpidAttestation>(AttestedMsg {
+        msg,
+        attestation: attestation.into(),
+    });
 
     // Send setoffs to mtcs contract on chain
     let output =
-        wasmd_client.tx_execute(contract, chain_id, 2000000, sender, json!(setoffs_msg))?;
+        wasmd_client.tx_execute(contract, chain_id, 2000000, &sender, json!(setoffs_msg))?;
 
     println!("output: {}", output);
     Ok(())

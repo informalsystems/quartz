@@ -33,7 +33,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     // must be the handled first!
-    msg.0.handle_raw(deps.branch(), &env, &info)?;
+    msg.quartz.handle_raw(deps.branch(), &env, &info)?;
 
     let state = State {
         owner: info.sender.to_string(),

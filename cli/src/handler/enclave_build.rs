@@ -1,6 +1,7 @@
 use std::process::Command;
 
-use tracing::{debug, trace};
+use async_trait::async_trait;
+use tracing::{debug, info};
 
 use crate::{
     error::Error,
@@ -10,11 +11,12 @@ use crate::{
     Config,
 };
 
+#[async_trait]
 impl Handler for EnclaveBuildRequest {
     type Error = Error;
     type Response = Response;
 
-    fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         let mut cargo = Command::new("cargo");
         let command = cargo
             .args(["build", "--release"])
@@ -25,7 +27,7 @@ impl Handler for EnclaveBuildRequest {
             command.arg("--features=mock-sgx");
         }
 
-        trace!("🚧 Building enclave ...");
+        info!("🚧 Building enclave ...");
         let status = command
             .status()
             .map_err(|e| Error::GenericErr(e.to_string()))?;

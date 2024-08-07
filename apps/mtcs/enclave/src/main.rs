@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let attestor = DefaultAttestor::default();
 
-    let config = Config::new(
+    let config: Config = Config::new(
         attestor.mr_enclave()?,
         Duration::from_secs(30 * 24 * 60),
         light_client_opts,
