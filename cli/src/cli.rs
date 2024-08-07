@@ -74,9 +74,12 @@ pub enum Command {
     },
     /// Build, deploy, perform handshake, and run quartz app while listening for changes
     Dev {
-        /// Automatically deploy and instantiate new cosmwasm contract instance upon changes to contract source
+        /// Automatically deploy and instantiate new cosmwasm contract instance upon changes to source
         #[clap(long)]
-        watch_contract: bool,
+        watch: bool,
+        /// Enable automatic redeployment upon changes to contract source
+        #[clap(long)]
+        with_contract: bool,
         /// Path to quartz app directory
         /// Defaults to current working dir
         #[clap(long)]

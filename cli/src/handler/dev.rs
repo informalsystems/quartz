@@ -10,11 +10,11 @@ use crate::{
     Config,
 };
 
-use std::sync::Arc;
+use std::{sync::Arc, thread::sleep, time::Duration};
 // todo get rid of this?
 use miette::{IntoDiagnostic, Result};
 use watchexec::{
-	command::{Command, Program, SpawnOptions},
+	command::{Command, Program, Shell, SpawnOptions},
 	job::CommandState,
 	Id, Watchexec,
 };
@@ -29,27 +29,30 @@ impl Handler for DevRequest {
     async fn handle(self, _config: Config) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
 
-        // Build enclave
+		if !self.watch {
+			// Build enclave
 
-        // In separate process, start enclave
+			// In separate process, start enclave
 
-        // Build contract
+			// Build contract
 
-        // Deploy contract
+			// Deploy contract
 
-        // Run handshake
+			// Run handshake
+	
+			dispatch_dev(DevRebuild:: Both).await;
+		} else {
+			// Run listening process 
 
-        // Check for existing listening process
-        // Spawn if doesn't exist
-        // let res = watcher(self).await;
+			let (tx, rx) = mpsc::channel::<DevRebuild>(32);
+			let watcher_handler = tokio::spawn(watcher(self, tx));
+			let message_handler = tokio::spawn(dev_driver(rx));
 		
-        let (tx, rx) = mpsc::channel::<DevRebuild>(32);
-		let watcher_handler = tokio::spawn(watcher(self, tx));
-		let message_handler = tokio::spawn(handle_messages(rx));
-	
-		// Use try_join! to wait for both tasks to complete.
-		let (_, _) = try_join!(watcher_handler, message_handler).map_err(|e| Error::GenericErr(e.to_string()))?;
-	
+			// Use try_join! to wait for both tasks to complete.
+			let (_, _) = try_join!(watcher_handler, message_handler).map_err(|e| Error::GenericErr(e.to_string()))?;
+		}
+
+			
         Ok(DevResponse.into())
     }
 }
@@ -60,31 +63,40 @@ enum DevRebuild {
 	Both,
 }
 
-async fn handle_messages(mut rx: mpsc::Receiver<DevRebuild>) {
+async fn dispatch_dev(dev: DevRebuild) {
+	match dev {
+		DevRebuild::Both => {
+			info!("Launching quartz app...");
+
+			let build = EnclaveBuildRequest { release: false, manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap() };
+			let res = build.handle(Config { mock_sgx: false }).await;		
+		}
+		DevRebuild::Enclave => {
+			info!("Rebuilding Enclave...");
+			let build = EnclaveBuildRequest { release: false, manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap() };
+			let res = build.handle(Config { mock_sgx: false }).await;		
+		},
+		DevRebuild::Contract => todo!(),
+	}
+} 
+
+async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>) {
 	// Config state can be held in memory here for contract addrs and etc
     while let Some(dev) = rx.recv().await {
-		match dev {
-			DevRebuild::Enclave => {
-				println!("Rebuilding Enclave...");
-				let build = EnclaveBuildRequest { release: false, manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap() };
-				let res = build.handle(Config { mock_sgx: false }).await;		
-			},
-			DevRebuild::Contract => todo!(),
-			DevRebuild::Both => {
-				let build = EnclaveBuildRequest { release: false, manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap() };
-				let res = build.handle(Config { mock_sgx: false }).await;		
-			}
-		}
+		dispatch_dev(dev).await;
     }
 }
 
 async fn watcher(args: DevRequest, tx: mpsc::Sender<DevRebuild>) -> Result<()> {
 	let build_id = Id::default();
-	let app_dir = args.app_dir.clone();
+	let DevRequest {
+		app_dir,
+		..
+	} = args;
 
 	let wx = Watchexec::new_async(move |mut action| {
 		let tx = tx.clone();
-		let app_dir = app_dir.clone();
+		
 		Box::new(async move {
 			if action.signals().any(|sig| sig == Signal::Interrupt) {
 				eprintln!("[Quitting...]");
@@ -94,19 +106,28 @@ async fn watcher(args: DevRequest, tx: mpsc::Sender<DevRebuild>) -> Result<()> {
 
 			// Defining the function that gets ran upon a detected code change
 			// We run cargo check to only update when the codebase compiles
-			// TODO: replace Program::Exec with a shell script which can run check on both enclave and contract
 			let check = action.get_or_create_job(build_id, || {
 				Arc::new(Command {
-					program: Program::Exec {
-						prog: "cargo".into(),
-						args: vec!["check".into(), "--package".into(), "quartz-app-transfers-enclave".into()],
+					program: Program::Shell {
+						shell: Shell::new("bash"),
+						command: "
+							cargo check --package 'quartz-app-transfers-enclave
+						".into(),
+						args: Vec::new(),
 					},
 					options: Default::default(),
-				})
-			});
+        	    }
+			)});
 
-			// Look for updates to filepaths (or 'init' event)
-			if action.paths().next().is_some() || action.events.iter().any(|event| event.tags.is_empty()) {
+			// Look for start event to launch quartz app
+			if action.events.iter().any(|event| event.tags.is_empty())  {
+				tx.send(DevRebuild::Both).await.unwrap();
+				
+				return action;
+			}
+
+			// Look for updates to filepaths
+			if action.paths().next().is_some() {
 				check.restart().await;
 			}
 
@@ -120,12 +141,12 @@ async fn watcher(args: DevRequest, tx: mpsc::Sender<DevRebuild>) -> Result<()> {
 					} = context.current	
 					{
                         tokio::spawn(async move {
-                            tx.send(DevRebuild::Enclave).await.unwrap();
+							tx.send(DevRebuild::Enclave).await.unwrap();
                         });
 					}
 				})
 				.await;	
-            
+
 			action
 		})
 	})?;
@@ -139,7 +160,9 @@ async fn watcher(args: DevRequest, tx: mpsc::Sender<DevRebuild>) -> Result<()> {
 		.unwrap();
 
 	// Watch all files in quartz app directory
-	wx.config.pathset([args.app_dir]);
+	wx.config
+		.throttle(Duration::new(5, 0))
+		.pathset([app_dir]);
 
 	// Keep running until Watchexec quits
 	let _ = main.await.into_diagnostic()?;

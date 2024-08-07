@@ -51,10 +51,12 @@ impl TryFrom<Command> for Request {
             Command::Contract { contract_command } => contract_command.try_into(),
             Command::Enclave { enclave_command } => Ok(enclave_command.into()),
             Command::Dev {
-                watch_contract,
+                watch,
+                with_contract,
                 app_dir,
             } => Ok(DevRequest {
-                watch_contract,
+                watch,
+                with_contract,
                 app_dir: Self::path_checked(app_dir)?,
             }
             .into()),

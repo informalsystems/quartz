@@ -4,7 +4,8 @@ use crate::request::Request;
 
 #[derive(Clone, Debug)]
 pub struct DevRequest {
-    pub watch_contract: bool,
+    pub watch: bool,
+    pub with_contract: bool,
     pub app_dir: PathBuf,
 }
 
