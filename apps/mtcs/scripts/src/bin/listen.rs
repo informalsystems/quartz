@@ -1,10 +1,10 @@
-use std::{collections::BTreeMap, env, process::Command, str::FromStr};
+use std::{collections::BTreeMap, env, str::FromStr};
 
 use anyhow::anyhow;
 use base64::prelude::*;
 use clap::Parser;
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
-use cosmwasm_std::{Binary, HexBinary, Uint64};
+use cosmwasm_std::{HexBinary, Uint64};
 use cw_tee_mtcs::msg::{
     execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
     QueryMsg::GetLiquiditySources,
@@ -16,19 +16,14 @@ use mtcs_enclave::{
     types::RunClearingMessage,
 };
 use quartz_common::contract::msg::execute::attested::{
-    EpidAttestation, RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation,
+    RawAttested, RawAttestedMsgSansHandler, RawDcapAttestation,
 };
-use quartz_tee_ra::{intel_sgx::epid::types::ReportBody, IASReport};
 use reqwest::Url;
 use scripts::utils::wasmaddr_to_id;
 use serde_json::json;
 use tendermint_rpc::{
     query::{EventType, Query},
     SubscriptionClient, WebSocketClient,
-};
-use tokio::{
-    fs::{self, File},
-    io::AsyncWriteExt,
 };
 use tonic::Request;
 
@@ -54,9 +49,6 @@ struct Cli {
 
     #[clap(long, default_value_t = default_rpc_addr())]
     rpc_addr: String,
-
-    #[arg(short, long, default_value = "dangush")]
-    user: String, // The filesys user for gramine filepaths. TODO: improve this
 }
 
 fn default_rpc_addr() -> String {
@@ -84,7 +76,6 @@ async fn main() -> Result<(), anyhow::Error> {
             cli.sender.clone(),
             format!("{}:{}", cli.rpc_addr, cli.port),
             &cli.node_url,
-            &cli.user,
         )
         .await
         {
@@ -105,7 +96,6 @@ async fn handler(
     sender: String,
     rpc_addr: String,
     node_url: &str,
-    user: &str,
 ) -> Result<(), anyhow::Error> {
     let chain_id = &ChainId::from_str("testing")?;
     let httpurl = Url::parse(&format!("http://{}", node_url))?;
@@ -127,17 +117,13 @@ async fn handler(
         .into_inner();
 
     // Extract json from the Protobuf message
-    let quote: RawAttested<SubmitSetoffsMsg, Vec<u8>> =
+    let attested_msg: RawAttested<SubmitSetoffsMsg, RawDcapAttestation> =
         serde_json::from_str(&clearing_response.message)
             .map_err(|e| anyhow!("Error serializing SubmitSetoffs: {}", e))?;
 
-    // Get IAS report and build attested message
-    let attestation = gramine_ias_request(quote.attestation, user).await?;
-    let msg = RawAttestedMsgSansHandler(quote.msg);
-
-    let setoffs_msg = ExecuteMsg::SubmitSetoffs::<RawEpidAttestation>(AttestedMsg {
-        msg,
-        attestation: attestation.into(),
+    let setoffs_msg = ExecuteMsg::SubmitSetoffs(AttestedMsg {
+        msg: RawAttestedMsgSansHandler(attested_msg.msg),
+        attestation: attested_msg.attestation,
     });
 
     // Send setoffs to mtcs contract on chain
@@ -198,42 +184,4 @@ async fn query_chain(
         intents: obligations_map,
         liquidity_sources: liquidity_sources.into_iter().collect(),
     })
-}
-
-// Request the IAS report for EPID attestations
-async fn gramine_ias_request(
-    attested_msg: Vec<u8>,
-    user: &str,
-) -> Result<EpidAttestation, anyhow::Error> {
-    let ias_api_key = String::from("669244b3e6364b5888289a11d2a1726d");
-    let ra_client_spid = String::from("51CAF5A48B450D624AEFE3286D314894");
-    let quote_file = format!("/tmp/{}_test.quote", user);
-    let report_file = format!("/tmp/{}_datareport", user);
-    let report_sig_file = format!("/tmp/{}_datareportsig", user);
-
-    // Write the binary data to a file
-    let mut file = File::create(&quote_file).await?;
-    file.write_all(&attested_msg)
-        .await
-        .map_err(|e| anyhow!("Couldn't write to file. {e}"))?;
-
-    let mut gramine = Command::new("gramine-sgx-ias-request");
-    let command = gramine
-        .arg("report")
-        .args(["-g", &ra_client_spid])
-        .args(["-k", &ias_api_key])
-        .args(["-q", &quote_file])
-        .args(["-r", &report_file])
-        .args(["-s", &report_sig_file]);
-
-    let output = command.output()?;
-    if !output.status.success() {
-        return Err(anyhow!("Couldn't run gramine. {:?}", output));
-    }
-
-    let report: ReportBody = serde_json::from_str(&fs::read_to_string(report_file).await?)?;
-    let report_sig_str = fs::read_to_string(report_sig_file).await?.replace('\r', "");
-    let report_sig: Binary = Binary::from_base64(report_sig_str.trim())?;
-
-    Ok(EpidAttestation::new(IASReport { report, report_sig }))
 }
