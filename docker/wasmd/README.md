@@ -101,7 +101,7 @@ Docker container is running, in a separate terminal run:
 # the second "wasmd" indicates the name of the command to run inside the
 # container.
 docker exec -it wasmd \
-    wasmd query bank balances wasm18yll6ww65dlz4u9eqpy7xna2wempzd4sa22mhy
+    wasmd query bank balances wasm1mkrm9m8g0dzv5z73xg8yzlj6srqc72qru5xfv3
 ```
 
 You should see output like:

@@ -41,7 +41,7 @@ delete-local-accounts:
 # the ./accounts/ folder. We assume that the mnemonic for each account is the
 # last line of each of the text files.
 import-local-accounts:
-	tail -n 1 accounts/admin.txt | wasmd keys add admin --recover --keyring-backend="test"
+	tail -n 1 accounts/admin.txt | wasmd keys add admin --recover --keyring-backend=test
 	tail -n 1 accounts/alice.txt | wasmd keys add alice --recover --keyring-backend=test
 	tail -n 1 accounts/bob.txt | wasmd keys add bob --recover --keyring-backend=test
 	tail -n 1 accounts/charlie.txt | wasmd keys add charlie --recover --keyring-backend=test
