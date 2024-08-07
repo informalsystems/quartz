@@ -35,7 +35,7 @@ base64 = "0.22.1"
 subtle-encoding = "0.5.1"
 tokio-tungstenite = "0.23.1"
 futures-util = "0.3.30"
-tendermint-rpc = { version ="0.36.0", features=["websocket-client", "http-client"]}
+tendermint-rpc = { version = "0.36.0", features = ["websocket-client", "http-client"] }
 
 # cosmos
 cosmrs.workspace = true
@@ -50,9 +50,9 @@ mtcs.workspace = true
 
 # todo remove unnecessary imports
 
-cycles-sync = { workspace = true}
-tm-prover = { workspace = true}
-quartz-common = { workspace = true, features=["contract"]}
-quartz-tee-ra = { workspace = true, features = ["dcap"] }
-mtcs-enclave = { path = "../enclave", optional = false}
+cycles-sync = { workspace = true }
+tm-prover = { workspace = true }
+quartz-common = { workspace = true, features = ["contract"] }
+quartz-tee-ra = { workspace = true }
+mtcs-enclave = { path = "../enclave", optional = false }
 regex = "1.10.5"

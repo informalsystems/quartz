@@ -15,7 +15,6 @@ loader.env.RA_TLS_ALLOW_OUTDATED_TCB_INSECURE = { passthrough = true }
 loader.env.RA_TLS_MRENCLAVE = { passthrough = true }
 loader.env.RA_TLS_MRSIGNER = { passthrough = true }
 loader.env.RA_TLS_ISV_SVN = { passthrough = true }
-loader.env.RA_TLS_DCAP_QUOTE_TYPE = { passthrough = true }
 loader.env.RA_TLS_ISV_PROD_ID = { passthrough = true }
 loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
@@ -38,7 +37,7 @@ sgx.enclave_size = "512M"
 sgx.max_threads = 4
 sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
 
-sgx.remote_attestation = "dcap"
+sgx.remote_attestation = "{{ ra_type }}"
 sgx.ra_client_spid = "{{ ra_client_spid }}"
 sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
 

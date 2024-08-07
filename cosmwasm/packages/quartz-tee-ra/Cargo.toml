@@ -9,15 +9,6 @@ repository.workspace = true
 keywords = ["blockchain", "cosmos", "cosmwasm", "cycles", "quartz"]
 readme = "README.md"
 
-[features]
-default = []
-dcap = [
-    "dep:mc-attestation-verifier",
-    "dep:mc-sgx-core-types",
-    "dep:mc-sgx-dcap-types",
-    "dep:mc-sgx-dcap-sys-types"
-]
-
 [dependencies]
 # external
 der.workspace = true
@@ -31,12 +22,12 @@ thiserror.workspace = true
 x509-cert.workspace = true
 x509-parser.workspace = true
 zeroize.workspace = true
+
 # mobilecoin
-mc-attestation-verifier = { workspace = true, optional = true }
-mc-sgx-core-types = { workspace = true, optional = true }
-mc-sgx-dcap-types = { workspace = true, optional = true }
-# mc-sgx-dcap-sys-types = { workspace = true, optional = true }
-mc-sgx-dcap-sys-types = { version = "0.11.0", workspace = true, optional = true }
+mc-attestation-verifier.workspace = true
+mc-sgx-core-types.workspace = true
+mc-sgx-dcap-types.workspace = true
+mc-sgx-dcap-sys-types.workspace = true
 
 # cosmos
 cosmwasm-schema.workspace = true
