@@ -4,7 +4,7 @@ use crate::response::Response;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct InitResponse {
-    pub result_dir: String
+    pub result_dir: String,
 }
 
 impl From<InitResponse> for Response {
