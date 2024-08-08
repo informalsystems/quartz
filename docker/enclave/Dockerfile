@@ -21,8 +21,6 @@ RUN apk update && \
 RUN apk update && \
     apk add --no-cache musl-dev protobuf-dev build-base
 
-ENV ENCLAVE_DIR=${ENCLAVE_DIR}
-
 RUN cd /opt/src/${ENCLAVE_DIR} && \
     CARGO_TARGET_DIR=./target cargo build --release ${CARGO_FLAGS}
 
@@ -39,29 +37,33 @@ ARG ENCLAVE_BIN="enclave"
 ARG TRUSTED_HEIGHT
 ARG TRUSTED_HASH
 
+RUN apt update && \
+    apt install -y build-essential
+
 # Copy the enclave binary we built in the previous stage
 COPY --from=build /opt/src/${ENCLAVE_DIR}/target/release/${ENCLAVE_BIN} /opt/enclave/bin/enclave
 COPY --from=build /opt/src/${ENCLAVE_DIR}/quartz.manifest.template /opt/enclave/
 WORKDIR /opt/enclave
 
 # TODO: Do we really need these files?
-RUN echo "${TRUSTED_HEIGHT}" > trusted.height && \
-    echo "${TRUSTED_HASH}" > trusted.hash
+RUN cd /opt/enclave && \
+    echo "${TRUSTED_HEIGHT}" > /opt/enclave/trusted.height && \
+    echo "${TRUSTED_HASH}" > /opt/enclave/trusted.hash
 
-RUN gramine-sgx-gen-private-key > /dev/null 2>&1
-RUN gramine-manifest  \
-    -Dlog_level="error"  \
-    -Dhome="/opt/enclave"  \
-    -Denclave_dir="/opt/enclave"  \
-    -Denclave_executable="/opt/enclave/bin/enclave" \
-    -Darch_libdir="/lib/$(gcc -dumpmachine)"  \
-    -Dra_type="epid" \
-    -Dra_client_spid="51CAF5A48B450D624AEFE3286D314894" \
-    -Dra_client_linkable=1 \
-    -Dtrusted_height="${TRUSTED_HEIGHT}"  \
-    -Dtrusted_hash="${TRUSTED_HASH}"  \
-    -Dgramine_port=11090 \
-    quartz.manifest.template quartz.manifest
-RUN gramine-sgx-sign --manifest quartz.manifest --output quartz.manifest.sgx
+RUN gramine-sgx-gen-private-key > /dev/null 2>&1 && \
+    gramine-manifest  \
+        -Dlog_level="error"  \
+        -Dhome="/opt/enclave"  \
+        -Denclave_dir="/opt/enclave"  \
+        -Denclave_executable="/opt/enclave/bin/enclave" \
+        -Darch_libdir="/lib/$(gcc -dumpmachine)"  \
+        -Dra_type="epid" \
+        -Dra_client_spid="51CAF5A48B450D624AEFE3286D314894" \
+        -Dra_client_linkable=1 \
+        -Dtrusted_height="${TRUSTED_HEIGHT}"  \
+        -Dtrusted_hash="${TRUSTED_HASH}"  \
+        -Dgramine_port=11090 \
+        quartz.manifest.template quartz.manifest && \
+    gramine-sgx-sign --manifest quartz.manifest --output quartz.manifest.sgx
 
-CMD ["/usr/bin/gramine-sgx", "./quartz"]
+CMD ["/usr/bin/gramine-sgx", "quartz"]
