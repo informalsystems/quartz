@@ -4,7 +4,7 @@ use crate::request::Request;
 
 #[derive(Clone, Debug)]
 pub struct EnclaveStartRequest {
-    pub manifest_path: PathBuf,
+    pub app_dir: PathBuf,
 }
 
 impl From<EnclaveStartRequest> for Request {

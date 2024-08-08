@@ -1,8 +1,8 @@
 use serde::Serialize;
 
 use crate::response::{
-    contract_deploy::ContractDeployResponse, enclave_build::EnclaveBuildResponse, enclave_start::EnclaveStartResponse,
-    handshake::HandshakeResponse, init::InitResponse,
+    contract_deploy::ContractDeployResponse, enclave_build::EnclaveBuildResponse,
+    enclave_start::EnclaveStartResponse, handshake::HandshakeResponse, init::InitResponse,
 };
 
 pub mod contract_deploy;
@@ -17,5 +17,5 @@ pub enum Response {
     Handshake(HandshakeResponse),
     ContractDeploy(ContractDeployResponse),
     EnclaveBuild(EnclaveBuildResponse),
-    EnclaveStart(EnclaveStartResponse)
+    EnclaveStart(EnclaveStartResponse),
 }

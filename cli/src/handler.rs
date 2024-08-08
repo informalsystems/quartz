@@ -29,7 +29,7 @@ impl Handler for Request {
             Request::Handshake(request) => request.handle(config).await,
             Request::ContractDeploy(request) => request.handle(config).await,
             Request::EnclaveBuild(request) => request.handle(config).await,
-            Request::EnclaveStart(request) => request.handle(config).await
+            Request::EnclaveStart(request) => request.handle(config).await,
         }
         .map(Into::into)
     }

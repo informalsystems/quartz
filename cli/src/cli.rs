@@ -116,14 +116,16 @@ pub enum ContractCommand {
 pub enum EnclaveCommand {
     /// Build the Quartz app's enclave
     Build {
-        /// path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
+        /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
         #[arg(long, default_value = "./enclave/Cargo.toml")]
         manifest_path: PathBuf,
     },
     // Run the Quartz app's enclave
     Start {
+        /// Path to quartz app directory
+        /// Defaults to current working dir
         #[clap(long)]
-        path: Option<PathBuf>,
+        app_dir: Option<PathBuf>,
     },
 }
 
