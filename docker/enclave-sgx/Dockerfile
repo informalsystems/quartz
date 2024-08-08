@@ -19,7 +19,7 @@ RUN apk update && \
 
 # System dependencies for building our binary
 RUN apk update && \
-    apk add --no-cache musl-dev protobuf-dev build-base
+    apk add --no-cache build-base protobuf-dev
 
 RUN cd /opt/src/${ENCLAVE_DIR} && \
     CARGO_TARGET_DIR=./target cargo build --release ${CARGO_FLAGS}
@@ -62,14 +62,4 @@ RUN gramine-sgx-gen-private-key > /dev/null 2>&1 && \
         quartz.manifest.template quartz.manifest && \
     gramine-sgx-sign --manifest quartz.manifest --output quartz.manifest.sgx
 
-RUN <<EOF
-cat <<END > /opt/enclave/run.sh
-#!/bin/bash
-set -euo pipefail
-/restart_aesm.sh
-/usr/bin/gramine-sgx ./quartz
-END
-chmod +x /opt/enclave/run.sh
-EOF
-
-CMD ["./run.sh"]
+CMD ["/restart_aesm.sh && gramine-sgx ./quartz"]
