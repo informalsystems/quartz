@@ -47,9 +47,10 @@ The following build arguments are important:
 On an SGX-enabled machine:
 
 ```bash
-# The /dev/sgx_enclave device needs to be mounted into the container.
+# The devices need to be mounted into the container.
 docker run --rm -it \
    --device /dev/sgx_enclave \
+   --device /dev/sgx_provision \
    informaldev/transfers-enclave
 ```
 
