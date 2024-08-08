@@ -46,7 +46,7 @@ mtcs.workspace = true
 quartz-common = { workspace = true, features = ["full"]}
 
 [dev-dependencies]
-cw-multi-test = "2.0.0"
+cw-multi-test = "2.1.0"
 
 [build-dependencies]
 tonic-build.workspace = true
