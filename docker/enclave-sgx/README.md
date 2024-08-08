@@ -1,4 +1,4 @@
-# Quartz Enclave Build/Run Image
+# Quartz Enclave Build/Run Image for SGX
 
 This folder contains the basis for a multi-stage Docker image that:
 
@@ -25,7 +25,7 @@ docker build \
    --build-arg TRUSTED_HEIGHT=1234 \
    --build-arg TRUSTED_HASH=0123456789abcdef \
    -t informaldev/transfers-enclave \
-   -f ./docker/enclave/Dockerfile \
+   -f ./docker/enclave-sgx/Dockerfile \
    .
 ```
 
