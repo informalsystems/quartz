@@ -44,9 +44,9 @@ pub struct Cli {
 pub enum Command {
     /// Create an empty Quartz app from a template
     Init {
-        /// path to create & init a Quartz app, defaults to current path if unspecified
-        #[clap(long)]
-        path: Option<PathBuf>,
+        /// the name of your Quartz app directory, defaults to quartz_app
+        #[clap(long, default_value = "quartz_app")]
+        name: String,
     },
     /// Perform handshake
     Handshake {
