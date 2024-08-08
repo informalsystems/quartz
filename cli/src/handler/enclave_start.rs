@@ -34,7 +34,7 @@ impl Handler for EnclaveStartRequest {
                 trusted_hash.to_string(),
             ];
 
-            let res = run_enclave(
+            let _res = run_enclave(
                 enclave_dir.join("Cargo.toml").display().to_string(),
                 config.mock_sgx,
                 enclave_args,
@@ -44,7 +44,6 @@ impl Handler for EnclaveStartRequest {
 
         // set cwd to enclave app
         env::set_current_dir(enclave_dir).map_err(|e| Error::GenericErr(e.to_string()))?;
-
         // gramine private key
         gramine_sgx_gen_private_key().await?;
         // gramine manifest
@@ -93,9 +92,6 @@ async fn run_enclave(
 }
 
 async fn gramine_sgx_gen_private_key() -> Result<(), Error> {
-    // Change directory to DIR_QUARTZ_ENCLAVE
-    println!("... gen priv key if it doesn't exist");
-
     // Launch the gramine-sgx-gen-private-key command
     let output = Command::new("gramine-sgx-gen-private-key")
         .output()
@@ -107,14 +103,8 @@ async fn gramine_sgx_gen_private_key() -> Result<(), Error> {
             ))
         })?;
 
-    // Check if the command succeeded
-    if !output.status.success() {
-        return Err(Error::GenericErr(format!(
-            "Couldn't generate gramine priv key. {:?}",
-            output.stderr
-        )));
-    }
-
+    // Continue regardless of error
+    // > /dev/null 2>&1 || :  # may fail
     Ok(())
 }
 
@@ -125,8 +115,8 @@ async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<()
     //     .arg("-dumpmachine")
     //     .output()
     //     .map_err(|e| Error::GenericErr(format!("Failed to execute gcc -dumpmachine: {e}")))?;
-    // let arch_libdir = format!("/lib/{}", String::from_utf8_lossy(&gcc_output.stdout).trim());
-    let arch_libdir = format!("/lib/{}", target_lexicon::HOST);
+    let host = target_lexicon::HOST;
+    let arch_libdir = format!("/lib/{}-{}-{}", host.architecture, host.operating_system, host.environment);
     let ra_client_spid = "51CAF5A48B450D624AEFE3286D314894";
     let home_dir = dirs::home_dir()
         .ok_or(Error::GenericErr("home dir not set".to_string()))?
