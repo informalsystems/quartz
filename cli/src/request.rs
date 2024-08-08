@@ -125,7 +125,7 @@ impl TryFrom<EnclaveCommand> for Request {
 
     fn try_from(cmd: EnclaveCommand) -> Result<Request, Error> {
         match cmd {
-            EnclaveCommand::Build { release, manifest_path } => EnclaveBuildRequest { release, manifest_path }.into(),
+            EnclaveCommand::Build { release, manifest_path } => Ok(EnclaveBuildRequest { release, manifest_path }.into()),
             EnclaveCommand::Start { app_dir, chain_id } => Ok(EnclaveStartRequest {
                 app_dir: Self::path_checked(app_dir)?,
                 chain_id,
