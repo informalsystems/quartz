@@ -23,25 +23,32 @@ panic = 'abort'
 incremental = false
 overflow-checks = true
 
+
 [features]
-library = []
 mock-sgx = ["quartz-common/mock-sgx-cw"]
+library = []
 
 [dependencies]
 # external
 sha2 = "0.10.8"
-serde_json = "1.0.117"
-serde = { version = "1.0.137", default-features = false, features = ["derive"] }
-thiserror = { version = "1.0.49" }
-getrandom = { version = "0.2.15", features = ["js"] }
+serde_json = { version = "1.0.122", default-features = false, features = ["alloc"] }
+serde = { version = "1.0.204", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.63" }
 
 # cosmwasm
-cosmwasm-schema = { version = "2.0.0", default-features = false }
-cosmwasm-std = { version = "2.0.0", default-features = false, features = ["std"] }
+cosmwasm-std = { version = "2.1.1", default-features = false }
+cosmwasm-schema = { version = "2.1.1", default-features = false }
+cw2 = { version = "2.0.0", default-features = false }
 cw-storage-plus = { version = "2.0.0", default-features = false }
-cw-utils = "2.0.0"
-cw20-base = { version = "2.0.0", features = ["library"] }
-cw2 = "2.0.0"
+cw20-base = { version = "2.0.0", default-features = false, features = ["library"] }
+cw-utils = { version = "2.0.0", default-features = false }
 
 # quartz
-quartz-common = { path = "../../../core/quartz-common", features=["contract"]}
+quartz-common = { path = "../../../core/quartz-common", default-features = false, features = ["contract"] }
+
+# patch indirect deps
+getrandom = { version = "0.2.15", default-features = false, features = ["js"] }
+
+[dev-dependencies]
+cw-multi-test = { version = "2.1.0", default-features = false }
+serde_json = "1.0.122"

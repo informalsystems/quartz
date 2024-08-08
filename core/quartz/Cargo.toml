@@ -12,8 +12,11 @@ readme = "README.md"
 [features]
 mock-sgx = ["quartz-cw/mock-sgx"]
 
+
+
 [dependencies]
 # external
+sha2 = { workspace = true }
 clap.workspace = true
 color-eyre.workspace = true
 ecies.workspace = true
