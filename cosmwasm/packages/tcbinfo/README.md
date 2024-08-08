@@ -1,85 +1,32 @@
-# CosmWasm Starter Pack
+# CosmWasm SGX TcbInfo Smart Contract
 
-This is a template to build smart contracts in Rust to run inside a
-[Cosmos SDK](https://github.com/cosmos/cosmos-sdk) module on all chains that enable it.
-To understand the framework better, please read the overview in the
-[cosmwasm repo](https://github.com/CosmWasm/cosmwasm/blob/master/README.md),
-and dig into the [cosmwasm docs](https://www.cosmwasm.com).
-This assumes you understand the theory and just want to get coding.
+This smart contract facilitates the storage and verification of `TcbInfo`s for Intel SGX. The contract ensures that
+TcbInfos are kept up-to-date so other contracts can query the latest TcbInfo state using the quote's `fmspc` during
+remote attestation verification to ensure the attesting enclave setup is up-to-date.
 
-## Creating a new repo from template
+## Overview
 
-Assuming you have a recent version of Rust and Cargo installed
-(via [rustup](https://rustup.rs/)),
-then the following should get you a new repo to start a contract:
+The contract provides the following functionalities:
 
-Install [cargo-generate](https://github.com/ashleygwilliams/cargo-generate) and cargo-run-script.
-Unless you did that before, run this line now:
+- Instantiate: Initialize the contract with a root certificate.
+- Execute: Store and verify TcbInfo along with the provided certificate and optional timestamp.
+- Query: Retrieve the latest TcbInfo using the FMSPC.
 
-```sh
-cargo install cargo-generate --features vendored-openssl
-cargo install cargo-run-script
+## Usage (with wasmd)
+
+- Submit a new `TcbInfo` for a specific `fmspc`
+
+```shell
+export EXECUTE='{
+  "tcb_info": "{\"tcbInfo\":{ /* ... */ },\"signature\":\"647bac99371750892415557b838237839e52b02afe027a43322fe661f4a1a693b04a82717120d74bccf2b3787bf7e9ecbe44caa06e6e532b7a68a21b2765663d\"}
+  "certificate": "-----BEGIN CERTIFICATE-----\\n /* ... */ \\n-----END CERTIFICATE-----"
+}'
+wasmd tx wasm execute "$CONTRACT" "$EXECUTE" --from alice --chain-id testing -y
+
 ```
 
-Now, use it to create your new contract.
-Go to the folder in which you want to place it and run:
+- Query the latest `TcbInfo` by `fmspc`
 
-**Latest**
-
-```sh
-cargo generate --git https://github.com/CosmWasm/cw-template.git --name PROJECT_NAME
+```shell
+wasmd query wasm contract-state smart "$CONTRACT" '{"get_tcb_info": {"fmspc": "00906ED50000"}}'
 ```
-
-For cloning minimal code repo:
-
-```sh
-cargo generate --git https://github.com/CosmWasm/cw-template.git --name PROJECT_NAME -d minimal=true
-```
-
-You will now have a new folder called `PROJECT_NAME` (I hope you changed that to something else)
-containing a simple working contract and build system that you can customize.
-
-## Create a Repo
-
-After generating, you have a initialized local git repo, but no commits, and no remote.
-Go to a server (eg. github) and create a new upstream repo (called `YOUR-GIT-URL` below).
-Then run the following:
-
-```sh
-# this is needed to create a valid Cargo.lock file (see below)
-cargo check
-git branch -M main
-git add .
-git commit -m 'Initial Commit'
-git remote add origin YOUR-GIT-URL
-git push -u origin main
-```
-
-## CI Support
-
-We have template configurations for both [GitHub Actions](.github/workflows/Basic.yml)
-and [Circle CI](.circleci/config.yml) in the generated project, so you can
-get up and running with CI right away.
-
-One note is that the CI runs all `cargo` commands
-with `--locked` to ensure it uses the exact same versions as you have locally. This also means
-you must have an up-to-date `Cargo.lock` file, which is not auto-generated.
-The first time you set up the project (or after adding any dep), you should ensure the
-`Cargo.lock` file is updated, so the CI will test properly. This can be done simply by
-running `cargo check` or `cargo unit-test`.
-
-## Using your project
-
-Once you have your custom repo, you should check out [Developing](./Developing.md) to explain
-more on how to run tests and develop code. Or go through the
-[online tutorial](https://docs.cosmwasm.com/) to get a better feel
-of how to develop.
-
-[Publishing](./Publishing.md) contains useful information on how to publish your contract
-to the world, once you are ready to deploy it on a running blockchain. And
-[Importing](./Importing.md) contains information about pulling in other contracts or crates
-that have been published.
-
-Please replace this README file with information about your specific project. You can keep
-the `Developing.md` and `Publishing.md` files as useful references, but please set some
-proper description in the README.
