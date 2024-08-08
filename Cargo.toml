@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "apps/mtcs/enclave",
-    "apps/mtcs/scripts",
     "apps/transfers/enclave",
     "cli",
     "core/light-client-proofs/*",
@@ -11,7 +10,7 @@ members = [
     "cosmwasm/packages/*",
     "utils/*",
 ]
-exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers/contracts"]
+exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers/contracts", "apps/mtcs/scripts"]
 
 [workspace.package]
 version = "0.1.0"
@@ -37,7 +36,7 @@ hex = { version = "0.4.3", default-features = false }
 hex-literal = { version = "0.4.1", default-features = false }
 k256 = { version = "0.13.2", default-features = false, features = ["ecdsa", "alloc"] }
 num-bigint = { version = "0.4.4", default-features = false }
-prost = { version = "0.12.3", default-features = false }
+prost = { version = "=0.13.1", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["getrandom"] }
 rand_core = { version = "0.6", default-features = false, features = ["std"] }
 reqwest = { version = "0.12.2", default-features = false, features = ["json", "rustls-tls"] }
@@ -48,9 +47,9 @@ sha2 = { version = "0.10.8", default-features = false }
 subtle-encoding = { version = "0.5.1", default-features = false, features = ["bech32-preview"] }
 tempfile = { version = "3", default-features = false }
 thiserror = { version = "1.0.49", default-features = false }
-tokio = { version = "1.38.0", default-features = false, features = ["macros", "rt-multi-thread"] }
-tonic = { version = "0.11", default-features = false, features = ["codegen", "prost", "transport"] }
-tonic-build = { version = "0.11", default-features = false, features = ["prost", "transport"] }
+tokio = { version = "=1.39.2",default-features = false, features = ["macros", "rt"]}
+tonic = { version = "=0.12.1", default-features = false, features = ["codegen", "prost", "transport"] }
+tonic-build = { version = "=0.12.1", default-features = false, features = ["prost", "transport"] }
 tracing = { version = "0.1.39", default-features = false }
 tracing-subscriber = { version = "0.3.17", default-features = false, features = ["fmt"] }
 uuid = { version = "1.4.1", default-features = false, features = ["serde"] }
@@ -59,12 +58,12 @@ x509-parser = { version = "0.16.0", features = ["default", "verify"] }
 zeroize = { version = "1.7.0", default-features = false }
 
 # cosmos
-cosmos-sdk-proto = { version = "0.21.1" }
-cosmrs = { version = "=0.16.0", default-features = false }
-cosmwasm-schema = { version = "2.0.0", default-features = false }
-cosmwasm-std = { version = "2.0.0", default-features = false, features = ["std"] }
+cosmos-sdk-proto = { version = "0.22.0" }
+cosmrs = { version = "=0.17.0", default-features = false }
+cosmwasm-schema = { version = "2.1.1", default-features = false }
+cosmwasm-std = { version = "2.1.1", default-features = false, features = ["std"] }
 cw-storage-plus = { version = "2.0.0", default-features = false }
-ics23 = { version = "0.11.0", default-features = false, features = ["host-functions"] }
+ics23 = { version = "0.12.0", default-features = false, features = ["host-functions"] }
 tendermint = { version = "=0.38.1", default-features = false }
 tendermint-light-client = { version = "=0.38.1", default-features = false, features = ["rust-crypto"] }
 tendermint-light-client-detector = { version = "=0.38.1", default-features = false }
@@ -79,11 +78,11 @@ mc-attestation-verifier = { git = "https://github.com/informalsystems/attestatio
 # quartz
 cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = false }
 cycles-sync = { path = "utils/cycles-sync", default-features = false }
-quartz-common = { path = "core/quartz-common" }
+quartz-common = { path = "core/quartz-common"}
 quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
 quartz-enclave = { path = "core/quartz", default-features = false }
 quartz-proto = { path = "core/quartz-proto", default-features = false }
-quartz-relayer = { path = "relayer", default-features = false }
+quartz-relayer = { path = "relayer", default-features = false ,  features = ["mock-sgx"]}
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
 tm-prover = { path = "utils/tm-prover", default-features = false }
 tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
