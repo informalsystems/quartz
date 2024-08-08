@@ -1,5 +1,6 @@
 use std::process::Command;
 
+use async_trait::async_trait;
 use tracing::{debug, trace};
 
 use crate::{
@@ -10,11 +11,12 @@ use crate::{
     Config,
 };
 
+#[async_trait]
 impl Handler for ContractBuildRequest {
     type Error = Error;
     type Response = Response;
 
-    fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         let mut cargo = Command::new("cargo");
         let command = cargo
             .arg("wasm")

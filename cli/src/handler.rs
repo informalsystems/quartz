@@ -4,8 +4,8 @@ use crate::{error::Error, request::Request, response::Response, Config};
 
 pub mod utils;
 // commands
-pub mod contract_deploy;
 pub mod contract_build;
+pub mod contract_deploy;
 pub mod enclave_build;
 pub mod handshake;
 pub mod init;
