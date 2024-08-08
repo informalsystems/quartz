@@ -2,6 +2,7 @@ mod cli;
 
 use std::{error::Error, fs::File, io::Read};
 
+use crate::cli::Cli;
 use clap::Parser;
 use cosmos_sdk_proto::{
     cosmos::{
@@ -25,16 +26,22 @@ use cosmrs::{
 };
 use ecies::{PublicKey, SecretKey};
 use quartz_cw::msg::{
-    execute::attested::Attested,
+    execute::attested::{Attested, DcapAttestation, RawDcapAttestation},
     instantiate::{CoreInstantiate, RawInstantiate},
     InstantiateMsg,
 };
 use quartz_proto::quartz::{core_client::CoreClient, InstantiateRequest};
 use quartz_relayer::types::InstantiateResponse;
+use quartz_tee_ra::intel_sgx::dcap::Collateral;
 use subtle_encoding::base64;
 use tendermint::public_key::Secp256k1 as TmPublicKey;
+use reqwest::Client;
 
-use crate::cli::Cli;
+async fn fetch_collateral(client: &Client, url: &str) -> Result<Collateral, Box<dyn Error>> {
+    let response = client.get(url).send().await?;
+    let collateral = response.json::<Collateral>().await?;
+    Ok(collateral)
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -53,22 +60,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(not(feature = "mock-sgx"))]
     let attestation = {
-        use quartz_cw::msg::execute::attested::EpidAttestation;
-        use quartz_tee_ra::IASReport;
+        use quartz_cw::msg::execute::attested::DcapAttestation;
+        use quartz_tee_ra::intel_sgx::dcap::{Collateral, Quote3};
 
-        let ias_report = gramine_sgx_ias_report(response.quote())?;
-        println!(
-            "{}",
-            serde_json::to_string(&ias_report).expect("infallible serializer")
-        );
-        let ias_report: IASReport = serde_json::from_str(&ias_report.to_string())?;
-        EpidAttestation::new(ias_report)
+        let quote = gramine_sgx_ias_report(response.quote())?;
+        let quote: Quote3<Vec<u8>> = serde_json::from_value(quote)?;
+
+
+        // Fetch collateral data
+        let http_client = Client::new();
+        let url = "https://api.trustedservices.intel.com/sgx/certification/v3/pckcert";
+        let collateral: Collateral = fetch_collateral(&http_client, url).await?;
+
+        // println!("PCK Certificate: {}", collateral.pck_crl_issuer_chain());
+        println!("TCB Info: {}", collateral.tcb_info());
+        // println!("CRL: {}", collateral.pck_crl());
+         DcapAttestation::new(quote, collateral)
     };
 
-    let cw_instantiate_msg = Attested::new(
+    let cw_instantiate_msg: Attested<CoreInstantiate, DcapAttestation> = Attested::new(
         CoreInstantiate::new(response.into_message().into_tuple().0),
         attestation,
     );
+    
+    let raw_instantiate: RawInstantiate<RawDcapAttestation> = InstantiateMsg(cw_instantiate_msg).into();
+    
+    let msg = serde_json::to_string(&raw_instantiate)?.into_bytes();
+
 
     // Read the TSP secret
     let secret = {
@@ -90,8 +108,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let msgs = vec![MsgExecuteContract {
         sender: sender.clone(),
         contract: args.contract.clone(),
-        msg: serde_json::to_string::<RawInstantiate>(&InstantiateMsg(cw_instantiate_msg).into())?
-            .into_bytes(),
+        msg,
         funds: vec![],
     }
     .to_any()
