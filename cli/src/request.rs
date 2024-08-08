@@ -27,7 +27,7 @@ impl TryFrom<Command> for Request {
 
     fn try_from(cmd: Command) -> Result<Self, Self::Error> {
         match cmd {
-            Command::Init { path } => InitRequest::try_from(path).map(Into::into),
+            Command::Init { name } => Ok(InitRequest { name }.try_into()?),
             Command::Handshake {
                 contract,
                 port,
