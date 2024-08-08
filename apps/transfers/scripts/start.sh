@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#set -eo pipefail
+set -euo pipefail
 
 DIR_QUARTZ=${ROOT:-$(git rev-parse --show-toplevel)}
 DIR_QUARTZ_APP="$DIR_QUARTZ/apps/transfers"
@@ -44,17 +44,18 @@ gramine-sgx-gen-private-key > /dev/null 2>&1 || :  # may fail
 
 echo "... create manifest"
 gramine-manifest  \
--Dlog_level="error"  \
--Dhome="$HOME"  \
--Darch_libdir="/lib/$(gcc -dumpmachine)"  \
--Dra_type="epid" \
--Dra_client_spid="51CAF5A48B450D624AEFE3286D314894" \
--Dra_client_linkable=1 \
--Dquartz_dir="$(pwd)"  \
--Dtrusted_height="$TRUSTED_HEIGHT"  \
--Dtrusted_hash="$TRUSTED_HASH"  \
--Dgramine_port="$QUARTZ_PORT" \
-quartz.manifest.template quartz.manifest
+    -Dlog_level="error"  \
+    -Dhome="${HOME}"  \
+    -Denclave_dir="$(pwd)"  \
+    -Denclave_executable="$(pwd)/target/release/quartz-app-transfers-enclave" \
+    -Darch_libdir="/lib/$(gcc -dumpmachine)"  \
+    -Dra_type="epid" \
+    -Dra_client_spid="51CAF5A48B450D624AEFE3286D314894" \
+    -Dra_client_linkable=1 \
+    -Dtrusted_height="${TRUSTED_HEIGHT}"  \
+    -Dtrusted_hash="${TRUSTED_HASH}"  \
+    -Dgramine_port="${QUARTZ_PORT}" \
+    quartz.manifest.template quartz.manifest
 
 echo "... sign manifest"
 gramine-sgx-sign --manifest quartz.manifest --output quartz.manifest.sgx
