@@ -93,8 +93,13 @@ where
         // 1. we avoid (the more expensive) attestation verification if the message handler fails
         // 2. we allow the message handler to make changes to the config so that the attestation
         //    handler can use those changes, e.g. InstantiateMsg
-        Handler::handle(msg, deps.branch(), env, info)?;
-        Handler::handle(attestation, deps, env, info)
+        // return response from msg handle to include pub_key attribute
+        let res_msg = Handler::handle(msg, deps.branch(), env, info)?;
+        let res_attest = Handler::handle(attestation, deps, env, info)?;
+
+        Ok(res_msg
+            .add_events(res_attest.events)
+            .add_attributes(res_attest.attributes))
     }
 }
 

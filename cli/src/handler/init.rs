@@ -1,21 +1,23 @@
 use std::path::{Path, PathBuf};
 use cargo_generate::{generate, GenerateArgs, TemplatePath, Vcs};
 
+use async_trait::async_trait;
 use tracing::trace;
 
 use crate::{
-    cli::Verbosity,
     error::Error,
     handler::Handler,
     request::init::InitRequest,
     response::{init::InitResponse, Response},
+    Config,
 };
 
+#[async_trait]
 impl Handler for InitRequest {
     type Error = Error;
     type Response = Response;
 
-    fn handle(self, _verbosity: Verbosity) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, _config: Config) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
 
         if Path::new(&self.name).iter().count() != 1 {
