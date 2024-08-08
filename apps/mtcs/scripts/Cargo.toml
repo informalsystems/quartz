@@ -35,7 +35,7 @@ base64 = "0.22.1"
 subtle-encoding = "0.5.1"
 tokio-tungstenite = "0.23.1"
 futures-util = "0.3.30"
-tendermint-rpc = { version ="0.36.0", features=["websocket-client", "http-client"]}
+tendermint-rpc = { version ="0.38.1", features=["websocket-client", "http-client"]}
 
 # cosmos
 cosmrs.workspace = true
