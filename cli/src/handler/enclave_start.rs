@@ -93,7 +93,7 @@ async fn run_enclave(
 
 async fn gramine_sgx_gen_private_key() -> Result<(), Error> {
     // Launch the gramine-sgx-gen-private-key command
-    let output = Command::new("gramine-sgx-gen-private-key")
+    Command::new("gramine-sgx-gen-private-key")
         .output()
         .await
         .map_err(|e| {
@@ -116,7 +116,10 @@ async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<()
     //     .output()
     //     .map_err(|e| Error::GenericErr(format!("Failed to execute gcc -dumpmachine: {e}")))?;
     let host = target_lexicon::HOST;
-    let arch_libdir = format!("/lib/{}-{}-{}", host.architecture, host.operating_system, host.environment);
+    let arch_libdir = format!(
+        "/lib/{}-{}-{}",
+        host.architecture, host.operating_system, host.environment
+    );
     let ra_client_spid = "51CAF5A48B450D624AEFE3286D314894";
     let home_dir = dirs::home_dir()
         .ok_or(Error::GenericErr("home dir not set".to_string()))?
@@ -130,10 +133,7 @@ async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<()
         .arg("-Dra_type=epid")
         .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
-        .arg(format!(
-            "-Dquartz_dir={}",
-            current_dir.display().to_string()
-        ))
+        .arg(format!("-Dquartz_dir={}", current_dir.display()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg("quartz.manifest.template")
