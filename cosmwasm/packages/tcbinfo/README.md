@@ -22,7 +22,6 @@ export EXECUTE='{
   "certificate": "-----BEGIN CERTIFICATE-----\\n /* ... */ \\n-----END CERTIFICATE-----"
 }'
 wasmd tx wasm execute "$CONTRACT" "$EXECUTE" --from alice --chain-id testing -y
-
 ```
 
 - Query the latest `TcbInfo` by `fmspc`
