@@ -126,6 +126,9 @@ pub enum EnclaveCommand {
         /// Defaults to current working dir
         #[clap(long)]
         app_dir: Option<PathBuf>,
+        /// The network chain ID
+        #[clap(long)]
+        chain_id: String,
     },
 }
 

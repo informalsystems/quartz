@@ -108,8 +108,9 @@ impl TryFrom<EnclaveCommand> for Request {
             EnclaveCommand::Build { manifest_path } => {
                 Ok(EnclaveBuildRequest { manifest_path }.into())
             }
-            EnclaveCommand::Start { app_dir } => Ok(EnclaveStartRequest {
+            EnclaveCommand::Start { app_dir, chain_id } => Ok(EnclaveStartRequest {
                 app_dir: Self::path_checked(app_dir)?,
+                chain_id,
             }
             .into()),
         }

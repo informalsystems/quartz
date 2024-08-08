@@ -27,7 +27,7 @@ impl Handler for EnclaveStartRequest {
         if config.mock_sgx {
             let enclave_args: Vec<String> = vec![
                 "--chain-id".to_string(),
-                "testing".to_string(),
+                self.chain_id,
                 "--trusted-height".to_string(),
                 trusted_height.to_string(),
                 "--trusted-hash".to_string(),
@@ -111,15 +111,12 @@ async fn gramine_sgx_gen_private_key() -> Result<(), Error> {
 async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<(), Error> {
     let current_dir = env::current_dir().map_err(|e| Error::GenericErr(e.to_string()))?;
 
-    // let gcc_output = Command::new("gcc")
-    //     .arg("-dumpmachine")
-    //     .output()
-    //     .map_err(|e| Error::GenericErr(format!("Failed to execute gcc -dumpmachine: {e}")))?;
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
         "/lib/{}-{}-{}",
         host.architecture, host.operating_system, host.environment
     );
+
     let ra_client_spid = "51CAF5A48B450D624AEFE3286D314894";
     let home_dir = dirs::home_dir()
         .ok_or(Error::GenericErr("home dir not set".to_string()))?
