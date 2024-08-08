@@ -10,7 +10,9 @@ keywords = ["blockchain", "cosmos", "cosmwasm", "cycles", "quartz"]
 readme = "README.md"
 
 [features]
+default = []
 mock-sgx = []
+std = ["k256/std", "serde/std", "serde_json/std", "sha2/std", "cosmwasm-std/std"]
 
 [dependencies]
 # external
