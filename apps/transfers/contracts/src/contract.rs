@@ -214,7 +214,7 @@ pub mod execute {
         msg: QueryResponseMsg,
     ) -> Result<Response, ContractError> {
         // Store state
-        BALANCES.save(deps.storage, &msg.address.to_string(), &msg.encrypted_bal)?;
+        BALANCES.save(deps.storage, msg.address.as_ref(), &msg.encrypted_bal)?;
 
         // Emit event
         let event = Event::new("store_balance")

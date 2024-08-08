@@ -150,9 +150,9 @@ pub async fn account_info(
     address: impl ToString,
 ) -> Result<BaseAccount, Box<dyn Error>> {
     let mut client = AuthQueryClient::connect(node.to_string()).await?;
-    let request = tonic::Request::new(QueryAccountRequest {
+    let request = QueryAccountRequest {
         address: address.to_string(),
-    });
+    };
     let response = client.account(request).await?;
     let response = RawBaseAccount::decode(response.into_inner().account.unwrap().value.as_slice())?;
     let account = BaseAccount::try_from(response)?;
@@ -180,14 +180,13 @@ pub fn tx_bytes(
 
 pub async fn send_tx(node: impl ToString, tx_bytes: Vec<u8>) -> Result<(), Box<dyn Error>> {
     let mut client = ServiceClient::connect(node.to_string()).await?;
-    let request = tonic::Request::new(BroadcastTxRequest {
+    let request = BroadcastTxRequest {
         tx_bytes,
         mode: BroadcastMode::Block.into(),
-    });
+    };
     let _response = client.broadcast_tx(request).await?;
     Ok(())
 }
-
 #[cfg(not(feature = "mock-sgx"))]
 fn gramine_sgx_ias_report(quote: &[u8]) -> Result<serde_json::Value, Box<dyn Error>> {
     use std::{fs::read_to_string, io::Write, process::Command};
