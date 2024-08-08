@@ -33,7 +33,6 @@ use tendermint_light_client::{
 use tendermint_light_client_detector::{detect_divergence, Error, Provider, Trace};
 use tendermint_rpc::{client::HttpClient, Client, HttpClientUrl};
 use tracing::{error, info};
-use tracing_subscriber::{util::SubscriberInitExt, EnvFilter};
 
 const WASM_STORE_KEY: &str = "/store/wasm/key";
 
@@ -51,21 +50,11 @@ pub async fn prove(
         max_clock_drift,
         max_block_lag,
         trace_file,
-        verbose,
+        verbose: _,
         contract_address,
         storage_key,
     }: TmProverConfig,
 ) -> Result<()> {
-    let env_filter = EnvFilter::builder()
-        .with_default_directive(verbose.to_level_filter().into())
-        .from_env_lossy();
-
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .with_env_filter(env_filter)
-        .finish()
-        .init();
-
     let options = Options {
         trust_threshold,
         trusting_period: Duration::from_secs(trusting_period),

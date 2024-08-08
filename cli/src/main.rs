@@ -25,12 +25,27 @@ use tracing_subscriber::{util::SubscriberInitExt, EnvFilter};
 
 use crate::{cli::Cli, handler::Handler, request::Request};
 
+const BANNER: &str = r"
+ ________       ___  ___      ________      ________     _________     ________     
+|\   __  \     |\  \|\  \    |\   __  \    |\   __  \   |\___   ___\  |\_____  \    
+\ \  \|\  \    \ \  \\\  \   \ \  \|\  \   \ \  \|\  \  \|___ \  \_|   \|___/  /|   
+ \ \  \\\  \    \ \  \\\  \   \ \   __  \   \ \   _  _\      \ \  \        /  / /   
+  \ \  \\\  \    \ \  \\\  \   \ \  \ \  \   \ \  \\  \|      \ \  \      /  /_/__  
+   \ \_____  \    \ \_______\   \ \__\ \__\   \ \__\\ _\       \ \__\    |\________\
+    \|___| \__\    \|_______|    \|__|\|__|    \|__|\|__|       \|__|     \|_______|
+          \|__|                                                                     
+                                                                                    
+";
+
 pub struct Config {
     pub mock_sgx: bool,
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     color_eyre::install()?;
+
+    println!("{BANNER}");
 
     let args = Cli::parse();
 
@@ -52,9 +67,11 @@ fn main() -> Result<()> {
 
     // Each `Request` defines an associated `Handler` (i.e. logic) and `Response`. All handlers are
     // free to log to the terminal and these logs are sent to `stderr`.
-    let response = request.handle(Config {
-        mock_sgx: args.mock_sgx,
-    })?;
+    let response = request
+        .handle(Config {
+            mock_sgx: args.mock_sgx,
+        })
+        .await?;
 
     // `Handlers` must use `Responses` to output to `stdout`.
     println!(

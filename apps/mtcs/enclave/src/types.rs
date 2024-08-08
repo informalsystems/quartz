@@ -1,5 +1,14 @@
+use std::collections::{BTreeMap, BTreeSet};
+
 use cosmwasm_std::{Addr, HexBinary};
+use cw_tee_mtcs::state::{LiquiditySource, RawCipherText, RawHash};
 use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RunClearingMessage {
+    pub intents: BTreeMap<RawHash, RawCipherText>,
+    pub liquidity_sources: BTreeSet<LiquiditySource>,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContractObligation {
