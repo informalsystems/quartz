@@ -14,6 +14,7 @@ async-trait.workspace = true
 clap = { workspace = true, features=["env"] }
 color-eyre.workspace = true
 displaydoc.workspace = true
+dirs = "5.0.1"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
@@ -30,6 +31,7 @@ anyhow = "1.0.86"
 base64 = "0.22.1"
 subtle-encoding = "0.5.1"
 futures-util = "0.3.30"
+target-lexicon = "0.12.16"
 
 # cosmos
 cosmrs.workspace = true

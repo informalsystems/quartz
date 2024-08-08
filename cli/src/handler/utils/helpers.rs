@@ -6,10 +6,11 @@ use cosmrs::{AccountId, ErrorReport};
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use subtle_encoding::bech32::decode as bech32_decode;
-use tendermint::Hash;
+use tendermint::{block::Height, Hash};
 use tendermint_rpc::{
     endpoint::tx::Response as TmTxResponse, error::ErrorDetail, Client, HttpClient,
 };
+use tokio::fs;
 use tracing::debug;
 
 use super::types::RelayMessage;
@@ -85,4 +86,20 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
             }
         }
     }
+}
+
+pub async fn read_hash_height(base_path: &Path) -> Result<(Height, Hash), anyhow::Error> {
+    let height_path = base_path.join("trusted.height");
+    let trusted_height: Height = fs::read_to_string(height_path.as_path())
+        .await?
+        .trim()
+        .parse()?;
+
+    let hash_path = base_path.join("trusted.hash");
+    let trusted_hash: Hash = fs::read_to_string(hash_path.as_path())
+        .await?
+        .trim()
+        .parse()?;
+
+    Ok((trusted_height, trusted_hash))
 }
