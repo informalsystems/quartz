@@ -64,4 +64,4 @@ RUN gramine-manifest  \
     quartz.manifest.template quartz.manifest
 RUN gramine-sgx-sign --manifest quartz.manifest --output quartz.manifest.sgx
 
-CMD ["/bin/sh"]
+CMD ["/usr/bin/gramine-sgx", "./quartz"]
