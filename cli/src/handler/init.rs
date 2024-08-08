@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use async_trait::async_trait;
 use cargo_generate::{generate, GenerateArgs, TemplatePath, Vcs};
@@ -20,24 +20,14 @@ impl Handler for InitRequest {
     async fn handle(self, _config: Config) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
 
-        if Path::new(&self.name).iter().count() != 1 {
-            return Err(Error::GenericErr("App name contains path".to_string()));
-        }
-
-        let cli_manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
+        let root_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
 
         let wasm_pack_args = GenerateArgs {
             name: Some(self.name),
             vcs: Some(Vcs::Git),
             template_path: TemplatePath {
                 // git: Some("git@github.com:informalsystems/cycles-quartz.git".to_string()), // TODO: replace with public http address when open-sourced
-                path: Some(
-                    cli_manifest_dir
-                        .join("apps/transfers")
-                        .display()
-                        .to_string(),
-                ),
-                subfolder: Some(String::from("apps/transfers")),
+                path: Some(root_dir.join("apps/transfers").display().to_string()),
                 ..TemplatePath::default()
             },
             ..GenerateArgs::default()
