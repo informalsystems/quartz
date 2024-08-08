@@ -43,12 +43,8 @@ RUN apt update && \
 # Copy the enclave binary we built in the previous stage
 COPY --from=build /opt/src/${ENCLAVE_DIR}/target/release/${ENCLAVE_BIN} /opt/enclave/bin/enclave
 COPY --from=build /opt/src/${ENCLAVE_DIR}/quartz.manifest.template /opt/enclave/
-WORKDIR /opt/enclave
 
-# TODO: Do we really need these files?
-RUN cd /opt/enclave && \
-    echo "${TRUSTED_HEIGHT}" > /opt/enclave/trusted.height && \
-    echo "${TRUSTED_HASH}" > /opt/enclave/trusted.hash
+WORKDIR /opt/enclave
 
 RUN gramine-sgx-gen-private-key > /dev/null 2>&1 && \
     gramine-manifest  \
@@ -66,4 +62,14 @@ RUN gramine-sgx-gen-private-key > /dev/null 2>&1 && \
         quartz.manifest.template quartz.manifest && \
     gramine-sgx-sign --manifest quartz.manifest --output quartz.manifest.sgx
 
-CMD ["/usr/bin/gramine-sgx", "quartz"]
+RUN <<EOF
+cat <<END > /opt/enclave/run.sh
+#!/bin/bash
+set -euo pipefail
+/restart_aesm.sh
+/usr/bin/gramine-sgx ./quartz
+END
+chmod +x /opt/enclave/run.sh
+EOF
+
+CMD ["./run.sh"]
