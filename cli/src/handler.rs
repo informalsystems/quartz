@@ -4,6 +4,7 @@ use crate::{error::Error, request::Request, response::Response, Config};
 
 pub mod utils;
 // commands
+pub mod contract_build;
 pub mod contract_deploy;
 pub mod dev;
 pub mod enclave_build;
@@ -28,6 +29,7 @@ impl Handler for Request {
         match self {
             Request::Init(request) => request.handle(config).await,
             Request::Handshake(request) => request.handle(config).await,
+            Request::ContractBuild(request) => request.handle(config).await,
             Request::ContractDeploy(request) => request.handle(config).await,
             Request::EnclaveBuild(request) => request.handle(config).await,
             Request::EnclaveStart(request) => request.handle(config).await,

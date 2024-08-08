@@ -48,8 +48,9 @@ pub enum Command {
         #[clap(long)]
         path: Option<PathBuf>,
     },
+    /// Perform handshake
     Handshake {
-        /// path to create & init a quartz app, defaults to current path if unspecified
+        /// path to create & init a Quartz app, defaults to current path if unspecified
         #[arg(short, long, value_parser = wasmaddr_to_id)]
         contract: AccountId,
         /// Port enclave is listening on
@@ -64,10 +65,10 @@ pub enum Command {
         /// <host>:<port> to tendermint rpc interface for this chain
         #[clap(long, default_value_t = default_node_url())]
         node_url: String,
-        /// RPC interface for the quartz enclave
+        /// RPC interface for the Quartz enclave
         #[clap(long, default_value_t = default_rpc_addr())]
         enclave_rpc_addr: String,
-        /// Path to quartz app directory
+        /// Path to Quartz app directory
         /// Defaults to current working dir
         #[clap(long)]
         app_dir: Option<PathBuf>,
@@ -85,7 +86,7 @@ pub enum Command {
         #[clap(long)]
         app_dir: Option<PathBuf>,
     },
-    /// Create an empty Quartz app from a template
+    /// Subcommands for handling the Quartz app contract
     Contract {
         #[command(subcommand)]
         contract_command: ContractCommand,
@@ -101,7 +102,7 @@ pub enum Command {
 pub enum ContractCommand {
     Build {
         #[clap(long)]
-        path: Option<PathBuf>,
+        manifest_path: PathBuf,
     },
     Deploy {
         /// Json-formatted cosmwasm contract initialization message

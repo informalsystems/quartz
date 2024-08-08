@@ -4,11 +4,12 @@ use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},
     error::Error,
     request::{
-        contract_deploy::ContractDeployRequest, dev::DevRequest, enclave_build::EnclaveBuildRequest,
+        contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest, dev::DevRequest, enclave_build::EnclaveBuildRequest,
         enclave_start::EnclaveStartRequest, handshake::HandshakeRequest, init::InitRequest,
     },
 };
 
+pub mod contract_build;
 pub mod contract_deploy;
 pub mod dev;
 pub mod enclave_build;
@@ -20,6 +21,7 @@ pub mod init;
 pub enum Request {
     Init(InitRequest),
     Handshake(HandshakeRequest),
+    ContractBuild(ContractBuildRequest),
     ContractDeploy(ContractDeployRequest),
     EnclaveBuild(EnclaveBuildRequest),
     EnclaveStart(EnclaveStartRequest),
@@ -107,7 +109,13 @@ impl TryFrom<ContractCommand> for Request {
                 }
                 .into())
             }
-            ContractCommand::Build { path: _ } => todo!(),
+            ContractCommand::Build { manifest_path } => {
+                if !manifest_path.exists() {
+                    return Err(Error::PathNotFile(manifest_path.display().to_string()));
+                }
+
+                Ok(ContractBuildRequest { manifest_path }.into())
+            }
         }
     }
 }
