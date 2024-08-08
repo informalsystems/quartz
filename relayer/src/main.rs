@@ -26,16 +26,16 @@ use cosmrs::{
 };
 use ecies::{PublicKey, SecretKey};
 use quartz_cw::msg::{
-    execute::attested::{Attested, DcapAttestation, RawDcapAttestation},
+    execute::attested::Attested,
     instantiate::{CoreInstantiate, RawInstantiate},
     InstantiateMsg,
 };
 use quartz_proto::quartz::{core_client::CoreClient, InstantiateRequest};
 use quartz_relayer::types::InstantiateResponse;
 use quartz_tee_ra::intel_sgx::dcap::Collateral;
+use reqwest::Client;
 use subtle_encoding::base64;
 use tendermint::public_key::Secp256k1 as TmPublicKey;
-use reqwest::Client;
 
 async fn fetch_collateral(client: &Client, url: &str) -> Result<Collateral, Box<dyn Error>> {
     let response = client.get(url).send().await?;
@@ -66,27 +66,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let quote = gramine_sgx_ias_report(response.quote())?;
         let quote: Quote3<Vec<u8>> = serde_json::from_value(quote)?;
 
-
         // Fetch collateral data
         let http_client = Client::new();
         let url = "https://api.trustedservices.intel.com/sgx/certification/v3/pckcert";
         let collateral: Collateral = fetch_collateral(&http_client, url).await?;
 
-        // println!("PCK Certificate: {}", collateral.pck_crl_issuer_chain());
         println!("TCB Info: {}", collateral.tcb_info());
-        // println!("CRL: {}", collateral.pck_crl());
-         DcapAttestation::new(quote, collateral)
+        DcapAttestation::new(quote, collateral)
     };
 
-    let cw_instantiate_msg: Attested<CoreInstantiate, DcapAttestation> = Attested::new(
+    let cw_instantiate_msg: Attested<CoreInstantiate, _> = Attested::new(
         CoreInstantiate::new(response.into_message().into_tuple().0),
         attestation,
     );
-    
-    let raw_instantiate: RawInstantiate<RawDcapAttestation> = InstantiateMsg(cw_instantiate_msg).into();
-    
-    let msg = serde_json::to_string(&raw_instantiate)?.into_bytes();
 
+    #[cfg(feature = "mock-sgx")]
+    let raw_instantiate_msg = {
+        use quartz_cw::msg::execute::attested::RawMockAttestation;
+
+        let raw_instantiate: RawInstantiate<RawMockAttestation> =
+            InstantiateMsg(cw_instantiate_msg).into();
+        serde_json::to_string(&raw_instantiate)?.into_bytes()
+    };
+
+    #[cfg(not(feature = "mock-sgx"))]
+    let raw_instantiate_msg = {
+        use quartz_cw::msg::execute::attested::RawDcapAttestation;
+
+        let raw_instantiate: RawInstantiate<RawDcapAttestation> =
+            InstantiateMsg(cw_instantiate_msg).into();
+        serde_json::to_string(&raw_instantiate)?.into_bytes()
+    };
 
     // Read the TSP secret
     let secret = {
@@ -108,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let msgs = vec![MsgExecuteContract {
         sender: sender.clone(),
         contract: args.contract.clone(),
-        msg,
+        msg: raw_instantiate_msg,
         funds: vec![],
     }
     .to_any()
