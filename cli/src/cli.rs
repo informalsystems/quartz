@@ -48,6 +48,7 @@ pub enum Command {
         #[clap(long, default_value = "quartz_app")]
         name: String,
     },
+    /// Perform handshake
     Handshake {
         /// path to create & init a Quartz app, defaults to current path if unspecified
         #[arg(short, long, value_parser = wasmaddr_to_id)]
@@ -72,7 +73,7 @@ pub enum Command {
         #[clap(long)]
         app_dir: Option<PathBuf>,
     },
-    /// Create an empty Quartz app from a template
+    /// Subcommands for handling the Quartz app contract
     Contract {
         #[command(subcommand)]
         contract_command: ContractCommand,
@@ -88,7 +89,7 @@ pub enum Command {
 pub enum ContractCommand {
     Build {
         #[clap(long)]
-        path: Option<PathBuf>,
+        manifest_path: PathBuf,
     },
     Deploy {
         /// Json-formatted cosmwasm contract initialization message
