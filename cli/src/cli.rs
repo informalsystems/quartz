@@ -111,6 +111,29 @@ pub enum ContractCommand {
         #[clap(long)]
         wasm_bin_path: PathBuf,
     },
+    Tx {
+        /// <host>:<port> to tendermint rpc interface for this chain
+        #[arg(long)]
+        node_url: String,
+        /// Contract account ID
+        #[arg(long)]
+        contract: AccountId,
+        /// The network chain ID
+        #[arg(long)]
+        chain_id: ChainId,
+        /// Gas to send with tx
+        #[arg(long)]
+        gas: u64,
+        /// Name or address of private key with which to sign
+        #[arg(short, long)]
+        sender: String,
+        /// Method to call on the contract
+        #[arg(long)]
+        msg: String,
+        /// Arguments for the contract call
+        #[arg(long)]
+        args: String, // TODO: Vec string?
+    },
 }
 
 #[derive(Debug, Clone, Subcommand)]

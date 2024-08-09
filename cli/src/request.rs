@@ -5,12 +5,14 @@ use crate::{
     error::Error,
     request::{
         contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest,
-        enclave_build::EnclaveBuildRequest, handshake::HandshakeRequest, init::InitRequest,
+        contract_tx::ContractTxRequest, enclave_build::EnclaveBuildRequest,
+        handshake::HandshakeRequest, init::InitRequest,
     },
 };
 
 pub mod contract_build;
 pub mod contract_deploy;
+pub mod contract_tx;
 pub mod enclave_build;
 pub mod handshake;
 pub mod init;
@@ -21,6 +23,7 @@ pub enum Request {
     Handshake(HandshakeRequest),
     ContractBuild(ContractBuildRequest),
     ContractDeploy(ContractDeployRequest),
+    ContractTx(ContractTxRequest),
     EnclaveBuild(EnclaveBuildRequest),
 }
 
@@ -103,6 +106,24 @@ impl TryFrom<ContractCommand> for Request {
 
                 Ok(ContractBuildRequest { manifest_path }.into())
             }
+            ContractCommand::Tx {
+                node_url,
+                contract,
+                chain_id,
+                gas,
+                sender,
+                msg,
+                args,
+            } => Ok(ContractTxRequest {
+                node_url,
+                contract,
+                chain_id,
+                gas,
+                sender,
+                msg,
+                args,
+            }
+            .into()),
         }
     }
 }

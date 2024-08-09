@@ -52,7 +52,7 @@ pub fn run_relay<R: DeserializeOwned>(
     Ok(query_result)
 }
 
-// Note: time until tx commit is empiraclly 800ms on DO wasmd chain.
+// Note: time until tx commit is empirically 800ms on DO wasmd chain.
 pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxResponse, anyhow::Error> {
     let re = Regex::new(r"tx \([A-F0-9]{64}\) not found")?;
 
