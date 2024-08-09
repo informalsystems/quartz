@@ -34,25 +34,25 @@ impl Handler for EnclaveStartRequest {
                 trusted_hash.to_string(),
             ];
 
+            // Run quartz enclave and block
             let _res = run_enclave(
                 enclave_dir.join("Cargo.toml").display().to_string(),
                 config.mock_sgx,
                 enclave_args,
             )
             .await?;
+        } else {
+            // set cwd to enclave app
+            env::set_current_dir(enclave_dir).map_err(|e| Error::GenericErr(e.to_string()))?;
+            // gramine private key
+            gramine_sgx_gen_private_key().await?;
+            // gramine manifest
+            gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string()).await?;
+            // gramine sign
+            gramine_sgx_sign().await?;
+            // Run quartz enclave and block
+            gramine_sgx().await?;
         }
-
-        // set cwd to enclave app
-        env::set_current_dir(enclave_dir).map_err(|e| Error::GenericErr(e.to_string()))?;
-        // gramine private key
-        gramine_sgx_gen_private_key().await?;
-        // gramine manifest
-        gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string()).await?;
-        // gramine sign
-        gramine_sgx_sign().await?;
-        // run quartz enclave
-        gramine_sgx().await?;
-
         Ok(EnclaveStartResponse.into())
     }
 }
