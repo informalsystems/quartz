@@ -1,4 +1,5 @@
 mod cli;
+use log::{debug, error, info, warn};
 
 use std::{error::Error, fs::File, io::Read};
 
@@ -32,24 +33,20 @@ use quartz_cw::msg::{
 };
 use quartz_proto::quartz::{core_client::CoreClient, InstantiateRequest};
 use quartz_relayer::types::InstantiateResponse;
-use quartz_tee_ra::intel_sgx::dcap::Collateral;
-use reqwest::Client;
+
 use subtle_encoding::base64;
 use tendermint::public_key::Secp256k1 as TmPublicKey;
 
-async fn fetch_collateral(client: &Client, url: &str) -> Result<Collateral, Box<dyn Error>> {
-    let response = client.get(url).send().await?;
-    let collateral = response.json::<Collateral>().await?;
-    Ok(collateral)
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+
     let args = Cli::parse();
 
     let mut client = CoreClient::connect(args.enclave_addr.uri().to_string()).await?;
     let response = client.instantiate(InstantiateRequest {}).await?;
     let response: InstantiateResponse = response.into_inner().try_into()?;
+    debug!("Response from enclave: {:?}", response);
 
     #[cfg(feature = "mock-sgx")]
     let attestation = {
@@ -62,16 +59,75 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let attestation = {
         use quartz_cw::msg::execute::attested::DcapAttestation;
         use quartz_tee_ra::intel_sgx::dcap::{Collateral, Quote3};
+        use reqwest::Client;
+        use quartz_tee_ra::intel_sgx::dcap::Collateral;
+        use x509_cert::crl::CertificateList;
+        use x509_cert::Certificate;
+        use std::error::Error;
 
-        let quote = gramine_sgx_ias_report(response.quote())?;
-        let quote: Quote3<Vec<u8>> = serde_json::from_value(quote)?;
+        
+        async fn fetch_azure_sgx_collateral(client: &Client, fmspc: &str) -> Result<Collateral, Box<dyn Error>> {
+            let base_url = "https://global.acccache.azure.net/sgx/certification/v4";
+        
+            // Fetch root CA CRL
+            let root_ca_crl = client.get(&format!("{}/rootcacrl", base_url))
+                .send().await?
+                .bytes().await?;
+            let root_ca_crl = CertificateList::from_der(&root_ca_crl)?;
+        
+            // Fetch PCK CRL and its issuer chain
+            let pck_crl = client.get(&format!("{}/pckcrl", base_url))
+                .send().await?
+                .bytes().await?;
+            let pck_crl = CertificateList::from_der(&pck_crl)?;
+        
+            let pck_crl_issuer_chain = client.get(&format!("{}/pckcrl", base_url))
+                .header("Request-Type", "pckcrl_issuer_chain")
+                .send().await?
+                .text().await?;
+            let pck_crl_issuer_chain = Certificate::load_pem_chain(pck_crl_issuer_chain.as_bytes())?;
+        
+            // Fetch TCB info and its issuer chain
+            let tcb_info = client.get(&format!("{}/tcb?fmspc={}", base_url, fmspc))
+                .send().await?
+                .text().await?;
+        
+            let tcb_issuer_chain = client.get(&format!("{}/tcb", base_url))
+                .header("Request-Type", "tcb_issuer_chain")
+                .send().await?
+                .text().await?;
+            let tcb_issuer_chain = Certificate::load_pem_chain(tcb_issuer_chain.as_bytes())?;
+        
+            // Fetch QE Identity and its issuer chain
+            let qe_identity = client.get(&format!("{}/qe/identity", base_url))
+                .send().await?
+                .text().await?;
+        
+            let qe_identity_issuer_chain = client.get(&format!("{}/qe/identity", base_url))
+                .header("Request-Type", "qe_identity_issuer_chain")
+                .send().await?
+                .text().await?;
+            let qe_identity_issuer_chain = Certificate::load_pem_chain(qe_identity_issuer_chain.as_bytes())?;
+        
+            Ok(Collateral {
+                root_ca_crl,
+                pck_crl_issuer_chain,
+                pck_crl,
+                tcb_issuer_chain,
+                tcb_info,
+                qe_identity_issuer_chain,
+                qe_identity,
+            })
+        }
 
-        // Fetch collateral data
+        let quote: Quote3<Vec<u8>> = serde_json::from_value(response_quote)?;
+
+        // Fetch collateral data from Azure SGX cache
         let http_client = Client::new();
-        let url = "https://api.trustedservices.intel.com/sgx/certification/v3/pckcert";
-        let collateral: Collateral = fetch_collateral(&http_client, url).await?;
+        let fmspc = "00606a000000"; // You need to provide the correct FMSPC value
+        let collateral = fetch_azure_sgx_collateral(&http_client, fmspc).await?;
 
-        println!("TCB Info: {}", collateral.tcb_info());
+        // You may need to adjust this based on how your DcapAttestation::new() is implemented
         DcapAttestation::new(quote, collateral)
     };
 
@@ -79,6 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         CoreInstantiate::new(response.into_message().into_tuple().0),
         attestation,
     );
+    debug!("Constructed CoreInstantiate: {:?}", cw_instantiate_msg);
 
     #[cfg(feature = "mock-sgx")]
     let raw_instantiate_msg = {
@@ -86,7 +143,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let raw_instantiate: RawInstantiate<RawMockAttestation> =
             InstantiateMsg(cw_instantiate_msg).into();
-        serde_json::to_string(&raw_instantiate)?.into_bytes()
+        let raw_instantiate_str = serde_json::to_string(&raw_instantiate)?;
+        debug!("Raw instantiate message: {}", raw_instantiate_str);
+        raw_instantiate_str.into_bytes()
     };
 
     #[cfg(not(feature = "mock-sgx"))]
@@ -95,7 +154,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let raw_instantiate: RawInstantiate<RawDcapAttestation> =
             InstantiateMsg(cw_instantiate_msg).into();
-        serde_json::to_string(&raw_instantiate)?.into_bytes()
+        let raw_instantiate_str = serde_json::to_string(&raw_instantiate)?;
+        debug!("Raw instantiate message: {}", raw_instantiate_str);
+        raw_instantiate_str.into_bytes()
     };
 
     // Read the TSP secret
@@ -114,7 +175,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let tm_key = TmAccountId::from(tm_pubkey);
         AccountId::new("wasm", tm_key.as_bytes()).unwrap()
     };
-
+    debug!("Raw instantiate message: {:?}", String::from_utf8_lossy(&raw_instantiate_msg));
     let msgs = vec![MsgExecuteContract {
         sender: sender.clone(),
         contract: args.contract.clone(),
@@ -207,7 +268,7 @@ fn gramine_sgx_ias_report(quote: &[u8]) -> Result<serde_json::Value, Box<dyn Err
         .args(["-r", &datareport_file_path.display().to_string()])
         .args(["-s", &datareportsig_file_path.display().to_string()])
         .output()?;
-    println!("{gramine_sgx_ias_request_output:?}");
+    debug!("{gramine_sgx_ias_request_output:?}");
 
     let report = read_to_string(datareport_file_path)?;
     let report_sig = read_to_string(datareportsig_file_path)?;
