@@ -85,6 +85,9 @@ pub enum Command {
         /// Defaults to current working dir
         #[clap(long)]
         app_dir: Option<PathBuf>,
+        /// <host>:<port> to tendermint rpc interface for this chain
+        #[clap(long, default_value_t = default_node_url())]
+        node_url: String,
     },
     /// Subcommands for handling the Quartz app contract
     Contract {
@@ -146,6 +149,9 @@ pub enum EnclaveCommand {
         /// The network chain ID
         #[clap(long)]
         chain_id: String,
+        /// <host>:<port> to tendermint rpc interface for this chain
+        #[clap(long, default_value_t = default_node_url())]
+        node_url: String,
     },
 }
 

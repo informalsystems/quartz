@@ -1,10 +1,11 @@
 use std::env;
 
 use async_trait::async_trait;
+use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
+use reqwest::Url;
 use tokio::process::Command;
 use tracing::{debug, info};
 
-use super::utils::helpers::read_hash_height;
 use crate::{
     error::Error,
     handler::Handler,
@@ -19,10 +20,16 @@ impl Handler for EnclaveStartRequest {
     type Response = Response;
 
     async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+        let httpurl = Url::parse(&format!("http://{}", self.node_url)).unwrap();
+        println!("{:?}", httpurl);
+        let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str()).unwrap());
+
         let enclave_dir = self.app_dir.join("enclave");
-        let (trusted_height, trusted_hash) = read_hash_height(self.app_dir.as_path())
-            .await
+        let (trusted_height, trusted_hash) = wasmd_client.trusted_height_hash()
             .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+        println!("height {}\n hash {}", trusted_height, trusted_hash);
+        panic!();
 
         if config.mock_sgx {
             let enclave_args: Vec<String> = vec![

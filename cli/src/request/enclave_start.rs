@@ -9,6 +9,7 @@ pub struct EnclaveStartRequest {
     pub app_dir: PathBuf,
     pub chain_id: String,
     pub ready_signal: Option<oneshot::Sender<()>>,
+    pub node_url: String,
 }
 
 impl From<EnclaveStartRequest> for Request {
@@ -26,6 +27,7 @@ impl Clone for EnclaveStartRequest {
             app_dir: self.app_dir.clone(),
             chain_id: self.chain_id.clone(),
             ready_signal: Some(new_sender), // Assign the new Sender to the clone
+            node_url: self.node_url.clone()
         }
     }
 }

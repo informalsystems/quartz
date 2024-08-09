@@ -6,6 +6,7 @@ service Core {
   rpc Instantiate (InstantiateRequest) returns (InstantiateResponse) {}
   rpc SessionCreate (SessionCreateRequest) returns (SessionCreateResponse) {}
   rpc SessionSetPubKey (SessionSetPubKeyRequest) returns (SessionSetPubKeyResponse) {}
+  rpc Health (HealthRequest) returns (HealthResponse) {}
 }
 
 message InstantiateRequest {}
@@ -27,3 +28,7 @@ message SessionSetPubKeyRequest {
 message SessionSetPubKeyResponse {
   string message = 1;
 }
+
+message HealthRequest {}
+
+message HealthResponse {}

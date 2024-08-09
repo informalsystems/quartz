@@ -50,7 +50,7 @@ impl Handler for DevRequest {
 
 			// Launch enclave 
 			let (start_tx, start_rx) = oneshot::channel();
-			let enclave_start = EnclaveStartRequest { app_dir: self.app_dir.clone(), chain_id: "testing".to_string(), ready_signal: Some(start_tx) };
+			let enclave_start = EnclaveStartRequest { app_dir: self.app_dir.clone(), chain_id: "testing".to_string(), ready_signal: Some(start_tx), node_url: self.node_url.clone() };
 			
 			let enclave_start_handle = tokio::spawn(async move {
 				if let Ok(_) = start_rx.await {
@@ -67,7 +67,7 @@ impl Handler for DevRequest {
 
 			let contract_deploy = ContractDeployRequest {
                 init_msg: serde_json::Value::from_str("{}").map_err(|e| Error::GenericErr(e.to_string()))?,
-                node_url: default_node_url(),
+                node_url: self.node_url.clone(),
                 chain_id: "testing".parse().map_err(|_| Error::GenericErr(String::default()))?,
                 sender: "admin".to_string(),
                 label: "".to_string(),
@@ -87,7 +87,7 @@ impl Handler for DevRequest {
                 port: 11090u16,
                 sender: "admin".to_string(),
                 chain_id: "testing".parse().map_err(|_| Error::GenericErr(String::default()))?,
-                node_url: default_node_url(),
+                node_url: self.node_url,
                 enclave_rpc_addr: default_rpc_addr(),
                 app_dir: self.app_dir.clone(),
             };
