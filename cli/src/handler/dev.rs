@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use tokio::{sync::{mpsc, oneshot}, try_join};
+use tokio::{sync::{mpsc, oneshot}, time::sleep, try_join};
 use tracing::{info, trace};
 
 use crate::{
@@ -16,7 +16,7 @@ use crate::handler::utils::helpers::wasmaddr_to_id;
 // todo get rid of this?
 use miette::{IntoDiagnostic, Result};
 use watchexec::{
-	command::{Command, Program, Shell, SpawnOptions},
+	command::{Command, Program, Shell},
 	job::CommandState,
 	Id, Watchexec,
 };
@@ -28,74 +28,71 @@ impl Handler for DevRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, _config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
 
 		if !self.watch {
 			// Build enclave
-
-			// In separate process, start enclave
+			let enclave_build = EnclaveBuildRequest { release: false, manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap() };
+			let _eb_res = enclave_build.handle(Config { mock_sgx: config.mock_sgx }).await?;		
 
 			// Build contract
-
-			// Deploy contract
-
-			// Run handshake
-
-			let enclave_build = EnclaveBuildRequest { release: false, manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap() };
-			let eb_res = enclave_build.handle(Config { mock_sgx: false }).await?;		
-
 			let contract_build = ContractBuildRequest { manifest_path: "../apps/transfers/contracts/Cargo.toml".parse().unwrap() };
-			let cb_res = contract_build.handle(Config { mock_sgx: false }).await?;
+			let _cb_res = contract_build.handle(Config { mock_sgx: config.mock_sgx }).await?;
 
-			// Launch enclave 
+			// In separate process, launch the enclave
 			let (start_tx, start_rx) = oneshot::channel();
 			let enclave_start = EnclaveStartRequest { app_dir: self.app_dir.clone(), chain_id: "testing".to_string(), ready_signal: Some(start_tx), node_url: self.node_url.clone() };
 			
-			let enclave_start_handle = tokio::spawn(async move {
-				if let Ok(_) = start_rx.await {
-					// Call handle() only after receiving the message
-					let res: Response = enclave_start.handle(Config { mock_sgx: false }).await?;
+			let enclave_start_handle: tokio::task::JoinHandle<Result<Response, Error>> = tokio::spawn(async move {
+					let res: Response = enclave_start.handle(Config { mock_sgx: config.mock_sgx }).await?;
 					
-					return Ok(res);
-				}
-
-				Err(Error::GenericErr("Did not receive start signal from enclave".to_string()))
+					Ok(res)
 			});
 
-			// Calls which interact with enclave
+			info!("Waiting for enclave start to deploy contract and handshake");
+			sleep(Duration::from_secs(3)).await;
+			if let Ok(_) = start_rx.await {
+				// Calls which interact with enclave
+				info!("Enclave start message received");
 
-			let contract_deploy = ContractDeployRequest {
-                init_msg: serde_json::Value::from_str("{}").map_err(|e| Error::GenericErr(e.to_string()))?,
-                node_url: self.node_url.clone(),
-                chain_id: "testing".parse().map_err(|_| Error::GenericErr(String::default()))?,
-                sender: "admin".to_string(),
-                label: "".to_string(),
-                wasm_bin_path: "../apps/mtcs/contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm".parse().map_err(|_| Error::GenericErr(String::default()))?,
-            };
+				let contract_deploy = ContractDeployRequest {
+					init_msg: serde_json::Value::from_str("{}").map_err(|e| Error::GenericErr(e.to_string()))?,
+					node_url: self.node_url.clone(),
+					chain_id: "testing".parse().map_err(|_| Error::GenericErr(String::default()))?,
+					sender: "admin".to_string(),
+					label: "".to_string(),
+					wasm_bin_path: "../apps/mtcs/contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm".parse().map_err(|_| Error::GenericErr(String::default()))?,
+				};
 
-			let cd_res = contract_deploy.handle(Config { mock_sgx: false }).await?;
+				let cd_res = contract_deploy.handle(Config { mock_sgx: config.mock_sgx }).await?;
 
-			let contract = if let Response::ContractDeploy(res) = cd_res {
-				res.contract_addr
+				let contract = if let Response::ContractDeploy(res) = cd_res {
+					res.contract_addr
+				} else {
+					return Err(Error::GenericErr("Deploy failed".to_string()));
+				};
+
+				// Run handshake
+				let handshake = HandshakeRequest {
+					contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
+					port: 11090u16,
+					sender: "admin".to_string(),
+					chain_id: "testing".parse().map_err(|_| Error::GenericErr(String::default()))?,
+					node_url: self.node_url,
+					enclave_rpc_addr: default_rpc_addr(),
+					app_dir: self.app_dir.clone(),
+				};
+
+				let h_res = handshake.handle(Config { mock_sgx: config.mock_sgx }).await?;
+				
+				info!("Handshake complete\n{:?}", h_res);
+
+				info!("Enclave listening...");
+				return enclave_start_handle.await.map_err(|_| Error::GenericErr(String::default()))?;
 			} else {
-				return Err(Error::GenericErr("deploy didnt work".to_string()));
-			};
-
-			let handshake = HandshakeRequest {
-                contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
-                port: 11090u16,
-                sender: "admin".to_string(),
-                chain_id: "testing".parse().map_err(|_| Error::GenericErr(String::default()))?,
-                node_url: self.node_url,
-                enclave_rpc_addr: default_rpc_addr(),
-                app_dir: self.app_dir.clone(),
-            };
-
-			let h_res = handshake.handle(Config { mock_sgx: false }).await?;
-
-			println!("complete?");
-	
+				println!("did not get send signal");
+			}
 			// dispatch_dev(DevRebuild:: Both).await;
 		} else {
 			// Run listening process 
