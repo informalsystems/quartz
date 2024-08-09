@@ -1,5 +1,7 @@
 use std::{env::current_dir, path::PathBuf};
 
+use tokio::sync::oneshot;
+
 use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},
     error::Error,
@@ -129,6 +131,7 @@ impl TryFrom<EnclaveCommand> for Request {
             EnclaveCommand::Start { app_dir, chain_id } => Ok(EnclaveStartRequest {
                 app_dir: Self::path_checked(app_dir)?,
                 chain_id,
+                ready_signal: None
             }
             .into()),
         }
