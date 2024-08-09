@@ -11,6 +11,7 @@ readme = "README.md"
 
 [dependencies]
 async-trait.workspace = true
+cargo-generate.workspace = true
 clap = { workspace = true, features=["env"] }
 color-eyre.workspace = true
 displaydoc.workspace = true
