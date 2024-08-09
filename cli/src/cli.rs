@@ -44,12 +44,12 @@ pub struct Cli {
 pub enum Command {
     /// Create an empty Quartz app from a template
     Init {
-        /// path to create & init a Quartz app, defaults to current path if unspecified
-        #[clap(long)]
-        path: Option<PathBuf>,
+        /// the name of your Quartz app directory, defaults to quartz_app
+        #[clap(long, default_value = "quartz_app")]
+        name: String,
     },
     Handshake {
-        /// path to create & init a quartz app, defaults to current path if unspecified
+        /// path to create & init a Quartz app, defaults to current path if unspecified
         #[arg(short, long, value_parser = wasmaddr_to_id)]
         contract: AccountId,
         /// Port enclave is listening on
@@ -64,10 +64,10 @@ pub enum Command {
         /// <host>:<port> to tendermint rpc interface for this chain
         #[clap(long, default_value_t = default_node_url())]
         node_url: String,
-        /// RPC interface for the quartz enclave
+        /// RPC interface for the Quartz enclave
         #[clap(long, default_value_t = default_rpc_addr())]
         enclave_rpc_addr: String,
-        /// Path to quartz app directory
+        /// Path to Quartz app directory
         /// Defaults to current working dir
         #[clap(long)]
         app_dir: Option<PathBuf>,
