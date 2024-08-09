@@ -4,8 +4,9 @@ use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},
     error::Error,
     request::{
-        contract_deploy::ContractDeployRequest, contract_build::ContractBuildRequest, enclave_build::EnclaveBuildRequest,
-        enclave_start::EnclaveStartRequest, handshake::HandshakeRequest, init::InitRequest,
+        contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest,
+        enclave_build::EnclaveBuildRequest, enclave_start::EnclaveStartRequest,
+        handshake::HandshakeRequest, init::InitRequest,
     },
 };
 
