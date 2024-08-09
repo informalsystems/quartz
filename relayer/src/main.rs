@@ -65,59 +65,98 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         use x509_cert::Certificate;
         use std::error::Error;
 
+
+        // async fn fetch_azure_sgx_collateral(client: &Client, fmspc: &str) -> Result<Collateral, Box<dyn Error>> {
+        //     let base_url = "https://global.acccache.azure.net/sgx/certification/v4";
         
-        async fn fetch_azure_sgx_collateral(client: &Client, fmspc: &str) -> Result<Collateral, Box<dyn Error>> {
-            let base_url = "https://global.acccache.azure.net/sgx/certification/v4";
+        //     // Fetch root CA CRL
+        //     let root_ca_crl = client.get(&format!("{}/rootcacrl", base_url))
+        //         .send().await?
+        //         .bytes().await?;
+        //     let root_ca_crl = CertificateList::from_der(&root_ca_crl)?;
         
-            // Fetch root CA CRL
-            let root_ca_crl = client.get(&format!("{}/rootcacrl", base_url))
+        //     // Fetch PCK CRL and its issuer chain
+        //     let pck_crl = client.get(&format!("{}/pckcrl", base_url))
+        //         .send().await?
+        //         .bytes().await?;
+        //     let pck_crl = CertificateList::from_der(&pck_crl)?;
+        
+        //     let pck_crl_issuer_chain = client.get(&format!("{}/pckcrl", base_url))
+        //         .header("Request-Type", "pckcrl_issuer_chain")
+        //         .send().await?
+        //         .text().await?;
+        //     let pck_crl_issuer_chain = Certificate::load_pem_chain(pck_crl_issuer_chain.as_bytes())?;
+        
+        //     // Fetch TCB info and its issuer chain
+        //     let tcb_info = client.get(&format!("{}/tcb?fmspc={}", base_url, fmspc))
+        //         .send().await?
+        //         .text().await?;
+        
+        //     let tcb_issuer_chain = client.get(&format!("{}/tcb", base_url))
+        //         .header("Request-Type", "tcb_issuer_chain")
+        //         .send().await?
+        //         .text().await?;
+        //     let tcb_issuer_chain = Certificate::load_pem_chain(tcb_issuer_chain.as_bytes())?;
+        
+        //     // Fetch QE Identity and its issuer chain
+        //     let qe_identity = client.get(&format!("{}/qe/identity", base_url))
+        //         .send().await?
+        //         .text().await?;
+        
+        //     let qe_identity_issuer_chain = client.get(&format!("{}/qe/identity", base_url))
+        //         .header("Request-Type", "qe_identity_issuer_chain")
+        //         .send().await?
+        //         .text().await?;
+        //     let qe_identity_issuer_chain = Certificate::load_pem_chain(qe_identity_issuer_chain.as_bytes())?;
+        
+        //     Ok(Collateral {
+        //         root_ca_crl,
+        //         pck_crl_issuer_chain,
+        //         pck_crl,
+        //         tcb_issuer_chain,
+        //         tcb_info,
+        //         qe_identity_issuer_chain,
+        //         qe_identity,
+        //     })
+        async fn fetch_intel_sgx_data(quote: &[u8]) -> Result<Value, Box<dyn Error>> {
+            let client = Client::new();
+            let base_url = "https://api.trustedservices.intel.com/sgx/certification/v4";
+        
+            // Convert quote to base64
+            let quote_b64 = base64::encode(quote);
+        
+            // Fetch PCK certificate
+            let pck_cert = client.get(&format!("{}/pckcert", base_url))
+                .query(&[("encrypted_ppid", ""), ("cpusvn", ""), ("pcesvn", ""), ("pceid", ""), ("quote", quote_b64)])
                 .send().await?
-                .bytes().await?;
-            let root_ca_crl = CertificateList::from_der(&root_ca_crl)?;
+                .text().await?;
         
-            // Fetch PCK CRL and its issuer chain
+            // Fetch PCK CRL
             let pck_crl = client.get(&format!("{}/pckcrl", base_url))
                 .send().await?
                 .bytes().await?;
-            let pck_crl = CertificateList::from_der(&pck_crl)?;
         
-            let pck_crl_issuer_chain = client.get(&format!("{}/pckcrl", base_url))
-                .header("Request-Type", "pckcrl_issuer_chain")
-                .send().await?
-                .text().await?;
-            let pck_crl_issuer_chain = Certificate::load_pem_chain(pck_crl_issuer_chain.as_bytes())?;
-        
-            // Fetch TCB info and its issuer chain
-            let tcb_info = client.get(&format!("{}/tcb?fmspc={}", base_url, fmspc))
+            // Fetch TCB info
+            let tcb_info = client.get(&format!("{}/tcb", base_url))
+                .query(&[("fmspc", "")]) // You need to extract FMSPC from the quote
                 .send().await?
                 .text().await?;
         
-            let tcb_issuer_chain = client.get(&format!("{}/tcb", base_url))
-                .header("Request-Type", "tcb_issuer_chain")
-                .send().await?
-                .text().await?;
-            let tcb_issuer_chain = Certificate::load_pem_chain(tcb_issuer_chain.as_bytes())?;
-        
-            // Fetch QE Identity and its issuer chain
+            // Fetch QE Identity
             let qe_identity = client.get(&format!("{}/qe/identity", base_url))
                 .send().await?
                 .text().await?;
         
-            let qe_identity_issuer_chain = client.get(&format!("{}/qe/identity", base_url))
-                .header("Request-Type", "qe_identity_issuer_chain")
-                .send().await?
-                .text().await?;
-            let qe_identity_issuer_chain = Certificate::load_pem_chain(qe_identity_issuer_chain.as_bytes())?;
+            // Construct the collateral
+            let collateral = serde_json::json!({
+                "pck_cert": pck_cert,
+                "pck_crl": base64::encode(pck_crl),
+                "tcb_info": tcb_info,
+                "qe_identity": qe_identity
+            });
         
-            Ok(Collateral {
-                root_ca_crl,
-                pck_crl_issuer_chain,
-                pck_crl,
-                tcb_issuer_chain,
-                tcb_info,
-                qe_identity_issuer_chain,
-                qe_identity,
-            })
+            Ok(collateral)
+        
         }
 
         let quote: Quote3<Vec<u8>> = serde_json::from_value(response_quote)?;
@@ -125,7 +164,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Fetch collateral data from Azure SGX cache
         let http_client = Client::new();
         let fmspc = "00606a000000"; // You need to provide the correct FMSPC value
-        let collateral = fetch_azure_sgx_collateral(&http_client, fmspc).await?;
+        // let collateral = fetch_azure_sgx_collateral(&http_client, fmspc).await?;
+        let collateral = fetch_intel_sgx_data(&quote.as_ref()).await?;
 
         // You may need to adjust this based on how your DcapAttestation::new() is implemented
         DcapAttestation::new(quote, collateral)
