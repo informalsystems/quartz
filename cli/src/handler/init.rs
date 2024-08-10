@@ -5,11 +5,11 @@ use cargo_generate::{generate, GenerateArgs, TemplatePath, Vcs};
 use tracing::trace;
 
 use crate::{
+    config::Config,
     error::Error,
     handler::Handler,
     request::init::InitRequest,
     response::{init::InitResponse, Response},
-    Config,
 };
 
 #[async_trait]

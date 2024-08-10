@@ -4,11 +4,11 @@ use async_trait::async_trait;
 use tracing::{debug, trace};
 
 use crate::{
+    config::Config,
     error::Error,
     handler::Handler,
     request::contract_build::ContractBuildRequest,
     response::{contract_build::ContractBuildResponse, Response},
-    Config,
 };
 
 #[async_trait]

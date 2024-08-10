@@ -14,6 +14,7 @@
 )]
 
 pub mod cli;
+pub mod config;
 pub mod error;
 pub mod handler;
 pub mod request;
@@ -21,6 +22,7 @@ pub mod response;
 
 use clap::Parser;
 use color_eyre::eyre::Result;
+use config::{Config, load_config};
 use tracing_subscriber::{util::SubscriberInitExt, EnvFilter};
 
 use crate::{cli::Cli, handler::Handler, request::Request};
@@ -37,17 +39,16 @@ const BANNER: &str = r"
                                                                                     
 ";
 
-pub struct Config {
-    pub mock_sgx: bool,
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
 
     println!("{BANNER}");
 
-    let args = Cli::parse();
+    let args: Cli = Cli::parse();
+
+    // load config
+    let config = load_config(args.app_dir.as_path()).await?;
 
     let env_filter = EnvFilter::builder()
         .with_default_directive(args.verbose.to_level_filter().into())
@@ -67,11 +68,10 @@ async fn main() -> Result<()> {
 
     // Each `Request` defines an associated `Handler` (i.e. logic) and `Response`. All handlers are
     // free to log to the terminal and these logs are sent to `stderr`.
-    let response = request
-        .handle(Config {
-            mock_sgx: args.mock_sgx,
-        })
-        .await?;
+    let response = request.handle(Config {
+        app_dir: args.app_dir,
+        ..config
+    }).await?;
 
     // `Handlers` must use `Responses` to output to `stdout`.
     println!(

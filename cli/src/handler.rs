@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{error::Error, request::Request, response::Response, Config};
+use crate::{config::Config, error::Error, request::Request, response::Response};
 
 pub mod utils;
 // commands

@@ -1,6 +1,5 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use cosmrs::tendermint::chain::Id as ChainId;
 use serde::{Deserialize, Serialize};
 
 use crate::{error::Error, request::Request};
@@ -8,9 +7,6 @@ use crate::{error::Error, request::Request};
 #[derive(Clone, Debug)]
 pub struct ContractDeployRequest {
     pub init_msg: serde_json::Value,
-    pub node_url: String,
-    pub chain_id: ChainId,
-    pub sender: String,
     pub label: String,
     pub wasm_bin_path: PathBuf,
 }

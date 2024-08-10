@@ -3649,6 +3649,7 @@ dependencies = [
  "thiserror",
  "tm-prover",
  "tokio",
+ "toml",
  "tonic 0.12.1",
  "tracing",
  "tracing-subscriber",

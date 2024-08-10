@@ -1,0 +1,6 @@
+mock_sgx = false
+sender = "admin"
+port = 11090
+chain_id = "testing"
+node_url = "143.244.186.205:26657"
+enclave_rpc_addr = "http://127.0.0.1"

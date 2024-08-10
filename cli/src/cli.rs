@@ -1,4 +1,7 @@
-use std::{env, path::PathBuf};
+use std::{
+    env::{self},
+    path::PathBuf,
+};
 
 use clap::{Parser, Subcommand};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
@@ -35,6 +38,11 @@ pub struct Cli {
     #[clap(long, env)]
     pub mock_sgx: bool,
 
+    /// Path to Quartz app directory
+    /// Defaults to current working dir
+    #[clap(long, default_value = ".")]
+    pub app_dir: PathBuf,
+
     /// Main command
     #[command(subcommand)]
     pub command: Command,
@@ -53,25 +61,6 @@ pub enum Command {
         /// path to create & init a Quartz app, defaults to current path if unspecified
         #[arg(short, long, value_parser = wasmaddr_to_id)]
         contract: AccountId,
-        /// Port enclave is listening on
-        #[arg(short, long, default_value = "11090")]
-        port: u16,
-        /// Name or address of private key with which to sign
-        #[arg(short, long, default_value = "admin")]
-        sender: String,
-        /// The network chain ID
-        #[arg(long, default_value = "testing")]
-        chain_id: ChainId,
-        /// <host>:<port> to tendermint rpc interface for this chain
-        #[clap(long, default_value_t = default_node_url())]
-        node_url: String,
-        /// RPC interface for the Quartz enclave
-        #[clap(long, default_value_t = default_rpc_addr())]
-        enclave_rpc_addr: String,
-        /// Path to Quartz app directory
-        /// Defaults to current working dir
-        #[clap(long)]
-        app_dir: Option<PathBuf>,
     },
     /// Subcommands for handling the Quartz app contract
     Contract {
@@ -95,15 +84,6 @@ pub enum ContractCommand {
         /// Json-formatted cosmwasm contract initialization message
         #[clap(long, default_value = "{}")]
         init_msg: String,
-        /// <host>:<port> to tendermint rpc interface for this chain
-        #[clap(long, default_value_t = default_node_url())]
-        node_url: String,
-        /// Name or address of private key with which to sign
-        #[arg(short, long, default_value = "admin")]
-        sender: String,
-        /// The network chain ID
-        #[arg(long, default_value = "testing")]
-        chain_id: ChainId,
         /// A human-readable name for this contract in lists
         #[arg(long, default_value = "Quartz App Contract")]
         label: String,
@@ -122,15 +102,7 @@ pub enum EnclaveCommand {
         manifest_path: PathBuf,
     },
     // Run the Quartz app's enclave
-    Start {
-        /// Path to quartz app directory
-        /// Defaults to current working dir
-        #[clap(long)]
-        app_dir: Option<PathBuf>,
-        /// The network chain ID
-        #[clap(long)]
-        chain_id: String,
-    },
+    Start { },
 }
 
 fn default_rpc_addr() -> String {

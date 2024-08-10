@@ -6,11 +6,11 @@ use tracing::{debug, info};
 
 use super::utils::helpers::read_hash_height;
 use crate::{
+    config::Config,
     error::Error,
     handler::Handler,
     request::enclave_start::EnclaveStartRequest,
     response::{enclave_start::EnclaveStartResponse, Response},
-    Config,
 };
 
 #[async_trait]
@@ -19,15 +19,15 @@ impl Handler for EnclaveStartRequest {
     type Response = Response;
 
     async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
-        let enclave_dir = self.app_dir.join("enclave");
-        let (trusted_height, trusted_hash) = read_hash_height(self.app_dir.as_path())
+        let enclave_dir = config.app_dir.join("enclave");
+        let (trusted_height, trusted_hash) = read_hash_height(config.app_dir.as_path())
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
         if config.mock_sgx {
             let enclave_args: Vec<String> = vec![
                 "--chain-id".to_string(),
-                self.chain_id,
+                config.chain_id.to_string(),
                 "--trusted-height".to_string(),
                 trusted_height.to_string(),
                 "--trusted-hash".to_string(),
