@@ -5,7 +5,7 @@ use cargo_generate::{generate, GenerateArgs, TemplatePath, Vcs};
 use tracing::trace;
 
 use crate::{
-    config::{write_config, Config},
+    config::Config,
     error::Error,
     handler::Handler,
     request::init::InitRequest,
@@ -39,12 +39,6 @@ impl Handler for InitRequest {
             .expect("something went wrong!")
             .display()
             .to_string();
-
-        write_config(
-            config.app_dir.join(self.name).join("quartz.toml").as_path(),
-            &config,
-        )
-        .await?;
 
         Ok(InitResponse { result_dir }.into())
     }
