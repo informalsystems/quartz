@@ -89,21 +89,15 @@ pub async fn load_config(app_dir: &Path, write: bool) -> Result<Config, Error> {
     let config = Config::default();
 
     if write {
-        write_config(app_dir, &config).await?;
+        fs::write(
+            config_path,
+            &toml::to_string_pretty(&config)
+                .map_err(|e| Error::GenericErr(e.to_string()))?
+                .as_bytes(),
+        )
+        .await
+        .map_err(|e| Error::GenericErr(e.to_string()))?;
     }
 
     Ok(config)
-}
-
-pub async fn write_config(path: &Path, config: &Config) -> Result<(), Error> {
-    fs::write(
-        path,
-        &toml::to_string_pretty(config)
-            .map_err(|e| Error::GenericErr(e.to_string()))?
-            .as_bytes(),
-    )
-    .await
-    .map_err(|e| Error::GenericErr(e.to_string()))?;
-
-    Ok(())
 }
