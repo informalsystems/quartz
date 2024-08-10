@@ -1,12 +1,13 @@
-use std::{env, path::{Path, PathBuf}};
-
-use cosmrs::{tendermint::chain::Id as ChainId};
-use serde::{
-    Deserialize, Serialize,
+use std::{
+    env,
+    path::{Path, PathBuf},
 };
+
+use cosmrs::tendermint::chain::Id as ChainId;
+use serde::{Deserialize, Serialize};
 use tokio::fs;
 
-use crate::{error::Error};
+use crate::error::Error;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
@@ -54,7 +55,7 @@ fn default_admin() -> String {
 }
 
 fn default_chain_id() -> ChainId {
-    "testing".parse().unwrap()
+    "testing".parse().expect("default chain_id failed")
 }
 
 fn default_port() -> u16 {
@@ -70,31 +71,39 @@ impl Default for Config {
             chain_id: default_chain_id(),
             node_url: default_node_url(),
             enclave_rpc_addr: default_rpc_addr(),
-            app_dir: ".".parse().unwrap()
+            app_dir: ".".parse().unwrap(),
         }
     }
 }
 
-pub async fn load_config(app_dir: &Path) -> Result<Config, Error> {
+pub async fn load_config(app_dir: &Path, write: bool) -> Result<Config, Error> {
     let config_path = app_dir.join("quartz.toml");
     if config_path.exists() {
         let config_str = fs::read_to_string(config_path)
             .await
             .expect("Failed to read TOML file");
 
-        Ok(toml::from_str(&config_str).expect("Failed to deserialize TOML"))
-    } else {
-        let config = Config::default();
-
-        fs::write(
-            config_path,
-            &toml::to_string_pretty(&config)
-                .map_err(|e| Error::GenericErr(e.to_string()))?
-                .as_bytes(),
-        )
-        .await
-        .unwrap();
-
-        Ok(config)
+        return Ok(toml::from_str(&config_str).expect("Failed to deserialize TOML"));
     }
+
+    let config = Config::default();
+
+    if write {
+        write_config(app_dir, &config).await?;
+    }
+
+    Ok(config)
+}
+
+pub async fn write_config(path: &Path, config: &Config) -> Result<(), Error> {
+    fs::write(
+        path,
+        &toml::to_string_pretty(config)
+            .map_err(|e| Error::GenericErr(e.to_string()))?
+            .as_bytes(),
+    )
+    .await
+    .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+    Ok(())
 }

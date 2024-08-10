@@ -33,7 +33,7 @@ impl TryFrom<Command> for Request {
     fn try_from(cmd: Command) -> Result<Self, Self::Error> {
         match cmd {
             Command::Init { name } => Ok(InitRequest { name }.try_into()?),
-            Command::Handshake { contract} => Ok(HandshakeRequest { contract }.into()),
+            Command::Handshake { contract } => Ok(HandshakeRequest { contract }.into()),
             Command::Contract { contract_command } => contract_command.try_into(),
             Command::Enclave { enclave_command } => enclave_command.try_into(),
         }
@@ -94,7 +94,7 @@ impl TryFrom<EnclaveCommand> for Request {
             EnclaveCommand::Build { manifest_path } => {
                 Ok(EnclaveBuildRequest { manifest_path }.into())
             }
-            EnclaveCommand::Start { } => Ok(EnclaveStartRequest {}.into()),
+            EnclaveCommand::Start {} => Ok(EnclaveStartRequest {}.into()),
         }
     }
 }

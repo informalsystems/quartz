@@ -1,10 +1,7 @@
-use std::{
-    env::{self},
-    path::PathBuf,
-};
+use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
+use cosmrs::AccountId;
 use tracing::metadata::LevelFilter;
 
 use crate::handler::utils::helpers::wasmaddr_to_id;
@@ -102,13 +99,5 @@ pub enum EnclaveCommand {
         manifest_path: PathBuf,
     },
     // Run the Quartz app's enclave
-    Start { },
-}
-
-fn default_rpc_addr() -> String {
-    env::var("RPC_URL").unwrap_or_else(|_| "http://127.0.0.1".to_string())
-}
-
-fn default_node_url() -> String {
-    env::var("NODE_URL").unwrap_or_else(|_| "http://127.0.0.1:26657".to_string())
+    Start {},
 }

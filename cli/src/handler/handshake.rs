@@ -17,6 +17,7 @@ use super::utils::{
     types::WasmdTxResponse,
 };
 use crate::{
+    config::Config,
     error::Error,
     handler::{
         utils::{helpers::read_hash_height, types::RelayMessage},
@@ -24,7 +25,6 @@ use crate::{
     },
     request::handshake::HandshakeRequest,
     response::{handshake::HandshakeResponse, Response},
-    config::Config,
 };
 
 #[async_trait]
@@ -63,8 +63,12 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     let (trusted_height, trusted_hash) = read_hash_height(trusted_files_path.as_path()).await?;
 
     info!("Running SessionCreate");
-    let res: serde_json::Value =
-        run_relay(base_path.as_path(), config.mock_sgx, RelayMessage::SessionCreate).await?;
+    let res: serde_json::Value = run_relay(
+        base_path.as_path(),
+        config.mock_sgx,
+        RelayMessage::SessionCreate,
+    )
+    .await?;
 
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client
@@ -121,7 +125,8 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
         base_path.as_path(),
         config.mock_sgx,
         RelayMessage::SessionSetPubKey(proof_json),
-    ).await?;
+    )
+    .await?;
 
     // Submit SessionSetPubKey to contract
     let output: WasmdTxResponse = serde_json::from_str(
