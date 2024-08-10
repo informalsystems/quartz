@@ -35,7 +35,7 @@ impl TryFrom<Command> for Request {
 
     fn try_from(cmd: Command) -> Result<Self, Self::Error> {
         match cmd {
-            Command::Init { path } => InitRequest::try_from(path).map(Into::into),
+            Command::Init { name } => Ok(InitRequest { name }.try_into()?),
             Command::Handshake {
                 contract,
                 port,
@@ -133,7 +133,6 @@ impl TryFrom<EnclaveCommand> for Request {
             EnclaveCommand::Start { app_dir, chain_id, node_url } => Ok(EnclaveStartRequest {
                 app_dir: Self::path_checked(app_dir)?,
                 chain_id,
-                ready_signal: None,
                 node_url
             }
             .into()),

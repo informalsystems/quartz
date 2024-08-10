@@ -41,8 +41,7 @@ impl Handler for DevRequest {
 			let _cb_res = contract_build.handle(Config { mock_sgx: config.mock_sgx }).await?;
 
 			// In separate process, launch the enclave
-			let (start_tx, start_rx) = oneshot::channel();
-			let enclave_start = EnclaveStartRequest { app_dir: self.app_dir.clone(), chain_id: "testing".to_string(), ready_signal: Some(start_tx), node_url: self.node_url.clone() };
+			let enclave_start = EnclaveStartRequest { app_dir: self.app_dir.clone(), chain_id: "testing".to_string(), node_url: self.node_url.clone() };
 			
 			let enclave_start_handle: tokio::task::JoinHandle<Result<Response, Error>> = tokio::spawn(async move {
 					let res: Response = enclave_start.handle(Config { mock_sgx: config.mock_sgx }).await?;
@@ -51,48 +50,44 @@ impl Handler for DevRequest {
 			});
 
 			info!("Waiting for enclave start to deploy contract and handshake");
-			sleep(Duration::from_secs(3)).await;
-			if let Ok(_) = start_rx.await {
-				// Calls which interact with enclave
-				info!("Enclave start message received");
+			sleep(Duration::from_secs(10)).await;
+			// Calls which interact with enclave
+			info!("Enclave start message received");
 
-				let contract_deploy = ContractDeployRequest {
-					init_msg: serde_json::Value::from_str("{}").map_err(|e| Error::GenericErr(e.to_string()))?,
-					node_url: self.node_url.clone(),
-					chain_id: "testing".parse().map_err(|_| Error::GenericErr(String::default()))?,
-					sender: "admin".to_string(),
-					label: "".to_string(),
-					wasm_bin_path: "../apps/mtcs/contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm".parse().map_err(|_| Error::GenericErr(String::default()))?,
-				};
+			let contract_deploy = ContractDeployRequest {
+				init_msg: serde_json::Value::from_str("{}").map_err(|e| Error::GenericErr(e.to_string()))?,
+				node_url: self.node_url.clone(),
+				chain_id: "testing".parse().map_err(|_| Error::GenericErr(String::default()))?,
+				sender: "admin".to_string(),
+				label: "".to_string(),
+				wasm_bin_path: "../apps/mtcs/contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm".parse().map_err(|_| Error::GenericErr(String::default()))?,
+			};
 
-				let cd_res = contract_deploy.handle(Config { mock_sgx: config.mock_sgx }).await?;
+			let cd_res = contract_deploy.handle(Config { mock_sgx: config.mock_sgx }).await?;
 
-				let contract = if let Response::ContractDeploy(res) = cd_res {
-					res.contract_addr
-				} else {
-					return Err(Error::GenericErr("Deploy failed".to_string()));
-				};
-
-				// Run handshake
-				let handshake = HandshakeRequest {
-					contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
-					port: 11090u16,
-					sender: "admin".to_string(),
-					chain_id: "testing".parse().map_err(|_| Error::GenericErr(String::default()))?,
-					node_url: self.node_url,
-					enclave_rpc_addr: default_rpc_addr(),
-					app_dir: self.app_dir.clone(),
-				};
-
-				let h_res = handshake.handle(Config { mock_sgx: config.mock_sgx }).await?;
-				
-				info!("Handshake complete\n{:?}", h_res);
-
-				info!("Enclave listening...");
-				return enclave_start_handle.await.map_err(|_| Error::GenericErr(String::default()))?;
+			let contract = if let Response::ContractDeploy(res) = cd_res {
+				res.contract_addr
 			} else {
-				println!("did not get send signal");
-			}
+				return Err(Error::GenericErr("Deploy failed".to_string()));
+			};
+
+			// Run handshake
+			let handshake = HandshakeRequest {
+				contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
+				port: 11090u16,
+				sender: "admin".to_string(),
+				chain_id: "testing".parse().map_err(|_| Error::GenericErr(String::default()))?,
+				node_url: self.node_url,
+				enclave_rpc_addr: default_rpc_addr(),
+				app_dir: self.app_dir.clone(),
+			};
+
+			let h_res = handshake.handle(Config { mock_sgx: config.mock_sgx }).await?;
+			
+			info!("Handshake complete\n{:?}", h_res);
+
+			info!("Enclave listening...");
+			return enclave_start_handle.await.map_err(|_| Error::GenericErr(String::default()))?;
 			// dispatch_dev(DevRebuild:: Both).await;
 		} else {
 			// Run listening process 

@@ -41,11 +41,7 @@ impl Handler for EnclaveStartRequest {
                 trusted_hash.to_string(),
             ];
 
-            if let Some(ready_tx) = self.ready_signal {
-                ready_tx.send(()).map_err(|_| Error::GenericErr(String::default()))?;
-            }
-
-            // Runs continuously
+            // Run quartz enclave and block
             let _res = run_enclave(
                 enclave_dir.join("Cargo.toml").display().to_string(),
                 config.mock_sgx,
@@ -61,16 +57,9 @@ impl Handler for EnclaveStartRequest {
             gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string()).await?;
             // gramine sign
             gramine_sgx_sign().await?;
-            // run quartz enclave
-            if let Some(ready_tx) = self.ready_signal {
-                ready_tx.send(()).map_err(|_| Error::GenericErr(String::default()))?;
-            }
-
-            // Runs continuously
+            // Run quartz enclave and block
             gramine_sgx().await?;
         }
-
-
         Ok(EnclaveStartResponse.into())
     }
 }

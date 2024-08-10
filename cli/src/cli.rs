@@ -44,9 +44,9 @@ pub struct Cli {
 pub enum Command {
     /// Create an empty Quartz app from a template
     Init {
-        /// path to create & init a Quartz app, defaults to current path if unspecified
-        #[clap(long)]
-        path: Option<PathBuf>,
+        /// the name of your Quartz app directory, defaults to quartz_app
+        #[clap(long, default_value = "quartz_app")]
+        name: String,
     },
     /// Perform handshake
     Handshake {
@@ -136,6 +136,7 @@ pub enum EnclaveCommand {
         /// Whether to target release or dev
         #[arg(long)]
         release: bool,
+        
         /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
         #[arg(long, default_value = "./enclave/Cargo.toml")]
         manifest_path: PathBuf,
