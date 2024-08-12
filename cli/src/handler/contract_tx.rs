@@ -40,11 +40,14 @@ async fn tx(args: ContractTxRequest) -> Result<String, anyhow::Error> {
         args.gas,
         &args.sender,
         args.msg,
+        args.amount,
      )?)?;
     //  let res = block_tx_commit(&tmrpc_client, tx_output.txhash).await?; 
     //  let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
 
-     info!("\n🚀 Successfully sent tx TODO_TX_HASH and instantiated contract!");
+    println!("Full tx_output: {:#?}", tx_output);
+
+     info!("\n🚀 Successfully sent tx TODO_TX_HASH");
      info!("{}", tx_output.txhash.to_string());
  
      Ok(tx_output.txhash.to_string())

@@ -11,6 +11,7 @@ pub struct ContractTxRequest {
     pub sender: String,
     pub msg: String,
     pub args: String, // TODO: Vec string?
+    pub amount: Option<String>,
 }
 
 impl From<ContractTxRequest> for Request {

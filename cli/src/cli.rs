@@ -113,19 +113,19 @@ pub enum ContractCommand {
     },
     Tx {
         /// <host>:<port> to tendermint rpc interface for this chain
-        #[arg(long)]
+        #[clap(long, default_value_t = default_node_url())]
         node_url: String,
         /// Contract account ID
-        #[arg(long)]
+        #[arg(short, long, value_parser = wasmaddr_to_id)]
         contract: AccountId,
         /// The network chain ID
-        #[arg(long)]
+        #[arg(long, default_value = "testing")]
         chain_id: ChainId,
         /// Gas to send with tx
         #[arg(long)]
         gas: u64,
         /// Name or address of private key with which to sign
-        #[arg(short, long)]
+        #[arg(short, long, default_value = "admin")]
         sender: String,
         /// Method to call on the contract
         #[arg(long)]
@@ -133,6 +133,9 @@ pub enum ContractCommand {
         /// Arguments for the contract call
         #[arg(long)]
         args: String, // TODO: Vec string?
+        /// Amount of base coin to send with tx, i.e. "1000ucosm"
+        #[arg(long)]
+        amount: Option<String>,
     },
 }
 

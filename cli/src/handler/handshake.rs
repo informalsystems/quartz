@@ -72,6 +72,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
                 2000000,
                 &args.sender,
                 json!(res),
+                None,
             )?
             .as_str(),
     )?;
@@ -130,6 +131,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
                 2000000,
                 &args.sender,
                 json!(res),
+                None,
             )?
             .as_str(),
     )?;

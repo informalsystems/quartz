@@ -34,6 +34,7 @@ pub trait WasmdClient {
         gas: u64,
         sender: &str,
         msg: M,
+        amount: Option<String>,
     ) -> Result<String, Self::Error>;
 
     fn deploy<M: ToString>(
@@ -145,9 +146,10 @@ impl WasmdClient for CliWasmdClient {
         gas: u64,
         sender: &str,
         msg: M,
+        amount: Option<String>,
     ) -> Result<String, Self::Error> {
         let mut wasmd = Command::new("wasmd");
-        let command = wasmd
+        let mut command = wasmd
             .args(["--node", self.url.as_str()])
             .args(["--chain-id", chain_id.as_ref()])
             .args(["tx", "wasm"])
@@ -156,6 +158,11 @@ impl WasmdClient for CliWasmdClient {
             .args(["--from", sender])
             .args(["--output", "json"])
             .arg("-y");
+
+        // Add amount if provided
+        if let Some(amt) = amount {
+            command = command.arg("--amount").arg(amt);
+        }
 
         let output = command.output()?;
 

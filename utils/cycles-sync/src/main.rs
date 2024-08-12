@@ -177,7 +177,7 @@ async fn sync_obligations(
 
     let msg = create_wasm_msg(intents_enc, liquidity_sources)?;
     let wasmd_client = CliWasmdClient::new(cli.node);
-    wasmd_client.tx_execute(&cli.contract, &cli.chain_id, 3000000, &cli.user, msg)?;
+    wasmd_client.tx_execute(&cli.contract, &cli.chain_id, 3000000, &cli.user, msg, None)?;
 
     Ok(())
 }

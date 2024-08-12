@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ROOT=${ROOT:-$HOME}
+ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
 DEFAULT_NODE="127.0.0.1:26657"
 NODE_URL=${NODE_URL:-$DEFAULT_NODE}
 # Use the QUARTZ_PORT environment variable if set, otherwise default to 11090
@@ -54,11 +54,11 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         STATE=$($CMD query wasm contract-state raw $CONTRACT $(printf '%s' "state" | \
             hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
 
-        cd "$ROOT/cycles-quartz/apps/transfers"
+        cd "$ROOT/apps/transfers"
         export TRUSTED_HASH=$(cat trusted.hash)
         export TRUSTED_HEIGHT=$(cat trusted.height)
 
-        cd $ROOT/cycles-quartz/utils/tm-prover
+        cd $ROOT/utils/tm-prover
         export PROOF_FILE="light-client-proof.json"
         if [ -f "$PROOF_FILE" ]; then
             rm "$PROOF_FILE"
@@ -85,7 +85,7 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
         export REQUEST_MSG=$(jq --argjson msg "$ENCLAVE_REQUEST" '. + {msg: $msg}' <<< "$POP")
         export PROTO_MSG=$(jq -nc --arg message "$REQUEST_MSG" '$ARGS.named')
 
-        cd $ROOT/cycles-quartz/apps/transfers/enclave
+        cd $ROOT/apps/transfers/enclave
 
         echo "... executing transfer"
         export ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto \
@@ -135,7 +135,7 @@ REPORT_SIG_FILE="/tmp/${USER}_datareportsig"
             --arg ephemeral_pubkey "$EPHEMERAL_PUBKEY" '$ARGS.named')
         export REQUEST_MSG=$(jq -nc --arg message "$ENCLAVE_REQUEST" '$ARGS.named')
 
-        cd $ROOT/cycles-quartz/apps/transfers/enclave
+        cd $ROOT/apps/transfers/enclave
 
         echo "... executing query balance"
         ATTESTED_MSG=$(grpcurl -plaintext -import-path ./proto/ -proto transfers.proto \

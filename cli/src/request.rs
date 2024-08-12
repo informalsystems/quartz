@@ -114,6 +114,7 @@ impl TryFrom<ContractCommand> for Request {
                 sender,
                 msg,
                 args,
+                amount,
             } => Ok(ContractTxRequest {
                 node_url,
                 contract,
@@ -122,6 +123,7 @@ impl TryFrom<ContractCommand> for Request {
                 sender,
                 msg,
                 args,
+                amount,
             }
             .into()),
         }
