@@ -7,6 +7,6 @@ pub enum Error {
     PathNotDir(String),
     /// Specified file `{0}` does not exist
     PathNotFile(String),
-    /// {0}
+    /// unspecified error: {0}
     GenericErr(String),
 }

@@ -48,6 +48,7 @@ pub enum Command {
         #[clap(long, default_value = "quartz_app")]
         name: String,
     },
+    /// Perform handshake
     Handshake {
         /// path to create & init a Quartz app, defaults to current path if unspecified
         #[arg(short, long, value_parser = wasmaddr_to_id)]
@@ -72,7 +73,7 @@ pub enum Command {
         #[clap(long)]
         app_dir: Option<PathBuf>,
     },
-    /// Create an empty Quartz app from a template
+    /// Subcommands for handling the Quartz app contract
     Contract {
         #[command(subcommand)]
         contract_command: ContractCommand,
@@ -88,7 +89,7 @@ pub enum Command {
 pub enum ContractCommand {
     Build {
         #[clap(long)]
-        path: Option<PathBuf>,
+        manifest_path: PathBuf,
     },
     Deploy {
         /// Json-formatted cosmwasm contract initialization message
@@ -116,14 +117,19 @@ pub enum ContractCommand {
 pub enum EnclaveCommand {
     /// Build the Quartz app's enclave
     Build {
-        /// path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
+        /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
         #[arg(long, default_value = "./enclave/Cargo.toml")]
         manifest_path: PathBuf,
     },
     // Run the Quartz app's enclave
     Start {
+        /// Path to quartz app directory
+        /// Defaults to current working dir
         #[clap(long)]
-        path: Option<PathBuf>,
+        app_dir: Option<PathBuf>,
+        /// The network chain ID
+        #[clap(long)]
+        chain_id: String,
     },
 }
 
