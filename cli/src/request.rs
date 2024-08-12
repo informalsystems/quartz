@@ -6,7 +6,7 @@ use crate::{
     request::{
         contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest,
         contract_tx::ContractTxRequest, enclave_build::EnclaveBuildRequest,
-        handshake::HandshakeRequest, init::InitRequest,
+        enclave_start::EnclaveStartRequest, handshake::HandshakeRequest, init::InitRequest,
     },
 };
 
@@ -14,6 +14,7 @@ pub mod contract_build;
 pub mod contract_deploy;
 pub mod contract_tx;
 pub mod enclave_build;
+pub mod enclave_start;
 pub mod handshake;
 pub mod init;
 
@@ -25,6 +26,7 @@ pub enum Request {
     ContractDeploy(ContractDeployRequest),
     ContractTx(ContractTxRequest),
     EnclaveBuild(EnclaveBuildRequest),
+    EnclaveStart(EnclaveStartRequest),
 }
 
 impl TryFrom<Command> for Request {
@@ -52,7 +54,7 @@ impl TryFrom<Command> for Request {
             }
             .into()),
             Command::Contract { contract_command } => contract_command.try_into(),
-            Command::Enclave { enclave_command } => Ok(enclave_command.into()),
+            Command::Enclave { enclave_command } => enclave_command.try_into(),
         }
     }
 }
@@ -63,7 +65,6 @@ impl Request {
             if !path.is_dir() {
                 return Err(Error::PathNotDir(format!("{}", path.display())));
             }
-
             Ok(path)
         } else {
             Ok(current_dir().map_err(|e| Error::GenericErr(e.to_string()))?)
@@ -130,11 +131,19 @@ impl TryFrom<ContractCommand> for Request {
     }
 }
 
-impl From<EnclaveCommand> for Request {
-    fn from(cmd: EnclaveCommand) -> Request {
+impl TryFrom<EnclaveCommand> for Request {
+    type Error = Error;
+
+    fn try_from(cmd: EnclaveCommand) -> Result<Request, Error> {
         match cmd {
-            EnclaveCommand::Build { manifest_path } => EnclaveBuildRequest { manifest_path }.into(),
-            EnclaveCommand::Start { path: _ } => todo!(),
+            EnclaveCommand::Build { manifest_path } => {
+                Ok(EnclaveBuildRequest { manifest_path }.into())
+            }
+            EnclaveCommand::Start { app_dir, chain_id } => Ok(EnclaveStartRequest {
+                app_dir: Self::path_checked(app_dir)?,
+                chain_id,
+            }
+            .into()),
         }
     }
 }
