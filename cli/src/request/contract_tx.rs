@@ -10,7 +10,6 @@ pub struct ContractTxRequest {
     pub gas: u64,
     pub sender: String,
     pub msg: String,
-    pub args: String, // TODO: Vec string?
     pub amount: Option<String>,
 }
 

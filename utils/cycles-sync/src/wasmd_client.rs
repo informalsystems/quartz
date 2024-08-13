@@ -129,13 +129,22 @@ impl WasmdClient for CliWasmdClient {
             .args(["query", "tx"])
             .arg(txhash)
             .args(["--output", "json"]);
-
-        let output = command.output()?;
+    
+        let output = command.output().map_err(|e| anyhow!("Failed to execute wasmd command: {}", e))?;
+    
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+            return Err(anyhow!(
+                "Error querying tx {}\nCommand failed with status {:?}\nStderr: {}",
+                txhash,
+                output.status,
+                stderr
+            ));
         }
-
-        let query_result: R = serde_json::from_slice(&output.stdout).unwrap_or_default();
+    
+        let query_result: R = serde_json::from_slice(&output.stdout)
+            .map_err(|e| anyhow!("Error parsing query result for tx {}: {}", txhash, e))?;
+    
         Ok(query_result)
     }
 

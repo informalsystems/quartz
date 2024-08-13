@@ -87,10 +87,12 @@ pub enum Command {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum ContractCommand {
+    // Build the Quartz app's contract
     Build {
         #[clap(long)]
         manifest_path: PathBuf,
     },
+    // Deploy a contract to the chain
     Deploy {
         /// Json-formatted cosmwasm contract initialization message
         #[clap(long, default_value = "{}")]
@@ -111,6 +113,7 @@ pub enum ContractCommand {
         #[clap(long)]
         wasm_bin_path: PathBuf,
     },
+    /// Submit a transaction to the contract
     Tx {
         /// <host>:<port> to tendermint rpc interface for this chain
         #[clap(long, default_value_t = default_node_url())]
@@ -122,7 +125,7 @@ pub enum ContractCommand {
         #[arg(long, default_value = "testing")]
         chain_id: ChainId,
         /// Gas to send with tx
-        #[arg(long)]
+        #[arg(long, default_value = "900000000")]
         gas: u64,
         /// Name or address of private key with which to sign
         #[arg(short, long, default_value = "admin")]
@@ -130,9 +133,6 @@ pub enum ContractCommand {
         /// Method to call on the contract
         #[arg(long)]
         msg: String,
-        /// Arguments for the contract call
-        #[arg(long)]
-        args: String, // TODO: Vec string?
         /// Amount of base coin to send with tx, i.e. "1000ucosm"
         #[arg(long)]
         amount: Option<String>,
