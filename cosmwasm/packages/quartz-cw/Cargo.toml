@@ -10,13 +10,16 @@ keywords = ["blockchain", "cosmos", "cosmwasm", "cycles", "quartz"]
 readme = "README.md"
 
 [features]
+default = []
 mock-sgx = []
+std = ["k256/std", "serde/std", "serde_json/std", "sha2/std", "cosmwasm-std/std"]
 
 [dependencies]
 # external
 k256.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+serde_with.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
 

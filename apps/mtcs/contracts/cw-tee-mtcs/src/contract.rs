@@ -33,7 +33,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     // must be the handled first!
-    msg.0.handle_raw(deps.branch(), &env, &info)?;
+    msg.quartz.handle_raw(deps.branch(), &env, &info)?;
 
     let state = State {
         owner: info.sender.to_string(),
@@ -182,9 +182,7 @@ pub mod execute {
         let mut new_sources = vec![];
         for liquidity_source in new_liquidity_sources {
             // Validate the Cosmos address
-            let address = deps
-                .api
-                .addr_validate(&liquidity_source.address.to_string())?;
+            let address = deps.api.addr_validate(liquidity_source.address.as_ref())?;
 
             let liquidity_source = LiquiditySource {
                 address: address.clone(),
@@ -292,27 +290,23 @@ pub mod execute {
             }
             LiquiditySourceType::Overdraft => {
                 if is_payer {
-                    let increase_msg = WasmMsg::Execute {
+                    WasmMsg::Execute {
                         contract_addr: source.address.to_string(),
                         msg: to_json_binary(&OverdraftExecuteMsg::IncreaseBalance {
                             receiver: transfer.payee.clone(),
                             amount: transfer.amount.1,
                         })?,
                         funds: vec![],
-                    };
-
-                    increase_msg
+                    }
                 } else {
-                    let decrease_msg = WasmMsg::Execute {
+                    WasmMsg::Execute {
                         contract_addr: source.address.to_string(),
                         msg: to_json_binary(&OverdraftExecuteMsg::DecreaseBalance {
                             receiver: transfer.payer.clone(),
                             amount: transfer.amount.1,
                         })?,
                         funds: vec![],
-                    };
-
-                    decrease_msg
+                    }
                 }
             }
             LiquiditySourceType::External => {
