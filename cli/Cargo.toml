@@ -48,3 +48,4 @@ tm-prover = { workspace = true}
 quartz-common = { workspace = true, features=["contract"]}
 quartz-tee-ra = { workspace = true}
 mtcs-enclave = { workspace = true, optional = false}
+figment = { version = "0.10.19", features=["env", "toml"] }

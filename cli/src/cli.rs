@@ -1,12 +1,14 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use cosmrs::AccountId;
+use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
+use figment::{providers::Serialized, Figment};
+use serde::{Deserialize, Serialize};
 use tracing::metadata::LevelFilter;
 
 use crate::handler::utils::helpers::wasmaddr_to_id;
 
-#[derive(clap::Args, Debug, Clone)]
+#[derive(clap::Args, Debug, Clone, Serialize)]
 pub struct Verbosity {
     /// Increase verbosity, can be repeated up to 2 times
     #[arg(long, short, action = clap::ArgAction::Count)]
@@ -23,7 +25,7 @@ impl Verbosity {
     }
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Serialize)]
 #[command(version, long_about = None)]
 pub struct Cli {
     /// Increase log verbosity
@@ -32,38 +34,35 @@ pub struct Cli {
 
     /// Enable mock SGX mode for testing purposes.
     /// This flag disables the use of an Intel SGX processor and allows the system to run without remote attestations.
-    #[clap(long, env)]
-    pub mock_sgx: bool,
+    #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mock_sgx: Option<bool>,
 
     /// Path to Quartz app directory
     /// Defaults to current working dir
-    #[clap(long, default_value = ".")]
-    pub app_dir: PathBuf,
+    #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub app_dir: Option<PathBuf>,
 
     /// Main command
     #[command(subcommand)]
     pub command: Command,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Serialize, Clone)]
 pub enum Command {
     /// Create an empty Quartz app from a template
-    Init {
-        /// the name of your Quartz app directory, defaults to quartz_app
-        #[clap(long, default_value = "quartz_app")]
-        name: String,
-    },
+    Init(InitArgs),
+
     /// Perform handshake
-    Handshake {
-        /// path to create & init a Quartz app, defaults to current path if unspecified
-        #[arg(short, long, value_parser = wasmaddr_to_id)]
-        contract: AccountId,
-    },
+    Handshake(HandshakeArgs),
+
     /// Subcommands for handling the Quartz app contract
     Contract {
         #[command(subcommand)]
         contract_command: ContractCommand,
     },
+
     /// Subcommands for handling the Quartz app enclave
     Enclave {
         #[command(subcommand)]
@@ -71,33 +70,131 @@ pub enum Command {
     },
 }
 
-#[derive(Debug, Clone, Subcommand)]
+#[derive(Debug, Clone, Subcommand, Serialize)]
 pub enum ContractCommand {
-    Build {
-        #[clap(long)]
-        manifest_path: PathBuf,
-    },
-    Deploy {
-        /// Json-formatted cosmwasm contract initialization message
-        #[clap(long, default_value = "{}")]
-        init_msg: String,
-        /// A human-readable name for this contract in lists
-        #[arg(long, default_value = "Quartz App Contract")]
-        label: String,
-        /// Path to contract wasm binary for deployment
-        #[clap(long)]
-        wasm_bin_path: PathBuf,
-    },
+    Build(ContractBuildArgs),
+    Deploy(ContractDeployArgs),
 }
 
-#[derive(Debug, Clone, Subcommand)]
+#[derive(Debug, Clone, Subcommand, Serialize)]
 pub enum EnclaveCommand {
     /// Build the Quartz app's enclave
-    Build {
-        /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
-        #[arg(long, default_value = "./enclave/Cargo.toml")]
-        manifest_path: PathBuf,
-    },
-    // Run the Quartz app's enclave
-    Start {},
+    Build(EnclaveBuildArgs),
+    /// Run the Quartz app's enclave
+    Start(EnclaveStartArgs),
+}
+
+#[derive(Debug, Parser, Clone, Serialize, Deserialize)]
+pub struct InitArgs {
+    /// The name of your Quartz app directory, defaults to quartz_app
+    #[clap(long, default_value = "quartz_app")]
+    pub name: String,
+}
+
+#[derive(Debug, Parser, Clone, Serialize, Deserialize)]
+pub struct HandshakeArgs {
+    /// Path to create & init a Quartz app, defaults to current path if unspecified
+    #[arg(short, long, value_parser = wasmaddr_to_id)]
+    pub contract: AccountId,
+
+    /// Name or address of private key with which to sign
+    #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sender: Option<String>,
+
+    /// Port enclave is listening on
+    #[clap(long)]
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub port: Option<u16>,
+
+    /// The network chain ID
+    #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chain_id: Option<ChainId>,
+
+    /// <host>:<port> to tendermint rpc interface for this chain
+    #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node_url: Option<String>,
+
+    /// RPC interface for the Quartz enclave
+    #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enclave_rpc_addr: Option<String>,
+}
+
+#[derive(Debug, Parser, Clone, Serialize, Deserialize)]
+pub struct ContractBuildArgs {
+    #[clap(long)]
+    pub manifest_path: PathBuf,
+}
+
+#[derive(Debug, Parser, Clone, Serialize, Deserialize)]
+pub struct ContractDeployArgs {
+    /// Json-formatted cosmwasm contract initialization message
+    #[clap(long, default_value = "{}")]
+    pub init_msg: String,
+
+    /// <host>:<port> to tendermint rpc interface for this chain
+    #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node_url: Option<String>,
+
+    /// Name or address of private key with which to sign
+    #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sender: Option<String>,
+
+    /// The network chain ID
+    #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chain_id: Option<ChainId>,
+
+    /// A human-readable name for this contract in lists
+    #[arg(long, default_value = "Quartz App Contract")]
+    pub label: String,
+
+    /// Path to contract wasm binary for deployment
+    #[clap(long)]
+    pub wasm_bin_path: PathBuf,
+}
+
+#[derive(Debug, Parser, Clone, Serialize, Deserialize)]
+pub struct EnclaveBuildArgs {
+    /// Enable mock SGX mode for testing purposes.
+    /// This flag disables the use of an Intel SGX processor and allows the system to run without remote attestations.
+    #[clap(long, env)]
+    pub mock_sgx: bool,
+
+    /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
+    #[arg(long, default_value = "./enclave/Cargo.toml")]
+    pub manifest_path: PathBuf,
+}
+
+#[derive(Debug, Parser, Clone, Serialize, Deserialize)]
+pub struct EnclaveStartArgs {
+    #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chain_id: Option<ChainId>,
+}
+
+pub trait ToFigment {
+    fn to_figment(&self) -> Figment;
+}
+
+impl ToFigment for Command {
+    fn to_figment(&self) -> Figment {
+        match self {
+            Command::Init(args) => Figment::from(Serialized::defaults(args)),
+            Command::Handshake(args) => Figment::from(Serialized::defaults(args)),
+            Command::Contract { contract_command } => match contract_command {
+                ContractCommand::Build(args) => Figment::from(Serialized::defaults(args)),
+                ContractCommand::Deploy(args) => Figment::from(Serialized::defaults(args)),
+            },
+            Command::Enclave { enclave_command } => match enclave_command {
+                EnclaveCommand::Build(args) => Figment::from(Serialized::defaults(args)),
+                EnclaveCommand::Start(args) => Figment::from(Serialized::defaults(args)),
+            },
+        }
+    }
 }

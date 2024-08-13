@@ -16,8 +16,8 @@ pub struct Config {
     #[serde(default)]
     pub mock_sgx: bool,
 
-    #[serde(default = "default_admin")]
     /// Name or address of private key with which to sign
+    #[serde(default = "default_admin")]
     pub sender: String,
 
     /// Port enclave is listening on
@@ -38,7 +38,7 @@ pub struct Config {
 
     /// Path to Quartz app directory
     /// Defaults to current working dir
-    #[serde(skip)]
+    #[serde(default = "default_app_dir")]
     pub app_dir: PathBuf,
 }
 
@@ -60,6 +60,10 @@ fn default_chain_id() -> ChainId {
 
 fn default_port() -> u16 {
     11090
+}
+
+fn default_app_dir() -> PathBuf {
+    ".".parse().expect("default app_dir pathbuf failed")
 }
 
 impl Default for Config {
