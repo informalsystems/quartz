@@ -1,10 +1,11 @@
 use std::env;
 
 use async_trait::async_trait;
+use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
+use reqwest::Url;
 use tokio::process::Command;
 use tracing::{debug, info};
 
-use super::utils::helpers::read_hash_height;
 use crate::{
     config::Config,
     error::Error,
@@ -19,19 +20,19 @@ impl Handler for EnclaveStartRequest {
     type Response = Response;
 
     async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+        // Get trusted height and hash
+        let (trusted_height, trusted_hash) = get_trusted_hash_height(config.node_url)?;
+
         let enclave_dir = config.app_dir.join("enclave");
-        let (trusted_height, trusted_hash) = read_hash_height(config.app_dir.as_path())
-            .await
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
 
         if config.mock_sgx {
             let enclave_args: Vec<String> = vec![
                 "--chain-id".to_string(),
                 config.chain_id.to_string(),
                 "--trusted-height".to_string(),
-                trusted_height.to_string(),
+                trusted_height,
                 "--trusted-hash".to_string(),
-                trusted_hash.to_string(),
+                trusted_hash,
             ];
 
             // Run quartz enclave and block
@@ -47,7 +48,7 @@ impl Handler for EnclaveStartRequest {
             // gramine private key
             gramine_sgx_gen_private_key().await?;
             // gramine manifest
-            gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string()).await?;
+            gramine_manifest(&trusted_height, &trusted_hash).await?;
             // gramine sign
             gramine_sgx_sign().await?;
             // Run quartz enclave and block
@@ -184,4 +185,16 @@ async fn gramine_sgx() -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+fn get_trusted_hash_height(node_url: String) -> Result<(String, String), Error> {
+    let httpurl = Url::parse(&format!("http://{}", node_url))
+        .map_err(|e| Error::GenericErr(e.to_string()))?;
+    let wasmd_client = CliWasmdClient::new(httpurl);
+
+    let (trusted_height, trusted_hash) = wasmd_client
+        .trusted_height_hash()
+        .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+    Ok((trusted_height, trusted_hash))
 }
