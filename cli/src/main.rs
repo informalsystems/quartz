@@ -56,7 +56,7 @@ async fn main() -> Result<()> {
         .merge(Toml::file("quartz.toml"))
         .merge(Env::prefixed("QUARTZ_"))
         .merge(Serialized::defaults(&args))
-        .merge(&args.command.to_figment())
+        .merge(args.command.to_figment())
         .extract()?;
 
     let env_filter = EnvFilter::builder()
