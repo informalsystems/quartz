@@ -34,7 +34,7 @@ pub struct Config {
 
     /// Port enclave is listening on
     #[serde(default = "default_port")]
-    pub enclave_rpc_port: u16,    
+    pub enclave_rpc_port: u16,
 
     /// Path to Quartz app directory
     /// Defaults to current working dir

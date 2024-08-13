@@ -120,7 +120,7 @@ pub struct HandshakeArgs {
     /// Port enclave is listening on
     #[clap(long)]
     #[serde(skip_serializing_if = "::std::option::Option::is_none")]
-    pub enclave_rpc_port: Option<u16>,    
+    pub enclave_rpc_port: Option<u16>,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
