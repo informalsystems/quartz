@@ -13,6 +13,7 @@
     unused_qualifications
 )]
 
+pub mod cache;
 pub mod cli;
 pub mod error;
 pub mod handler;
@@ -45,6 +46,7 @@ pub struct Config {
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
+    cache::create_cache_dir().await?;
 
     println!("{BANNER}");
 

@@ -19,6 +19,7 @@ use watchexec_events::{Event, Priority, ProcessEnd};
 use watchexec_signals::Signal;
 
 use crate::{
+    cache::has_changed,
     error::Error,
     handler::{utils::helpers::wasmaddr_to_id, Handler},
     request::{
@@ -37,6 +38,13 @@ impl Handler for DevRequest {
 
     async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
+
+        let hash = has_changed(
+            self.app_dir
+                .join("contracts/target/wasm32-unknown-unknown/release/transfers_contract.wasm")
+                .as_path(),
+        )
+        .await;
 
         if !self.watch {
             // Build enclave

@@ -39,6 +39,7 @@ watchexec-events = "3.0.0"
 watchexec-signals = "3.0.0"
 miette = "7.2.0"
 ctrlc = { version = "3.4.5", features=["termination"] }
+xxhash-rust = { version = "0.8.12", features=["xxh3"] }
 
 # cosmos
 cosmrs.workspace = true

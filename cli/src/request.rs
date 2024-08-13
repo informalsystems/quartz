@@ -1,6 +1,6 @@
 use std::{env::current_dir, path::PathBuf};
 
-use tokio::sync::{watch};
+use tokio::sync::watch;
 
 use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},

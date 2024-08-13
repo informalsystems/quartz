@@ -17,6 +17,7 @@ use super::utils::{
     types::{Log, WasmdTxResponse},
 };
 use crate::{
+    cache::{get_cached_codeid, has_changed, save_codeid_to_cache},
     error::Error,
     handler::{utils::types::RelayMessage, Handler},
     request::contract_deploy::ContractDeployRequest,
@@ -63,18 +64,23 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
 
     info!("\n🚀 Deploying {} Contract\n", args.label);
     let contract_path = args.wasm_bin_path;
-    // .join("contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm");
 
-    // TODO: uncertain about the path -> string conversion
-    let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
-        &args.chain_id,
-        &args.sender,
-        contract_path.display().to_string(),
-    )?)?;
-    let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
+    let code_id = if has_changed(&contract_path).await? {
+        let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
+            &args.chain_id,
+            &args.sender,
+            contract_path.display().to_string(),
+        )?)?;
+        let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
 
-    let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-    let code_id: usize = log[0].events[1].attributes[1].value.parse()?;
+        let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
+        let code_id: u64 = log[0].events[1].attributes[1].value.parse()?;
+        save_codeid_to_cache(&contract_path, code_id).await?;
+
+        code_id
+    } else {
+        get_cached_codeid(&contract_path).await?
+    };
 
     info!("\n🚀 Communicating with Relay to Instantiate...\n");
     let raw_init_msg = run_relay::<QuartzInstantiateMsg<DA>>(
@@ -106,7 +112,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
 
     debug!("{contract_addr}");
 
-    Ok((code_id as u64, contract_addr.to_owned()))
+    Ok((code_id, contract_addr.to_owned()))
 }
 
 //RES=$($CMD tx wasm instantiate "$CODE_ID" "$INSTANTIATE_MSG" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin --output json)
