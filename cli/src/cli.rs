@@ -136,7 +136,7 @@ pub enum EnclaveCommand {
         /// Whether to target release or dev
         #[arg(long)]
         release: bool,
-        
+
         /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
         #[arg(long, default_value = "./enclave/Cargo.toml")]
         manifest_path: PathBuf,

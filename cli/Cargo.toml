@@ -33,6 +33,12 @@ base64 = "0.22.1"
 subtle-encoding = "0.5.1"
 futures-util = "0.3.30"
 target-lexicon = "0.12.16"
+regex = "1.10.5"
+watchexec = "4.1.0"
+watchexec-events = "3.0.0"
+watchexec-signals = "3.0.0"
+miette = "7.2.0"
+ctrlc = { version = "3.4.5", features=["termination"] }
 
 # cosmos
 cosmrs.workspace = true
@@ -46,8 +52,3 @@ tm-prover = { workspace = true}
 quartz-common = { workspace = true, features=["contract"]}
 quartz-tee-ra = { workspace = true}
 mtcs-enclave = { workspace = true, optional = false}
-regex = "1.10.5"
-watchexec = "4.1.0"
-watchexec-events = "3.0.0"
-watchexec-signals = "3.0.0"
-miette = "7.2.0"

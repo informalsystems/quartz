@@ -16,14 +16,12 @@ use quartz_cw::{
     state::{Config, LightClientOpts, Nonce, Session},
 };
 use quartz_proto::quartz::{
-    core_server::Core, InstantiateRequest as RawInstantiateRequest,
-    InstantiateResponse as RawInstantiateResponse, SessionCreateRequest as RawSessionCreateRequest,
+    core_server::Core,
+    InstantiateRequest as RawInstantiateRequest, InstantiateResponse as RawInstantiateResponse,
+    SessionCreateRequest as RawSessionCreateRequest,
     SessionCreateResponse as RawSessionCreateResponse,
     SessionSetPubKeyRequest as RawSessionSetPubKeyRequest,
     SessionSetPubKeyResponse as RawSessionSetPubKeyResponse,
-    HealthRequest as RawHealthRequest,
-    HealthResponse as RawHealthResponse,
-
 };
 use quartz_relayer::types::{InstantiateResponse, SessionCreateResponse, SessionSetPubKeyResponse};
 use rand::Rng;
@@ -130,10 +128,6 @@ where
 
         let response = SessionSetPubKeyResponse::new(*nonce, *pk, quote);
         Ok(Response::new(response.into()))
-    }
-
-    async fn health(&self, _request: Request<RawHealthRequest>) -> TonicResult<Response<RawHealthResponse>> {
-        Ok(Response::new(RawHealthResponse::default().into()))
     }
 }
 

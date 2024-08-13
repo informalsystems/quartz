@@ -1,13 +1,14 @@
 use std::{env::current_dir, path::PathBuf};
 
-use tokio::sync::oneshot;
+use tokio::sync::{watch};
 
 use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},
     error::Error,
     request::{
-        contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest, dev::DevRequest, enclave_build::EnclaveBuildRequest,
-        enclave_start::EnclaveStartRequest, handshake::HandshakeRequest, init::InitRequest,
+        contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest,
+        dev::DevRequest, enclave_build::EnclaveBuildRequest, enclave_start::EnclaveStartRequest,
+        handshake::HandshakeRequest, init::InitRequest,
     },
 };
 
@@ -60,12 +61,12 @@ impl TryFrom<Command> for Request {
                 watch,
                 with_contract,
                 app_dir,
-                node_url
+                node_url,
             } => Ok(DevRequest {
                 watch,
                 with_contract,
                 app_dir: Self::path_checked(app_dir)?,
-                node_url
+                node_url,
             }
             .into()),
         }
@@ -129,11 +130,23 @@ impl TryFrom<EnclaveCommand> for Request {
 
     fn try_from(cmd: EnclaveCommand) -> Result<Request, Error> {
         match cmd {
-            EnclaveCommand::Build { release, manifest_path } => Ok(EnclaveBuildRequest { release, manifest_path }.into()),
-            EnclaveCommand::Start { app_dir, chain_id, node_url } => Ok(EnclaveStartRequest {
+            EnclaveCommand::Build {
+                release,
+                manifest_path,
+            } => Ok(EnclaveBuildRequest {
+                release,
+                manifest_path,
+            }
+            .into()),
+            EnclaveCommand::Start {
+                app_dir,
+                chain_id,
+                node_url,
+            } => Ok(EnclaveStartRequest {
                 app_dir: Self::path_checked(app_dir)?,
                 chain_id,
-                node_url
+                node_url,
+                shutdown_rx: watch::channel(()).1,
             }
             .into()),
         }

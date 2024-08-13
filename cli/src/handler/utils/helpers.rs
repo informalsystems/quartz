@@ -1,5 +1,4 @@
 use std::{path::Path, time::Duration};
-use tokio::process::Command;
 
 use anyhow::anyhow;
 use cosmrs::{AccountId, ErrorReport};
@@ -10,7 +9,7 @@ use tendermint::{block::Height, Hash};
 use tendermint_rpc::{
     endpoint::tx::Response as TmTxResponse, error::ErrorDetail, Client, HttpClient,
 };
-use tokio::fs;
+use tokio::{fs, process::Command};
 use tracing::debug;
 
 use super::types::RelayMessage;

@@ -121,7 +121,8 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
         base_path.as_path(),
         mock_sgx,
         RelayMessage::SessionSetPubKey(proof_json),
-    ).await?;
+    )
+    .await?;
 
     // Submit SessionSetPubKey to contract
     let output: WasmdTxResponse = serde_json::from_str(

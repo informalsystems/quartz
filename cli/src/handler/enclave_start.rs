@@ -3,7 +3,7 @@ use std::env;
 use async_trait::async_trait;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use reqwest::Url;
-use tokio::process::Command;
+use tokio::{process::Command, sync::watch};
 use tracing::{debug, info};
 
 use crate::{
@@ -21,15 +21,12 @@ impl Handler for EnclaveStartRequest {
 
     async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         let httpurl = Url::parse(&format!("http://{}", self.node_url)).unwrap();
-        println!("{:?}", httpurl);
         let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str()).unwrap());
 
         let enclave_dir = self.app_dir.join("enclave");
-        let (trusted_height, trusted_hash) = wasmd_client.trusted_height_hash()
+        let (trusted_height, trusted_hash) = wasmd_client
+            .trusted_height_hash()
             .map_err(|e| Error::GenericErr(e.to_string()))?;
-
-        println!("height {}\n hash {}", trusted_height, trusted_hash);
-        panic!();
 
         if config.mock_sgx {
             let enclave_args: Vec<String> = vec![
@@ -42,10 +39,11 @@ impl Handler for EnclaveStartRequest {
             ];
 
             // Run quartz enclave and block
-            let _res = run_enclave(
+            let _res = run_mock_enclave(
                 enclave_dir.join("Cargo.toml").display().to_string(),
                 config.mock_sgx,
                 enclave_args,
+                self.shutdown_rx,
             )
             .await?;
         } else {
@@ -60,14 +58,16 @@ impl Handler for EnclaveStartRequest {
             // Run quartz enclave and block
             gramine_sgx().await?;
         }
+
         Ok(EnclaveStartResponse.into())
     }
 }
 
-async fn run_enclave(
+async fn run_mock_enclave(
     manifest_path: String,
     mock_sgx: bool,
     enclave_args: Vec<String>,
+    mut shutdown_rx: watch::Receiver<()>,
 ) -> Result<(), Error> {
     let mut cargo = Command::new("cargo");
     let command = cargo.args(["run", "--release", "--manifest-path", &manifest_path]);
@@ -83,16 +83,24 @@ async fn run_enclave(
     println!("command: {:?}", command);
 
     info!("🚧 Running enclave ...");
-    let status = command
-        .status()
-        .await
+    let mut child = command
+        .spawn()
         .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-    if !status.success() {
-        return Err(Error::GenericErr(format!(
-            "Couldn't build enclave. {:?}",
-            status
-        )));
+    tokio::select! {
+        status = child.wait() => {
+            let status = status.map_err(|e| Error::GenericErr(e.to_string()))?;
+            if !status.success() {
+                return Err(Error::GenericErr(format!(
+                    "Couldn't build enclave. {:?}",
+                    status
+                )));
+            }
+        }
+        _ = shutdown_rx.changed() => {
+            println!("Shutdown signal received. Terminating enclave...");
+            let _ = child.kill().await;
+        }
     }
 
     Ok(())

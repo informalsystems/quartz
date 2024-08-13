@@ -1,8 +1,9 @@
 use serde::Serialize;
 
 use crate::response::{
-    contract_build::ContractBuildResponse, contract_deploy::ContractDeployResponse, dev::DevResponse, enclave_build::EnclaveBuildResponse,
-    enclave_start::EnclaveStartResponse, handshake::HandshakeResponse, init::InitResponse,
+    contract_build::ContractBuildResponse, contract_deploy::ContractDeployResponse,
+    dev::DevResponse, enclave_build::EnclaveBuildResponse, enclave_start::EnclaveStartResponse,
+    handshake::HandshakeResponse, init::InitResponse,
 };
 
 pub mod contract_build;

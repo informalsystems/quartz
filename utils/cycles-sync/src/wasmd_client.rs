@@ -232,9 +232,7 @@ impl WasmdClient for CliWasmdClient {
 
     fn trusted_height_hash(&self) -> Result<(String, String), Self::Error> {
         let mut wasmd = Command::new("wasmd");
-        let command = wasmd
-            .args(["--node", self.url.as_str()])
-            .arg("status");
+        let command = wasmd.args(["--node", self.url.as_str()]).arg("status");
 
         let output = command.output()?;
 
@@ -242,11 +240,18 @@ impl WasmdClient for CliWasmdClient {
             return Err(anyhow!("{:?}", output));
         }
 
-        let query_result: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap_or_default();
+        let query_result: serde_json::Value =
+            serde_json::from_slice(&output.stdout).unwrap_or_default();
 
-        let trusted_height = query_result["SyncInfo"]["latest_block_height"].as_str().ok_or(anyhow!("Could not query height"))?.to_string();
-        let trusted_hash = query_result["SyncInfo"]["latest_block_hash"].as_str().ok_or(anyhow!("Could not query height"))?.to_string();
-        
+        let trusted_height = query_result["SyncInfo"]["latest_block_height"]
+            .as_str()
+            .ok_or(anyhow!("Could not query height"))?
+            .to_string();
+        let trusted_hash = query_result["SyncInfo"]["latest_block_hash"]
+            .as_str()
+            .ok_or(anyhow!("Could not query height"))?
+            .to_string();
+
         Ok((trusted_height, trusted_hash))
     }
 }
