@@ -54,7 +54,7 @@ impl CertificateChainVerifier for TlsCertificateChainVerifier {
         let mut issuers: Vec<usize> = (1..v.len()).collect();
         issuers.push(v.len() - 1);
         let subjects: Vec<usize> = (0..v.len()).collect();
-        for (i, s) in std::iter::zip(issuers, subjects) {
+        for (i, s) in core::iter::zip(issuers, subjects) {
             let r = v[s].1.verify_signature(Some(v[i].1.public_key()));
             r.map_err(|_| CertificateChainVerifierError::SignatureVerification)?
         }
