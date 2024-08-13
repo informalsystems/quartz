@@ -1,13 +1,7 @@
-use std::{
-    env,
-    path::{Path, PathBuf},
-};
+use std::{env, path::PathBuf};
 
 use cosmrs::tendermint::chain::Id as ChainId;
 use serde::{Deserialize, Serialize};
-use tokio::fs;
-
-use crate::error::Error;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
@@ -78,30 +72,4 @@ impl Default for Config {
             app_dir: default_app_dir(),
         }
     }
-}
-
-pub async fn load_config(app_dir: &Path, write: bool) -> Result<Config, Error> {
-    let config_path = app_dir.join("quartz.toml");
-    if config_path.exists() {
-        let config_str = fs::read_to_string(config_path)
-            .await
-            .expect("Failed to read TOML file");
-
-        return Ok(toml::from_str(&config_str).expect("Failed to deserialize TOML"));
-    }
-
-    let config = Config::default();
-
-    if write {
-        fs::write(
-            config_path,
-            &toml::to_string_pretty(&config)
-                .map_err(|e| Error::GenericErr(e.to_string()))?
-                .as_bytes(),
-        )
-        .await
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
-    }
-
-    Ok(config)
 }

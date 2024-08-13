@@ -20,6 +20,8 @@ pub mod handler;
 pub mod request;
 pub mod response;
 
+use std::path::PathBuf;
+
 use clap::Parser;
 use cli::ToFigment;
 use color_eyre::eyre::Result;
@@ -53,7 +55,12 @@ async fn main() -> Result<()> {
     let args: Cli = Cli::parse();
 
     let config: Config = Figment::new()
-        .merge(Toml::file("quartz.toml"))
+        .merge(Toml::file(
+            args.app_dir
+                .as_ref()
+                .unwrap_or(&PathBuf::from("."))
+                .join("quartz.toml"),
+        ))
         .merge(Env::prefixed("QUARTZ_"))
         .merge(Serialized::defaults(&args))
         .merge(args.command.to_figment())
