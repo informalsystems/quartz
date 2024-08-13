@@ -1,4 +1,4 @@
-use std::{process::Command, str::FromStr};
+use std::process::Command;
 
 use anyhow::anyhow;
 use cosmrs::{tendermint::chain::Id, AccountId};

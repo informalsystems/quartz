@@ -8,7 +8,7 @@ use tokio::{
 use tracing::debug;
 use xxhash_rust::xxh3::Xxh3;
 
-use crate::{error::Error};
+use crate::error::Error;
 
 const BUFFER_SIZE: usize = 16384; // 16 KB buffer
 type Hash = u64;

@@ -1,6 +1,5 @@
 use std::{env::current_dir, path::PathBuf};
 
-use tokio::sync::watch;
 
 use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},
@@ -146,7 +145,7 @@ impl TryFrom<EnclaveCommand> for Request {
                 app_dir: Self::path_checked(app_dir)?,
                 chain_id,
                 node_url,
-                shutdown_rx: watch::channel(()).1,
+                shutdown_rx: None,
             }
             .into()),
         }

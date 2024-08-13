@@ -16,9 +16,8 @@ use quartz_cw::{
     state::{Config, LightClientOpts, Nonce, Session},
 };
 use quartz_proto::quartz::{
-    core_server::Core,
-    InstantiateRequest as RawInstantiateRequest, InstantiateResponse as RawInstantiateResponse,
-    SessionCreateRequest as RawSessionCreateRequest,
+    core_server::Core, InstantiateRequest as RawInstantiateRequest,
+    InstantiateResponse as RawInstantiateResponse, SessionCreateRequest as RawSessionCreateRequest,
     SessionCreateResponse as RawSessionCreateResponse,
     SessionSetPubKeyRequest as RawSessionSetPubKeyRequest,
     SessionSetPubKeyResponse as RawSessionSetPubKeyResponse,

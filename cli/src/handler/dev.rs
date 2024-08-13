@@ -74,7 +74,7 @@ impl Handler for DevRequest {
                 app_dir: self.app_dir.clone(),
                 chain_id: "testing".to_string(),
                 node_url: self.node_url.clone(),
-                shutdown_rx,
+                shutdown_rx: Some(shutdown_rx),
             };
 
             let enclave_start_handle = tokio::spawn(async move {

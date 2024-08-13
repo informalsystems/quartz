@@ -9,7 +9,7 @@ pub struct EnclaveStartRequest {
     pub app_dir: PathBuf,
     pub chain_id: String,
     pub node_url: String,
-    pub shutdown_rx: watch::Receiver<()>,
+    pub shutdown_rx: Option<watch::Receiver<()>>,
 }
 
 impl From<EnclaveStartRequest> for Request {

@@ -67,7 +67,7 @@ async fn run_mock_enclave(
     manifest_path: String,
     mock_sgx: bool,
     enclave_args: Vec<String>,
-    mut shutdown_rx: watch::Receiver<()>,
+    shutdown_rx: Option<watch::Receiver<()>>,
 ) -> Result<(), Error> {
     let mut cargo = Command::new("cargo");
     let command = cargo.args(["run", "--release", "--manifest-path", &manifest_path]);
@@ -87,22 +87,38 @@ async fn run_mock_enclave(
         .spawn()
         .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-    tokio::select! {
-        status = child.wait() => {
-            let status = status.map_err(|e| Error::GenericErr(e.to_string()))?;
-            if !status.success() {
-                return Err(Error::GenericErr(format!(
-                    "Couldn't build enclave. {:?}",
-                    status
-                )));
+    match shutdown_rx {
+        Some(mut rx) => {
+            tokio::select! {
+                status = child.wait() => {
+                    handle_child_status(status.map_err(|e| Error::GenericErr(e.to_string()))?)?;
+                }
+                _ = rx.changed() => {
+                    println!("Shutdown signal received. Terminating enclave...");
+                    let _ = child.kill().await;
+                }
             }
         }
-        _ = shutdown_rx.changed() => {
-            println!("Shutdown signal received. Terminating enclave...");
-            let _ = child.kill().await;
+        None => {
+            // If no shutdown receiver is provided, just wait for the child process
+            let status = child
+                .wait()
+                .await
+                .map_err(|e| Error::GenericErr(e.to_string()))?;
+            handle_child_status(status)?;
         }
     }
 
+    Ok(())
+}
+
+fn handle_child_status(status: std::process::ExitStatus) -> Result<(), Error> {
+    if !status.success() {
+        return Err(Error::GenericErr(format!(
+            "Couldn't build enclave. {:?}",
+            status
+        )));
+    }
     Ok(())
 }
 
