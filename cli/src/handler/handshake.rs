@@ -76,7 +76,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 &args.contract.clone(),
                 &config.chain_id,
                 2000000,
-                &config.sender,
+                &config.tx_sender,
                 json!(res),
             )?
             .as_str(),
@@ -135,7 +135,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 &args.contract.clone(),
                 &ChainId::from_str("testing")?,
                 2000000,
-                &config.sender,
+                &config.tx_sender,
                 json!(res),
             )?
             .as_str(),

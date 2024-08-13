@@ -18,11 +18,7 @@ pub struct Config {
 
     /// Name or address of private key with which to sign
     #[serde(default = "default_admin")]
-    pub sender: String,
-
-    /// Port enclave is listening on
-    #[serde(default = "default_port")]
-    pub port: u16,
+    pub tx_sender: String,
 
     /// The network chain ID
     #[serde(default = "default_chain_id")]
@@ -35,6 +31,10 @@ pub struct Config {
     /// RPC interface for the Quartz enclave
     #[serde(default = "default_rpc_addr")]
     pub enclave_rpc_addr: String,
+
+    /// Port enclave is listening on
+    #[serde(default = "default_port")]
+    pub enclave_rpc_port: u16,    
 
     /// Path to Quartz app directory
     /// Defaults to current working dir
@@ -70,12 +70,12 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             mock_sgx: false,
-            sender: default_admin(),
-            port: default_port(),
+            tx_sender: default_admin(),
             chain_id: default_chain_id(),
             node_url: default_node_url(),
             enclave_rpc_addr: default_rpc_addr(),
-            app_dir: ".".parse().unwrap(),
+            enclave_rpc_port: default_port(),
+            app_dir: default_app_dir(),
         }
     }
 }

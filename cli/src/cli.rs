@@ -100,12 +100,7 @@ pub struct HandshakeArgs {
     /// Name or address of private key with which to sign
     #[clap(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sender: Option<String>,
-
-    /// Port enclave is listening on
-    #[clap(long)]
-    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
-    pub port: Option<u16>,
+    pub tx_sender: Option<String>,
 
     /// The network chain ID
     #[clap(long)]
@@ -121,6 +116,11 @@ pub struct HandshakeArgs {
     #[clap(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enclave_rpc_addr: Option<String>,
+
+    /// Port enclave is listening on
+    #[clap(long)]
+    #[serde(skip_serializing_if = "::std::option::Option::is_none")]
+    pub enclave_rpc_port: Option<u16>,    
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]

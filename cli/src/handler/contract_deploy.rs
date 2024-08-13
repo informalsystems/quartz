@@ -68,7 +68,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     // TODO: uncertain about the path -> string conversion
     let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
         &config.chain_id,
-        &config.sender,
+        &config.tx_sender,
         contract_path.display().to_string(),
     )?)?;
     let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
@@ -90,7 +90,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
 
     let init_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.init(
         &config.chain_id,
-        &config.sender,
+        &config.tx_sender,
         code_id,
         json!(init_msg),
         &format!("{} Contract #{}", args.label, code_id),
