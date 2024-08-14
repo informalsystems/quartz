@@ -162,11 +162,6 @@ pub struct ContractDeployArgs {
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct EnclaveBuildArgs {
-    /// Enable mock SGX mode for testing purposes.
-    /// This flag disables the use of an Intel SGX processor and allows the system to run without remote attestations.
-    #[arg(long, env)]
-    pub mock_sgx: bool,
-
     /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
     #[arg(long, default_value = "./enclave/Cargo.toml")]
     pub manifest_path: PathBuf,
