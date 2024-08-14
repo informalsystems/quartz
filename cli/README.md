@@ -80,33 +80,53 @@ You can use these instructions to run the transfers app. For your own app, you w
 > Note - Run all commands from within the `/cli` folder
 
 ```bash
-# setup env vars in EVERY terminal (there will be 3)
+# setup env vars in ALL THREE terminals
 export MOCK_SGX=true
 export NODE_URL=143.244.186.205:26657
 export CHAIN_ID=testing
 
-# TERMINAL 1
+#-------------------------------------------------------------------------------
+# TERMINAL 1 - setup enclave
+
 # build enclave
 cargo run -- enclave build --manifest-path "../apps/transfers/enclave/Cargo.toml"
+
 # start enclave
 cargo run -- enclave start --app-dir "../apps/transfers" --chain-id $CHAIN_ID
 
+#-------------------------------------------------------------------------------
 # TERMINAL 2 - After enclave is setup, setup contracts
+
 # build contracts
 cargo run -- --mock-sgx  contract build --manifest-path "../apps/transfers/contracts/Cargo.toml"
+
 # deploy contracts
-cargo run -- --mock-sgx contract deploy --wasm-bin-path "../apps/transfers/contracts/target/wasm32-unknown-unknown/release/transfers_contract.wasm" --init-msg '{"denom": "ucosm"}'
+cargo run -- \
+    --mock-sgx \
+    contract deploy \
+    --wasm-bin-path "../apps/transfers/contracts/target/wasm32-unknown-unknown/release/transfers_contract.wasm" \
+    --init-msg '{"denom": "ucosm"}'
+
 # retrieve contract addr from output and store in env
 export CONTRACT=<YOUR_CONTRACT_ADDR>
+
 # handshake
 cargo run -- --mock-sgx handshake --app-dir "../apps/transfers/" --contract $CONTRACT
+
 # listen - NOTE - still using bash instead of cli
 bash ../apps/transfers/scripts/listen.sh $CONTRACT
 
+#-------------------------------------------------------------------------------
 # TERMINAL 3 - After contracts are setup, interact with them
+
 export CONTRACT=<YOUR_CONTRACT_ADDR>
+
 ## example 1
 cargo run -- contract tx --msg "\"deposit\"" --amount 1000ucosm --gas 200000 --contract $CONTRACT
+
 ## example 2
-cargo run -- contract tx --msg "{\"query_request\": {\"emphemeral_pubkey\": \"$EPHEMERAL_PUBKEY\"}}"  --contract $CONTRACT
+cargo run -- \
+    contract tx \
+    --msg "{\"query_request\": {\"emphemeral_pubkey\": \"$EPHEMERAL_PUBKEY\"}}" \
+    --contract $CONTRACT
 ```
