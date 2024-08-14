@@ -53,6 +53,7 @@ async fn main() -> Result<()> {
     println!("{BANNER}");
 
     let args: Cli = Cli::parse();
+    check_path(&args.app_dir)?;
 
     let config: Config = Figment::new()
         .merge(Toml::file(
@@ -91,6 +92,16 @@ async fn main() -> Result<()> {
         "{}",
         serde_json::to_string(&response).expect("infallible serializer")
     );
+
+    Ok(())
+}
+
+fn check_path(path: &Option<PathBuf>) -> Result<(), error::Error> {
+    if let Some(path) = path {
+        if !path.is_dir() {
+            return Err(error::Error::PathNotDir(format!("{}", path.display())));
+        }
+    }
 
     Ok(())
 }

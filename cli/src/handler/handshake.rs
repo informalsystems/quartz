@@ -20,7 +20,7 @@ use crate::{
     config::Config,
     error::Error,
     handler::{
-        utils::{helpers::read_hash_height, types::RelayMessage},
+        utils::{helpers::get_hash_height, types::RelayMessage},
         Handler,
     },
     request::handshake::HandshakeRequest,
@@ -49,18 +49,16 @@ struct Message<'a> {
     message: &'a str,
 }
 
-async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
+async fn handshake(args: HandshakeRequest, mut config: Config) -> Result<String, anyhow::Error> {
     let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
     let wsurl = format!("ws://{}/websocket", config.node_url);
 
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
+    let (trusted_height, trusted_hash) = get_hash_height(false, &mut config)?;
     // TODO: dir logic issue #125
-    // Read trusted hash and height from files
     let base_path = current_dir()?.join("../");
-    let trusted_files_path = config.app_dir;
-    let (trusted_height, trusted_hash) = read_hash_height(trusted_files_path.as_path()).await?;
 
     info!("Running SessionCreate");
     let res: serde_json::Value = run_relay(

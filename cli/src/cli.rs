@@ -29,18 +29,19 @@ impl Verbosity {
 #[command(version, long_about = None)]
 pub struct Cli {
     /// Increase log verbosity
-    #[clap(flatten)]
+    #[command(flatten)]
     pub verbose: Verbosity,
 
     /// Enable mock SGX mode for testing purposes.
     /// This flag disables the use of an Intel SGX processor and allows the system to run without remote attestations.
-    #[clap(long)]
+    #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mock_sgx: Option<bool>,
 
     /// Path to Quartz app directory
     /// Defaults to current working dir
-    #[clap(long)]
+    /// For quartz init, root serves as the parent directory of the directory in which the quartz app is generated
+    #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app_dir: Option<PathBuf>,
 
@@ -87,8 +88,8 @@ pub enum EnclaveCommand {
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct InitArgs {
     /// The name of your Quartz app directory, defaults to quartz_app
-    #[clap(long, default_value = "quartz_app")]
-    pub name: String,
+    #[arg(default_value = "quartz_app")]
+    pub name: PathBuf,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
@@ -98,55 +99,55 @@ pub struct HandshakeArgs {
     pub contract: AccountId,
 
     /// Name or address of private key with which to sign
-    #[clap(long)]
+    #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tx_sender: Option<String>,
 
     /// The network chain ID
-    #[clap(long)]
+    #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chain_id: Option<ChainId>,
 
     /// <host>:<port> to tendermint rpc interface for this chain
-    #[clap(long)]
+    #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node_url: Option<String>,
 
     /// RPC interface for the Quartz enclave
-    #[clap(long)]
+    #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enclave_rpc_addr: Option<String>,
 
     /// Port enclave is listening on
-    #[clap(long)]
+    #[arg(long)]
     #[serde(skip_serializing_if = "::std::option::Option::is_none")]
     pub enclave_rpc_port: Option<u16>,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct ContractBuildArgs {
-    #[clap(long)]
+    #[arg(long)]
     pub manifest_path: PathBuf,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct ContractDeployArgs {
     /// Json-formatted cosmwasm contract initialization message
-    #[clap(long, default_value = "{}")]
+    #[arg(long, default_value = "{}")]
     pub init_msg: String,
 
     /// <host>:<port> to tendermint rpc interface for this chain
-    #[clap(long)]
+    #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node_url: Option<String>,
 
     /// Name or address of private key with which to sign
-    #[clap(long)]
+    #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sender: Option<String>,
+    pub tx_sender: Option<String>,
 
     /// The network chain ID
-    #[clap(long)]
+    #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chain_id: Option<ChainId>,
 
@@ -155,7 +156,7 @@ pub struct ContractDeployArgs {
     pub label: String,
 
     /// Path to contract wasm binary for deployment
-    #[clap(long)]
+    #[arg(long)]
     pub wasm_bin_path: PathBuf,
 }
 
@@ -163,7 +164,7 @@ pub struct ContractDeployArgs {
 pub struct EnclaveBuildArgs {
     /// Enable mock SGX mode for testing purposes.
     /// This flag disables the use of an Intel SGX processor and allows the system to run without remote attestations.
-    #[clap(long, env)]
+    #[arg(long, env)]
     pub mock_sgx: bool,
 
     /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
@@ -173,9 +174,14 @@ pub struct EnclaveBuildArgs {
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct EnclaveStartArgs {
-    #[clap(long)]
+    /// The network chain ID
+    #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chain_id: Option<ChainId>,
+
+    /// Fetch latest trusted hash and height from the chain instead of existing configuration
+    #[arg(long)]
+    pub use_latest_trusted: bool,
 }
 
 pub trait ToFigment {

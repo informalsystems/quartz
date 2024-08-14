@@ -1,18 +1,23 @@
-use std::path::Path;
+use std::path::PathBuf;
 
 use crate::{error::Error, request::Request};
 
 #[derive(Clone, Debug)]
 pub struct InitRequest {
-    pub name: String,
+    pub name: PathBuf,
 }
 
 impl TryFrom<InitRequest> for Request {
     type Error = Error;
 
     fn try_from(request: InitRequest) -> Result<Request, Error> {
-        if Path::new(&request.name).iter().count() != 1 {
-            return Err(Error::GenericErr("App name contains path".to_string()));
+        if request.name.extension().is_some() {
+            return Err(Error::PathNotDir(format!("{}", request.name.display())));
+        } else if request.name.exists() {
+            return Err(Error::GenericErr(format!(
+                "Directory already exists: {}",
+                request.name.display()
+            )));
         }
 
         Ok(Request::Init(request))

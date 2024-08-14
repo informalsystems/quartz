@@ -2,7 +2,9 @@ use std::{path::Path, time::Duration};
 
 use anyhow::anyhow;
 use cosmrs::{AccountId, ErrorReport};
+use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use regex::Regex;
+use reqwest::Url;
 use serde::de::DeserializeOwned;
 use subtle_encoding::bech32::decode as bech32_decode;
 use tendermint::{block::Height, Hash};
@@ -13,6 +15,7 @@ use tokio::{fs, process::Command};
 use tracing::debug;
 
 use super::types::RelayMessage;
+use crate::{config::Config, error};
 
 pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
     let (hr, _) = bech32_decode(address_str).map_err(|e| anyhow!(e))?;
@@ -87,18 +90,52 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
     }
 }
 
-pub async fn read_hash_height(base_path: &Path) -> Result<(Height, Hash), anyhow::Error> {
-    let height_path = base_path.join("trusted.height");
-    let trusted_height: Height = fs::read_to_string(height_path.as_path())
-        .await?
-        .trim()
-        .parse()?;
+/// Returns the trusted hash and height
+pub fn get_hash_height(use_latest: bool, config: &mut Config) -> Result<(Height, Hash), error::Error> {
+    if use_latest || config.trusted_height == 0 || config.trusted_hash == "" {
+        let (trusted_height, trusted_hash) = latest_height_hash(&config.node_url)?;
+        config.trusted_hash = trusted_hash.to_string();
+        config.trusted_height = trusted_height.into();
 
-    let hash_path = base_path.join("trusted.hash");
-    let trusted_hash: Hash = fs::read_to_string(hash_path.as_path())
-        .await?
-        .trim()
-        .parse()?;
+        Ok((trusted_height, trusted_hash))
+    } else {
+        Ok((
+            config.trusted_height.try_into().unwrap(),
+            config
+                .trusted_hash
+                .parse()
+                .map_err(|_| error::Error::GenericErr("invalid hash".to_string()))?,
+        ))
+    }
+}
 
-    Ok((trusted_height, trusted_hash))
+// Queries the chain for the latested height and hash
+pub fn latest_height_hash(node_url: &String) -> Result<(Height, Hash), error::Error> {
+    let httpurl = Url::parse(&format!("http://{}", node_url))
+        .map_err(|e| error::Error::GenericErr(e.to_string()))?;
+    let wasmd_client = CliWasmdClient::new(httpurl);
+
+    let (trusted_height, trusted_hash) = wasmd_client
+        .trusted_height_hash()
+        .map_err(|e| error::Error::GenericErr(e.to_string()))?;
+
+    Ok((
+        trusted_height.try_into().unwrap(),
+        trusted_hash.parse().expect("invalid hash from wasmd"),
+    ))
+}
+
+pub async fn persist_config_hash_height(config: &Config) -> Result<(), error::Error> {
+    let config_path = config.app_dir.join("quartz.toml");
+
+    let toml_content = fs::read_to_string(&config_path).await.unwrap();
+    let mut written_config: Config = toml::from_str(&toml_content).expect("good vibes only");
+
+    written_config.trusted_hash = config.trusted_hash.clone();
+    written_config.trusted_height = config.trusted_height;
+
+    let toml_string = toml::to_string(config).expect("todo: map error");
+    fs::write(&config_path, toml_string).await.expect("todo: map error");
+
+    Ok(())
 }

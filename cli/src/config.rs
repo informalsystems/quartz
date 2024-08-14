@@ -11,7 +11,7 @@ pub struct Config {
     pub mock_sgx: bool,
 
     /// Name or address of private key with which to sign
-    #[serde(default = "default_admin")]
+    #[serde(default = "default_tx_sender")]
     pub tx_sender: String,
 
     /// The network chain ID
@@ -34,6 +34,14 @@ pub struct Config {
     /// Defaults to current working dir
     #[serde(default = "default_app_dir")]
     pub app_dir: PathBuf,
+
+    /// Trusted height for light client proofs
+    #[serde(default)]
+    pub trusted_height: u64,
+
+    /// Trusted hash for block at trusted_height for light client proofs
+    #[serde(default)]
+    pub trusted_hash: String,
 }
 
 fn default_rpc_addr() -> String {
@@ -44,7 +52,7 @@ fn default_node_url() -> String {
     env::var("NODE_URL").unwrap_or_else(|_| "http://127.0.0.1:26657".to_string())
 }
 
-fn default_admin() -> String {
+fn default_tx_sender() -> String {
     String::from("admin")
 }
 
@@ -64,12 +72,14 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             mock_sgx: false,
-            tx_sender: default_admin(),
+            tx_sender: default_tx_sender(),
             chain_id: default_chain_id(),
             node_url: default_node_url(),
             enclave_rpc_addr: default_rpc_addr(),
             enclave_rpc_port: default_port(),
             app_dir: default_app_dir(),
+            trusted_height: u64::default(),
+            trusted_hash: String::default(),
         }
     }
 }

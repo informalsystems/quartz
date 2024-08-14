@@ -1,5 +1,3 @@
-use std::{env::current_dir, path::PathBuf};
-
 use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},
     error::Error,
@@ -39,19 +37,6 @@ impl TryFrom<Command> for Request {
             .into()),
             Command::Contract { contract_command } => contract_command.try_into(),
             Command::Enclave { enclave_command } => enclave_command.try_into(),
-        }
-    }
-}
-
-impl Request {
-    fn path_checked(path: Option<PathBuf>) -> Result<PathBuf, Error> {
-        if let Some(path) = path {
-            if !path.is_dir() {
-                return Err(Error::PathNotDir(format!("{}", path.display())));
-            }
-            Ok(path)
-        } else {
-            Ok(current_dir().map_err(|e| Error::GenericErr(e.to_string()))?)
         }
     }
 }
@@ -97,7 +82,10 @@ impl TryFrom<EnclaveCommand> for Request {
                 manifest_path: args.manifest_path,
             }
             .into()),
-            EnclaveCommand::Start(_args) => Ok(EnclaveStartRequest {}.into()),
+            EnclaveCommand::Start(args) => Ok(EnclaveStartRequest {
+                use_latest_trusted: args.use_latest_trusted,
+            }
+            .into()),
         }
     }
 }
