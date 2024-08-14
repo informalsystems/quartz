@@ -105,7 +105,14 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let wasmd_client = CliWasmdClient::new(node_url);
 
-    wasmd_client.tx_execute(&cli.mtcs, &chain_id, 3000000, &cli.admin.to_string(), msg, None)?;
+    wasmd_client.tx_execute(
+        &cli.mtcs,
+        &chain_id,
+        3000000,
+        &cli.admin.to_string(),
+        msg,
+        None,
+    )?;
 
     Ok(())
 }

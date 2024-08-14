@@ -6,11 +6,11 @@ pub mod utils;
 // commands
 pub mod contract_build;
 pub mod contract_deploy;
+pub mod contract_tx;
 pub mod enclave_build;
 pub mod enclave_start;
 pub mod handshake;
 pub mod init;
-pub mod contract_tx;
 
 #[async_trait]
 pub trait Handler {

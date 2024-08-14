@@ -1,12 +1,11 @@
 use async_trait::async_trait;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use reqwest::Url;
-use tracing::info;
-use tokio::time::{sleep, Duration};
 use serde_json::Value;
+use tokio::time::{sleep, Duration};
+use tracing::info;
 
 use super::utils::types::WasmdTxResponse;
-
 use crate::{
     error::Error,
     handler::Handler,
@@ -30,19 +29,19 @@ impl Handler for ContractTxRequest {
 }
 
 async fn tx(args: ContractTxRequest) -> Result<String, anyhow::Error> {
-     let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
-     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
- 
-     info!("🚀 Submitting Tx with msg: {}", args.msg);
+    let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
+    let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
-     let tx_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.tx_execute(
+    info!("🚀 Submitting Tx with msg: {}", args.msg);
+
+    let tx_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.tx_execute(
         &args.contract,
         &args.chain_id,
         args.gas,
         &args.sender,
         args.msg,
         args.amount,
-     )?)?;
+    )?)?;
 
     let hash = tx_output.txhash.to_string();
     info!("🚀 Successfully sent tx with hash {}", hash);
@@ -59,7 +58,10 @@ async fn tx(args: ContractTxRequest) -> Result<String, anyhow::Error> {
         if code == 0 {
             info!("Transaction was successful!");
         } else {
-            return Err(anyhow::anyhow!("Transaction failed. Inspect raw log: {}", tx_result["raw_log"]));
+            return Err(anyhow::anyhow!(
+                "Transaction failed. Inspect raw log: {}",
+                tx_result["raw_log"]
+            ));
         }
     } else {
         return Err(anyhow::anyhow!("Unable to determine transaction status"));
