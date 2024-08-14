@@ -91,8 +91,11 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
 }
 
 /// Returns the trusted hash and height
-pub fn get_hash_height(use_latest: bool, config: &mut Config) -> Result<(Height, Hash), error::Error> {
-    if use_latest || config.trusted_height == 0 || config.trusted_hash == "" {
+pub fn get_hash_height(
+    use_latest: bool,
+    config: &mut Config,
+) -> Result<(Height, Hash), error::Error> {
+    if use_latest || config.trusted_height == 0 || config.trusted_hash.is_empty() {
         let (trusted_height, trusted_hash) = latest_height_hash(&config.node_url)?;
         config.trusted_hash = trusted_hash.to_string();
         config.trusted_height = trusted_height.into();
@@ -100,7 +103,7 @@ pub fn get_hash_height(use_latest: bool, config: &mut Config) -> Result<(Height,
         Ok((trusted_height, trusted_hash))
     } else {
         Ok((
-            config.trusted_height.try_into().unwrap(),
+            config.trusted_height.try_into()?,
             config
                 .trusted_hash
                 .parse()
@@ -120,7 +123,7 @@ pub fn latest_height_hash(node_url: &String) -> Result<(Height, Hash), error::Er
         .map_err(|e| error::Error::GenericErr(e.to_string()))?;
 
     Ok((
-        trusted_height.try_into().unwrap(),
+        trusted_height.try_into()?,
         trusted_hash.parse().expect("invalid hash from wasmd"),
     ))
 }
@@ -128,14 +131,14 @@ pub fn latest_height_hash(node_url: &String) -> Result<(Height, Hash), error::Er
 pub async fn persist_config_hash_height(config: &Config) -> Result<(), error::Error> {
     let config_path = config.app_dir.join("quartz.toml");
 
-    let toml_content = fs::read_to_string(&config_path).await.unwrap();
-    let mut written_config: Config = toml::from_str(&toml_content).expect("good vibes only");
+    let toml_content = fs::read_to_string(&config_path).await?;
+    let mut written_config: Config = toml::from_str(&toml_content)?;
 
-    written_config.trusted_hash = config.trusted_hash.clone();
+    written_config.trusted_hash.clone_from(&config.trusted_hash);
     written_config.trusted_height = config.trusted_height;
 
-    let toml_string = toml::to_string(config).expect("todo: map error");
-    fs::write(&config_path, toml_string).await.expect("todo: map error");
+    let toml_string = toml::to_string(config)?;
+    fs::write(&config_path, toml_string).await?;
 
     Ok(())
 }
