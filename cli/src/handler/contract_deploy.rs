@@ -18,11 +18,11 @@ use super::utils::{
 };
 use crate::{
     cache::{get_cached_codeid, has_changed, save_codeid_to_cache},
+    config::Config,
     error::Error,
     handler::{utils::types::RelayMessage, Handler},
     request::contract_deploy::ContractDeployRequest,
     response::{contract_deploy::ContractDeployResponse, Response},
-    Config,
 };
 
 #[async_trait]
@@ -34,11 +34,11 @@ impl Handler for ContractDeployRequest {
         trace!("initializing directory structure...");
 
         let (code_id, contract_addr) = if config.mock_sgx {
-            deploy::<RawMockAttestation>(self, config.mock_sgx)
+            deploy::<RawMockAttestation>(self, config)
                 .await
                 .map_err(|e| Error::GenericErr(e.to_string()))?
         } else {
-            deploy::<RawEpidAttestation>(self, config.mock_sgx)
+            deploy::<RawEpidAttestation>(self, config)
                 .await
                 .map_err(|e| Error::GenericErr(e.to_string()))?
         };
@@ -53,12 +53,12 @@ impl Handler for ContractDeployRequest {
 
 async fn deploy<DA: Serialize + DeserializeOwned>(
     args: ContractDeployRequest,
-    mock_sgx: bool,
+    config: Config,
 ) -> Result<(u64, String), anyhow::Error> {
     // TODO: Replace with call to Rust package
     let relay_path = current_dir()?.join("../");
 
-    let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
+    let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
@@ -67,8 +67,8 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
 
     let code_id = if has_changed(&contract_path).await? {
         let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
-            &args.chain_id,
-            &args.sender,
+            &config.chain_id,
+            &config.tx_sender,
             contract_path.display().to_string(),
         )?)?;
         let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
@@ -85,7 +85,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     info!("\n🚀 Communicating with Relay to Instantiate...\n");
     let raw_init_msg = run_relay::<QuartzInstantiateMsg<DA>>(
         relay_path.as_path(),
-        mock_sgx,
+        config.mock_sgx,
         RelayMessage::Instantiate,
     )
     .await?;
@@ -95,8 +95,8 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     init_msg["quartz"] = json!(raw_init_msg);
 
     let init_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.init(
-        &args.chain_id,
-        &args.sender,
+        &config.chain_id,
+        &config.tx_sender,
         code_id,
         json!(init_msg),
         &format!("{} Contract #{}", args.label, code_id),

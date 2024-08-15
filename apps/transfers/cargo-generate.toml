@@ -1,5 +1,4 @@
 [template]
-name = "quartz-app-template"
 description = "An functioning example of a quartz app"
 
 ignore = [
@@ -9,5 +8,7 @@ ignore = [
     "enclave/target",
     "enclave/target/*",
     "frontend/package-lock.json",
-    "frontend/public/images"
+    "frontend/public/images",
+    "trusted.hash",
+    "trusted.height"
 ]

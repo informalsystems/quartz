@@ -6,10 +6,8 @@ use crate::request::Request;
 
 #[derive(Clone, Debug)]
 pub struct EnclaveStartRequest {
-    pub app_dir: PathBuf,
-    pub chain_id: String,
-    pub node_url: String,
     pub shutdown_rx: Option<watch::Receiver<()>>,
+    pub use_latest_trusted: bool,
 }
 
 impl From<EnclaveStartRequest> for Request {

@@ -17,14 +17,14 @@ use super::utils::{
     types::WasmdTxResponse,
 };
 use crate::{
+    config::Config,
     error::Error,
     handler::{
-        utils::{helpers::read_hash_height, types::RelayMessage},
+        utils::{helpers::get_hash_height, types::RelayMessage},
         Handler,
     },
     request::handshake::HandshakeRequest,
     response::{handshake::HandshakeResponse, Response},
-    Config,
 };
 
 #[async_trait]
@@ -36,7 +36,7 @@ impl Handler for HandshakeRequest {
         trace!("starting handshake...");
 
         // TODO: may need to import verbosity here
-        let pub_key = handshake(self, config.mock_sgx)
+        let pub_key = handshake(self, config)
             .await
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
@@ -49,30 +49,32 @@ struct Message<'a> {
     message: &'a str,
 }
 
-async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, anyhow::Error> {
-    let httpurl = Url::parse(&format!("http://{}", args.node_url))?;
-    let wsurl = format!("ws://{}/websocket", args.node_url);
+async fn handshake(args: HandshakeRequest, mut config: Config) -> Result<String, anyhow::Error> {
+    let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
+    let wsurl = format!("ws://{}/websocket", config.node_url);
 
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
+    let (trusted_height, trusted_hash) = get_hash_height(false, &mut config)?;
     // TODO: dir logic issue #125
-    // Read trusted hash and height from files
     let base_path = current_dir()?.join("../");
-    let trusted_files_path = args.app_dir;
-    let (trusted_height, trusted_hash) = read_hash_height(trusted_files_path.as_path()).await?;
 
     info!("Running SessionCreate");
-    let res: serde_json::Value =
-        run_relay(base_path.as_path(), mock_sgx, RelayMessage::SessionCreate).await?;
+    let res: serde_json::Value = run_relay(
+        base_path.as_path(),
+        config.mock_sgx,
+        RelayMessage::SessionCreate,
+    )
+    .await?;
 
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client
             .tx_execute(
                 &args.contract.clone(),
-                &args.chain_id,
+                &config.chain_id,
                 2000000,
-                &args.sender,
+                &config.tx_sender,
                 json!(res),
             )?
             .as_str(),
@@ -92,7 +94,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
     debug!("Proof path: {:?}", proof_path.to_str());
 
     // Call tm prover with trusted hash and height
-    let config = TmProverConfig {
+    let prover_config = TmProverConfig {
         primary: httpurl.as_str().parse()?,
         witnesses: httpurl.as_str().parse()?,
         trusted_height,
@@ -101,11 +103,11 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
         verbose: "1".parse()?, // TODO: both tm-prover and cli define the same Verbosity struct. Need to define this once and import
         contract_address: args.contract.clone(),
         storage_key: "quartz_session".to_string(),
-        chain_id: args.chain_id.to_string(),
+        chain_id: config.chain_id.to_string(),
         ..Default::default()
     };
-    debug!("config: {:?}", config);
-    if let Err(report) = prove(config).await {
+    debug!("config: {:?}", prover_config);
+    if let Err(report) = prove(prover_config).await {
         return Err(anyhow!("Tendermint prover failed. Report: {}", report));
     }
 
@@ -119,7 +121,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
     info!("Running SessionSetPubKey");
     let res: serde_json::Value = run_relay(
         base_path.as_path(),
-        mock_sgx,
+        config.mock_sgx,
         RelayMessage::SessionSetPubKey(proof_json),
     )
     .await?;
@@ -131,7 +133,7 @@ async fn handshake(args: HandshakeRequest, mock_sgx: bool) -> Result<String, any
                 &args.contract.clone(),
                 &ChainId::from_str("testing")?,
                 2000000,
-                &args.sender,
+                &config.tx_sender,
                 json!(res),
             )?
             .as_str(),

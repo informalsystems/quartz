@@ -12,3 +12,4 @@ artifacts/
 .vscode/
 .DS_Store
 **/.env.local
+cli/quartz.toml

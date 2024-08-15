@@ -40,7 +40,7 @@ impl Handler for DevRequest {
         trace!("initializing directory structure...");
 
         let hash = has_changed(
-            self.app_dir
+            config.app_dir
                 .join("contracts/target/wasm32-unknown-unknown/release/transfers_contract.wasm")
                 .as_path(),
         )
@@ -53,9 +53,7 @@ impl Handler for DevRequest {
                 manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap(),
             };
             let _eb_res = enclave_build
-                .handle(Config {
-                    mock_sgx: config.mock_sgx,
-                })
+                .handle(config.clone()) // TODO: pass by ref
                 .await?;
 
             // Build contract
@@ -63,25 +61,20 @@ impl Handler for DevRequest {
                 manifest_path: "../apps/transfers/contracts/Cargo.toml".parse().unwrap(),
             };
             let _cb_res = contract_build
-                .handle(Config {
-                    mock_sgx: config.mock_sgx,
-                })
+                .handle(config.clone())
                 .await?;
 
             // In separate process, launch the enclave
             let (shutdown_tx, shutdown_rx) = watch::channel(());
             let enclave_start = EnclaveStartRequest {
-                app_dir: self.app_dir.clone(),
-                chain_id: "testing".to_string(),
-                node_url: self.node_url.clone(),
                 shutdown_rx: Some(shutdown_rx),
+                use_latest_trusted: false // TODO: collect arg for dev, maybe this goes in config?
             };
 
+            let config_cpy = config.clone();
             let enclave_start_handle = tokio::spawn(async move {
                 let res = enclave_start
-                    .handle(Config {
-                        mock_sgx: config.mock_sgx,
-                    })
+                    .handle(config_cpy)
                     .await?;
 
                 Ok(res)
@@ -118,16 +111,11 @@ impl Handler for DevRequest {
             // Deploy Contract
             let contract_deploy = ContractDeployRequest {
 				init_msg: serde_json::Value::from_str("{}").expect("init msg didnt work"), // todo: receive from args
-				node_url: self.node_url.clone(),
-				chain_id: "testing".parse().expect("default chain id"), // todo: receive from args
-				sender: "admin".to_string(),
 				label: "test".to_string(),
 				wasm_bin_path: "../apps/mtcs/contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm".into()
 			};
             let cd_res = contract_deploy
-                .handle(Config {
-                    mock_sgx: config.mock_sgx,
-                })
+                .handle(config.clone())
                 .await;
 
             let contract = if let Ok(Response::ContractDeploy(res)) = cd_res {
@@ -146,19 +134,9 @@ impl Handler for DevRequest {
             let handshake = HandshakeRequest {
                 contract: wasmaddr_to_id(&contract)
                     .map_err(|_| Error::GenericErr(String::default()))?,
-                port: 11090u16,
-                sender: "admin".to_string(),
-                chain_id: "testing"
-                    .parse()
-                    .map_err(|_| Error::GenericErr(String::default()))?,
-                node_url: self.node_url,
-                enclave_rpc_addr: default_rpc_addr(),
-                app_dir: self.app_dir.clone(),
             };
             let h_res = handshake
-                .handle(Config {
-                    mock_sgx: config.mock_sgx,
-                })
+                .handle(config.clone())
                 .await;
 
             let h_res = if let Ok(Response::Handshake(res)) = h_res {
@@ -185,8 +163,8 @@ impl Handler for DevRequest {
             // Run listening process
 
             let (tx, rx) = mpsc::channel::<DevRebuild>(32);
-            let watcher_handler = tokio::spawn(watcher(self, tx));
-            let message_handler = tokio::spawn(dev_driver(rx));
+            let watcher_handler = tokio::spawn(watcher(config.clone(), tx));
+            let message_handler = tokio::spawn(dev_driver(rx, config.clone()));
 
             // Use try_join! to wait for both tasks to complete.
             let (_, _) = try_join!(watcher_handler, message_handler)
@@ -211,7 +189,7 @@ enum DevRebuild {
     Both,
 }
 
-async fn dispatch_dev(dev: DevRebuild) {
+async fn dispatch_dev(dev: DevRebuild, config: Config) {
     match dev {
         DevRebuild::Both => {
             info!("Launching quartz app...");
@@ -220,7 +198,7 @@ async fn dispatch_dev(dev: DevRebuild) {
                 release: false,
                 manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap(),
             };
-            let res = enclave_build.handle(Config { mock_sgx: false }).await;
+            let _res = enclave_build.handle(config.clone()).await;
         }
         DevRebuild::Enclave => {
             info!("Rebuilding Enclave...");
@@ -228,22 +206,21 @@ async fn dispatch_dev(dev: DevRebuild) {
                 release: false,
                 manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap(),
             };
-            let res = build.handle(Config { mock_sgx: false }).await;
+            let _res = build.handle(config.clone()).await;
         }
         DevRebuild::Contract => todo!(),
     }
 }
 
-async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>) {
+async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>, config: Config) {
     // Config state can be held in memory here for contract addrs and etc
     while let Some(dev) = rx.recv().await {
-        dispatch_dev(dev).await;
+        dispatch_dev(dev, config.clone()).await;
     }
 }
 
-async fn watcher(args: DevRequest, tx: mpsc::Sender<DevRebuild>) -> Result<()> {
+async fn watcher(config: Config, tx: mpsc::Sender<DevRebuild>) -> Result<()> {
     let build_id = Id::default();
-    let DevRequest { app_dir, .. } = args;
 
     let wx = Watchexec::new_async(move |mut action| {
         let tx = tx.clone();
@@ -312,7 +289,7 @@ async fn watcher(args: DevRequest, tx: mpsc::Sender<DevRebuild>) -> Result<()> {
         .unwrap();
 
     // Watch all files in quartz app directory
-    wx.config.throttle(Duration::new(5, 0)).pathset([app_dir]);
+    wx.config.throttle(Duration::new(5, 0)).pathset([config.app_dir]);
 
     // Keep running until Watchexec quits
     let _ = main.await.into_diagnostic()?;

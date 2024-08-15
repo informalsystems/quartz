@@ -7,11 +7,11 @@ use tokio::{process::Command, sync::watch};
 use tracing::{debug, info};
 
 use crate::{
+    config::Config,
     error::Error,
-    handler::Handler,
+    handler::{utils::helpers::get_hash_height, Handler},
     request::enclave_start::EnclaveStartRequest,
     response::{enclave_start::EnclaveStartResponse, Response},
-    Config,
 };
 
 #[async_trait]
@@ -19,19 +19,16 @@ impl Handler for EnclaveStartRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
-        let httpurl = Url::parse(&format!("http://{}", self.node_url)).unwrap();
-        let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str()).unwrap());
+    async fn handle(self, mut config: Config) -> Result<Self::Response, Self::Error> {
+        // Get trusted height and hash
+        let (trusted_height, trusted_hash) = get_hash_height(self.use_latest_trusted, &mut config)?;
 
-        let enclave_dir = self.app_dir.join("enclave");
-        let (trusted_height, trusted_hash) = wasmd_client
-            .trusted_height_hash()
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
+        let enclave_dir = config.app_dir.join("enclave");
 
         if config.mock_sgx {
             let enclave_args: Vec<String> = vec![
                 "--chain-id".to_string(),
-                self.chain_id,
+                config.chain_id.to_string(),
                 "--trusted-height".to_string(),
                 trusted_height.to_string(),
                 "--trusted-hash".to_string(),
