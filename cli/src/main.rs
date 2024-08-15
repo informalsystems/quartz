@@ -14,13 +14,22 @@
 )]
 
 pub mod cli;
+pub mod config;
 pub mod error;
 pub mod handler;
 pub mod request;
 pub mod response;
 
+use std::path::PathBuf;
+
 use clap::Parser;
+use cli::ToFigment;
 use color_eyre::eyre::Result;
+use config::Config;
+use figment::{
+    providers::{Env, Format, Serialized, Toml},
+    Figment,
+};
 use tracing_subscriber::{util::SubscriberInitExt, EnvFilter};
 
 use crate::{cli::Cli, handler::Handler, request::Request};
@@ -37,17 +46,26 @@ const BANNER: &str = r"
                                                                                     
 ";
 
-pub struct Config {
-    pub mock_sgx: bool,
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
 
     println!("{BANNER}");
 
-    let args = Cli::parse();
+    let args: Cli = Cli::parse();
+    check_path(&args.app_dir)?;
+
+    let config: Config = Figment::new()
+        .merge(Toml::file(
+            args.app_dir
+                .as_ref()
+                .unwrap_or(&PathBuf::from("."))
+                .join("quartz.toml"),
+        ))
+        .merge(Env::prefixed("QUARTZ_"))
+        .merge(Serialized::defaults(&args))
+        .merge(args.command.to_figment())
+        .extract()?;
 
     let env_filter = EnvFilter::builder()
         .with_default_directive(args.verbose.to_level_filter().into())
@@ -67,17 +85,23 @@ async fn main() -> Result<()> {
 
     // Each `Request` defines an associated `Handler` (i.e. logic) and `Response`. All handlers are
     // free to log to the terminal and these logs are sent to `stderr`.
-    let response = request
-        .handle(Config {
-            mock_sgx: args.mock_sgx,
-        })
-        .await?;
+    let response = request.handle(config).await?;
 
     // `Handlers` must use `Responses` to output to `stdout`.
     println!(
         "{}",
         serde_json::to_string(&response).expect("infallible serializer")
     );
+
+    Ok(())
+}
+
+fn check_path(path: &Option<PathBuf>) -> Result<(), error::Error> {
+    if let Some(path) = path {
+        if !path.is_dir() {
+            return Err(error::Error::PathNotDir(format!("{}", path.display())));
+        }
+    }
 
     Ok(())
 }

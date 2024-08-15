@@ -2,14 +2,15 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 use cargo_generate::{generate, GenerateArgs, TemplatePath, Vcs};
+use tokio::fs;
 use tracing::trace;
 
 use crate::{
+    config::Config,
     error::Error,
     handler::Handler,
     request::init::InitRequest,
     response::{init::InitResponse, Response},
-    Config,
 };
 
 #[async_trait]
@@ -17,13 +18,30 @@ impl Handler for InitRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, _config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
 
         let root_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
 
+        let parent = self
+            .name
+            .parent()
+            .map(|p| p.to_path_buf())
+            .expect("path already validated");
+        fs::create_dir_all(&parent)
+            .await
+            .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+        let file_name = self
+            .name
+            .file_name()
+            .and_then(|f| f.to_str())
+            .expect("path already validated");
+
         let wasm_pack_args = GenerateArgs {
-            name: Some(self.name),
+            name: Some(file_name.to_string()),
+            destination: Some(config.app_dir.join(parent)),
+            overwrite: true,
             vcs: Some(Vcs::Git),
             template_path: TemplatePath {
                 // git: Some("git@github.com:informalsystems/cycles-quartz.git".to_string()), // TODO: replace with public http address when open-sourced

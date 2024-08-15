@@ -4,11 +4,11 @@ use async_trait::async_trait;
 use tracing::{debug, info};
 
 use crate::{
+    config::Config,
     error::Error,
     handler::Handler,
     request::enclave_build::EnclaveBuildRequest,
     response::{enclave_build::EnclaveBuildResponse, Response},
-    Config,
 };
 
 #[async_trait]
