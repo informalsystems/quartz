@@ -16,7 +16,12 @@ impl Handler for ContractBuildRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(
+        self,
+        config: C,
+    ) -> Result<Self::Response, Self::Error> {
+        let config = config.as_ref();
+
         let mut cargo = Command::new("cargo");
         let command = cargo
             .arg("wasm")

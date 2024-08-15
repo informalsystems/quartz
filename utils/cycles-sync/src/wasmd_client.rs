@@ -47,7 +47,7 @@ pub trait WasmdClient {
         &self,
         chain_id: &Id,
         sender: &str,
-        code_id: usize,
+        code_id: u64,
         init_msg: M,
         label: &str,
     ) -> Result<String, Self::Error>;
@@ -201,7 +201,7 @@ impl WasmdClient for CliWasmdClient {
         &self,
         chain_id: &Id,
         sender: &str,
-        code_id: usize,
+        code_id: u64,
         init_msg: M,
         label: &str,
     ) -> Result<String, Self::Error> {
