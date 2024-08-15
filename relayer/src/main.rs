@@ -33,7 +33,6 @@ use quartz_proto::quartz::{core_client::CoreClient, InstantiateRequest};
 use quartz_relayer::types::InstantiateResponse;
 use subtle_encoding::base64;
 use tendermint::public_key::Secp256k1 as TmPublicKey;
-use tokio::process::Command;
 
 use crate::cli::Cli;
 

@@ -1,4 +1,4 @@
-use std::{env, process::exit, str::FromStr, sync::Arc, time::Duration};
+use std::{process::exit, str::FromStr, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 // todo get rid of this?
@@ -19,7 +19,6 @@ use watchexec_events::{Event, Priority, ProcessEnd};
 use watchexec_signals::Signal;
 
 use crate::{
-    cache::has_changed,
     error::Error,
     handler::{utils::helpers::wasmaddr_to_id, Handler},
     request::{
@@ -38,13 +37,6 @@ impl Handler for DevRequest {
 
     async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
         trace!("initializing directory structure...");
-
-        let hash = has_changed(
-            config.app_dir
-                .join("contracts/target/wasm32-unknown-unknown/release/transfers_contract.wasm")
-                .as_path(),
-        )
-        .await;
 
         if !self.watch {
             // Build enclave
@@ -173,14 +165,6 @@ impl Handler for DevRequest {
 
         Ok(DevResponse.into())
     }
-}
-
-fn default_rpc_addr() -> String {
-    env::var("RPC_URL").unwrap_or_else(|_| "http://127.0.0.1".to_string())
-}
-
-fn default_node_url() -> String {
-    env::var("NODE_URL").unwrap_or_else(|_| "http://127.0.0.1:26657".to_string())
 }
 
 enum DevRebuild {

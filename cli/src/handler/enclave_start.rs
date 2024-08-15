@@ -1,8 +1,6 @@
 use std::env;
 
 use async_trait::async_trait;
-use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
-use reqwest::Url;
 use tokio::{process::Command, sync::watch};
 use tracing::{debug, info};
 
