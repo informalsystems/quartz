@@ -33,6 +33,8 @@ base64 = "0.22.1"
 subtle-encoding = "0.5.1"
 futures-util = "0.3.30"
 target-lexicon = "0.12.16"
+regex = "1.10.5"
+toml = "0.8.19"
 
 # cosmos
 cosmrs.workspace = true
@@ -46,4 +48,4 @@ tm-prover = { workspace = true}
 quartz-common = { workspace = true, features=["contract"]}
 quartz-tee-ra = { workspace = true}
 mtcs-enclave = { workspace = true, optional = false}
-regex = "1.10.5"
+figment = { version = "0.10.19", features=["env", "toml"] }
