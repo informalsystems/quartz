@@ -76,6 +76,7 @@ As an example, to build a Docker image for the transfers app's enclave:
 ```bash
 # From the root of the cycles-quartz repository
 docker build \
+   --platform linux/amd64 \
    --build-arg ENCLAVE_DIR=apps/transfers/enclave \
    --build-arg ENCLAVE_BIN=quartz-app-transfers-enclave \
    --build-arg TRUSTED_HEIGHT=1234 \
