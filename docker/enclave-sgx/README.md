@@ -15,6 +15,8 @@ the image does.
 
 ## Setup
 
+### Secrets
+
 **TODO: Remove this subsection once all necessary subcomponents are
 open-sourced.**
 
@@ -44,6 +46,28 @@ You will, of course, need to make sure that you have added the public key to
 your GitHub account in your SSH key settings before these keys will be useful.
 Once you have built the image, you can delete the keys and remove them from your
 GitHub account.
+
+### Trusted Height and Hash
+
+The enclave needs to know that it can trust the chain with which it interacts,
+and to do so it uses a light client that needs to be initialized with a root
+trusted height along with the hash of the block at that height.
+
+A simple way of initializing such a light client for testing/experimentation
+purposes is to query the chain:
+
+```bash
+# Assumes a CometBFT-based chain accessible via localhost. Replace "localhost"
+# with the host/IP address of the full node/validator you want to query.
+#
+# Gets the latest block for the chain. Pipes the output through jq to format it
+# nicely.
+curl http://localhost:26657/block | jq
+```
+
+The hash in which we are interested is the _last_ block hash, meaning that the
+height of that block is the height of the response from the above command minus
+1.
 
 ## Building
 
