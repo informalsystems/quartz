@@ -13,6 +13,38 @@ This folder contains the basis for a multi-stage Docker image that:
 The build process itself does not require an SGX-capable processor, but running
 the image does.
 
+## Setup
+
+**TODO: Remove this subsection once all necessary subcomponents are
+open-sourced.**
+
+Before building the image, you will need to ensure that the image has access to
+a public/private keypair that will allow access to the private dependencies
+needed by the build process.
+
+For example, you could generate a public/private keypair as follows. **NB: This
+keypair must _not_ be password-protected, since it needs to be accessible in an
+unsupervised manner during the Docker image build.**
+
+```bash
+# Should generate ~/.ssh/{id_ed25519,id_ed25519.pub}
+ssh-keygen -t ed25519
+```
+
+Both the public and private keys must be copied into a `.secrets` folder in the
+root of this repository prior to building the image.
+
+```bash
+# From the root of the cycles-quartz repo
+mkdir -p .secrets
+cp ~/.ssh/id_ed25519* .secrets/
+```
+
+You will, of course, need to make sure that you have added the public key to
+your GitHub account in your SSH key settings before these keys will be useful.
+Once you have built the image, you can delete the keys and remove them from your
+GitHub account.
+
 ## Building
 
 As an example, to build a Docker image for the transfers app's enclave:
