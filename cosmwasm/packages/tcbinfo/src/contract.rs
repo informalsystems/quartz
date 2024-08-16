@@ -5,7 +5,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use der::{DateTime, DecodePem};
-use mc_attestation_verifier::{CertificateChainVerifier, SignedTcbInfo, TcbInfo as McTcbInfo};
+use mc_attestation_verifier::{CertificateChainVerifier, SignedTcbInfo};
 use p256::ecdsa::VerifyingKey;
 use quartz_tee_ra::intel_sgx::dcap::certificate_chain::TlsCertificateChainVerifier;
 use serde_json::Value;

@@ -29,7 +29,12 @@ impl Handler for ContractDeployRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(
+        self,
+        config: C,
+    ) -> Result<Self::Response, Self::Error> {
+        let config = config.as_ref();
+
         trace!("initializing directory structure...");
 
         let (code_id, contract_addr) = if config.mock_sgx {
@@ -52,7 +57,7 @@ impl Handler for ContractDeployRequest {
 
 async fn deploy<DA: Serialize + DeserializeOwned>(
     args: ContractDeployRequest,
-    config: Config,
+    config: &Config,
 ) -> Result<(u64, String), anyhow::Error> {
     // TODO: Replace with call to Rust package
     let relay_path = current_dir()?.join("../");
@@ -74,7 +79,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
 
     let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-    let code_id: usize = log[0].events[1].attributes[1].value.parse()?;
+    let code_id: u64 = log[0].events[1].attributes[1].value.parse()?;
 
     info!("\n🚀 Communicating with Relay to Instantiate...\n");
     let raw_init_msg = run_relay::<QuartzInstantiateMsg<DA>>(
@@ -106,7 +111,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
 
     debug!("{contract_addr}");
 
-    Ok((code_id as u64, contract_addr.to_owned()))
+    Ok((code_id, contract_addr.to_owned()))
 }
 
 //RES=$($CMD tx wasm instantiate "$CODE_ID" "$INSTANTIATE_MSG" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin --output json)

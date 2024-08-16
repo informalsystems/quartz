@@ -83,3 +83,9 @@ impl Default for Config {
         }
     }
 }
+
+impl AsRef<Config> for Config {
+    fn as_ref(&self) -> &Config {
+        self
+    }
+}
