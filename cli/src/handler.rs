@@ -17,7 +17,10 @@ pub trait Handler {
     type Error;
     type Response;
 
-    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error>;
+    async fn handle<C: AsRef<Config> + Send>(
+        self,
+        config: C,
+    ) -> Result<Self::Response, Self::Error>;
 }
 
 #[async_trait]
@@ -25,7 +28,10 @@ impl Handler for Request {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(
+        self,
+        config: C,
+    ) -> Result<Self::Response, Self::Error> {
         match self {
             Request::Init(request) => request.handle(config).await,
             Request::Handshake(request) => request.handle(config).await,

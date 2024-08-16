@@ -18,7 +18,12 @@ impl Handler for InitRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(
+        self,
+        config: C,
+    ) -> Result<Self::Response, Self::Error> {
+        let config = config.as_ref();
+
         trace!("initializing directory structure...");
 
         let root_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");

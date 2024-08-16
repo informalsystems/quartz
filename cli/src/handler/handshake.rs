@@ -32,7 +32,12 @@ impl Handler for HandshakeRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(
+        self,
+        config: C,
+    ) -> Result<Self::Response, Self::Error> {
+        let config = config.as_ref().clone();
+
         trace!("starting handshake...");
 
         // TODO: may need to import verbosity here

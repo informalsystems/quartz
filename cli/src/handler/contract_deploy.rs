@@ -30,7 +30,12 @@ impl Handler for ContractDeployRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(
+        self,
+        config: C,
+    ) -> Result<Self::Response, Self::Error> {
+        let config = config.as_ref();
+
         trace!("initializing directory structure...");
 
         let (code_id, contract_addr) = if config.mock_sgx {
@@ -53,7 +58,7 @@ impl Handler for ContractDeployRequest {
 
 async fn deploy<DA: Serialize + DeserializeOwned>(
     args: ContractDeployRequest,
-    config: Config,
+    config: &Config,
 ) -> Result<(u64, String), anyhow::Error> {
     // TODO: Replace with call to Rust package
     let relay_path = current_dir()?.join("../");
