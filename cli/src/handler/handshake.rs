@@ -10,7 +10,7 @@ use serde::Serialize;
 use serde_json::json;
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tm_prover::{config::Config as TmProverConfig, prover::prove};
-use tracing::{debug, info, trace};
+use tracing::{debug, info};
 
 use super::utils::{
     helpers::{block_tx_commit, run_relay},
@@ -38,7 +38,7 @@ impl Handler for HandshakeRequest {
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref().clone();
 
-        trace!("starting handshake...");
+        info!("\nIn Handshake");
 
         // TODO: may need to import verbosity here
         let pub_key = handshake(self, config)

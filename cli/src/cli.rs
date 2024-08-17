@@ -51,7 +51,7 @@ pub struct Cli {
 }
 
 fn is_false(b: &bool) -> bool {
-    *b == false
+    !(*b)
 }
 
 #[derive(Debug, Subcommand, Serialize, Clone)]
@@ -192,16 +192,18 @@ pub struct EnclaveStartArgs {
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct DevArgs {
     /// Automatically deploy and instantiate new cosmwasm contract instance upon changes to source
-    #[clap(long)]
+    #[arg(long)]
     pub watch: bool,
-
-    /// Enable automatic redeployment upon changes to contract source
-    #[clap(long)]
-    pub with_contract: bool,
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
     #[arg(long)]
     pub use_latest_trusted: bool,
+
+    #[command(flatten)]
+    pub contract_deploy: ContractDeployArgs,
+
+    #[command(flatten)]
+    pub enclave_build: EnclaveBuildArgs,
 }
 
 pub trait ToFigment {

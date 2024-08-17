@@ -21,6 +21,7 @@ impl Handler for EnclaveBuildRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref();
+        info!("\nIn Enclave Build");
 
         let mut cargo = Command::new("cargo");
         let command = cargo
@@ -37,7 +38,7 @@ impl Handler for EnclaveBuildRequest {
             command.arg("--release");
         }
 
-        info!("🚧 Building enclave ...");
+        info!("🚧 Running build command ...");
         let status = command
             .status()
             .await

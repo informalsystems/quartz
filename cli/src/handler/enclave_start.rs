@@ -22,6 +22,7 @@ impl Handler for EnclaveStartRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let mut config = config.as_ref().clone();
+        info!("\nIn Enclave Start");
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = get_hash_height(self.use_latest_trusted, &mut config)?;
 

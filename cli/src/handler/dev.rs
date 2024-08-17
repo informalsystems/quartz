@@ -1,4 +1,4 @@
-use std::{process::exit, str::FromStr, time::Duration};
+use std::{process::exit, time::Duration};
 
 use async_trait::async_trait;
 // todo get rid of this?
@@ -35,6 +35,7 @@ impl Handler for DevRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref();
+        info!("\nIn Dev");
 
         let (tx, rx) = mpsc::channel::<DevRebuild>(32);
         let _res = tx.send(DevRebuild::Init).await;
@@ -43,7 +44,7 @@ impl Handler for DevRequest {
             tokio::spawn(watcher(tx));
         }
 
-        let _res = dev_driver(rx, config.clone()).await;
+        dev_driver(rx, &self, config.clone()).await?;
 
         Ok(DevResponse.into())
     }
@@ -56,7 +57,11 @@ enum DevRebuild {
     Contract,
 }
 
-async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>, config: Config) -> Result<(), Error> {
+async fn dev_driver(
+    mut rx: mpsc::Receiver<DevRebuild>,
+    args: &DevRequest,
+    config: Config,
+) -> Result<(), Error> {
     // State
     let mut shutdown_tx: Option<watch::Sender<()>> = None;
     let mut first_enclave_message = true;
@@ -74,7 +79,7 @@ async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>, config: Config) -> Resul
     })
     .expect("Error setting Ctrl-C handler");
 
-    // Config state can be held in memory here for contract addrs and etc
+    // Drive
     while let Some(dev) = rx.recv().await {
         match dev {
             DevRebuild::Init => {
@@ -82,24 +87,24 @@ async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>, config: Config) -> Resul
 
                 // Build enclave
                 let enclave_build = EnclaveBuildRequest {
-                    release: false,
-                    manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap(),
+                    release: args.release,
+                    manifest_path: config.app_dir.join("enclave/Cargo.toml"),
                 };
-                let _eb_res = enclave_build
-                    .handle(&config) // TODO: pass by ref
-                    .await?;
+                enclave_build.handle(&config).await?;
 
                 // Build contract
                 let contract_build = ContractBuildRequest {
-                    manifest_path: "../apps/transfers/contracts/Cargo.toml".parse().unwrap(),
+                    manifest_path: config.app_dir.join("contracts/Cargo.toml"),
                 };
-                let _cb_res = contract_build.handle(&config).await?;
+                contract_build.handle(&config).await?;
 
+                // Start enclave in background
                 let new_shutdown_tx = spawn_enclave_start(&config).await?;
 
-                let res = deploy_and_handshake(None, &config).await;
+                // Deploy new contract and perform handshake
+                let res = deploy_and_handshake(None, args, &config).await;
 
-                // Set new contract or shutdown and return error
+                // Save resulting contract address or shutdown and return error
                 match res {
                     Ok(res_contract) => {
                         // Set state
@@ -107,6 +112,8 @@ async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>, config: Config) -> Resul
                         shutdown_tx = Some(new_shutdown_tx);
                     }
                     Err(e) => {
+                        eprintln!("Error running initial round");
+
                         new_shutdown_tx
                             .send(())
                             .expect("Could not send signal on channel");
@@ -133,7 +140,7 @@ async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>, config: Config) -> Resul
                 let new_shutdown_tx = spawn_enclave_start(&config).await?;
 
                 // todo: should not unconditionally deploy here
-                let res = deploy_and_handshake(Some(&contract), &config).await;
+                let res = deploy_and_handshake(Some(&contract), args, &config).await;
 
                 match res {
                     Ok(res_contract) => {
@@ -142,6 +149,8 @@ async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>, config: Config) -> Resul
                         shutdown_tx = Some(new_shutdown_tx);
                     }
                     Err(e) => {
+                        eprintln!("Error restarting enclave and handshake");
+
                         new_shutdown_tx
                             .send(())
                             .expect("Could not send signal on channel");
@@ -159,11 +168,13 @@ async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>, config: Config) -> Resul
                 info!("Rebuilding Contract...");
 
                 if let Some(shutdown_tx) = shutdown_tx.clone() {
-                    let res = deploy_and_handshake(None, &config).await;
+                    let res = deploy_and_handshake(None, args, &config).await;
 
                     match res {
                         Ok(res_contract) => contract = res_contract,
                         Err(e) => {
+                            eprintln!("Error deploying contract and handshake:");
+
                             shutdown_tx
                                 .send(())
                                 .expect("Could not send signal on channel");
@@ -172,7 +183,7 @@ async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>, config: Config) -> Resul
                         }
                     }
                 } else {
-                    panic!("enclave should exist homie");
+                    return Err(Error::GenericErr("Attempting to redeploy contract, but enclave isn't running".to_string()))
                 }
             }
         }
@@ -187,7 +198,7 @@ async fn spawn_enclave_start(config: &Config) -> Result<watch::Sender<()>, Error
     let (shutdown_tx, shutdown_rx) = watch::channel(());
     let enclave_start = EnclaveStartRequest {
         shutdown_rx: Some(shutdown_rx),
-        use_latest_trusted: false, // TODO: collect arg for dev, maybe this goes in config?
+        use_latest_trusted: false, // TODO: should use this argument from dev but `true` is currently unsupported`
     };
 
     let config_cpy = config.clone();
@@ -202,16 +213,21 @@ async fn spawn_enclave_start(config: &Config) -> Result<watch::Sender<()>, Error
 }
 
 // TODO: do not shutdown if cli calls fail, just print
-async fn deploy_and_handshake(contract: Option<&str>, config: &Config) -> Result<String, Error> {
+async fn deploy_and_handshake(
+    contract: Option<&str>,
+    args: &DevRequest,
+    config: &Config,
+) -> Result<String, Error> {
     info!("Waiting for enclave start to deploy contract and handshake");
 
     // Wait at most 30 seconds to connect to enclave
     let mut i = 30;
-    while let Err(_) = CoreClient::connect(format!(
+    while CoreClient::connect(format!(
         "{}:{}",
         config.enclave_rpc_addr, config.enclave_rpc_port
     ))
     .await
+    .is_err()
     {
         sleep(Duration::from_secs(1)).await;
         i -= 1;
@@ -228,48 +244,44 @@ async fn deploy_and_handshake(contract: Option<&str>, config: &Config) -> Result
 
     // Deploy contract IF existing contract wasn't pass into the function
     let contract = if let Some(contract) = contract {
+        info!("Contract already deployed, reusing");
         contract.to_string()
     } else {
+        info!("Deploying contract");
         // Deploy Contract request
         let contract_deploy = ContractDeployRequest {
-            init_msg: serde_json::Value::from_str(r#"{"denom": "ucosm"}"#).expect("init msg didnt work"), // todo: receive from args
-            label: "test".to_string(),
-            wasm_bin_path: "../apps/transfers/contracts/target/wasm32-unknown-unknown/release/transfers_contract.wasm".into()
+            init_msg: args.init_msg.clone(),
+            label: args.label.clone(),
+            wasm_bin_path: args.wasm_bin_path.clone(),
         };
         // Call handler
         let cd_res = contract_deploy.handle(config).await;
 
         // Return contract address or shutdown enclave & error
-        let contract = if let Ok(Response::ContractDeploy(res)) = cd_res {
-            res.contract_addr
-        } else {
-            return Err(Error::GenericErr(format!(
-                "Deploy failed: {}",
-                cd_res.expect_err("else")
-            )));
-        };
-
-        contract
+        match cd_res {
+            Ok(Response::ContractDeploy(res)) => res.contract_addr,
+            Err(e) => return Err(e),
+            _ => unreachable!("Unexpected response variant"),
+        }
     };
 
     // Run handshake
+    info!("Running handshake on contract `{}`", contract);
     let handshake = HandshakeRequest {
         contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
     };
 
-    println!("handshake: {:?}", handshake);
     let h_res = handshake.handle(config).await;
 
-    let h_res = if let Ok(Response::Handshake(res)) = h_res {
-        res
-    } else {
-        return Err(Error::GenericErr(format!(
-            "Handshake failed: {}",
-            h_res.expect_err("else")
-        )));
+    match h_res {
+        Ok(Response::Handshake(res)) => {
+            info!("Handshake complete: {}", res.pub_key);
+        }
+        Err(e) => {
+            return Err(e);
+        }
+        _ => unreachable!("Unexpected response variant"),
     };
-
-    info!("Handshake complete\n{:?}", h_res);
 
     Ok(contract)
 }
