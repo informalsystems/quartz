@@ -93,7 +93,7 @@ async fn run_mock_enclave(
                     handle_child_status(status.map_err(|e| Error::GenericErr(e.to_string()))?)?;
                 }
                 _ = rx.changed() => {
-                    println!("Shutdown signal received. Terminating enclave...");
+                    info!("Enclave shutdown signal received.");
                     let _ = child.kill().await;
                 }
             }

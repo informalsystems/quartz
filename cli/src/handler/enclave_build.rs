@@ -3,6 +3,7 @@ use tokio::process::Command;
 use tracing::{debug, info};
 
 use crate::{
+    cache::log_build_to_cache,
     config::Config,
     error::Error,
     handler::Handler,
@@ -48,6 +49,8 @@ impl Handler for EnclaveBuildRequest {
                 status
             )));
         }
+
+        log_build_to_cache(&config.app_dir.join("enclave")).await?;
 
         Ok(EnclaveBuildResponse.into())
     }

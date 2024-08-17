@@ -42,6 +42,7 @@ impl TryFrom<Command> for Request {
             Command::Dev(args) => Ok(DevRequest {
                 watch: args.watch,
                 with_contract: args.with_contract,
+                use_latest_trusted: args.use_latest_trusted,
             }
             .into()),
         }

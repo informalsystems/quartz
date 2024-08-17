@@ -96,12 +96,14 @@ pub fn get_hash_height(
     config: &mut Config,
 ) -> Result<(Height, Hash), error::Error> {
     if use_latest || config.trusted_height == 0 || config.trusted_hash.is_empty() {
+        debug!("querying latest trusted hash & height from node");
         let (trusted_height, trusted_hash) = latest_height_hash(&config.node_url)?;
         config.trusted_hash = trusted_hash.to_string();
         config.trusted_height = trusted_height.into();
 
         Ok((trusted_height, trusted_hash))
     } else {
+        debug!("reusing config trusted hash & height");
         Ok((
             config.trusted_height.try_into()?,
             config
