@@ -1,7 +1,7 @@
 use std::env;
 
 use async_trait::async_trait;
-use tokio::{process::Command, sync::watch};
+use tokio::{process::{Child, Command}, sync::watch};
 use tracing::{debug, info};
 
 use crate::{
@@ -39,13 +39,13 @@ impl Handler for EnclaveStartRequest {
             ];
 
             // Run quartz enclave and block
-            let _res = run_mock_enclave(
+            let enclave_child = create_mock_enclave_child(
                 enclave_dir.join("Cargo.toml").display().to_string(),
                 config.mock_sgx,
                 enclave_args,
-                self.shutdown_rx,
             )
             .await?;
+            handle_process(self.shutdown_rx, enclave_child).await?;
         } else {
             // set cwd to enclave app
             env::set_current_dir(enclave_dir).map_err(|e| Error::GenericErr(e.to_string()))?;
@@ -56,37 +56,15 @@ impl Handler for EnclaveStartRequest {
             // gramine sign
             gramine_sgx_sign().await?;
             // Run quartz enclave and block
-            gramine_sgx().await?;
+            let enclave_child = create_gramine_sgx_child().await?;
+            handle_process(self.shutdown_rx, enclave_child).await?;
         }
 
         Ok(EnclaveStartResponse.into())
     }
 }
 
-async fn run_mock_enclave(
-    manifest_path: String,
-    mock_sgx: bool,
-    enclave_args: Vec<String>,
-    shutdown_rx: Option<watch::Receiver<()>>,
-) -> Result<(), Error> {
-    let mut cargo = Command::new("cargo");
-    let command = cargo.args(["run", "--release", "--manifest-path", &manifest_path]);
-
-    if mock_sgx {
-        debug!("Running with mock-sgx enabled");
-        command.arg("--features=mock-sgx");
-    }
-
-    command.arg("--");
-    command.args(enclave_args);
-
-    println!("command: {:?}", command);
-
-    info!("🚧 Running enclave ...");
-    let mut child = command
-        .spawn()
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
-
+async fn handle_process(shutdown_rx: Option<watch::Receiver<()>>, mut child: Child) -> Result<(), Error> {
     match shutdown_rx {
         Some(mut rx) => {
             tokio::select! {
@@ -110,6 +88,32 @@ async fn run_mock_enclave(
     }
 
     Ok(())
+}
+
+async fn create_mock_enclave_child(
+    manifest_path: String,
+    mock_sgx: bool,
+    enclave_args: Vec<String>,
+) -> Result<Child, Error> {
+    let mut cargo = Command::new("cargo");
+    let command = cargo.args(["run", "--release", "--manifest-path", &manifest_path]);
+
+    if mock_sgx {
+        debug!("Running with mock-sgx enabled");
+        command.arg("--features=mock-sgx");
+    }
+
+    command.arg("--");
+    command.args(enclave_args);
+
+    println!("command: {:?}", command);
+
+    info!("🚧 Spawning enclave process ...");
+    let child = command
+        .spawn()
+        .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+    Ok(child)
 }
 
 fn handle_child_status(status: std::process::ExitStatus) -> Result<(), Error> {
@@ -200,19 +204,12 @@ async fn gramine_sgx_sign() -> Result<(), Error> {
     Ok(())
 }
 
-async fn gramine_sgx() -> Result<(), Error> {
-    let status = Command::new("gramine-sgx")
+async fn create_gramine_sgx_child() -> Result<Child, Error> {
+    info!("🚧 Spawning enclave process ...");
+
+    let child = Command::new("gramine-sgx")
         .arg("./quartz")
-        .status()
-        .await
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
-
-    if !status.success() {
-        return Err(Error::GenericErr(format!(
-            "gramine-sgx-sign command failed. {:?}",
-            status
-        )));
-    }
-
-    Ok(())
+        .spawn()?;
+    
+    Ok(child)
 }

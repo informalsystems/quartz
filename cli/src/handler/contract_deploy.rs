@@ -17,7 +17,6 @@ use super::utils::{
     types::{Log, WasmdTxResponse},
 };
 use crate::{
-    cache::{get_cached_codeid, has_changed, save_codeid_to_cache},
     config::Config,
     error::Error,
     handler::{utils::types::RelayMessage, Handler},
@@ -69,7 +68,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     info!("🚀 Deploying {} Contract", args.label);
     let contract_path = args.wasm_bin_path;
 
-    let code_id = if has_changed(&contract_path).await? {
+    let code_id = if config.contract_has_changed(&contract_path).await? {
         let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
             &config.chain_id,
             &config.tx_sender,
@@ -79,11 +78,11 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
 
         let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
         let code_id: u64 = log[0].events[1].attributes[1].value.parse()?;
-        save_codeid_to_cache(&contract_path, code_id).await?;
+        config.save_codeid_to_cache(&contract_path, code_id).await?;
 
         code_id
     } else {
-        get_cached_codeid(&contract_path).await?
+        config.get_cached_codeid(&contract_path).await?
     };
 
     info!("🚀 Communicating with Relay to Instantiate...");

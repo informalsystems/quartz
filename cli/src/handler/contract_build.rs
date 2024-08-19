@@ -4,7 +4,6 @@ use async_trait::async_trait;
 use tracing::{debug, info, trace};
 
 use crate::{
-    cache::log_build_to_cache,
     config::Config,
     error::Error,
     handler::Handler,
@@ -47,7 +46,7 @@ impl Handler for ContractBuildRequest {
             )));
         }
 
-        log_build_to_cache(&config.app_dir.join("contract")).await?;
+        config.log_build(false).await?;
 
         Ok(ContractBuildResponse.into())
     }

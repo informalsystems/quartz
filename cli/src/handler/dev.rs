@@ -1,28 +1,24 @@
-use std::{process::exit, time::Duration};
+use std::{path::PathBuf, process::exit, time::Duration};
 
 use async_trait::async_trait;
 // todo get rid of this?
 use miette::{IntoDiagnostic, Result};
 use quartz_common::proto::core_client::CoreClient;
 use tokio::{
-    sync::{mpsc, watch},
-    time::sleep,
+    sync::{mpsc, watch}, time::sleep,
 };
 use tracing::info;
 use watchexec::Watchexec;
 use watchexec_signals::Signal;
 
 use crate::{
-    cache,
     error::Error,
     handler::{utils::helpers::wasmaddr_to_id, Handler},
     request::{
         contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest,
         dev::DevRequest, enclave_build::EnclaveBuildRequest, enclave_start::EnclaveStartRequest,
         handshake::HandshakeRequest,
-    },
-    response::{dev::DevResponse, Response},
-    Config,
+    }, response::{dev::DevResponse, Response}, Config
 };
 
 #[async_trait]
@@ -41,7 +37,7 @@ impl Handler for DevRequest {
         let _res = tx.send(DevRebuild::Init).await;
 
         if self.watch {
-            tokio::spawn(watcher(tx));
+            tokio::spawn(watcher(tx, config.build_log_dir()?));
         }
 
         dev_driver(rx, &self, config.clone()).await?;
@@ -286,7 +282,7 @@ async fn deploy_and_handshake(
     Ok(contract)
 }
 
-async fn watcher(tx: mpsc::Sender<DevRebuild>) -> Result<()> {
+async fn watcher(tx: mpsc::Sender<DevRebuild>, log_dir: PathBuf) -> Result<()> {
     let wx = Watchexec::new_async(move |mut action| {
         let tx = tx.clone();
 
@@ -315,7 +311,8 @@ async fn watcher(tx: mpsc::Sender<DevRebuild>) -> Result<()> {
     let main = wx.main();
 
     // Watch all files in quartz app directory
-    wx.config.pathset([cache::log_dir().unwrap()]);
+    // TODO: should create_log_dir be called instead? Just enforce building log in all cases?
+    wx.config.pathset([log_dir]);
 
     // Keep running until Watchexec quits
     let _ = main.await.into_diagnostic()?;

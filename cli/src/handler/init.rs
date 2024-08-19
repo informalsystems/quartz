@@ -18,6 +18,7 @@ impl Handler for InitRequest {
     type Error = Error;
     type Response = Response;
 
+    // TODO: Add non-template init method
     async fn handle<C: AsRef<Config> + Send>(
         self,
         config: C,
