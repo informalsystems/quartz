@@ -10,7 +10,7 @@ use reqwest::Url;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use tendermint_rpc::HttpClient;
-use tracing::{debug, info, trace};
+use tracing::{debug, info};
 
 use super::utils::{
     helpers::{block_tx_commit, run_relay},
@@ -35,8 +35,7 @@ impl Handler for ContractDeployRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref();
-
-        trace!("initializing directory structure...");
+        info!("\nIn Contract Deploy");
 
         let (code_id, contract_addr) = if config.mock_sgx {
             deploy::<RawMockAttestation>(self, config)
@@ -67,7 +66,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
-    info!("\n🚀 Deploying {} Contract\n", args.label);
+    info!("🚀 Deploying {} Contract", args.label);
     let contract_path = args.wasm_bin_path;
 
     let code_id = if has_changed(&contract_path).await? {
@@ -87,7 +86,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
         get_cached_codeid(&contract_path).await?
     };
 
-    info!("\n🚀 Communicating with Relay to Instantiate...\n");
+    info!("🚀 Communicating with Relay to Instantiate...");
     let raw_init_msg = run_relay::<QuartzInstantiateMsg<DA>>(
         relay_path.as_path(),
         config.mock_sgx,
@@ -95,7 +94,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     )
     .await?;
 
-    info!("\n🚀 Instantiating {} Contract\n", args.label);
+    info!("🚀 Instantiating {}", args.label);
     let mut init_msg = args.init_msg;
     init_msg["quartz"] = json!(raw_init_msg);
 
@@ -111,9 +110,9 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
     let contract_addr: &String = &log[0].events[1].attributes[0].value;
 
-    info!("\n🚀 Successfully deployed and instantiated contract!");
-    info!("\n🆔 Code ID: {}", code_id);
-    info!("\n📌 Contract Address: {}", contract_addr);
+    info!("🚀 Successfully deployed and instantiated contract!");
+    info!("🆔 Code ID: {}", code_id);
+    info!("📌 Contract Address: {}", contract_addr);
 
     debug!("{contract_addr}");
 

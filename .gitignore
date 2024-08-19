@@ -11,5 +11,6 @@ target/
 artifacts/
 .vscode/
 .DS_Store
+.secrets/
 **/.env.local
 cli/quartz.toml

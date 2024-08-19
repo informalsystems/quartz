@@ -51,6 +51,7 @@ const BANNER: &str = r"
 async fn main() -> Result<()> {
     color_eyre::install()?;
     cache::create_cache_dir().await?;
+    cache::create_log_dir().await?;
 
     println!("{BANNER}");
 

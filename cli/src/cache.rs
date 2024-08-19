@@ -127,3 +127,43 @@ pub async fn create_cache_dir() -> Result<(), Error> {
 
     Ok(())
 }
+
+// todo: rename these functions
+pub fn log_dir() -> Result<PathBuf, Error> {
+    let home_dir = dirs::home_dir()
+        .ok_or_else(|| Error::GenericErr("Failed to grab home directory".to_string()))?;
+
+    Ok(home_dir.join(".quartz/log/"))
+}
+
+pub async fn create_log_dir() -> Result<(), Error> {
+    let log_dir = log_dir()?;
+    if !log_dir.exists() {
+        tokio::fs::create_dir_all(&log_dir)
+            .await
+            .map_err(|e| Error::GenericErr(e.to_string()))?;
+    }
+
+    Ok(())
+}
+
+pub async fn log_build_to_cache(build_dir_path: &Path) -> Result<(), Error> {
+    let log_dir = log_dir()?;
+
+    let app_name = build_dir_path.parent().unwrap().file_name().unwrap();
+    let quartz_package = build_dir_path
+        .file_name()
+        .expect("function calls to this should have contract or enclave at the end");
+
+    let filename = format!(
+        "{}-{}",
+        app_name.to_string_lossy(),
+        quartz_package.to_string_lossy()
+    );
+
+    tokio::fs::write(log_dir.join(filename), "test")
+        .await
+        .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+    Ok(())
+}

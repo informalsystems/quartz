@@ -3,6 +3,7 @@ use tokio::process::Command;
 use tracing::{debug, info};
 
 use crate::{
+    cache::log_build_to_cache,
     config::Config,
     error::Error,
     handler::Handler,
@@ -20,6 +21,7 @@ impl Handler for EnclaveBuildRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref();
+        info!("\nIn Enclave Build");
 
         let mut cargo = Command::new("cargo");
         let command = cargo
@@ -36,7 +38,7 @@ impl Handler for EnclaveBuildRequest {
             command.arg("--release");
         }
 
-        info!("🚧 Building enclave ...");
+        info!("🚧 Running build command ...");
         let status = command
             .status()
             .await
@@ -48,6 +50,8 @@ impl Handler for EnclaveBuildRequest {
                 status
             )));
         }
+
+        log_build_to_cache(&config.app_dir.join("enclave")).await?;
 
         Ok(EnclaveBuildResponse.into())
     }

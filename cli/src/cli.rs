@@ -35,8 +35,8 @@ pub struct Cli {
     /// Enable mock SGX mode for testing purposes.
     /// This flag disables the use of an Intel SGX processor and allows the system to run without remote attestations.
     #[arg(long)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub mock_sgx: Option<bool>,
+    #[serde(skip_serializing_if = "is_false")]
+    pub mock_sgx: bool,
 
     /// Path to Quartz app directory
     /// Defaults to current working dir
@@ -48,6 +48,10 @@ pub struct Cli {
     /// Main command
     #[command(subcommand)]
     pub command: Command,
+}
+
+fn is_false(b: &bool) -> bool {
+    !(*b)
 }
 
 #[derive(Debug, Subcommand, Serialize, Clone)]
@@ -188,14 +192,19 @@ pub struct EnclaveStartArgs {
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct DevArgs {
     /// Automatically deploy and instantiate new cosmwasm contract instance upon changes to source
-    #[clap(long)]
+    #[arg(long)]
     pub watch: bool,
 
-    /// Enable automatic redeployment upon changes to contract source
-    #[clap(long)]
-    pub with_contract: bool,
-}
+    /// Fetch latest trusted hash and height from the chain instead of existing configuration
+    #[arg(long)]
+    pub use_latest_trusted: bool,
 
+    #[command(flatten)]
+    pub contract_deploy: ContractDeployArgs,
+
+    #[command(flatten)]
+    pub enclave_build: EnclaveBuildArgs,
+}
 
 pub trait ToFigment {
     fn to_figment(&self) -> Figment;

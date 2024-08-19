@@ -1,9 +1,10 @@
 use std::process::Command;
 
 use async_trait::async_trait;
-use tracing::{debug, trace};
+use tracing::{debug, info, trace};
 
 use crate::{
+    cache::log_build_to_cache,
     config::Config,
     error::Error,
     handler::Handler,
@@ -21,6 +22,7 @@ impl Handler for ContractBuildRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref();
+        info!("\nIn Contract Build");
 
         let mut cargo = Command::new("cargo");
         let command = cargo
@@ -44,6 +46,8 @@ impl Handler for ContractBuildRequest {
                 status
             )));
         }
+
+        log_build_to_cache(&config.app_dir.join("contract")).await?;
 
         Ok(ContractBuildResponse.into())
     }

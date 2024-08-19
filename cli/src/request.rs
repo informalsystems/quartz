@@ -41,7 +41,13 @@ impl TryFrom<Command> for Request {
             Command::Enclave { enclave_command } => enclave_command.try_into(),
             Command::Dev(args) => Ok(DevRequest {
                 watch: args.watch,
-                with_contract: args.with_contract,
+                use_latest_trusted: args.use_latest_trusted,
+                init_msg: serde_json::from_str(&args.contract_deploy.init_msg)
+                    .map_err(|e| Error::GenericErr(e.to_string()))?,
+                label: args.contract_deploy.label,
+                wasm_bin_path: args.contract_deploy.wasm_bin_path,
+                release: args.enclave_build.release,
+                manifest_path: args.enclave_build.manifest_path,
             }
             .into()),
         }

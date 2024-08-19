@@ -58,7 +58,10 @@ rm -f "$QUOTE_FILE" "$REPORT_FILE" "$REPORT_SIG_FILE"
 
 # request the IAS report for EPID attestations
 echo -n "$QUOTE" | xxd -r -p - > "$QUOTE_FILE"
-gramine-sgx-ias-request report -g "$RA_CLIENT_SPID" -k "$IAS_API_KEY" -q "$QUOTE_FILE" -r "$REPORT_FILE" -s "$REPORT_SIG_FILE" > /dev/null 2>&1
+docker run --rm -it \
+    -v /tmp:/tmp:rw \
+    gramineproject/gramine:1.7-jammy \
+    "gramine-sgx-ias-request report -g \"$RA_CLIENT_SPID\" -k \"$IAS_API_KEY\" -q \"$QUOTE_FILE\" -r \"$REPORT_FILE\" -s \"$REPORT_SIG_FILE\" > /dev/null 2>&1"
 REPORT=$(cat "$REPORT_FILE")
 REPORTSIG=$(cat "$REPORT_SIG_FILE" | tr -d '\r')
 

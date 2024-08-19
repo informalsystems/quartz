@@ -1,4 +1,4 @@
-use std::{process::exit, str::FromStr, sync::Arc, time::Duration};
+use std::{process::exit, time::Duration};
 
 use async_trait::async_trait;
 // todo get rid of this?
@@ -7,18 +7,13 @@ use quartz_common::proto::core_client::CoreClient;
 use tokio::{
     sync::{mpsc, watch},
     time::sleep,
-    try_join,
 };
-use tracing::{info, trace};
-use watchexec::{
-    command::{Command, Program, Shell},
-    job::CommandState,
-    Id, Watchexec,
-};
-use watchexec_events::{Event, Priority, ProcessEnd};
+use tracing::info;
+use watchexec::Watchexec;
 use watchexec_signals::Signal;
 
 use crate::{
+    cache,
     error::Error,
     handler::{utils::helpers::wasmaddr_to_id, Handler},
     request::{
@@ -35,177 +30,263 @@ impl Handler for DevRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
-        trace!("initializing directory structure...");
+    async fn handle<C: AsRef<Config> + Send>(
+        self,
+        config: C,
+    ) -> Result<Self::Response, Self::Error> {
+        let config = config.as_ref();
+        info!("\nIn Dev");
 
-        if !self.watch {
-            // Build enclave
-            let enclave_build = EnclaveBuildRequest {
-                release: false,
-                manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap(),
-            };
-            let _eb_res = enclave_build
-                .handle(config.clone()) // TODO: pass by ref
-                .await?;
+        let (tx, rx) = mpsc::channel::<DevRebuild>(32);
+        let _res = tx.send(DevRebuild::Init).await;
 
-            // Build contract
-            let contract_build = ContractBuildRequest {
-                manifest_path: "../apps/transfers/contracts/Cargo.toml".parse().unwrap(),
-            };
-            let _cb_res = contract_build
-                .handle(config.clone())
-                .await?;
-
-            // In separate process, launch the enclave
-            let (shutdown_tx, shutdown_rx) = watch::channel(());
-            let enclave_start = EnclaveStartRequest {
-                shutdown_rx: Some(shutdown_rx),
-                use_latest_trusted: false // TODO: collect arg for dev, maybe this goes in config?
-            };
-
-            let config_cpy = config.clone();
-            let enclave_start_handle = tokio::spawn(async move {
-                let res = enclave_start
-                    .handle(config_cpy)
-                    .await?;
-
-                Ok(res)
-            });
-
-            // Shutdown enclave upon interruption
-            let shutdown_tx_cpy = shutdown_tx.clone();
-            ctrlc::set_handler(move || {
-                shutdown_tx_cpy
-                    .send(())
-                    .expect("Could not send signal on channel.");
-                exit(130)
-            })
-            .expect("Error setting Ctrl-C handler");
-
-            info!("Waiting for enclave start to deploy contract and handshake");
-
-            // Wait at most 30 seconds to connect to enclave
-            let mut i = 30;
-            while let Err(_) = CoreClient::connect("http://127.0.0.1:11090").await {
-                sleep(Duration::from_secs(1)).await;
-                i -= 1;
-
-                if i == 0 {
-                    return Err(Error::GenericErr(
-                        "Could not connect to enclave".to_string(),
-                    ));
-                }
-            }
-
-            // Calls which interact with enclave
-            info!("Enclave started");
-
-            // Deploy Contract
-            let contract_deploy = ContractDeployRequest {
-				init_msg: serde_json::Value::from_str("{}").expect("init msg didnt work"), // todo: receive from args
-				label: "test".to_string(),
-				wasm_bin_path: "../apps/mtcs/contracts/cw-tee-mtcs/target/wasm32-unknown-unknown/release/cw_tee_mtcs.wasm".into()
-			};
-            let cd_res = contract_deploy
-                .handle(config.clone())
-                .await;
-
-            let contract = if let Ok(Response::ContractDeploy(res)) = cd_res {
-                res.contract_addr
-            } else {
-                shutdown_tx
-                    .send(())
-                    .expect("Could not send signal on channel");
-                return Err(Error::GenericErr(format!(
-                    "Deploy failed: {}",
-                    cd_res.expect_err("else")
-                )));
-            };
-
-            // Run handshake
-            let handshake = HandshakeRequest {
-                contract: wasmaddr_to_id(&contract)
-                    .map_err(|_| Error::GenericErr(String::default()))?,
-            };
-            let h_res = handshake
-                .handle(config.clone())
-                .await;
-
-            let h_res = if let Ok(Response::Handshake(res)) = h_res {
-                res
-            } else {
-                shutdown_tx
-                    .send(())
-                    .expect("Could not send signal on channel");
-                return Err(Error::GenericErr(format!(
-                    "Handshake failed: {}",
-                    h_res.expect_err("else")
-                )));
-            };
-
-            info!("Handshake complete\n{:?}", h_res);
-
-            // Move control to enclave
-            info!("Enclave listening...");
-            return enclave_start_handle
-                .await
-                .map_err(|_| Error::GenericErr(String::default()))?;
-            // dispatch_dev(DevRebuild:: Both).await;
-        } else {
-            // Run listening process
-
-            let (tx, rx) = mpsc::channel::<DevRebuild>(32);
-            let watcher_handler = tokio::spawn(watcher(config.clone(), tx));
-            let message_handler = tokio::spawn(dev_driver(rx, config.clone()));
-
-            // Use try_join! to wait for both tasks to complete.
-            let (_, _) = try_join!(watcher_handler, message_handler)
-                .map_err(|e| Error::GenericErr(e.to_string()))?;
+        if self.watch {
+            tokio::spawn(watcher(tx));
         }
+
+        dev_driver(rx, &self, config.clone()).await?;
 
         Ok(DevResponse.into())
     }
 }
 
+#[derive(Debug, Clone)]
 enum DevRebuild {
+    Init,
     Enclave,
     Contract,
-    Both,
 }
 
-async fn dispatch_dev(dev: DevRebuild, config: Config) {
-    match dev {
-        DevRebuild::Both => {
-            info!("Launching quartz app...");
+async fn dev_driver(
+    mut rx: mpsc::Receiver<DevRebuild>,
+    args: &DevRequest,
+    config: Config,
+) -> Result<(), Error> {
+    // State
+    let mut shutdown_tx: Option<watch::Sender<()>> = None;
+    let mut first_enclave_message = true;
+    let mut first_contract_message = true;
+    let mut contract = String::from("");
 
-            let enclave_build = EnclaveBuildRequest {
-                release: false,
-                manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap(),
-            };
-            let _res = enclave_build.handle(config.clone()).await;
+    // Shutdown enclave upon interruption
+    let shutdown_tx_cpy = shutdown_tx.clone();
+    ctrlc::set_handler(move || {
+        if let Some(tx) = &shutdown_tx_cpy {
+            let _res = tx.send(());
         }
-        DevRebuild::Enclave => {
-            info!("Rebuilding Enclave...");
-            let build = EnclaveBuildRequest {
-                release: false,
-                manifest_path: "../apps/transfers/enclave/Cargo.toml".parse().unwrap(),
-            };
-            let _res = build.handle(config.clone()).await;
-        }
-        DevRebuild::Contract => todo!(),
-    }
-}
 
-async fn dev_driver(mut rx: mpsc::Receiver<DevRebuild>, config: Config) {
-    // Config state can be held in memory here for contract addrs and etc
+        exit(130)
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    // Drive
     while let Some(dev) = rx.recv().await {
-        dispatch_dev(dev, config.clone()).await;
+        match dev {
+            DevRebuild::Init => {
+                info!("Launching quartz app...");
+
+                // Build enclave
+                let enclave_build = EnclaveBuildRequest {
+                    release: args.release,
+                    manifest_path: config.app_dir.join("enclave/Cargo.toml"),
+                };
+                enclave_build.handle(&config).await?;
+
+                // Build contract
+                let contract_build = ContractBuildRequest {
+                    manifest_path: config.app_dir.join("contracts/Cargo.toml"),
+                };
+                contract_build.handle(&config).await?;
+
+                // Start enclave in background
+                let new_shutdown_tx = spawn_enclave_start(&config).await?;
+
+                // Deploy new contract and perform handshake
+                let res = deploy_and_handshake(None, args, &config).await;
+
+                // Save resulting contract address or shutdown and return error
+                match res {
+                    Ok(res_contract) => {
+                        // Set state
+                        contract = res_contract;
+                        shutdown_tx = Some(new_shutdown_tx);
+                    }
+                    Err(e) => {
+                        eprintln!("Error running initial round");
+
+                        new_shutdown_tx
+                            .send(())
+                            .expect("Could not send signal on channel");
+
+                        return Err(e);
+                    }
+                }
+            }
+            DevRebuild::Enclave => {
+                if first_enclave_message {
+                    first_enclave_message = false;
+
+                    continue;
+                }
+
+                info!("Rebuilding Enclave...");
+                if let Some(shutdown_tx) = shutdown_tx.clone() {
+                    let _res = shutdown_tx.send(());
+                }
+
+                info!("Waiting 1 second for the enclave to shut down");
+                sleep(Duration::from_secs(1)).await;
+
+                let new_shutdown_tx = spawn_enclave_start(&config).await?;
+
+                // todo: should not unconditionally deploy here
+                let res = deploy_and_handshake(Some(&contract), args, &config).await;
+
+                match res {
+                    Ok(res_contract) => {
+                        // Set state
+                        contract = res_contract;
+                        shutdown_tx = Some(new_shutdown_tx);
+                    }
+                    Err(e) => {
+                        eprintln!("Error restarting enclave and handshake");
+
+                        new_shutdown_tx
+                            .send(())
+                            .expect("Could not send signal on channel");
+
+                        return Err(e);
+                    }
+                }
+            }
+            DevRebuild::Contract => {
+                if first_contract_message {
+                    first_contract_message = false;
+                    continue;
+                }
+
+                info!("Rebuilding Contract...");
+
+                if let Some(shutdown_tx) = shutdown_tx.clone() {
+                    let res = deploy_and_handshake(None, args, &config).await;
+
+                    match res {
+                        Ok(res_contract) => contract = res_contract,
+                        Err(e) => {
+                            eprintln!("Error deploying contract and handshake:");
+
+                            shutdown_tx
+                                .send(())
+                                .expect("Could not send signal on channel");
+
+                            return Err(e);
+                        }
+                    }
+                } else {
+                    return Err(Error::GenericErr("Attempting to redeploy contract, but enclave isn't running".to_string()))
+                }
+            }
+        }
     }
+
+    Ok(())
 }
 
-async fn watcher(config: Config, tx: mpsc::Sender<DevRebuild>) -> Result<()> {
-    let build_id = Id::default();
+// Spawns enclve start in a separate task which runs in the background
+async fn spawn_enclave_start(config: &Config) -> Result<watch::Sender<()>, Error> {
+    // In separate process, launch the enclave
+    let (shutdown_tx, shutdown_rx) = watch::channel(());
+    let enclave_start = EnclaveStartRequest {
+        shutdown_rx: Some(shutdown_rx),
+        use_latest_trusted: false, // TODO: should use this argument from dev but `true` is currently unsupported`
+    };
 
+    let config_cpy = config.clone();
+
+    tokio::spawn(async move {
+        let res = enclave_start.handle(config_cpy).await?;
+
+        Ok::<Response, Error>(res)
+    });
+
+    Ok(shutdown_tx)
+}
+
+// TODO: do not shutdown if cli calls fail, just print
+async fn deploy_and_handshake(
+    contract: Option<&str>,
+    args: &DevRequest,
+    config: &Config,
+) -> Result<String, Error> {
+    info!("Waiting for enclave start to deploy contract and handshake");
+
+    // Wait at most 30 seconds to connect to enclave
+    let mut i = 30;
+    while CoreClient::connect(format!(
+        "{}:{}",
+        config.enclave_rpc_addr, config.enclave_rpc_port
+    ))
+    .await
+    .is_err()
+    {
+        sleep(Duration::from_secs(1)).await;
+        i -= 1;
+
+        if i == 0 {
+            return Err(Error::GenericErr(
+                "Could not connect to enclave".to_string(),
+            ));
+        }
+    }
+
+    // Calls which interact with enclave
+    info!("Successfully pinged enclave, enclave is running");
+
+    // Deploy contract IF existing contract wasn't pass into the function
+    let contract = if let Some(contract) = contract {
+        info!("Contract already deployed, reusing");
+        contract.to_string()
+    } else {
+        info!("Deploying contract");
+        // Deploy Contract request
+        let contract_deploy = ContractDeployRequest {
+            init_msg: args.init_msg.clone(),
+            label: args.label.clone(),
+            wasm_bin_path: args.wasm_bin_path.clone(),
+        };
+        // Call handler
+        let cd_res = contract_deploy.handle(config).await;
+
+        // Return contract address or shutdown enclave & error
+        match cd_res {
+            Ok(Response::ContractDeploy(res)) => res.contract_addr,
+            Err(e) => return Err(e),
+            _ => unreachable!("Unexpected response variant"),
+        }
+    };
+
+    // Run handshake
+    info!("Running handshake on contract `{}`", contract);
+    let handshake = HandshakeRequest {
+        contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
+    };
+
+    let h_res = handshake.handle(config).await;
+
+    match h_res {
+        Ok(Response::Handshake(res)) => {
+            info!("Handshake complete: {}", res.pub_key);
+        }
+        Err(e) => {
+            return Err(e);
+        }
+        _ => unreachable!("Unexpected response variant"),
+    };
+
+    Ok(contract)
+}
+
+async fn watcher(tx: mpsc::Sender<DevRebuild>) -> Result<()> {
     let wx = Watchexec::new_async(move |mut action| {
         let tx = tx.clone();
 
@@ -216,49 +297,15 @@ async fn watcher(config: Config, tx: mpsc::Sender<DevRebuild>) -> Result<()> {
                 return action;
             }
 
-            // Defining the function that gets ran upon a detected code change
-            // We run cargo check to only update when the codebase compiles
-            let check = action.get_or_create_job(build_id, || {
-                Arc::new(Command {
-                    program: Program::Shell {
-                        shell: Shell::new("bash"),
-                        command: "
-							cargo check --package 'quartz-app-transfers-enclave
-						"
-                        .into(),
-                        args: Vec::new(),
-                    },
-                    options: Default::default(),
-                })
-            });
-
-            // Look for start event to launch quartz app
-            if action.events.iter().any(|event| event.tags.is_empty()) {
-                tx.send(DevRebuild::Both).await.unwrap();
-
-                return action;
-            }
-
             // Look for updates to filepaths
-            if action.paths().next().is_some() {
-                check.restart().await;
+            if let Some((path, _)) = action.paths().next() {
+                println!("path:\n {:?}", path);
+                if path.to_string_lossy().contains("-enclave") {
+                    let _res = tx.send(DevRebuild::Enclave).await;
+                } else if path.to_string_lossy().contains("-contract") {
+                    let _res = tx.send(DevRebuild::Contract).await;
+                }
             }
-
-            check.to_wait().await;
-            // If job (cargo check) succeeds, then message dispatcher to run quartz-cli logic
-            check
-                .run(move |context| {
-                    if let CommandState::Finished {
-                        status: ProcessEnd::Success,
-                        ..
-                    } = context.current
-                    {
-                        tokio::spawn(async move {
-                            tx.send(DevRebuild::Enclave).await.unwrap();
-                        });
-                    }
-                })
-                .await;
 
             action
         })
@@ -267,13 +314,8 @@ async fn watcher(config: Config, tx: mpsc::Sender<DevRebuild>) -> Result<()> {
     // Start the engine
     let main = wx.main();
 
-    // Send an event to start
-    wx.send_event(Event::default(), Priority::Urgent)
-        .await
-        .unwrap();
-
     // Watch all files in quartz app directory
-    wx.config.throttle(Duration::new(5, 0)).pathset([config.app_dir]);
+    wx.config.pathset([cache::log_dir().unwrap()]);
 
     // Keep running until Watchexec quits
     let _ = main.await.into_diagnostic()?;
