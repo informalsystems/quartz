@@ -1,6 +1,10 @@
-use std::env;
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
 use async_trait::async_trait;
+use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
 use tokio::{
     process::{Child, Command},
@@ -11,7 +15,10 @@ use tracing::{debug, info};
 use crate::{
     config::Config,
     error::Error,
-    handler::{utils::helpers::get_hash_height, Handler},
+    handler::{
+        utils::helpers::{get_hash_height, write_cache_hash_height},
+        Handler,
+    },
     request::enclave_start::EnclaveStartRequest,
     response::{enclave_start::EnclaveStartResponse, Response},
 };
@@ -30,6 +37,9 @@ impl Handler for EnclaveStartRequest {
 
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = get_hash_height(self.use_latest_trusted, &mut config)?;
+        if self.use_latest_trusted {
+            write_cache_hash_height(&config).await?;
+        }
 
         let enclave_dir = config.app_dir.join("enclave");
 
@@ -44,12 +54,9 @@ impl Handler for EnclaveStartRequest {
             ];
 
             // Run quartz enclave and block
-            let enclave_child = create_mock_enclave_child(
-                enclave_dir.join("Cargo.toml").display().to_string(),
-                config.mock_sgx,
-                enclave_args,
-            )
-            .await?;
+            let enclave_child =
+                create_mock_enclave_child(enclave_dir.as_path(), config.release, enclave_args)
+                    .await?;
             handle_process(self.shutdown_rx, enclave_child).await?;
         } else {
             // set cwd to enclave app
@@ -73,6 +80,7 @@ async fn handle_process(
     shutdown_rx: Option<watch::Receiver<()>>,
     mut child: Child,
 ) -> Result<(), Error> {
+    info!("{}", "Running enclave ...".green().bold());
     match shutdown_rx {
         Some(mut rx) => {
             tokio::select! {
@@ -99,19 +107,32 @@ async fn handle_process(
 }
 
 async fn create_mock_enclave_child(
-    manifest_path: String,
-    mock_sgx: bool,
+    enclave_dir: &Path,
+    release: bool,
     enclave_args: Vec<String>,
 ) -> Result<Child, Error> {
-    let mut cargo = Command::new("cargo");
-    let command = cargo.args(["run", "--release", "--manifest-path", &manifest_path]);
+    // Use the enclave package metadata to get the path to the program binary
+    let metadata = MetadataCommand::new()
+        .manifest_path(enclave_dir.join("Cargo.toml"))
+        .exec()
+        .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-    if mock_sgx {
-        debug!("Running with mock-sgx enabled");
-        command.arg("--features=mock-sgx");
-    }
+    let package = metadata
+        .root_package()
+        .ok_or("No root package found in the metadata")
+        .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-    command.arg("--");
+    let package_name = package.name.clone();
+    let target_directory: PathBuf = metadata.target_directory.into();
+
+    let executable = if release {
+        target_directory.join("release").join(package_name)
+    } else {
+        target_directory.join("debug").join(package_name)
+    };
+
+    let mut command = Command::new(executable.display().to_string());
+
     command.args(enclave_args);
 
     debug!("Enclave Start Command: {:?}", command);

@@ -1,4 +1,4 @@
-use std::env::current_dir;
+use std::path::PathBuf;
 
 use async_trait::async_trait;
 use color_eyre::owo_colors::OwoColorize;
@@ -60,7 +60,7 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     config: &Config,
 ) -> Result<(u64, String), anyhow::Error> {
     // TODO: Replace with call to Rust package
-    let relay_path = current_dir()?.join("../");
+    let relay_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
 
     let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;

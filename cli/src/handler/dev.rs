@@ -112,6 +112,8 @@ async fn dev_driver(
                         // Set state
                         contract = res_contract;
                         shutdown_tx = Some(new_shutdown_tx);
+
+                        info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
                         eprintln!("Error running initial round");
@@ -151,6 +153,8 @@ async fn dev_driver(
                         // Set state
                         contract = res_contract;
                         shutdown_tx = Some(new_shutdown_tx);
+
+                        info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
                         eprintln!("Error restarting enclave and handshake");
@@ -192,6 +196,8 @@ async fn dev_driver(
                         "Attempting to redeploy contract, but enclave isn't running".to_string(),
                     ));
                 }
+
+                info!("{}", "Enclave is listening for requests...".green().bold());
             }
         }
     }
@@ -276,6 +282,7 @@ async fn deploy_and_handshake(
     info!("Running handshake on contract `{}`", contract);
     let handshake = HandshakeRequest {
         contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
+        use_latest_trusted: args.use_latest_trusted,
     };
 
     let h_res = handshake.handle(config).await;

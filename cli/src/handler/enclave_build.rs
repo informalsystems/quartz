@@ -23,10 +23,13 @@ impl Handler for EnclaveBuildRequest {
         let config = config.as_ref();
         info!("{}", "\nPeforming Enclave Build".blue().bold());
 
+        let enclave_dir = config.app_dir.join("enclave");
+
         let mut cargo = Command::new("cargo");
-        let command = cargo
-            .args(["build"])
-            .args(["--manifest-path", &self.manifest_path.display().to_string()]);
+        let command = cargo.arg("build").args([
+            "--manifest-path",
+            &enclave_dir.join("Cargo.toml").display().to_string(),
+        ]);
 
         if config.mock_sgx {
             debug!("Building with mock-sgx enabled");

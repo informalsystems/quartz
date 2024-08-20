@@ -25,7 +25,7 @@ struct Cli {
 async fn main() -> Result<(), anyhow::Error> {
     let cli = Cli::parse();
 
-    let base_path = current_dir()?.join("../../../");
+    let base_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
 
     println!("\n🚀 Communicating with Relay to Instantiate...\n");
     let init_msg: RawInstantiateMsg = run_relay(base_path.as_path(), "Instantiate", None)?; // need to define the return type

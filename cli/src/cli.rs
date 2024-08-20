@@ -104,6 +104,10 @@ pub struct HandshakeArgs {
     #[arg(short, long, value_parser = wasmaddr_to_id)]
     pub contract: AccountId,
 
+    /// Fetch latest trusted hash and height from the chain instead of existing configuration
+    #[arg(long)]
+    pub use_latest_trusted: bool,
+
     /// Name or address of private key with which to sign
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -174,6 +178,7 @@ pub struct EnclaveBuildArgs {
 
     /// Whether to target release or dev
     #[arg(long)]
+    #[serde(skip_serializing_if = "is_false")]
     pub release: bool,
 }
 
@@ -187,6 +192,11 @@ pub struct EnclaveStartArgs {
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
     #[arg(long)]
     pub use_latest_trusted: bool,
+
+    /// Whether to target release or dev
+    #[arg(long)]
+    #[serde(skip_serializing_if = "is_false")]
+    pub release: bool,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]

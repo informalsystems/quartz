@@ -35,6 +35,7 @@ impl TryFrom<Command> for Request {
             Command::Init(args) => Ok(InitRequest { name: args.name }.try_into()?),
             Command::Handshake(args) => Ok(HandshakeRequest {
                 contract: args.contract,
+                use_latest_trusted: args.use_latest_trusted,
             }
             .into()),
             Command::Contract { contract_command } => contract_command.try_into(),

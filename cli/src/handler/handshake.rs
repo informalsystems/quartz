@@ -1,4 +1,4 @@
-use std::{env::current_dir, fs, str::FromStr};
+use std::{fs, path::PathBuf, str::FromStr};
 
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -21,7 +21,10 @@ use crate::{
     config::Config,
     error::Error,
     handler::{
-        utils::{helpers::get_hash_height, types::RelayMessage},
+        utils::{
+            helpers::{get_hash_height, read_cached_hash_height},
+            types::RelayMessage,
+        },
         Handler,
     },
     request::handshake::HandshakeRequest,
@@ -62,9 +65,13 @@ async fn handshake(args: HandshakeRequest, mut config: Config) -> Result<String,
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
-    let (trusted_height, trusted_hash) = get_hash_height(false, &mut config)?;
+    let (trusted_height, trusted_hash) = if args.use_latest_trusted {
+        read_cached_hash_height(&config).await?
+    } else {
+        get_hash_height(false, &mut config)?
+    };
     // TODO: dir logic issue #125
-    let base_path = current_dir()?.join("../");
+    let base_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
 
     info!("Running SessionCreate");
     let res: serde_json::Value = run_relay(
@@ -96,7 +103,7 @@ async fn handshake(args: HandshakeRequest, mut config: Config) -> Result<String,
     two_block_waitoor(&wsurl).await?;
 
     // TODO: dir logic issue #125
-    let proof_path = current_dir()?.join("../utils/tm-prover/light-client-proof.json");
+    let proof_path = base_path.join("utils/tm-prover/light-client-proof.json");
     debug!("Proof path: {:?}", proof_path.to_str());
 
     // Call tm prover with trusted hash and height
