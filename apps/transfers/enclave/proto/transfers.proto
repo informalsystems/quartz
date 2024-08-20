@@ -22,3 +22,10 @@ message QueryRequest {
 message QueryResponse {
   string message = 1;
 }
+
+service EventListener {
+  rpc Listen (ListenRequest) returns (ListenResponse);
+}
+
+message ListenRequest {}
+message ListenResponse {}

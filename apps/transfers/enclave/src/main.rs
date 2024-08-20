@@ -16,15 +16,15 @@ pub mod cli;
 pub mod proto;
 pub mod state;
 pub mod transfers_server;
+pub mod listen_server;
 
 use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
+    sync::{Arc, Mutex}, time::Duration
 };
 
 use clap::Parser;
 use cli::Cli;
-use proto::settlement_server::SettlementServer as TransfersServer;
+use proto::{settlement_server::SettlementServer as TransfersServer, event_listener_server::EventListenerServer};
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
@@ -35,6 +35,7 @@ use quartz_common::{
 };
 use tonic::transport::Server;
 use transfers_server::TransfersService;
+use listen_server::EventListenerService;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -72,7 +73,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             attestor.clone(),
         )))
         .add_service(TransfersServer::new(TransfersService::new(
-            config, sk, attestor,
+            config.clone(), sk.clone(), attestor.clone(),
+        )))
+        .add_service(EventListenerServer::new(EventListenerService::new(
+            config,
+            attestor,
         )))
         .serve(args.rpc_addr)
         .await?;
