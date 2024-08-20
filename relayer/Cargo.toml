@@ -1,5 +1,5 @@
 [package]
-name = "quartz-enclave"
+name = "quartz-relayer"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -12,33 +12,27 @@ readme = "README.md"
 [features]
 mock-sgx = ["quartz-cw/mock-sgx"]
 
-
-
 [dependencies]
 # external
-sha2 = { workspace = true }
 clap.workspace = true
-color-eyre.workspace = true
+displaydoc.workspace = true
 ecies.workspace = true
-hex.workspace = true
 k256.workspace = true
-rand.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+subtle-encoding.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
 tonic.workspace = true
 tokio.workspace = true
 
 # cosmos
-cosmrs.workspace = true
+cosmos-sdk-proto.workspace = true
+cosmrs = { workspace = true, features = ["cosmwasm"] }
 cosmwasm-std.workspace = true
-tendermint.workspace = true
-tendermint-light-client.workspace = true
+tendermint = { workspace = true, features = ["secp256k1"] }
 
 # quartz
-cw-proof.workspace = true
-mtcs.workspace = true
 quartz-cw.workspace = true
-quartz-proto.workspace = true
-quartz-relayer.workspace = true
 quartz-tee-ra.workspace = true
-tm-stateless-verifier.workspace = true
+quartz-proto.workspace = true
