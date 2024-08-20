@@ -5,9 +5,10 @@ use async_trait::async_trait;
 use miette::{IntoDiagnostic, Result};
 use quartz_common::proto::core_client::CoreClient;
 use tokio::{
-    sync::{mpsc, watch}, time::sleep,
+    sync::{mpsc, watch},
+    time::sleep,
 };
-use tracing::info;
+use tracing::{debug, info};
 use watchexec::Watchexec;
 use watchexec_signals::Signal;
 
@@ -18,7 +19,9 @@ use crate::{
         contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest,
         dev::DevRequest, enclave_build::EnclaveBuildRequest, enclave_start::EnclaveStartRequest,
         handshake::HandshakeRequest,
-    }, response::{dev::DevResponse, Response}, Config
+    },
+    response::{dev::DevResponse, Response},
+    Config,
 };
 
 #[async_trait]
@@ -179,7 +182,9 @@ async fn dev_driver(
                         }
                     }
                 } else {
-                    return Err(Error::GenericErr("Attempting to redeploy contract, but enclave isn't running".to_string()))
+                    return Err(Error::GenericErr(
+                        "Attempting to redeploy contract, but enclave isn't running".to_string(),
+                    ));
                 }
             }
         }
@@ -295,10 +300,18 @@ async fn watcher(tx: mpsc::Sender<DevRebuild>, log_dir: PathBuf) -> Result<()> {
 
             // Look for updates to filepaths
             if let Some((path, _)) = action.paths().next() {
-                println!("path:\n {:?}", path);
-                if path.to_string_lossy().contains("-enclave") {
+                debug!("event triggered on path:\n {:?}", path);
+                if path
+                    .file_name()
+                    .expect("events can't trigger on nonexistent files")
+                    .eq("enclave")
+                {
                     let _res = tx.send(DevRebuild::Enclave).await;
-                } else if path.to_string_lossy().contains("-contract") {
+                } else if path
+                    .file_name()
+                    .expect("events can't trigger on nonexistent files")
+                    .eq("contract")
+                {
                     let _res = tx.send(DevRebuild::Contract).await;
                 }
             }

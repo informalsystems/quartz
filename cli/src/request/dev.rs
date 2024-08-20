@@ -10,7 +10,6 @@ pub struct DevRequest {
     pub label: String,
     pub wasm_bin_path: PathBuf,
     pub release: bool,
-    pub manifest_path: PathBuf,
 }
 
 impl From<DevRequest> for Request {

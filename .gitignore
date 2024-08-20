@@ -13,4 +13,10 @@ artifacts/
 .DS_Store
 .secrets/
 **/.env.local
+
+#cli
 cli/quartz.toml
+.cache/*
+.cache/log/*
+!.cache/log/
+!.cache/

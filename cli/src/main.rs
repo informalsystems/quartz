@@ -50,7 +50,7 @@ const BANNER: &str = r"
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
-    
+
     println!("{BANNER}");
 
     let args: Cli = Cli::parse();

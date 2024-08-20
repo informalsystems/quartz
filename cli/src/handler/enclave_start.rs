@@ -1,7 +1,10 @@
 use std::env;
 
 use async_trait::async_trait;
-use tokio::{process::{Child, Command}, sync::watch};
+use tokio::{
+    process::{Child, Command},
+    sync::watch,
+};
 use tracing::{debug, info};
 
 use crate::{
@@ -64,7 +67,10 @@ impl Handler for EnclaveStartRequest {
     }
 }
 
-async fn handle_process(shutdown_rx: Option<watch::Receiver<()>>, mut child: Child) -> Result<(), Error> {
+async fn handle_process(
+    shutdown_rx: Option<watch::Receiver<()>>,
+    mut child: Child,
+) -> Result<(), Error> {
     match shutdown_rx {
         Some(mut rx) => {
             tokio::select! {
@@ -106,7 +112,7 @@ async fn create_mock_enclave_child(
     command.arg("--");
     command.args(enclave_args);
 
-    println!("command: {:?}", command);
+    debug!("Enclave Start Command: {:?}", command);
 
     info!("🚧 Spawning enclave process ...");
     let child = command
@@ -207,9 +213,7 @@ async fn gramine_sgx_sign() -> Result<(), Error> {
 async fn create_gramine_sgx_child() -> Result<Child, Error> {
     info!("🚧 Spawning enclave process ...");
 
-    let child = Command::new("gramine-sgx")
-        .arg("./quartz")
-        .spawn()?;
-    
+    let child = Command::new("gramine-sgx").arg("./quartz").spawn()?;
+
     Ok(child)
 }

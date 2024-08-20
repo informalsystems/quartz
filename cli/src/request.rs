@@ -47,7 +47,6 @@ impl TryFrom<Command> for Request {
                 label: args.contract_deploy.label,
                 wasm_bin_path: args.contract_deploy.wasm_bin_path,
                 release: args.enclave_build.release,
-                manifest_path: args.enclave_build.manifest_path,
             }
             .into()),
         }
