@@ -1,6 +1,7 @@
 use std::{path::PathBuf, process::exit, time::Duration};
 
 use async_trait::async_trait;
+use color_eyre::owo_colors::OwoColorize;
 // todo get rid of this?
 use miette::{IntoDiagnostic, Result};
 use quartz_common::proto::core_client::CoreClient;
@@ -21,7 +22,7 @@ use crate::{
         handshake::HandshakeRequest,
     },
     response::{dev::DevResponse, Response},
-    Config,
+    Config, BANNER,
 };
 
 #[async_trait]
@@ -34,7 +35,7 @@ impl Handler for DevRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref();
-        info!("\nIn Dev");
+        info!("\nPeforming Dev");
 
         let (tx, rx) = mpsc::channel::<DevRebuild>(32);
         let _res = tx.send(DevRebuild::Init).await;
@@ -82,7 +83,9 @@ async fn dev_driver(
     while let Some(dev) = rx.recv().await {
         match dev {
             DevRebuild::Init => {
-                info!("Launching quartz app...");
+                clearscreen::clear().unwrap();
+                println!("{}", BANNER.yellow().bold());
+                info!("{}", "Launching quartz app...".green().bold());
 
                 // Build enclave
                 let enclave_build = EnclaveBuildRequest {
@@ -127,8 +130,10 @@ async fn dev_driver(
 
                     continue;
                 }
+                clearscreen::clear().unwrap();
+                println!("{}", BANNER.yellow().bold());
+                info!("{}", "Rebuilding Enclave...".green().bold());
 
-                info!("Rebuilding Enclave...");
                 if let Some(shutdown_tx) = shutdown_tx.clone() {
                     let _res = shutdown_tx.send(());
                 }
@@ -163,8 +168,9 @@ async fn dev_driver(
                     first_contract_message = false;
                     continue;
                 }
-
-                info!("Rebuilding Contract...");
+                clearscreen::clear().unwrap();
+                println!("{}", BANNER.yellow().bold());
+                info!("{}", "Rebuilding Contract...".green().bold());
 
                 if let Some(shutdown_tx) = shutdown_tx.clone() {
                     let res = deploy_and_handshake(None, args, &config).await;

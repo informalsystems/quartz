@@ -16,7 +16,4 @@ artifacts/
 
 #cli
 cli/quartz.toml
-.cache/*
-.cache/log/*
-!.cache/log/
-!.cache/
+.cache/

@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use color_eyre::owo_colors::OwoColorize;
 use tokio::process::Command;
 use tracing::{debug, info};
 
@@ -20,7 +21,7 @@ impl Handler for EnclaveBuildRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref();
-        info!("\nIn Enclave Build");
+        info!("{}", "\nPeforming Enclave Build".blue().bold());
 
         let mut cargo = Command::new("cargo");
         let command = cargo
@@ -37,7 +38,7 @@ impl Handler for EnclaveBuildRequest {
             command.arg("--release");
         }
 
-        info!("🚧 Running build command ...");
+        info!("{}", "🚧 Running build command ...".green().bold());
         let status = command
             .status()
             .await

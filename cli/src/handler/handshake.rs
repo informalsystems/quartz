@@ -2,6 +2,7 @@ use std::{env::current_dir, fs, str::FromStr};
 
 use anyhow::anyhow;
 use async_trait::async_trait;
+use color_eyre::owo_colors::OwoColorize;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use futures_util::stream::StreamExt;
@@ -38,7 +39,7 @@ impl Handler for HandshakeRequest {
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref().clone();
 
-        info!("\nIn Handshake");
+        info!("{}", "\nPeforming Handshake".blue().bold());
 
         // TODO: may need to import verbosity here
         let pub_key = handshake(self, config)

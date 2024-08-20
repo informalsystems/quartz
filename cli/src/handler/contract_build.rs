@@ -1,7 +1,8 @@
 use std::process::Command;
 
 use async_trait::async_trait;
-use tracing::{debug, info, trace};
+use color_eyre::owo_colors::OwoColorize;
+use tracing::{debug, info};
 
 use crate::{
     config::Config,
@@ -21,7 +22,7 @@ impl Handler for ContractBuildRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref();
-        info!("\nIn Contract Build");
+        info!("{}", "\nPeforming Contract Build".blue().bold());
 
         let mut cargo = Command::new("cargo");
         let command = cargo
@@ -34,7 +35,7 @@ impl Handler for ContractBuildRequest {
             command.arg("--features=mock-sgx");
         }
 
-        trace!("🚧 Building contract binary ...");
+        info!("{}", "🚧 Building contract binary ...".green().bold());
         let status = command
             .status()
             .map_err(|e| Error::GenericErr(e.to_string()))?;

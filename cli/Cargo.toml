@@ -55,3 +55,4 @@ tm-prover = { workspace = true}
 quartz-common = { workspace = true, features=["contract"]}
 quartz-tee-ra = { workspace = true}
 mtcs-enclave = { workspace = true, optional = false}
+clearscreen = "3.0.0"

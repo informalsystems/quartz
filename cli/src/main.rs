@@ -25,7 +25,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use cli::ToFigment;
-use color_eyre::eyre::Result;
+use color_eyre::{eyre::Result, owo_colors::OwoColorize};
 use config::Config;
 use figment::{
     providers::{Env, Format, Serialized, Toml},
@@ -51,7 +51,7 @@ const BANNER: &str = r"
 async fn main() -> Result<()> {
     color_eyre::install()?;
 
-    println!("{BANNER}");
+    println!("{}", BANNER.yellow().bold());
 
     let args: Cli = Cli::parse();
     check_path(&args.app_dir)?;

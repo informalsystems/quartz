@@ -1,6 +1,7 @@
 use std::env;
 
 use async_trait::async_trait;
+use color_eyre::owo_colors::OwoColorize;
 use tokio::{
     process::{Child, Command},
     sync::watch,
@@ -25,7 +26,8 @@ impl Handler for EnclaveStartRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let mut config = config.as_ref().clone();
-        info!("\nIn Enclave Start");
+        info!("{}", "\nPeforming Enclave Start".blue().bold());
+
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = get_hash_height(self.use_latest_trusted, &mut config)?;
 
@@ -114,7 +116,7 @@ async fn create_mock_enclave_child(
 
     debug!("Enclave Start Command: {:?}", command);
 
-    info!("🚧 Spawning enclave process ...");
+    info!("{}", "🚧 Spawning enclave process ...".green().bold());
     let child = command
         .spawn()
         .map_err(|e| Error::GenericErr(e.to_string()))?;

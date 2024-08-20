@@ -1,6 +1,7 @@
 use std::env::current_dir;
 
 use async_trait::async_trait;
+use color_eyre::owo_colors::OwoColorize;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use quartz_common::contract::{
     msg::execute::attested::{RawEpidAttestation, RawMockAttestation},
@@ -34,7 +35,7 @@ impl Handler for ContractDeployRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref();
-        info!("\nIn Contract Deploy");
+        info!("{}", "\nPeforming Contract Deploy".blue().bold());
 
         let (code_id, contract_addr) = if config.mock_sgx {
             deploy::<RawMockAttestation>(self, config)
