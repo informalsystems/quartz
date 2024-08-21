@@ -93,8 +93,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     info!("Waiting 2 blocks for light client proof");
     two_block_waitoor(&wsurl).await?;
 
-    // TODO: dir logic issue #125
-    let proof_path = base_path.join("utils/tm-prover/light-client-proof.json");
+    let proof_path = config.cache_dir()?.join("light-client-proof.json");
     debug!("Proof path: {:?}", proof_path.to_str());
 
     // Call tm prover with trusted hash and height

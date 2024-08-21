@@ -109,20 +109,20 @@ pub fn query_latest_height_hash(node_url: &String) -> Result<(Height, Hash), err
 pub async fn write_cache_hash_height(
     trusted_height: Height,
     trusted_hash: Hash,
-    app_dir: &Path,
+    config: &Config,
 ) -> Result<(), error::Error> {
-    let height_path = app_dir.join(".cache/trusted.height");
+    let height_path = config.cache_dir()?.join("trusted.height");
     fs::write(height_path.as_path(), trusted_height.to_string()).await?;
 
-    let hash_path = app_dir.join(".cache/trusted.hash");
+    let hash_path = config.cache_dir()?.join("trusted.hash");
     fs::write(hash_path.as_path(), trusted_hash.to_string()).await?;
 
     Ok(())
 }
 
 pub async fn read_cached_hash_height(config: &Config) -> Result<(Height, Hash), error::Error> {
-    let height_path = config.app_dir.join(".cache/trusted.height");
-    let hash_path = config.app_dir.join(".cache/trusted.hash");
+    let height_path = config.cache_dir()?.join("trusted.height");
+    let hash_path = config.cache_dir()?.join("trusted.hash");
 
     if !height_path.exists() || !hash_path.exists() {
         return Err(error::Error::PathNotFile(

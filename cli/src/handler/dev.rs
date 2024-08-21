@@ -95,7 +95,7 @@ async fn dev_driver(
 
                 // Build contract
                 let contract_build = ContractBuildRequest {
-                    manifest_path: config.app_dir.join("contracts/Cargo.toml"),
+                    manifest_path: args.manifest_path.clone(),
                 };
                 contract_build.handle(&config).await?;
 
