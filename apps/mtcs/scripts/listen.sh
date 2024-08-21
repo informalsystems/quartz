@@ -1,10 +1,9 @@
 
 
-    ROOT=${ROOT:-$HOME}
-    DIR_MTCS="$ROOT/cycles-protocol/quartz-app/"
+    ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
+    DIR_MTCS="$ROOT/apps/mtcs"
     DIR_PROTO="$DIR_MTCS/enclave/proto"
-    DEFAULT_NODE="127.0.0.1:26657"
-    NODE_URL="143.244.186.205:26657"
+    NODE_URL="127.0.0.1:26657"
     # Use the QUARTZ_PORT environment variable if set, otherwise default to 11090
     QUARTZ_PORT="${QUARTZ_PORT:-11090}"
 
@@ -60,7 +59,34 @@
         PREV_EPOCH=$((EPOCH - 1))
 
         export OBLIGATIONS=$($CMD query wasm contract-state raw "$CONTRACT" $(printf '%s/%s' "$PREV_EPOCH" "obligations" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
-        export LIQUIDITY_SOURCES=$($CMD query wasm contract-state smart $CONTRACT '{"get_liquidity_sources": {"epoch": '$PREV_EPOCH'}}' -o json | jq -r .data.liquidity_sources)
+        export LIQUIDITY_SOURCES=$($CMD query wasm contract-state smart $CONTRACT '{"get_liquidity_sources": {"epoch": "'$PREV_EPOCH'"}}' -o json | jq -r .data.liquidity_sources)
+
+        cd "$ROOT/apps/mtcs"
+        export TRUSTED_HASH=$(cat trusted.hash)
+        export TRUSTED_HEIGHT=$(cat trusted.height)
+
+        cd $ROOT/utils/tm-prover
+        export PROOF_FILE="light-client-proof.json"
+        if [ -f "$PROOF_FILE" ]; then
+            rm "$PROOF_FILE"
+            echo "removed old $PROOF_FILE"
+        fi
+
+        echo "trusted hash $TRUSTED_HASH"
+        echo "trusted hash $TRUSTED_HEIGHT"
+        echo "contract $CONTRACT"
+
+        # run prover to get light client proof
+        cargo run -- --chain-id testing \
+            --primary "http://$NODE_URL" \
+            --witnesses "http://$NODE_URL" \
+            --trusted-height $TRUSTED_HEIGHT \
+            --trusted-hash $TRUSTED_HASH \
+            --contract-address $CONTRACT \
+            --storage-key $(printf '%s/%s' "$PREV_EPOCH" "obligations") \
+            --trace-file $PROOF_FILE
+
+        export POP=$(cat $PROOF_FILE)
 
         COMBINED_JSON=$(jq -nc \
             --argjson intents "$OBLIGATIONS" \
@@ -71,6 +97,7 @@
 
         # Wrap the combined JSON string into another JSON object with a "message" field
         REQUEST_MSG=$(jq -nc --arg message "$COMBINED_JSON" '{"message": $message}')
+
 
         echo "... executing mtcs"
         export ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto mtcs.proto -d "$REQUEST_MSG" "127.0.0.1:$QUARTZ_PORT" mtcs.Clearing/Run | jq -c '.message | fromjson')

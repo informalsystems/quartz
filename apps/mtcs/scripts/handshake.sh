@@ -9,7 +9,7 @@
 
 set -eo pipefail
 
-ROOT=${ROOT:-$HOME}
+ROOT=${ROOT:-$(git rev-parse --show-toplevel)}
 
 NODE_URL=${NODE_URL:-127.0.0.1:26657}
 
@@ -22,7 +22,7 @@ CONTRACT="$1"
 
 CMD="wasmd --node http://$NODE_URL"
 
-cd "$ROOT/cycles-protocol/quartz-app/"
+cd "$ROOT/apps/mtcs"
 export TRUSTED_HASH=$(cat trusted.hash)
 export TRUSTED_HEIGHT=$(cat trusted.height)
 
@@ -32,7 +32,7 @@ echo "--------------------------------------------------------"
 echo "create session"
 
 # change to relay dir
-cd $ROOT/cycles-protocol/packages/relayer
+cd $ROOT/relayer
 
 # execute SessionCreate on enclave
 export EXECUTE_CREATE=$(./scripts/relay.sh SessionCreate)
@@ -69,7 +69,7 @@ echo "--------------------------------------------------------"
 echo "set session pk"
 
 # change to prover dir
-cd $ROOT/cycles-protocol/packages/tm-prover
+cd $ROOT/utils/tm-prover
 export PROOF_FILE="light-client-proof.json"
 if [ -f "$PROOF_FILE" ]; then
     rm "$PROOF_FILE"
@@ -96,7 +96,7 @@ export POP=$(cat $PROOF_FILE)
 export POP_MSG=$(jq -nc --arg message "$POP" '$ARGS.named')
 echo "hi"
 # execute SessionSetPubKey on enclave
-cd $ROOT/cycles-protocol/packages/relayer
+cd $ROOT/relayer
 export EXECUTE_SETPUB=$(./scripts/relay.sh SessionSetPubKey "$POP_MSG")
 
 RES=$($CMD tx wasm execute "$CONTRACT" "$EXECUTE_SETPUB" --from admin --chain-id testing -y --output json)
