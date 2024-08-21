@@ -1,6 +1,6 @@
 use std::{
     env,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use async_trait::async_trait;
@@ -35,10 +35,8 @@ impl Handler for EnclaveStartRequest {
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = self.get_hash_height(&config)?;
         if self.use_latest_trusted {
-            write_cache_hash_height(trusted_height, trusted_hash, &config.app_dir).await?;
+            write_cache_hash_height(trusted_height, trusted_hash, &config).await?;
         }
-
-        let enclave_dir = config.app_dir.join("enclave");
 
         if config.mock_sgx {
             let enclave_args: Vec<String> = vec![
@@ -52,10 +50,11 @@ impl Handler for EnclaveStartRequest {
 
             // Run quartz enclave and block
             let enclave_child =
-                create_mock_enclave_child(enclave_dir.as_path(), config.release, enclave_args)
+                create_mock_enclave_child(config.app_dir.as_path(), config.release, enclave_args)
                     .await?;
             handle_process(self.shutdown_rx, enclave_child).await?;
         } else {
+            let enclave_dir = config.app_dir.join("enclave");
             // set cwd to enclave app
             env::set_current_dir(enclave_dir).map_err(|e| Error::GenericErr(e.to_string()))?;
             // gramine private key
@@ -104,28 +103,28 @@ async fn handle_process(
 }
 
 async fn create_mock_enclave_child(
-    enclave_dir: &Path,
+    app_dir: &Path,
     release: bool,
     enclave_args: Vec<String>,
 ) -> Result<Child, Error> {
-    // Use the enclave package metadata to get the path to the program binary
-    let metadata = MetadataCommand::new()
-        .manifest_path(enclave_dir.join("Cargo.toml"))
-        .exec()
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
+    let enclave_dir = app_dir.join("enclave");
+    let target_dir = app_dir.join("target");
 
-    let package = metadata
+    // Use the enclave package metadata to get the path to the program binary
+    let package_name = MetadataCommand::new()
+        .manifest_path(&enclave_dir.join("Cargo.toml"))
+        .exec()
+        .map_err(|e| Error::GenericErr(e.to_string()))?
         .root_package()
         .ok_or("No root package found in the metadata")
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
-
-    let package_name = package.name.clone();
-    let target_directory: PathBuf = metadata.target_directory.into();
+        .map_err(|e| Error::GenericErr(e.to_string()))?
+        .name
+        .clone();
 
     let executable = if release {
-        target_directory.join("release").join(package_name)
+        target_dir.join("release").join(package_name)
     } else {
-        target_directory.join("debug").join(package_name)
+        target_dir.join("debug").join(package_name)
     };
 
     let mut command = Command::new(executable.display().to_string());
