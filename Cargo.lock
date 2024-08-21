@@ -4209,7 +4209,6 @@ dependencies = [
  "cosmrs",
  "cosmwasm-std",
  "cw-multi-test",
- "cycles-sync",
  "ecies",
  "hex",
  "k256",

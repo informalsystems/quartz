@@ -77,7 +77,6 @@ mc-attestation-verifier = { git = "https://github.com/informalsystems/attestatio
 
 # quartz
 cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = false }
-cycles-sync = { path = "utils/cycles-sync", default-features = false }
 quartz-common = { path = "core/quartz-common"}
 quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
 quartz-enclave = { path = "core/quartz", default-features = false }

@@ -32,7 +32,6 @@ tonic = { version = "=0.12.1", default-features = false, features = ["codegen", 
 # cosmos
 cosmrs = { version = "=0.17.0", default-features = false }
 cosmwasm-std = { version = "2.1.1", default-features = false, features = ["std"] }
-cycles-sync = { path = "../../../utils/cycles-sync", default-features = false }
 tendermint = { version = "=0.38.1", default-features = false }
 tendermint-light-client = { version = "=0.38.1", default-features = false, features = ["rust-crypto"] }
 transfers-contract = { path = "../contracts", default-features = false }
