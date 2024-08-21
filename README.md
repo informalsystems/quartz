@@ -32,7 +32,6 @@ Utilities for supporting Quartz development and  -
 * [cw-prover](utils/cw-prover) - Retrieve a merkle-proof for CosmWasm state
 * [cycles-sync](utils/cycles-sync) - Sync obligations and setoffs
   with [Obligato](https://github.com/informalsystems/obligato)
-* [mtcs-intent](utils/mtcs-intent) - CLI for keygen, encrypting/decrypting obligations/setoffs, etc.
 * [tm-prover](utils/tm-prover) - Generate light client and merkle proofs for CosmWasm storage in a format that Quartz
   understands
 
