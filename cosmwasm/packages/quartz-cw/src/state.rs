@@ -53,7 +53,7 @@ pub struct RawConfig {
     mr_enclave: HexBinary,
     epoch_duration: Duration,
     light_client_opts: RawLightClientOpts,
-    tcbinfo_contract: Addr,
+    tcbinfo_contract: String,
 }
 
 impl RawConfig {
@@ -73,8 +73,8 @@ impl TryFrom<RawConfig> for Config {
                 .light_client_opts
                 .try_into()
                 .map_err(|e| StdError::parse_err("light_client_opts", e))?,
-            tcbinfo_contract: value.tcbinfo_contract,
-        })
+                tcbinfo_contract: Addr::unchecked(value.tcbinfo_contract),
+            })
     }
 }
 
@@ -84,7 +84,7 @@ impl From<Config> for RawConfig {
             mr_enclave: value.mr_enclave.into(),
             epoch_duration: value.epoch_duration,
             light_client_opts: value.light_client_opts.into(),
-            tcbinfo_contract: value.tcbinfo_contract
+            tcbinfo_contract: value.tcbinfo_contract.to_string()
         }
     }
 }

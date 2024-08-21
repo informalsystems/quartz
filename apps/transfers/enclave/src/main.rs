@@ -24,6 +24,7 @@ use std::{
 
 use clap::Parser;
 use cli::Cli;
+use cosmwasm_std::Addr;
 use proto::settlement_server::SettlementServer as TransfersServer;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
@@ -61,6 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         attestor.mr_enclave()?,
         Duration::from_secs(30 * 24 * 60),
         light_client_opts,
+        Addr::unchecked(args.tcbinfo_contract) // Convert String to Addr
     );
 
     let sk = Arc::new(Mutex::new(None));
