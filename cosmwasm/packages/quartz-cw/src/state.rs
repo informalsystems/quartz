@@ -1,7 +1,7 @@
 use core::time::Duration;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{HexBinary, StdError, Uint64};
+use cosmwasm_std::{HexBinary, StdError, Uint64, Addr};
 use cw_storage_plus::Item;
 use k256::ecdsa::VerifyingKey;
 
@@ -17,6 +17,7 @@ pub struct Config {
     mr_enclave: MrEnclave,
     epoch_duration: Duration,
     light_client_opts: LightClientOpts,
+    tcbinfo_contract: Addr
 }
 
 impl Config {
@@ -24,11 +25,13 @@ impl Config {
         mr_enclave: MrEnclave,
         epoch_duration: Duration,
         light_client_opts: LightClientOpts,
+        tcbinfo_contract: Addr
     ) -> Self {
         Self {
             mr_enclave,
             epoch_duration,
             light_client_opts,
+            tcbinfo_contract
         }
     }
 
@@ -39,6 +42,10 @@ impl Config {
     pub fn mr_enclave(&self) -> MrEnclave {
         self.mr_enclave
     }
+    
+    pub fn tcbinfo_contract(&self) -> &Addr {
+        &self.tcbinfo_contract
+    }
 }
 
 #[cw_serde]
@@ -46,6 +53,7 @@ pub struct RawConfig {
     mr_enclave: HexBinary,
     epoch_duration: Duration,
     light_client_opts: RawLightClientOpts,
+    tcbinfo_contract: Addr,
 }
 
 impl RawConfig {
@@ -65,6 +73,7 @@ impl TryFrom<RawConfig> for Config {
                 .light_client_opts
                 .try_into()
                 .map_err(|e| StdError::parse_err("light_client_opts", e))?,
+            tcbinfo_contract: value.tcbinfo_contract,
         })
     }
 }
@@ -75,6 +84,7 @@ impl From<Config> for RawConfig {
             mr_enclave: value.mr_enclave.into(),
             epoch_duration: value.epoch_duration,
             light_client_opts: value.light_client_opts.into(),
+            tcbinfo_contract: value.tcbinfo_contract
         }
     }
 }
