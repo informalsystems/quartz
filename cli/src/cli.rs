@@ -136,6 +136,7 @@ pub struct HandshakeArgs {
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct ContractBuildArgs {
+    /// Path to Cargo manifest file for CosmWasm contract package
     #[arg(long)]
     pub manifest_path: PathBuf,
 }
@@ -165,17 +166,13 @@ pub struct ContractDeployArgs {
     #[arg(long, default_value = "Quartz App Contract")]
     pub label: String,
 
-    /// Path to contract wasm binary for deployment
+    /// Path to Cargo manifest file for CosmWasm contract package
     #[arg(long)]
-    pub wasm_bin_path: PathBuf,
+    pub manifest_path: PathBuf,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct EnclaveBuildArgs {
-    /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
-    #[arg(long, default_value = "./enclave/Cargo.toml")]
-    pub manifest_path: PathBuf,
-
     /// Whether to target release or dev
     #[arg(long)]
     #[serde(skip_serializing_if = "is_false")]

@@ -20,13 +20,7 @@ use super::utils::{
 use crate::{
     config::Config,
     error::Error,
-    handler::{
-        utils::{
-            helpers::{get_hash_height, read_cached_hash_height},
-            types::RelayMessage,
-        },
-        Handler,
-    },
+    handler::{utils::types::RelayMessage, Handler},
     request::handshake::HandshakeRequest,
     response::{handshake::HandshakeResponse, Response},
 };
@@ -58,18 +52,15 @@ struct Message<'a> {
     message: &'a str,
 }
 
-async fn handshake(args: HandshakeRequest, mut config: Config) -> Result<String, anyhow::Error> {
+async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
     let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
     let wsurl = format!("ws://{}/websocket", config.node_url);
 
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
-    let (trusted_height, trusted_hash) = if args.use_latest_trusted {
-        read_cached_hash_height(&config).await?
-    } else {
-        get_hash_height(false, &mut config)?
-    };
+    let (trusted_height, trusted_hash) = args.get_hash_height(&config).await?;
+
     // TODO: dir logic issue #125
     let base_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
 

@@ -27,6 +27,10 @@ impl Handler for ContractBuildRequest {
         let mut cargo = Command::new("cargo");
         let command = cargo
             .arg("wasm")
+            .args([
+                "--target-dir",
+                &config.app_dir.join("target").display().to_string(),
+            ])
             .args(["--manifest-path", &self.manifest_path.display().to_string()])
             .env("RUSTFLAGS", "-C link-arg=-s");
 

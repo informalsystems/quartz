@@ -1,6 +1,7 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
+use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
 use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use quartz_common::contract::{
@@ -37,12 +38,30 @@ impl Handler for ContractDeployRequest {
         let config = config.as_ref();
         info!("{}", "\nPeforming Contract Deploy".blue().bold());
 
+        let metadata = MetadataCommand::new()
+            .manifest_path(&self.manifest_path)
+            .exec()
+            .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+        let package = metadata
+            .root_package()
+            .ok_or("No root package found in the metadata")
+            .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+        let package_name = package.name.replace('-', "_");
+
+        let wasm_bin_path = config
+            .app_dir
+            .join("target/wasm32-unknown-unknown/release")
+            .join(package_name)
+            .with_extension("wasm");
+
         let (code_id, contract_addr) = if config.mock_sgx {
-            deploy::<RawMockAttestation>(self, config)
+            deploy::<RawMockAttestation>(wasm_bin_path.as_path(), self, config)
                 .await
                 .map_err(|e| Error::GenericErr(e.to_string()))?
         } else {
-            deploy::<RawEpidAttestation>(self, config)
+            deploy::<RawEpidAttestation>(wasm_bin_path.as_path(), self, config)
                 .await
                 .map_err(|e| Error::GenericErr(e.to_string()))?
         };
@@ -56,6 +75,7 @@ impl Handler for ContractDeployRequest {
 }
 
 async fn deploy<DA: Serialize + DeserializeOwned>(
+    wasm_bin_path: &Path,
     args: ContractDeployRequest,
     config: &Config,
 ) -> Result<(u64, String), anyhow::Error> {
@@ -67,23 +87,21 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
     info!("🚀 Deploying {} Contract", args.label);
-    let contract_path = args.wasm_bin_path;
-
-    let code_id = if config.contract_has_changed(&contract_path).await? {
+    let code_id = if config.contract_has_changed(wasm_bin_path).await? {
         let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
             &config.chain_id,
             &config.tx_sender,
-            contract_path.display().to_string(),
+            wasm_bin_path.display().to_string(),
         )?)?;
         let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
 
         let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
         let code_id: u64 = log[0].events[1].attributes[1].value.parse()?;
-        config.save_codeid_to_cache(&contract_path, code_id).await?;
+        config.save_codeid_to_cache(wasm_bin_path, code_id).await?;
 
         code_id
     } else {
-        config.get_cached_codeid(&contract_path).await?
+        config.get_cached_codeid(wasm_bin_path).await?
     };
 
     info!("🚀 Communicating with Relay to Instantiate...");

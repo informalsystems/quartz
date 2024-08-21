@@ -32,7 +32,7 @@ pub struct Config {
 
     /// Path to Quartz app directory
     /// Defaults to current working dir
-    #[serde(default = "default_app_dir", skip_deserializing)]
+    #[serde(default = "default_app_dir", skip_serializing)]
     pub app_dir: PathBuf,
 
     /// Trusted height for light client proofs

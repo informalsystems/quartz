@@ -46,7 +46,7 @@ impl TryFrom<Command> for Request {
                 init_msg: serde_json::from_str(&args.contract_deploy.init_msg)
                     .map_err(|e| Error::GenericErr(e.to_string()))?,
                 label: args.contract_deploy.label,
-                wasm_bin_path: args.contract_deploy.wasm_bin_path,
+                manifest_path: args.contract_deploy.manifest_path,
                 release: args.enclave_build.release,
             }
             .into()),
@@ -60,15 +60,15 @@ impl TryFrom<ContractCommand> for Request {
     fn try_from(cmd: ContractCommand) -> Result<Request, Error> {
         match cmd {
             ContractCommand::Deploy(args) => {
-                if !args.wasm_bin_path.exists() {
-                    return Err(Error::PathNotFile(args.wasm_bin_path.display().to_string()));
+                if !args.manifest_path.exists() {
+                    return Err(Error::PathNotFile(args.manifest_path.display().to_string()));
                 }
 
                 Ok(ContractDeployRequest {
                     init_msg: serde_json::from_str(&args.init_msg)
                         .map_err(|e| Error::GenericErr(e.to_string()))?,
                     label: args.label,
-                    wasm_bin_path: args.wasm_bin_path,
+                    manifest_path: args.manifest_path,
                 }
                 .into())
             }
@@ -93,7 +93,6 @@ impl TryFrom<EnclaveCommand> for Request {
         match cmd {
             EnclaveCommand::Build(args) => Ok(EnclaveBuildRequest {
                 release: args.release,
-                manifest_path: args.manifest_path,
             }
             .into()),
             EnclaveCommand::Start(args) => Ok(EnclaveStartRequest {

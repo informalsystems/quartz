@@ -8,7 +8,7 @@ use crate::{error::Error, request::Request};
 pub struct ContractDeployRequest {
     pub init_msg: serde_json::Value,
     pub label: String,
-    pub wasm_bin_path: PathBuf,
+    pub manifest_path: PathBuf,
 }
 
 impl From<ContractDeployRequest> for Request {

@@ -26,9 +26,10 @@ impl Handler for EnclaveBuildRequest {
         let enclave_dir = config.app_dir.join("enclave");
 
         let mut cargo = Command::new("cargo");
-        let command = cargo.arg("build").args([
-            "--manifest-path",
-            &enclave_dir.join("Cargo.toml").display().to_string(),
+        let command = cargo
+            .arg("build")
+            .args(["--target-dir", &config.app_dir.join("target").display().to_string()]) // TODO: Where should this be set to?
+            .args(["--manifest-path", &enclave_dir.join("Cargo.toml").display().to_string(),
         ]);
 
         if config.mock_sgx {

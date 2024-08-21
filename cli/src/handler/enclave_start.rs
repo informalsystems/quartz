@@ -15,10 +15,7 @@ use tracing::{debug, info};
 use crate::{
     config::Config,
     error::Error,
-    handler::{
-        utils::helpers::{get_hash_height, write_cache_hash_height},
-        Handler,
-    },
+    handler::{utils::helpers::write_cache_hash_height, Handler},
     request::enclave_start::EnclaveStartRequest,
     response::{enclave_start::EnclaveStartResponse, Response},
 };
@@ -32,13 +29,13 @@ impl Handler for EnclaveStartRequest {
         self,
         config: C,
     ) -> Result<Self::Response, Self::Error> {
-        let mut config = config.as_ref().clone();
+        let config = config.as_ref().clone();
         info!("{}", "\nPeforming Enclave Start".blue().bold());
 
         // Get trusted height and hash
-        let (trusted_height, trusted_hash) = get_hash_height(self.use_latest_trusted, &mut config)?;
+        let (trusted_height, trusted_hash) = self.get_hash_height(&config)?;
         if self.use_latest_trusted {
-            write_cache_hash_height(&config).await?;
+            write_cache_hash_height(trusted_height, trusted_hash, &config.app_dir).await?;
         }
 
         let enclave_dir = config.app_dir.join("enclave");

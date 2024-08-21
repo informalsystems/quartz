@@ -26,7 +26,7 @@ impl Config {
         let cur_hash: Hash = Self::gen_hash(file).await?;
         debug!("current file hash: {}", cur_hash);
 
-        let cached_file_path = Self::to_cache_path(&self, file)?;
+        let cached_file_path = Self::to_cache_path(self, file)?;
 
         if !cached_file_path.exists() {
             return Ok(true);
@@ -67,7 +67,7 @@ impl Config {
 
     pub async fn save_codeid_to_cache(&self, file: &Path, code_id: u64) -> Result<(), Error> {
         let contract_hash = Self::gen_hash(file).await?;
-        let dest = Self::to_cache_path(&self, file)?;
+        let dest = Self::to_cache_path(self, file)?;
         let deployed_contract = DeployedContract {
             code_id,
             contract_hash,
@@ -77,7 +77,7 @@ impl Config {
     }
 
     pub async fn get_cached_codeid(&self, file: &Path) -> Result<u64, Error> {
-        let cache_path = Self::to_cache_path(&self, file)?;
+        let cache_path = Self::to_cache_path(self, file)?;
         let code_id = Self::read_from_cache(cache_path.as_path()).await?.code_id;
 
         Ok(code_id)
@@ -87,10 +87,13 @@ impl Config {
 
     fn to_cache_path(&self, file: &Path) -> Result<PathBuf, Error> {
         // Get cache filepath (".quartz/cache/example.wasm.json") from "example.wasm" filepath
-        let mut filename = file.file_name().unwrap().to_os_string();
+        let mut filename = file
+            .file_name()
+            .ok_or(Error::PathNotFile(file.display().to_string()))?
+            .to_os_string();
         filename.push(".json");
 
-        let cached_file_path = Self::cache_dir(&self)?.join::<PathBuf>(filename.into());
+        let cached_file_path = Self::cache_dir(self)?.join::<PathBuf>(filename.into());
 
         Ok(cached_file_path)
     }
@@ -121,7 +124,7 @@ impl Config {
 
     /// Creates the build log if it isn't created already, returns relative path from app_dir to log directory
     pub async fn create_build_log(&self) -> Result<PathBuf, Error> {
-        let log_dir = Self::build_log_dir(&self)?;
+        let log_dir = Self::build_log_dir(self)?;
         if !log_dir.exists() {
             tokio::fs::create_dir_all(&log_dir)
                 .await
@@ -132,7 +135,7 @@ impl Config {
     }
 
     pub async fn log_build(&self, is_enclave: bool) -> Result<(), Error> {
-        let log_dir = Self::create_build_log(&self).await?;
+        let log_dir = Self::create_build_log(self).await?;
 
         let filename = match is_enclave {
             true => "enclave",

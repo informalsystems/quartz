@@ -90,32 +90,8 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
     }
 }
 
-/// Returns the trusted hash and height
-pub fn get_hash_height(
-    use_latest: bool,
-    config: &mut Config,
-) -> Result<(Height, Hash), error::Error> {
-    if use_latest || config.trusted_height == 0 || config.trusted_hash.is_empty() {
-        debug!("querying latest trusted hash & height from node");
-        let (trusted_height, trusted_hash) = latest_height_hash(&config.node_url)?;
-        config.trusted_hash = trusted_hash.to_string();
-        config.trusted_height = trusted_height.into();
-
-        Ok((trusted_height, trusted_hash))
-    } else {
-        debug!("reusing config trusted hash & height");
-        Ok((
-            config.trusted_height.try_into()?,
-            config
-                .trusted_hash
-                .parse()
-                .map_err(|_| error::Error::GenericErr("invalid hash".to_string()))?,
-        ))
-    }
-}
-
 // Queries the chain for the latested height and hash
-pub fn latest_height_hash(node_url: &String) -> Result<(Height, Hash), error::Error> {
+pub fn query_latest_height_hash(node_url: &String) -> Result<(Height, Hash), error::Error> {
     let httpurl = Url::parse(&format!("http://{}", node_url))
         .map_err(|e| error::Error::GenericErr(e.to_string()))?;
     let wasmd_client = CliWasmdClient::new(httpurl);
@@ -130,21 +106,32 @@ pub fn latest_height_hash(node_url: &String) -> Result<(Height, Hash), error::Er
     ))
 }
 
-pub async fn write_cache_hash_height(config: &Config) -> Result<(), error::Error> {
-    let height_path = config.app_dir.join(".cache/trusted.height");
-    fs::write(height_path.as_path(), config.trusted_height.to_string()).await?;
+pub async fn write_cache_hash_height(
+    trusted_height: Height,
+    trusted_hash: Hash,
+    app_dir: &Path,
+) -> Result<(), error::Error> {
+    let height_path = app_dir.join(".cache/trusted.height");
+    fs::write(height_path.as_path(), trusted_height.to_string()).await?;
 
-    let hash_path = config.app_dir.join(".cache/trusted.hash");
-    fs::write(hash_path.as_path(), config.trusted_hash.to_string()).await?;
+    let hash_path = app_dir.join(".cache/trusted.hash");
+    fs::write(hash_path.as_path(), trusted_hash.to_string()).await?;
 
     Ok(())
 }
 
 pub async fn read_cached_hash_height(config: &Config) -> Result<(Height, Hash), error::Error> {
     let height_path = config.app_dir.join(".cache/trusted.height");
-    let trusted_height: Height = fs::read_to_string(height_path.as_path()).await?.parse()?;
-
     let hash_path = config.app_dir.join(".cache/trusted.hash");
+
+    if !height_path.exists() || !hash_path.exists() {
+        return Err(error::Error::PathNotFile(
+            "Trusted hash & height are not available in cache. Have you started the enclave?"
+                .to_string(),
+        ));
+    }
+
+    let trusted_height: Height = fs::read_to_string(height_path.as_path()).await?.parse()?;
     let trusted_hash: Hash = fs::read_to_string(hash_path.as_path()).await?.parse()?;
 
     Ok((trusted_height, trusted_hash))
