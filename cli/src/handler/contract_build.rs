@@ -26,7 +26,10 @@ impl Handler for ContractBuildRequest {
 
         let mut cargo = Command::new("cargo");
         let command = cargo
-            .arg("wasm")
+            .arg("build")
+            .arg("--release")
+            .args(["--target", "wasm32-unknown-unknown"])
+            .arg("--lib")
             .args([
                 "--target-dir",
                 &config.app_dir.join("target").display().to_string(),
