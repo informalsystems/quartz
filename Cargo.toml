@@ -86,6 +86,7 @@ quartz-relayer = { path = "relayer", default-features = false ,  features = ["mo
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
 tm-prover = { path = "utils/tm-prover", default-features = false }
 tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
+wasmd-client = { path = "cosmwasm/packages/wasmd-client", default-features = false }
 
 # quartz apps
 cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }

@@ -4,7 +4,6 @@ use anyhow::anyhow;
 use async_trait::async_trait;
 use color_eyre::owo_colors::OwoColorize;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
-use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use futures_util::stream::StreamExt;
 use reqwest::Url;
 use serde::Serialize;
@@ -12,6 +11,7 @@ use serde_json::json;
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tm_prover::{config::Config as TmProverConfig, prover::prove};
 use tracing::{debug, info};
+use wasmd_client::{CliWasmdClient, WasmdClient};
 
 use super::utils::{
     helpers::{block_tx_commit, run_relay},

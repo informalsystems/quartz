@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
-use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use quartz_common::contract::{
     msg::execute::attested::{RawEpidAttestation, RawMockAttestation},
     prelude::QuartzInstantiateMsg,
@@ -13,6 +12,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use tendermint_rpc::HttpClient;
 use tracing::{debug, info};
+use wasmd_client::{CliWasmdClient, WasmdClient};
 
 use super::utils::{
     helpers::{block_tx_commit, run_relay},

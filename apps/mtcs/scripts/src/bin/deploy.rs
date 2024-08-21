@@ -3,7 +3,7 @@ use std::{env::current_dir, str::FromStr};
 use clap::Parser;
 use cosmrs::tendermint::chain::Id as ChainId;
 use cw_tee_mtcs::msg::InstantiateMsg as MtcsInstantiateMsg;
-use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
+use wasmd_client::{CliWasmdClient, WasmdClient};
 use quartz_common::contract::msg::RawInstantiateMsg;
 use reqwest::Url;
 use scripts::{

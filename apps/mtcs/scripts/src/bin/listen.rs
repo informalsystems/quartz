@@ -9,7 +9,7 @@ use cw_tee_mtcs::msg::{
     execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
     QueryMsg::GetLiquiditySources,
 };
-use cycles_sync::wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
+use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use futures_util::stream::StreamExt;
 use mtcs_enclave::{
     proto::{clearing_client::ClearingClient, RunClearingRequest},

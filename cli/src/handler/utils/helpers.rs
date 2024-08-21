@@ -2,7 +2,6 @@ use std::{path::Path, time::Duration};
 
 use anyhow::anyhow;
 use cosmrs::{AccountId, ErrorReport};
-use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use regex::Regex;
 use reqwest::Url;
 use serde::de::DeserializeOwned;
@@ -13,6 +12,7 @@ use tendermint_rpc::{
 };
 use tokio::{fs, process::Command};
 use tracing::debug;
+use wasmd_client::{CliWasmdClient, WasmdClient};
 
 use super::types::RelayMessage;
 use crate::{config::Config, error};
