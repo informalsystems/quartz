@@ -9,6 +9,5 @@ ignore = [
     "enclave/target/*",
     "frontend/package-lock.json",
     "frontend/public/images",
-    "trusted.hash",
-    "trusted.height"
+    "target/"    
 ]

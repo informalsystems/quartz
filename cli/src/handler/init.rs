@@ -2,8 +2,9 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 use cargo_generate::{generate, GenerateArgs, TemplatePath, Vcs};
+use color_eyre::owo_colors::OwoColorize;
 use tokio::fs;
-use tracing::trace;
+use tracing::info;
 
 use crate::{
     config::Config,
@@ -24,8 +25,7 @@ impl Handler for InitRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref();
-
-        trace!("initializing directory structure...");
+        println!("{}", "\nPeforming Init".blue().bold());
 
         let root_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
 
@@ -61,7 +61,8 @@ impl Handler for InitRequest {
             .expect("something went wrong!")
             .display()
             .to_string();
-
+        
+        println!("\n{}", "It's TEE time.".green().bold());
         Ok(InitResponse { result_dir }.into())
     }
 }
