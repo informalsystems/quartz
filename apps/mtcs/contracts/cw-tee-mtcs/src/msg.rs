@@ -183,7 +183,8 @@ mod tests {
                                 "trusting_period": 1209600,
                                 "max_clock_drift": 5,
                                 "max_block_lag": 5
-                            }
+                            },
+                            "tcbinfo_contract": "wasm14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s0phg4d"
                         }
                     },
                     "attestation": {
