@@ -24,7 +24,7 @@ where
 }
 
 impl Handler for CoreInstantiate {
-    fn handle(self, deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {        
+    fn handle(self, deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {
         CONFIG
             .save(deps.storage, &RawConfig::from(self.config().clone()))
             .map_err(Error::Std)?;

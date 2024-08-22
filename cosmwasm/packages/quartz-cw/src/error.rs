@@ -14,7 +14,7 @@ pub enum Error {
     #[error("invalid session nonce or attempt to reset pub_key")]
     BadSessionTransition,
     #[error("tcbinfo query error")]
-    TcbInfoQueryError
+    TcbInfoQueryError,
 }
 
 impl From<K256Error> for Error {

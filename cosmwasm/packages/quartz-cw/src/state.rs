@@ -17,7 +17,7 @@ pub struct Config {
     mr_enclave: MrEnclave,
     epoch_duration: Duration,
     light_client_opts: LightClientOpts,
-    tcbinfo_contract: String
+    tcbinfo_contract: String,
 }
 
 impl Config {
@@ -25,13 +25,13 @@ impl Config {
         mr_enclave: MrEnclave,
         epoch_duration: Duration,
         light_client_opts: LightClientOpts,
-        tcbinfo_contract: String
+        tcbinfo_contract: String,
     ) -> Self {
         Self {
             mr_enclave,
             epoch_duration,
             light_client_opts,
-            tcbinfo_contract
+            tcbinfo_contract,
         }
     }
 
@@ -42,7 +42,7 @@ impl Config {
     pub fn mr_enclave(&self) -> MrEnclave {
         self.mr_enclave
     }
-    
+
     pub fn tcbinfo_contract(&self) -> &str {
         &self.tcbinfo_contract
     }
@@ -73,9 +73,8 @@ impl TryFrom<RawConfig> for Config {
                 .light_client_opts
                 .try_into()
                 .map_err(|e| StdError::parse_err("light_client_opts", e))?,
-                tcbinfo_contract: value.tcbinfo_contract,  
-
-            })
+            tcbinfo_contract: value.tcbinfo_contract,
+        })
     }
 }
 
