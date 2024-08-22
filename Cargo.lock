@@ -2964,7 +2964,7 @@ dependencies = [
 [[package]]
 name = "mtcs"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/mtcs.git?branch=hu55a1n1/109-generic-ids#6fcdfc9bbecceabe0a98f83929bbf36846344ed0"
+source = "git+ssh://git@github.com/informalsystems/mtcs.git#b2093085a53bc39107012fcae9e236edbc4433cb"
 dependencies = [
  "displaydoc",
  "itertools 0.10.5",

@@ -90,7 +90,7 @@ tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier
 
 # quartz apps
 cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
-mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", branch = "hu55a1n1/109-generic-ids", default-features = false }
+mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
 mtcs-enclave = { path = "apps/mtcs/enclave" }
 transfers-contract = { path = "apps/transfers/contracts", default-features = false }
 
