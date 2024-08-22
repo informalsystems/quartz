@@ -26,6 +26,10 @@ pub struct Cli {
     #[clap(long)]
     pub chain_id: String,
 
+    /// TcbInfo contract address
+    #[clap(long)]
+    pub tcbinfo_contract: String,
+
     /// Height of the trusted header (AKA root-of-trust)
     #[clap(long)]
     pub trusted_height: Height,

@@ -25,6 +25,9 @@ where
 
 impl Handler for CoreInstantiate {
     fn handle(self, deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {
+         // Validate the tcbinfo_contract address
+        deps.api.addr_validate(&self.config().tcbinfo_contract())?;
+        
         CONFIG
             .save(deps.storage, &RawConfig::from(self.config().clone()))
             .map_err(Error::Std)?;
