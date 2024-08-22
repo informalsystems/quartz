@@ -1,8 +1,9 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use quartz_tee_ra::{
-    intel_sgx::dcap::TrustedMrEnclaveIdentity, verify_dcap_attestation, verify_epid_attestation,
-    Error as RaVerificationError,
+    intel_sgx::dcap:: TrustedMrEnclaveIdentity,
+    verify_dcap_attestation, verify_epid_attestation, Error as RaVerificationError,
 };
+use serde_json::Value;
 use tcbinfo::contract::query::get_info;
 
 use crate::{
@@ -34,29 +35,38 @@ impl Handler for EpidAttestation {
 }
 
 impl Handler for DcapAttestation {
-    fn handle(
-        self,
-        deps: DepsMut<'_>,
-        _env: &Env,
-        _info: &MessageInfo,
-    ) -> Result<Response, Error> {
+    fn handle(self, deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {
         let (quote, collateral) = self.clone().into_tuple();
         let mr_enclave = TrustedMrEnclaveIdentity::new(self.mr_enclave().into(), [""; 0], [""; 0]);
 
-        // Retrieve the FMSPC from the quote 
-        let report_body = quote.app_report_body();
-        let fmspc: [u8; 6] = report_body.config_id().as_ref()[6..12].try_into().unwrap();
+        // Retrieve the FMSPC from the collateral
+        let fmspc = collateral.tcb_info();
+
+        let tcb_info_json: Value = serde_json::from_str(fmspc).expect("could not read tcbinfo");
+        let fmspc_raw = hex::decode(
+            tcb_info_json
+                .get("tcbInfo")
+                .unwrap()
+                .get("fmspc")
+                .unwrap()
+                .as_str()
+                .expect("could not find fmspc string"),
+        )
+        .expect("failed to decode fmspc hex string");
+
+        let fmspc: [u8; 6] = fmspc_raw.try_into().unwrap();
         let fmspc_value = u16::from_be_bytes([fmspc[4], fmspc[5]]);
         let fmspc_hex = format!("{:04X}", fmspc_value);
-        // Return an error if the get_info query fails
-        let tcb_info_response = get_info(deps.as_ref(), fmspc_hex)
-        .map_err(|_| Error::TcbInfoQueryError)?;
-     
+        
+        // @dusterbloom not sure about this part
+        let _tcb_info_response =
+            get_info(deps.as_ref(), fmspc_hex).map_err(|_| Error::TcbInfoQueryError)?;
+
         // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
         let verification_output = verify_dcap_attestation(quote, collateral, &[mr_enclave.into()]);
-        
+
         // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
-        if verification_output.is_success().into() {          
+        if verification_output.is_success().into() {
             Ok(Response::default())
         } else {
             Err(Error::RaVerification(RaVerificationError::Dcap(
