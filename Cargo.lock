@@ -1392,6 +1392,7 @@ dependencies = [
  "displaydoc",
  "ecies",
  "hex",
+ "mtcs-enclave",
  "rand_core",
  "reqwest 0.12.5",
  "serde",
@@ -1402,6 +1403,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+ "wasmd-client",
 ]
 
 [[package]]

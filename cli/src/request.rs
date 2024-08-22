@@ -61,7 +61,9 @@ impl TryFrom<ContractCommand> for Request {
         match cmd {
             ContractCommand::Deploy(args) => {
                 if !args.contract_manifest.exists() {
-                    return Err(Error::PathNotFile(args.contract_manifest.display().to_string()));
+                    return Err(Error::PathNotFile(
+                        args.contract_manifest.display().to_string(),
+                    ));
                 }
 
                 Ok(ContractDeployRequest {
@@ -74,7 +76,9 @@ impl TryFrom<ContractCommand> for Request {
             }
             ContractCommand::Build(args) => {
                 if !args.contract_manifest.exists() {
-                    return Err(Error::PathNotFile(args.contract_manifest.display().to_string()));
+                    return Err(Error::PathNotFile(
+                        args.contract_manifest.display().to_string(),
+                    ));
                 }
 
                 Ok(ContractBuildRequest {

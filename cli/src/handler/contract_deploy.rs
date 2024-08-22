@@ -38,17 +38,17 @@ impl Handler for ContractDeployRequest {
         let config = config.as_ref();
         info!("{}", "\nPeforming Contract Deploy".blue().bold());
 
-        let metadata = MetadataCommand::new()
-            .manifest_path(&self.manifest_path)
+        // Get contract package name in snake_case
+        let package_name = MetadataCommand::new()
+            .manifest_path(&self.contract_manifest)
             .exec()
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
-
-        let package = metadata
+            .map_err(|e| Error::GenericErr(e.to_string()))?
             .root_package()
             .ok_or("No root package found in the metadata")
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
-
-        let package_name = package.name.replace('-', "_");
+            .map_err(|e| Error::GenericErr(e.to_string()))?
+            .name
+            .clone()
+            .replace('-', "_");
 
         let wasm_bin_path = config
             .app_dir

@@ -34,7 +34,10 @@ impl Handler for ContractBuildRequest {
                 "--target-dir",
                 &config.app_dir.join("target").display().to_string(),
             ])
-            .args(["--manifest-path", &self.manifest_path.display().to_string()])
+            .args([
+                "--manifest-path",
+                &self.contract_manifest.display().to_string(),
+            ])
             .env("RUSTFLAGS", "-C link-arg=-s");
 
         if config.mock_sgx {

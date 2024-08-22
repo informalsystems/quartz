@@ -1176,6 +1176,7 @@ dependencies = [
 [[package]]
 name = "quartz-common"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#302008c337b58fcad0373922a2787b9341eafd58"
 dependencies = [
  "quartz-cw",
 ]
@@ -1183,6 +1184,7 @@ dependencies = [
 [[package]]
 name = "quartz-cw"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#302008c337b58fcad0373922a2787b9341eafd58"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1199,6 +1201,7 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#302008c337b58fcad0373922a2787b9341eafd58"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",

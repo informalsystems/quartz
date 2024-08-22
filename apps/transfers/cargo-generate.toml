@@ -10,5 +10,4 @@ ignore = [
     "enclave/target",
     "enclave/src/prost/*",
     "frontend/package-lock.json",
-    "scripts/"
 ]
