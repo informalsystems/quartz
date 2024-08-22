@@ -14,33 +14,7 @@ echo "--------------------------------------------------------"
 echo "set trusted hash"
 
 cd "$DIR_QUARTZ_TM_PROVER"
-# cargo run -- --chain-id testing \
-# --primary "http://$NODE_URL" \
-# --witnesses "http://$NODE_URL" \
-# --trusted-height 1 \
-# --trusted-hash "5237772462A41C0296ED688A0327B8A60DF310F08997AD760EB74A70D0176C27" \
-# --contract-address "wasm14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s0phg4d" \
-# --storage-key "quartz_session" \
-# --trace-file light-client-proof.json &> $DIR_QUARTZ_APP/output
 
-# # Debug output of cargo run
-# echo "Cargo run output:"
-# cat $DIR_QUARTZ_APP/output
-
-# cd $DIR_QUARTZ_APP
-# # Debug hash extraction
-# echo "Attempting to extract trusted hash from output..."
-# cat output | grep found | head -1 | awk '{print $NF}' | sed 's/\x1b\[[0-9;]*m//g' > trusted.hash
-
-# # Check if the hash was extracted correctly
-# if [[ ! -s trusted.hash ]]; then
-#     echo "Failed to extract trusted hash from output"
-#     exit 1
-# fi
-
-# export TRUSTED_HASH=$(cat trusted.hash)
-# echo "Extracted TRUSTED_HASH: $TRUSTED_HASH"
-# rm output
 CHAIN_STATUS=$($CMD status)
 TRUSTED_HASH=$(echo "$CHAIN_STATUS" | jq -r .SyncInfo.latest_block_hash)
 TRUSTED_HEIGHT=$(echo "$CHAIN_STATUS" | jq -r .SyncInfo.latest_block_height)

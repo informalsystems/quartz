@@ -39,6 +39,5 @@ cw-proof.workspace = true
 mtcs.workspace = true
 quartz-cw.workspace = true
 quartz-proto.workspace = true
-quartz-relayer.workspace = true
 quartz-tee-ra.workspace = true
 tm-stateless-verifier.workspace = true
