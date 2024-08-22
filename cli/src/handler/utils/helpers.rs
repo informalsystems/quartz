@@ -32,7 +32,7 @@ pub async fn run_relay<R: DeserializeOwned>(
     mock_sgx: bool,
     msg: RelayMessage,
 ) -> Result<R, anyhow::Error> {
-    let relayer_path = base_path.join("relayer/scripts/relay.sh");
+    let relayer_path = base_path.join("cli/scripts/relay.sh");
 
     let mut bash = Command::new("bash");
     let command = bash
