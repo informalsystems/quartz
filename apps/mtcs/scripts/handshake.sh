@@ -83,7 +83,7 @@ echo "contract $CONTRACT"
 # run prover to get light client proof
 # TODO: assume this binary is pre-built?
 # TODO: pass in addresses and chain id 
-cargo run -vvv -- --chain-id testing \
+cargo run -- --chain-id testing \
     --primary "http://$NODE_URL" \
     --witnesses "http://$NODE_URL" \
     --trusted-height $TRUSTED_HEIGHT \
@@ -94,7 +94,7 @@ cargo run -vvv -- --chain-id testing \
 
 export POP=$(cat $PROOF_FILE)
 export POP_MSG=$(jq -nc --arg message "$POP" '$ARGS.named')
-echo "hi"
+
 # execute SessionSetPubKey on enclave
 cd $ROOT/relayer
 export EXECUTE_SETPUB=$(./scripts/relay.sh SessionSetPubKey "$POP_MSG")
