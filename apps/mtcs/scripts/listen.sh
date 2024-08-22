@@ -47,8 +47,7 @@
         echo "... fetching obligations"
 
         EPOCH=$($CMD query wasm contract-state raw "$CONTRACT" "65706f63685f636f756e746572" -o json | jq -r .data | base64 -d | tr -d '"')
-        # TODO: Using $EPOCH variable is not working
-        PREV_EPOCH=$((2 - 1))
+        PREV_EPOCH=$(($EPOCH - 1))
         OBLIGATIONS_RAW_KEY=$(printf '%s/%s' $PREV_EPOCH "obligations")
 
         cd "$ROOT/apps/mtcs"
@@ -76,10 +75,8 @@
             --storage-key $OBLIGATIONS_RAW_KEY \
             --trace-file $PROOF_FILE
 
-
         OBLIGATIONS=$($CMD query wasm contract-state raw "$CONTRACT" $(printf '%s/%s' $PREV_EPOCH "obligations" | hexdump -ve '/1 "%02X"') -o json | jq -r .data | base64 -d)
         LIQUIDITY_SOURCES=$($CMD query wasm contract-state smart $CONTRACT '{"get_liquidity_sources": {"epoch": "'$PREV_EPOCH'"}}' -o json | jq -r .data.liquidity_sources)
-
         REQUEST=$(jq -nc \
             --argjson intents "$OBLIGATIONS" \
             --argjson liquidity_sources "$LIQUIDITY_SOURCES" \
