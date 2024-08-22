@@ -124,11 +124,11 @@ pub async fn read_cached_hash_height(config: &Config) -> Result<(Height, Hash), 
     let height_path = config.cache_dir()?.join("trusted.height");
     let hash_path = config.cache_dir()?.join("trusted.hash");
 
-    if !height_path.exists() || !hash_path.exists() {
-        return Err(error::Error::PathNotFile(
-            "Trusted hash & height are not available in cache. Have you started the enclave?"
-                .to_string(),
-        ));
+    if !height_path.exists() {
+        return Err(error::Error::PathNotFile(height_path.display().to_string()));
+    }
+    if !hash_path.exists() {
+        return Err(error::Error::PathNotFile(hash_path.display().to_string()));
     }
 
     let trusted_height: Height = fs::read_to_string(height_path.as_path()).await?.parse()?;

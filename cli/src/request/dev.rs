@@ -8,7 +8,7 @@ pub struct DevRequest {
     pub use_latest_trusted: bool,
     pub init_msg: serde_json::Value,
     pub label: String,
-    pub manifest_path: PathBuf,
+    pub contract_manifest: PathBuf,
     pub release: bool,
 }
 

@@ -95,7 +95,7 @@ async fn dev_driver(
 
                 // Build contract
                 let contract_build = ContractBuildRequest {
-                    manifest_path: args.manifest_path.clone(),
+                    contract_manifest: args.contract_manifest.clone(),
                 };
                 contract_build.handle(&config).await?;
 
@@ -266,7 +266,7 @@ async fn deploy_and_handshake(
         let contract_deploy = ContractDeployRequest {
             init_msg: args.init_msg.clone(),
             label: args.label.clone(),
-            manifest_path: args.manifest_path.clone(),
+            contract_manifest: args.contract_manifest.clone(),
         };
         // Call handler
         let cd_res = contract_deploy.handle(config).await;

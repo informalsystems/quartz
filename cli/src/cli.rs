@@ -138,7 +138,7 @@ pub struct HandshakeArgs {
 pub struct ContractBuildArgs {
     /// Path to Cargo manifest file for CosmWasm contract package
     #[arg(long)]
-    pub manifest_path: PathBuf,
+    pub contract_manifest: PathBuf,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
@@ -168,7 +168,7 @@ pub struct ContractDeployArgs {
 
     /// Path to Cargo manifest file for CosmWasm contract package
     #[arg(long)]
-    pub manifest_path: PathBuf,
+    pub contract_manifest: PathBuf,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]

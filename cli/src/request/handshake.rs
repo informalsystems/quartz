@@ -24,9 +24,13 @@ impl HandshakeRequest {
     pub async fn get_hash_height(&self, config: &Config) -> Result<(Height, Hash), Error> {
         if self.use_latest_trusted || config.trusted_height == 0 || config.trusted_hash.is_empty() {
             debug!("querying latest trusted hash & height from node");
-            let (trusted_height, trusted_hash) = read_cached_hash_height(config).await?;
-
-            Ok((trusted_height, trusted_hash))
+            
+            let res = read_cached_hash_height(config).await;
+            if let Err(Error::PathNotFile(e)) = res {
+                return Err(Error::GenericErr(format!("File not found error from reading cache: {}. Have you started the enclave?", e)));
+            }
+            
+            Ok(res?)
         } else {
             debug!("reusing config trusted hash & height");
             Ok((
