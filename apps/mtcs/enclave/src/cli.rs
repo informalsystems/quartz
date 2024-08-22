@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
-use cosmrs::tendermint::Hash;
+use cosmrs::{tendermint::Hash, AccountId};
 use tendermint_light_client::types::{Height, TrustThreshold};
 
 fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {
@@ -28,7 +28,7 @@ pub struct Cli {
 
     /// TcbInfo contract address
     #[clap(long)]
-    pub tcbinfo_contract: String,
+    pub tcbinfo_contract: AccountId,
 
     /// Height of the trusted header (AKA root-of-trust)
     #[clap(long)]
