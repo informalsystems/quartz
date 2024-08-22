@@ -25,7 +25,7 @@ pub enum ExecuteMsg<RA = RawDefaultAttestation> {
     SubmitObligation(execute::SubmitObligationMsg),
     SubmitObligations(execute::SubmitObligationsMsg),
     SubmitSetoffs(AttestedMsg<execute::SubmitSetoffsMsg, RA>),
-    InitClearing,
+    InitClearing {},
     SetLiquiditySources(execute::SetLiquiditySourcesMsg),
 }
 
