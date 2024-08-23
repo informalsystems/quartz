@@ -1,32 +1,44 @@
 use cosmwasm_std::{
     from_json, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
-    StdResult, WasmQuery,
+    WasmQuery,
 };
 use quartz_tee_ra::{
-    intel_sgx::dcap::TrustedMrEnclaveIdentity, verify_dcap_attestation, verify_epid_attestation,
-    Error as RaVerificationError,
+    intel_sgx::dcap::{Collateral, TrustedMrEnclaveIdentity},
+    verify_dcap_attestation, verify_epid_attestation, Error as RaVerificationError,
 };
-use serde_json::Value;
 
 use crate::{
     error::Error,
     handler::Handler,
     msg::execute::attested::{
         Attestation, Attested, AttestedMsgSansHandler, DcapAttestation, EpidAttestation,
-        GetTcbInfoResponse, HasUserData, MockAttestation, TcbInfoQueryMsg,
+        HasUserData, MockAttestation,
     },
     state::CONFIG,
 };
+use tcbinfo::msg::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg}; 
 
-pub fn query_tcbinfo(deps: Deps<'_>, tcbinfo_addr: String, fmspc: String) -> StdResult<Binary> {
-    let query_msg = TcbInfoQueryMsg::GetInfo { fmspc };
+
+pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
+    let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
+    let tcbinfo_addr = config.tcb_info();
+
+    let fmspc_bytes =
+        hex::decode(&fmspc).map_err(|_| Error::InvalidFmspc("Invalid FMSPC format".to_string()))?;
+    if fmspc_bytes.len() != 6 {
+        return Err(Error::InvalidFmspc("FMSPC must be 6 bytes".to_string()));
+    }
+
+    let query_msg = TcbInfoQueryMsg::GetTcbInfo { fmspc };
 
     let request = QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: tcbinfo_addr,
-        msg: to_json_binary(&query_msg)?,
+        msg: to_json_binary(&query_msg).map_err(Error::Std)?,
     });
 
-    deps.querier.query(&request)
+    deps.querier
+        .query(&request)
+        .map_err(|err| Error::TcbInfoQueryError(err.to_string()))
 }
 
 impl Handler for EpidAttestation {
@@ -53,35 +65,42 @@ impl Handler for DcapAttestation {
         let mr_enclave = TrustedMrEnclaveIdentity::new(self.mr_enclave().into(), [""; 0], [""; 0]);
 
         // Retrieve the FMSPC from the collateral
-        let fmspc = collateral.tcb_info();
+        let fmspc_hex = collateral.tcb_info().to_string();
 
-        let tcb_info_json: Value = serde_json::from_str(fmspc).expect("could not read tcbinfo");
-        let fmspc_raw = hex::decode(
-            tcb_info_json
-                .get("tcbInfo")
-                .expect("tcbInfo not found in JSON")
-                .get("fmspc")
-                .expect("fmspc not found in tcbInfo")
-                .as_str()
-                .expect("fmspc is not a string"),
-        )
-        .expect("failed to decode fmspc hex string");
+        // Query the tcbinfo contract with the FMSPC retrieved and validated
+        let tcb_info_query = query_tcbinfo(deps.as_ref(), fmspc_hex)?;
+        let tcb_info_response: GetTcbInfoResponse = from_json(tcb_info_query)?;
+        let new_tcb_info = serde_json::to_string(&tcb_info_response.tcb_info).map_err(|e| {
+            Error::TcbInfoQueryError(format!("Failed to parse new tcb info from contract: {}", e))
+        })?;
 
-        let fmspc: [u8; 6] = fmspc_raw.try_into().expect("fmspc should be 6 bytes");
-        let fmspc_value = u16::from_be_bytes([fmspc[4], fmspc[5]]);
-        let fmspc_hex = format!("{:04X}", fmspc_value);
+        // Serialize the existing collateral
+        let mut collateral_json: serde_json::Value =
+            serde_json::to_value(&collateral).map_err(|e| {
+                Error::TcbInfoQueryError(format!("Failed to serialize collateral: {}", e))
+            })?;
 
-        // We need to get the CONFIG
-        let rawconfig = CONFIG.load(deps.storage)?;
-        // We retrieve the contract address
-        let tcbinfo_addr = rawconfig.tcb_info();
+        // Update the tcb_info in the serialized data
+        if let Some(obj) = collateral_json.as_object_mut() {
+            obj.insert(
+                "tcb_info".to_string(),
+                serde_json::Value::String(new_tcb_info),
+            );
+        } else {
+            return Err(Error::TcbInfoQueryError(
+                "Failed to update serialized collateral".to_string(),
+            ));
+        }
 
-        let tcb_info_response = query_tcbinfo(deps.as_ref(), tcbinfo_addr, fmspc_hex)?;
-
-        let _tcb_info: GetTcbInfoResponse = from_json(tcb_info_response)?;
+        // Deserialize back into a Collateral
+        let updated_collateral: Collateral =
+            serde_json::from_value(collateral_json).map_err(|e| {
+                Error::TcbInfoQueryError(format!("Failed to deserialize updated collateral: {}", e))
+            })?;
 
         // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
-        let verification_output = verify_dcap_attestation(quote, collateral, &[mr_enclave.into()]);
+        let verification_output =
+            verify_dcap_attestation(quote, updated_collateral, &[mr_enclave.into()]);
 
         // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
         if verification_output.is_success().into() {

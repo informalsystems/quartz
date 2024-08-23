@@ -32,7 +32,7 @@ cosmwasm-std.workspace = true
 quartz-tee-ra.workspace = true
 
 # tcbinfo
-# tcbinfo = { path = "../tcbinfo" }
+tcbinfo = { path = "../tcbinfo", features = ["library"] }
 
 [dev-dependencies]
 serde_json.workspace = true
