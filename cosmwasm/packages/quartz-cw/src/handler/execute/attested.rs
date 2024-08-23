@@ -6,6 +6,7 @@ use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, TrustedMrEnclaveIdentity},
     verify_dcap_attestation, verify_epid_attestation, Error as RaVerificationError,
 };
+use tcbinfo::msg::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
     error::Error,
@@ -16,8 +17,6 @@ use crate::{
     },
     state::CONFIG,
 };
-use tcbinfo::msg::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg}; 
-
 
 pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
     let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
