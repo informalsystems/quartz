@@ -1,4 +1,10 @@
+use std::{
+    fmt::{Display, Formatter},
+    str::FromStr,
+};
+
 use cosmwasm_std::{HexBinary, StdError};
+use hex::FromHexError;
 use k256::ecdsa::VerifyingKey;
 use quartz_cw::{
     error::Error as QuartzCwError,
@@ -259,5 +265,40 @@ impl From<SessionSetPubKeyResponseMsg> for RawSessionSetPubKeyResponseMsg {
             pub_key: value.pub_key.to_sec1_bytes().into_vec().into(),
             quote: value.quote.into(),
         }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Fmspc(pub [u8; 6]);
+
+impl AsRef<[u8]> for Fmspc {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+
+impl FromStr for Fmspc {
+    type Err = FromHexError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let bytes = hex::decode(s)?;
+        let fmspc: [u8; 6] = bytes
+            .try_into()
+            .map_err(|_| FromHexError::InvalidStringLength)?;
+        Ok(Self(fmspc))
+    }
+}
+
+impl TryFrom<String> for Fmspc {
+    type Error = FromHexError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        value.as_str().parse()
+    }
+}
+
+impl Display for Fmspc {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", hex::encode(self))
     }
 }
