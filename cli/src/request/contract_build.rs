@@ -4,7 +4,7 @@ use crate::request::Request;
 
 #[derive(Clone, Debug)]
 pub struct ContractBuildRequest {
-    pub manifest_path: PathBuf,
+    pub contract_manifest: PathBuf,
 }
 
 impl From<ContractBuildRequest> for Request {

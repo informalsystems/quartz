@@ -104,6 +104,10 @@ pub struct HandshakeArgs {
     #[arg(short, long, value_parser = wasmaddr_to_id)]
     pub contract: AccountId,
 
+    /// Fetch latest trusted hash and height from the chain instead of existing configuration
+    #[arg(long)]
+    pub use_latest_trusted: bool,
+
     /// Name or address of private key with which to sign
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -132,8 +136,9 @@ pub struct HandshakeArgs {
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct ContractBuildArgs {
+    /// Path to Cargo manifest file for CosmWasm contract package
     #[arg(long)]
-    pub manifest_path: PathBuf,
+    pub contract_manifest: PathBuf,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
@@ -161,19 +166,16 @@ pub struct ContractDeployArgs {
     #[arg(long, default_value = "Quartz App Contract")]
     pub label: String,
 
-    /// Path to contract wasm binary for deployment
+    /// Path to Cargo manifest file for CosmWasm contract package
     #[arg(long)]
-    pub wasm_bin_path: PathBuf,
+    pub contract_manifest: PathBuf,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct EnclaveBuildArgs {
-    /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
-    #[arg(long, default_value = "./enclave/Cargo.toml")]
-    pub manifest_path: PathBuf,
-
     /// Whether to target release or dev
     #[arg(long)]
+    #[serde(skip_serializing_if = "is_false")]
     pub release: bool,
 }
 
@@ -187,6 +189,11 @@ pub struct EnclaveStartArgs {
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
     #[arg(long)]
     pub use_latest_trusted: bool,
+
+    /// Whether to target release or dev
+    #[arg(long)]
+    #[serde(skip_serializing_if = "is_false")]
+    pub release: bool,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]

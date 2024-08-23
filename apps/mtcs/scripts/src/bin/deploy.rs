@@ -3,7 +3,7 @@ use std::{env::current_dir, str::FromStr};
 use clap::Parser;
 use cosmrs::tendermint::chain::Id as ChainId;
 use cw_tee_mtcs::msg::InstantiateMsg as MtcsInstantiateMsg;
-use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
+use wasmd_client::{CliWasmdClient, WasmdClient};
 use quartz_common::contract::msg::RawInstantiateMsg;
 use reqwest::Url;
 use scripts::{
@@ -25,7 +25,7 @@ struct Cli {
 async fn main() -> Result<(), anyhow::Error> {
     let cli = Cli::parse();
 
-    let base_path = current_dir()?.join("../../../");
+    let base_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
 
     println!("\n🚀 Communicating with Relay to Instantiate...\n");
     let init_msg: RawInstantiateMsg = run_relay(base_path.as_path(), "Instantiate", None)?; // need to define the return type

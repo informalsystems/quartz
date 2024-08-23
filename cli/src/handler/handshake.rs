@@ -1,10 +1,9 @@
-use std::{env::current_dir, fs, str::FromStr};
+use std::{fs, path::PathBuf, str::FromStr};
 
 use anyhow::anyhow;
 use async_trait::async_trait;
 use color_eyre::owo_colors::OwoColorize;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
-use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use futures_util::stream::StreamExt;
 use reqwest::Url;
 use serde::Serialize;
@@ -12,6 +11,7 @@ use serde_json::json;
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tm_prover::{config::Config as TmProverConfig, prover::prove};
 use tracing::{debug, info};
+use wasmd_client::{CliWasmdClient, WasmdClient};
 
 use super::utils::{
     helpers::{block_tx_commit, run_relay},
@@ -20,10 +20,7 @@ use super::utils::{
 use crate::{
     config::Config,
     error::Error,
-    handler::{
-        utils::{helpers::get_hash_height, types::RelayMessage},
-        Handler,
-    },
+    handler::{utils::types::RelayMessage, Handler},
     request::handshake::HandshakeRequest,
     response::{handshake::HandshakeResponse, Response},
 };
@@ -55,16 +52,17 @@ struct Message<'a> {
     message: &'a str,
 }
 
-async fn handshake(args: HandshakeRequest, mut config: Config) -> Result<String, anyhow::Error> {
+async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
     let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
     let wsurl = format!("ws://{}/websocket", config.node_url);
 
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
-    let (trusted_height, trusted_hash) = get_hash_height(false, &mut config)?;
+    let (trusted_height, trusted_hash) = args.get_hash_height(&config).await?;
+
     // TODO: dir logic issue #125
-    let base_path = current_dir()?.join("../");
+    let base_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
 
     info!("Running SessionCreate");
     let res: serde_json::Value = run_relay(
@@ -95,8 +93,7 @@ async fn handshake(args: HandshakeRequest, mut config: Config) -> Result<String,
     info!("Waiting 2 blocks for light client proof");
     two_block_waitoor(&wsurl).await?;
 
-    // TODO: dir logic issue #125
-    let proof_path = current_dir()?.join("../utils/tm-prover/light-client-proof.json");
+    let proof_path = config.cache_dir()?.join("light-client-proof.json");
     debug!("Proof path: {:?}", proof_path.to_str());
 
     // Call tm prover with trusted hash and height

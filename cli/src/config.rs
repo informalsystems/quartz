@@ -32,7 +32,7 @@ pub struct Config {
 
     /// Path to Quartz app directory
     /// Defaults to current working dir
-    #[serde(default = "default_app_dir")]
+    #[serde(default = "default_app_dir", skip_serializing)]
     pub app_dir: PathBuf,
 
     /// Trusted height for light client proofs
@@ -42,6 +42,9 @@ pub struct Config {
     /// Trusted hash for block at trusted_height for light client proofs
     #[serde(default)]
     pub trusted_hash: String,
+
+    #[serde(default)]
+    pub release: bool,
 }
 
 fn default_rpc_addr() -> String {
@@ -80,6 +83,7 @@ impl Default for Config {
             app_dir: default_app_dir(),
             trusted_height: u64::default(),
             trusted_hash: String::default(),
+            release: false,
         }
     }
 }

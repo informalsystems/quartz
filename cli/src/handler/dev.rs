@@ -83,25 +83,24 @@ async fn dev_driver(
     while let Some(dev) = rx.recv().await {
         match dev {
             DevRebuild::Init => {
-                clearscreen::clear().unwrap();
+                clearscreen::clear()?;
                 println!("{}", BANNER.yellow().bold());
                 info!("{}", "Launching quartz app...".green().bold());
 
                 // Build enclave
                 let enclave_build = EnclaveBuildRequest {
                     release: args.release,
-                    manifest_path: config.app_dir.join("enclave/Cargo.toml"),
                 };
                 enclave_build.handle(&config).await?;
 
                 // Build contract
                 let contract_build = ContractBuildRequest {
-                    manifest_path: config.app_dir.join("contracts/Cargo.toml"),
+                    contract_manifest: args.contract_manifest.clone(),
                 };
                 contract_build.handle(&config).await?;
 
                 // Start enclave in background
-                let new_shutdown_tx = spawn_enclave_start(&config).await?;
+                let new_shutdown_tx = spawn_enclave_start(args, &config).await?;
 
                 // Deploy new contract and perform handshake
                 let res = deploy_and_handshake(None, args, &config).await;
@@ -112,6 +111,8 @@ async fn dev_driver(
                         // Set state
                         contract = res_contract;
                         shutdown_tx = Some(new_shutdown_tx);
+
+                        info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
                         eprintln!("Error running initial round");
@@ -130,7 +131,7 @@ async fn dev_driver(
 
                     continue;
                 }
-                clearscreen::clear().unwrap();
+                clearscreen::clear()?;
                 println!("{}", BANNER.yellow().bold());
                 info!("{}", "Rebuilding Enclave...".green().bold());
 
@@ -141,7 +142,7 @@ async fn dev_driver(
                 info!("Waiting 1 second for the enclave to shut down");
                 sleep(Duration::from_secs(1)).await;
 
-                let new_shutdown_tx = spawn_enclave_start(&config).await?;
+                let new_shutdown_tx = spawn_enclave_start(args, &config).await?;
 
                 // todo: should not unconditionally deploy here
                 let res = deploy_and_handshake(Some(&contract), args, &config).await;
@@ -151,6 +152,8 @@ async fn dev_driver(
                         // Set state
                         contract = res_contract;
                         shutdown_tx = Some(new_shutdown_tx);
+
+                        info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
                         eprintln!("Error restarting enclave and handshake");
@@ -168,7 +171,7 @@ async fn dev_driver(
                     first_contract_message = false;
                     continue;
                 }
-                clearscreen::clear().unwrap();
+                clearscreen::clear()?;
                 println!("{}", BANNER.yellow().bold());
                 info!("{}", "Rebuilding Contract...".green().bold());
 
@@ -192,6 +195,8 @@ async fn dev_driver(
                         "Attempting to redeploy contract, but enclave isn't running".to_string(),
                     ));
                 }
+
+                info!("{}", "Enclave is listening for requests...".green().bold());
             }
         }
     }
@@ -200,12 +205,15 @@ async fn dev_driver(
 }
 
 // Spawns enclve start in a separate task which runs in the background
-async fn spawn_enclave_start(config: &Config) -> Result<watch::Sender<()>, Error> {
+async fn spawn_enclave_start(
+    args: &DevRequest,
+    config: &Config,
+) -> Result<watch::Sender<()>, Error> {
     // In separate process, launch the enclave
     let (shutdown_tx, shutdown_rx) = watch::channel(());
     let enclave_start = EnclaveStartRequest {
         shutdown_rx: Some(shutdown_rx),
-        use_latest_trusted: false, // TODO: should use this argument from dev but `true` is currently unsupported`
+        use_latest_trusted: args.use_latest_trusted,
     };
 
     let config_cpy = config.clone();
@@ -245,7 +253,6 @@ async fn deploy_and_handshake(
             ));
         }
     }
-
     // Calls which interact with enclave
     info!("Successfully pinged enclave, enclave is running");
 
@@ -259,7 +266,7 @@ async fn deploy_and_handshake(
         let contract_deploy = ContractDeployRequest {
             init_msg: args.init_msg.clone(),
             label: args.label.clone(),
-            wasm_bin_path: args.wasm_bin_path.clone(),
+            contract_manifest: args.contract_manifest.clone(),
         };
         // Call handler
         let cd_res = contract_deploy.handle(config).await;
@@ -276,6 +283,7 @@ async fn deploy_and_handshake(
     info!("Running handshake on contract `{}`", contract);
     let handshake = HandshakeRequest {
         contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
+        use_latest_trusted: args.use_latest_trusted,
     };
 
     let h_res = handshake.handle(config).await;

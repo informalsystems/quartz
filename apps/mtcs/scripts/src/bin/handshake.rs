@@ -5,7 +5,7 @@ use clap::Parser;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
 use cosmrs::AccountId;
 use cw_tee_mtcs::msg::ExecuteMsg as MtcsExecuteMsg;
-use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
+use wasmd_client::{CliWasmdClient, WasmdClient};
 use futures_util::stream::StreamExt;
 use quartz_common::contract::prelude::QuartzExecuteMsg;
 use reqwest::Url;
