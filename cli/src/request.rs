@@ -84,6 +84,7 @@ impl TryFrom<EnclaveCommand> for Request {
             .into()),
             EnclaveCommand::Start(args) => Ok(EnclaveStartRequest {
                 use_latest_trusted: args.use_latest_trusted,
+                fmspc: args.fmspc,
             }
             .into()),
         }

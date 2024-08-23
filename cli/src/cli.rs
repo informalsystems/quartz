@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use figment::{providers::Serialized, Figment};
+use quartz_common::enclave::types::Fmspc;
 use serde::{Deserialize, Serialize};
 use tracing::metadata::LevelFilter;
 
@@ -177,6 +178,11 @@ pub struct EnclaveStartArgs {
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
     #[arg(long)]
     pub use_latest_trusted: bool,
+
+    /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fmspc: Option<Fmspc>,
 }
 
 pub trait ToFigment {

@@ -1,6 +1,7 @@
 use std::env;
 
 use async_trait::async_trait;
+use quartz_common::enclave::types::Fmspc;
 use tokio::process::Command;
 use tracing::{debug, info};
 
@@ -45,12 +46,23 @@ impl Handler for EnclaveStartRequest {
             )
             .await?;
         } else {
+            let Some(fmspc) = self.fmspc else {
+                return Err(Error::GenericErr(
+                    "FMSPC is required if MOCK_SGX isn't set".to_string(),
+                ));
+            };
+
             // set cwd to enclave app
             env::set_current_dir(enclave_dir).map_err(|e| Error::GenericErr(e.to_string()))?;
             // gramine private key
             gramine_sgx_gen_private_key().await?;
             // gramine manifest
-            gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string()).await?;
+            gramine_manifest(
+                &trusted_height.to_string(),
+                &trusted_hash.to_string(),
+                fmspc,
+            )
+            .await?;
             // gramine sign
             gramine_sgx_sign().await?;
             // Run quartz enclave and block
@@ -111,7 +123,11 @@ async fn gramine_sgx_gen_private_key() -> Result<(), Error> {
     Ok(())
 }
 
-async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<(), Error> {
+async fn gramine_manifest(
+    trusted_height: &str,
+    trusted_hash: &str,
+    fmspc: Fmspc,
+) -> Result<(), Error> {
     let current_dir = env::current_dir().map_err(|e| Error::GenericErr(e.to_string()))?;
 
     let host = target_lexicon::HOST;
@@ -130,12 +146,13 @@ async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<()
         .arg("-Dlog_level=error")
         .arg(format!("-Dhome={}", home_dir))
         .arg(format!("-Darch_libdir={}", arch_libdir))
-        .arg("-Dra_type=epid")
+        .arg("-Dra_type=dcap")
         .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
         .arg(format!("-Dquartz_dir={}", current_dir.display()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
+        .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
         .status()
