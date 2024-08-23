@@ -7,6 +7,36 @@ pub enum Error {
     PathNotDir(String),
     /// Specified file `{0}` does not exist
     PathNotFile(String),
-    /// {0}
+    /// unspecified error: {0}
     GenericErr(String),
+    /// IoError: {0}
+    IoError(String),
+    /// TOML Error : {0}
+    TomlError(String),
+    /// Tendermint error: {0}
+    TendermintError(String),
+}
+
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Self {
+        Error::IoError(err.to_string())
+    }
+}
+
+impl From<toml::de::Error> for Error {
+    fn from(err: toml::de::Error) -> Self {
+        Error::TomlError(err.to_string())
+    }
+}
+
+impl From<toml::ser::Error> for Error {
+    fn from(err: toml::ser::Error) -> Self {
+        Error::TomlError(err.to_string())
+    }
+}
+
+impl From<tendermint::Error> for Error {
+    fn from(err: tendermint::Error) -> Self {
+        Error::TendermintError(err.to_string())
+    }
 }

@@ -47,10 +47,12 @@ pub trait WasmdClient {
         &self,
         chain_id: &Id,
         sender: &str,
-        code_id: usize,
+        code_id: u64,
         init_msg: M,
         label: &str,
     ) -> Result<String, Self::Error>;
+
+    fn trusted_height_hash(&self) -> Result<(u64, String), Self::Error>;
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -199,7 +201,7 @@ impl WasmdClient for CliWasmdClient {
         &self,
         chain_id: &Id,
         sender: &str,
-        code_id: usize,
+        code_id: u64,
         init_msg: M,
         label: &str,
     ) -> Result<String, Self::Error> {
@@ -226,5 +228,30 @@ impl WasmdClient for CliWasmdClient {
 
         // TODO: find the rust type for the tx output and return that
         Ok((String::from_utf8(output.stdout)?).to_string())
+    }
+
+    fn trusted_height_hash(&self) -> Result<(u64, String), Self::Error> {
+        let mut wasmd = Command::new("wasmd");
+        let command = wasmd.args(["--node", self.url.as_str()]).arg("status");
+
+        let output = command.output()?;
+
+        if !output.status.success() {
+            return Err(anyhow!("{:?}", output));
+        }
+
+        let query_result: serde_json::Value =
+            serde_json::from_slice(&output.stdout).unwrap_or_default();
+
+        let trusted_height = query_result["SyncInfo"]["latest_block_height"]
+            .as_u64()
+            .ok_or(anyhow!("Could not query height"))?;
+
+        let trusted_hash = query_result["SyncInfo"]["latest_block_hash"]
+            .as_str()
+            .ok_or(anyhow!("Could not query height"))?
+            .to_string();
+
+        Ok((trusted_height, trusted_hash))
     }
 }

@@ -4,11 +4,11 @@ use async_trait::async_trait;
 use tracing::{debug, info};
 
 use crate::{
+    config::Config,
     error::Error,
     handler::Handler,
     request::enclave_build::EnclaveBuildRequest,
     response::{enclave_build::EnclaveBuildResponse, Response},
-    Config,
 };
 
 #[async_trait]
@@ -16,7 +16,12 @@ impl Handler for EnclaveBuildRequest {
     type Error = Error;
     type Response = Response;
 
-    async fn handle(self, config: Config) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(
+        self,
+        config: C,
+    ) -> Result<Self::Response, Self::Error> {
+        let config = config.as_ref();
+
         let mut cargo = Command::new("cargo");
         let command = cargo
             .args(["build", "--release"])

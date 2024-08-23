@@ -1,7 +1,7 @@
-# Quartz manifest file
+# Quartz-based app manifest file
 
 loader.entrypoint = "file:{{ gramine.libos }}"
-libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-app-transfers-enclave"
+libos.entrypoint = "{{ enclave_executable }}"
 
 loader.log_level = "{{ log_level }}"
 
@@ -22,6 +22,7 @@ loader.env.QUARTZ_PORT = { passthrough = true }
 
 loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "testing",
+                "--rpc-addr", "0.0.0.0:11090",
                 "--trusted-height", "{{ trusted_height }}",
                 "--trusted-hash", "{{ trusted_hash }}"]
 
@@ -29,7 +30,7 @@ fs.mounts = [
   { uri = "file:{{ gramine.runtimedir() }}", path = "/lib" },
   { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
-  { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
+  { uri = "file:{{ enclave_dir }}", path = "{{ enclave_dir }}" },
 ]
 
 # sgx.debug = true
@@ -43,15 +44,15 @@ sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
 
 sgx.trusted_files = [
   "file:{{ gramine.libos }}",
-  "file:{{ quartz_dir }}/target/release/quartz-app-transfers-enclave",
+  "file:{{ enclave_executable }}",
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
 ]
 
 sgx.allowed_files = [
-  "file:{{ quartz_dir }}/exchange.sk",
-  "file:{{ quartz_dir }}/request.json",
+  "file:{{ enclave_dir }}/exchange.sk",
+  "file:{{ enclave_dir }}/request.json",
 ]
 
 sys.insecure__allow_eventfd = true

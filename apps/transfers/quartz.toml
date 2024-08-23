@@ -1,0 +1,8 @@
+mock_sgx = false
+tx_sender = "admin"
+chain_id = "testing"
+node_url = "127.0.0.1:26657"
+enclave_rpc_addr = "http://127.0.0.1"
+enclave_rpc_port = 11090
+trusted_hash = "0E01C103E05108B2981C202C5AE41024444E0638A7D8C734916C2797EB1EE447"
+trusted_height = 8401
