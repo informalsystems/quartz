@@ -178,8 +178,8 @@ impl DcapAttestation {
 
 #[cw_serde]
 pub struct RawDcapAttestation {
-    quote: HexBinary,
-    collateral: serde_json::Value,
+    pub quote: HexBinary,
+    pub collateral: serde_json::Value,
 }
 
 impl TryFrom<RawDcapAttestation> for DcapAttestation {

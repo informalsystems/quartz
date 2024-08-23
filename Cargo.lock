@@ -1799,9 +1799,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d6401deb83407ab3da39eba7e33987a73c3df0c82b4bb5813ee871c19c41d48"
 dependencies = [
  "futures-core",
+ "futures-io",
  "futures-macro",
  "futures-sink",
  "futures-task",
+ "memchr",
  "pin-project-lite",
  "pin-utils",
  "slab",
@@ -3719,11 +3721,13 @@ dependencies = [
  "ecies",
  "hex",
  "k256",
+ "mc-sgx-dcap-sys-types",
  "mtcs",
  "quartz-cw",
  "quartz-proto",
  "quartz-tee-ra",
  "rand",
+ "reqwest 0.12.5",
  "serde",
  "serde_json",
  "sha2 0.10.8",
@@ -4001,6 +4005,7 @@ checksum = "c7d6d2a27d57148378eb5e111173f4276ad26340ecc5c49a4a2152167a2d6a37"
 dependencies = [
  "base64 0.22.1",
  "bytes",
+ "futures-channel",
  "futures-core",
  "futures-util",
  "http 1.1.0",

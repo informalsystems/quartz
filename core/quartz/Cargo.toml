@@ -12,8 +12,6 @@ readme = "README.md"
 [features]
 mock-sgx = ["quartz-cw/mock-sgx"]
 
-
-
 [dependencies]
 # external
 sha2 = { workspace = true }
@@ -23,10 +21,14 @@ ecies.workspace = true
 hex.workspace = true
 k256.workspace = true
 rand.workspace = true
+reqwest = { workspace = true, features = ["blocking"] }
 serde.workspace = true
 serde_json.workspace = true
 tonic.workspace = true
 tokio.workspace = true
+
+# mobilecoin
+mc-sgx-dcap-sys-types.workspace = true
 
 # cosmos
 cosmrs.workspace = true

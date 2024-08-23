@@ -58,6 +58,7 @@ walkdir = { version = "2.5.0", default-features = false }
 x509-cert = { version = "0.2.5", default-features = false }
 x509-parser = { version = "0.16.0", features = ["default", "verify"] }
 zeroize = { version = "1.7.0", default-features = false }
+
 # cosmos
 cosmos-sdk-proto = { version = "0.22.0" }
 cosmrs = { version = "=0.17.0", default-features = false }
