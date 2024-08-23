@@ -1,5 +1,5 @@
 #![doc = include_str!("../README.md")]
-#![forbid(unsafe_code)]
+// #![forbid(unsafe_code)]
 #![warn(
     clippy::checked_conversions,
     clippy::panic,
