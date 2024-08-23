@@ -96,9 +96,10 @@ where
 
         let msg = SubmitSetoffsMsg { setoffs_enc };
         println!("setoff_msg: {:?}", msg);
+
         let attestation = self
             .attestor
-            .quote(msg.clone())
+            .attestation(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
 
         let attested_msg = RawAttested { msg, attestation };
@@ -138,25 +139,6 @@ fn into_settle_offs(
         SettleOff::SetOff(vec![])
     }
 }
-
-// fn wasm_address(pk: VerifyingKey) -> String {
-//     let tm_pk = TmAccountId::from(pk);
-//     AccountId::new("wasm", tm_pk.as_bytes())
-//         .unwrap()
-//         .to_string()
-// }
-
-// fn encrypt_setoff(
-//     so: SimpleSetoff<HexBinary, i64>,
-//     debtor_pk: VerifyingKey,
-//     creditor_pk: VerifyingKey,
-// ) -> Vec<RawCipherText> {
-//     let so_ser = serde_json::to_string(&so).expect("infallible serializer");
-//     let so_debtor = encrypt(&debtor_pk.to_sec1_bytes(), so_ser.as_bytes()).unwrap();
-//     let so_creditor = encrypt(&creditor_pk.to_sec1_bytes(), so_ser.as_bytes()).unwrap();
-
-//     vec![so_debtor.into(), so_creditor.into()]
-// }
 
 fn decrypt_obligation(
     sk: &SigningKey,

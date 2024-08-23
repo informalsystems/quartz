@@ -22,6 +22,7 @@ loader.env.QUARTZ_PORT = { passthrough = true }
 
 loader.argv = ["enclave",
                 "--chain-id", "testing",
+                "--fmspc", "{{ fmspc }}",
                 "--trusted-height", "{{ trusted_height }}",
                 "--trusted-hash", "{{ trusted_hash }}"]
 

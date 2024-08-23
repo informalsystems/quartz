@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
 use cosmrs::tendermint::Hash;
+use quartz_common::enclave::types::Fmspc;
 use tendermint_light_client::types::{Height, TrustThreshold};
 
 fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {
@@ -25,6 +26,10 @@ pub struct Cli {
     /// Identifier of the chain
     #[clap(long)]
     pub chain_id: String,
+
+    /// FMSPC (Family-Model-Stepping-Platform-Custom SKU)
+    #[clap(long)]
+    pub fmspc: Fmspc,
 
     /// Height of the trusted header (AKA root-of-trust)
     #[clap(long)]
