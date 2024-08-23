@@ -1,20 +1,33 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{
+    from_json, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
+    StdResult, WasmQuery,
+};
 use quartz_tee_ra::{
     intel_sgx::dcap::TrustedMrEnclaveIdentity, verify_dcap_attestation, verify_epid_attestation,
     Error as RaVerificationError,
 };
 use serde_json::Value;
-use tcbinfo::contract::query::get_info;
 
 use crate::{
     error::Error,
     handler::Handler,
     msg::execute::attested::{
         Attestation, Attested, AttestedMsgSansHandler, DcapAttestation, EpidAttestation,
-        HasUserData, MockAttestation,
+        GetTcbInfoResponse, HasUserData, MockAttestation, TcbInfoQueryMsg,
     },
     state::CONFIG,
 };
+
+pub fn query_tcbinfo(deps: Deps<'_>, tcbinfo_addr: String, fmspc: String) -> StdResult<Binary> {
+    let query_msg = TcbInfoQueryMsg::GetInfo { fmspc };
+
+    let request = QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: tcbinfo_addr,
+        msg: to_json_binary(&query_msg)?,
+    });
+
+    deps.querier.query(&request)
+}
 
 impl Handler for EpidAttestation {
     fn handle(
@@ -46,21 +59,26 @@ impl Handler for DcapAttestation {
         let fmspc_raw = hex::decode(
             tcb_info_json
                 .get("tcbInfo")
-                .unwrap()
+                .expect("tcbInfo not found in JSON")
                 .get("fmspc")
-                .unwrap()
+                .expect("fmspc not found in tcbInfo")
                 .as_str()
-                .expect("could not find fmspc string"),
+                .expect("fmspc is not a string"),
         )
         .expect("failed to decode fmspc hex string");
 
-        let fmspc: [u8; 6] = fmspc_raw.try_into().unwrap();
+        let fmspc: [u8; 6] = fmspc_raw.try_into().expect("fmspc should be 6 bytes");
         let fmspc_value = u16::from_be_bytes([fmspc[4], fmspc[5]]);
         let fmspc_hex = format!("{:04X}", fmspc_value);
 
-        // @dusterbloom not sure about this part
-        let _tcb_info_response =
-            get_info(deps.as_ref(), fmspc_hex).map_err(|_| Error::TcbInfoQueryError)?;
+        // We need to get the CONFIG
+        let rawconfig = CONFIG.load(deps.storage)?;
+        // We retrieve the contract address
+        let tcbinfo_addr = rawconfig.tcb_info();
+
+        let tcb_info_response = query_tcbinfo(deps.as_ref(), tcbinfo_addr, fmspc_hex)?;
+
+        let _tcb_info: GetTcbInfoResponse = from_json(tcb_info_response)?;
 
         // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
         let verification_output = verify_dcap_attestation(quote, collateral, &[mr_enclave.into()]);

@@ -308,3 +308,13 @@ impl<T> From<AttestedMsgSansHandler<T>> for RawAttestedMsgSansHandler<T> {
         Self(value.0)
     }
 }
+
+#[cw_serde]
+pub enum TcbInfoQueryMsg {
+    GetInfo { fmspc: String },
+}
+
+#[cw_serde]
+pub struct GetTcbInfoResponse {
+    pub tcb_info: serde_json::Value,
+}

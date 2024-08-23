@@ -60,6 +60,10 @@ impl RawConfig {
     pub fn mr_enclave(&self) -> &[u8] {
         self.mr_enclave.as_slice()
     }
+
+    pub fn tcb_info(&self) -> String {
+        self.tcbinfo_contract.to_string()
+    }
 }
 
 impl TryFrom<RawConfig> for Config {
