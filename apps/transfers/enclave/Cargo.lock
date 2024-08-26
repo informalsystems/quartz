@@ -2491,7 +2491,7 @@ dependencies = [
  "hex",
  "k256",
  "prost 0.13.1",
- "quartz-common 0.1.0 (git+ssh://git@github.com/informalsystems/cycles-quartz.git)",
+ "quartz-common",
  "serde",
  "serde_json",
  "sha2 0.10.8",
@@ -2507,16 +2507,9 @@ dependencies = [
 [[package]]
 name = "quartz-common"
 version = "0.1.0"
-dependencies = [
- "quartz-cw 0.1.0",
-]
-
-[[package]]
-name = "quartz-common"
-version = "0.1.0"
 source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#302008c337b58fcad0373922a2787b9341eafd58"
 dependencies = [
- "quartz-cw 0.1.0 (git+ssh://git@github.com/informalsystems/cycles-quartz.git)",
+ "quartz-cw",
  "quartz-enclave",
  "quartz-proto",
 ]
@@ -2524,29 +2517,13 @@ dependencies = [
 [[package]]
 name = "quartz-cw"
 version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "k256",
- "quartz-tee-ra 0.1.0",
- "serde",
- "serde_json",
- "serde_with",
- "sha2 0.10.8",
- "thiserror",
-]
-
-[[package]]
-name = "quartz-cw"
-version = "0.1.0"
 source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#302008c337b58fcad0373922a2787b9341eafd58"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
  "k256",
- "quartz-tee-ra 0.1.0 (git+ssh://git@github.com/informalsystems/cycles-quartz.git)",
+ "quartz-tee-ra",
  "serde",
  "serde_json",
  "serde_with",
@@ -2568,9 +2545,9 @@ dependencies = [
  "hex",
  "k256",
  "mtcs",
- "quartz-cw 0.1.0 (git+ssh://git@github.com/informalsystems/cycles-quartz.git)",
+ "quartz-cw",
  "quartz-proto",
- "quartz-tee-ra 0.1.0 (git+ssh://git@github.com/informalsystems/cycles-quartz.git)",
+ "quartz-tee-ra",
  "rand",
  "serde",
  "serde_json",
@@ -2590,29 +2567,6 @@ dependencies = [
  "prost 0.13.1",
  "tonic",
  "tonic-build",
-]
-
-[[package]]
-name = "quartz-tee-ra"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "der",
- "displaydoc",
- "hex-literal",
- "mc-attestation-verifier",
- "mc-sgx-core-types",
- "mc-sgx-dcap-sys-types",
- "mc-sgx-dcap-types",
- "num-bigint",
- "serde",
- "serde_json",
- "sha2 0.10.8",
- "thiserror",
- "x509-cert",
- "x509-parser",
- "zeroize",
 ]
 
 [[package]]
@@ -3802,7 +3756,7 @@ dependencies = [
  "cw2",
  "cw20-base",
  "getrandom",
- "quartz-common 0.1.0",
+ "quartz-common",
  "serde",
  "serde_json",
  "sha2 0.10.8",
