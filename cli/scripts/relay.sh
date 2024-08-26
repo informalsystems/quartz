@@ -8,7 +8,6 @@ usage() {
     exit 1
 }
 
-ROOT=${ROOT:-$HOME}
 DIR_QUARTZ=$(git rev-parse --show-toplevel)
 DIR_PROTO="$DIR_QUARTZ/core/quartz-proto/proto"
 IAS_API_KEY="669244b3e6364b5888289a11d2a1726d"
@@ -34,7 +33,7 @@ QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')
 MSG=$(echo "$ATTESTED_MSG" | jq 'del(.quote)')
 
 
-if [ "$MOCK_SGX" = "true" ]; then
+if [ "$MOCK_SGX" ]; then
 
     case "$REQUEST" in
         "Instantiate")
