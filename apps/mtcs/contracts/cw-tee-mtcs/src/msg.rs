@@ -138,7 +138,7 @@ pub mod execute {
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(GetAllSetoffsResponse)]
-    GetAllSetoffs,
+    GetAllSetoffs {},
     #[returns(GetLiquiditySourcesResponse)]
     GetLiquiditySources { epoch: Option<Uint64> }, // `None` means latest
     #[returns(cw20::BalanceResponse)]
