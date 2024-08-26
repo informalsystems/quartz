@@ -93,3 +93,9 @@ impl AsRef<Config> for Config {
         self
     }
 }
+
+impl Config {
+    pub fn enclave_rpc(&self) -> String {
+        format!("{}:{}", self.enclave_rpc_addr, self.enclave_rpc_port)
+    }
+}

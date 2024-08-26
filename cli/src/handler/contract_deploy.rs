@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
@@ -15,13 +15,16 @@ use tracing::{debug, info};
 use wasmd_client::{CliWasmdClient, WasmdClient};
 
 use super::utils::{
-    helpers::{block_tx_commit, run_relay},
+    helpers::block_tx_commit,
     types::{Log, WasmdTxResponse},
 };
 use crate::{
     config::Config,
     error::Error,
-    handler::{utils::types::RelayMessage, Handler},
+    handler::{
+        utils::{helpers::run_relay_rust, types::RelayMessage},
+        Handler,
+    },
     request::contract_deploy::ContractDeployRequest,
     response::{contract_deploy::ContractDeployResponse, Response},
 };
@@ -79,9 +82,6 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     args: ContractDeployRequest,
     config: &Config,
 ) -> Result<(u64, String), anyhow::Error> {
-    // TODO: Replace with call to Rust package
-    let relay_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
-
     let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
@@ -105,8 +105,8 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     };
 
     info!("🚀 Communicating with Relay to Instantiate...");
-    let raw_init_msg = run_relay::<QuartzInstantiateMsg<DA>>(
-        relay_path.as_path(),
+    let raw_init_msg = run_relay_rust::<QuartzInstantiateMsg<DA>>(
+        config.enclave_rpc(),
         config.mock_sgx,
         RelayMessage::Instantiate,
     )

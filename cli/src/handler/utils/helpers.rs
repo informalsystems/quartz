@@ -1,16 +1,26 @@
-use std::{path::Path, time::Duration};
+use std::time::Duration;
 
 use anyhow::anyhow;
 use cosmrs::{AccountId, ErrorReport};
+use quartz_common::{
+    contract::msg::{
+        execute::{session_create::RawSessionCreate, session_set_pub_key::RawSessionSetPubKey},
+        instantiate::RawCoreInstantiate,
+    },
+    proto::{
+        core_client::CoreClient, InstantiateRequest, SessionCreateRequest, SessionSetPubKeyRequest,
+    },
+};
 use regex::Regex;
 use reqwest::Url;
 use serde::de::DeserializeOwned;
+use serde_json::json;
 use subtle_encoding::bech32::decode as bech32_decode;
 use tendermint::{block::Height, Hash};
 use tendermint_rpc::{
     endpoint::tx::Response as TmTxResponse, error::ErrorDetail, Client, HttpClient,
 };
-use tokio::{fs, process::Command};
+use tokio::fs;
 use tracing::debug;
 use wasmd_client::{CliWasmdClient, WasmdClient};
 
@@ -27,33 +37,118 @@ pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
 }
 
 // TODO: move wrapping result with "quartz:" struct into here
-pub async fn run_relay<R: DeserializeOwned>(
-    base_path: &Path,
+pub async fn run_relay_rust<R: DeserializeOwned>(
+    enclave_rpc: String,
     mock_sgx: bool,
-    msg: RelayMessage,
+    relay_msg: RelayMessage,
 ) -> Result<R, anyhow::Error> {
-    let relayer_path = base_path.join("relayer/scripts/relay.sh");
+    println!("in relay");
+    // Query the gRPC quartz enclave service
+    println!("endpoint: {}", enclave_rpc);
+    let mut qc_client = CoreClient::connect(enclave_rpc).await?;
 
-    let mut bash = Command::new("bash");
-    let command = bash
-        .arg(relayer_path)
-        .arg(msg.to_string())
-        .env("MOCK_SGX", mock_sgx.to_string());
+    let attested_msg = match &relay_msg {
+        RelayMessage::Instantiate => &qc_client
+            .instantiate(tonic::Request::new(InstantiateRequest {}))
+            .await?
+            .get_ref()
+            .message
+            .clone(),
+        RelayMessage::SessionCreate => &qc_client
+            .session_create(tonic::Request::new(SessionCreateRequest {}))
+            .await?
+            .get_ref()
+            .message
+            .clone(),
+        RelayMessage::SessionSetPubKey(proof) => &qc_client
+            .session_set_pub_key(SessionSetPubKeyRequest {
+                message: proof.to_string(),
+            })
+            .await?
+            .get_ref()
+            .message
+            .clone(),
+    };
+    let mut attested_msg_json: serde_json::Value = serde_json::from_str(attested_msg)?;
+    println!("attested message: {}", attested_msg_json);
+    let quote = attested_msg_json["quote"].take();
 
-    if let RelayMessage::SessionSetPubKey(proof) = msg {
-        command.arg(proof);
+    if mock_sgx {
+        match relay_msg {
+            RelayMessage::Instantiate => {
+                // Construct CoreInstantiate
+                let msg: RawCoreInstantiate = serde_json::from_value(attested_msg_json)?;
+
+                let query_result: R = serde_json::from_value(json!({
+                    "msg": RawCoreInstantiate::from(msg),
+                    "attestation": quote
+                }))?;
+
+                return Ok(query_result);
+            }
+            RelayMessage::SessionCreate => {
+                // Convert RelayMessage to a snake_case string
+                let request_key = relay_msg.to_string();
+
+                let msg: RawSessionCreate = serde_json::from_value(attested_msg_json)?;
+                // Build the nested JSON structures
+                let inner_json = json!({
+                    "msg": msg,
+                    "attestation": quote
+                });
+
+                let quartz_json = json!({
+                    request_key: inner_json
+                });
+
+                let jsonify = json!({
+                    "quartz": quartz_json
+                });
+
+                let query_result: R = serde_json::from_value(jsonify)?;
+
+                return Ok(query_result);
+            }
+            RelayMessage::SessionSetPubKey(_) => {
+                // Convert RelayMessage to a snake_case string
+                let request_key = relay_msg.to_string();
+
+                let msg: RawSessionSetPubKey = serde_json::from_value(attested_msg_json)?;
+                // Build the nested JSON structures
+                let inner_json = json!({
+                    "msg": msg,
+                    "attestation": quote
+                });
+
+                let quartz_json = json!({
+                    request_key: inner_json
+                });
+
+                let jsonify = json!({
+                    "quartz": quartz_json
+                });
+
+                let query_result: R = serde_json::from_value(jsonify)?;
+
+                return Ok(query_result);
+            }
+        }
     }
 
-    let output = command.output().await?;
+    todo!()
+    // if mock_sgx
 
-    if !output.status.success() {
-        return Err(anyhow!("{:?}", output));
-    }
+    // match against relaymessage variant and construct
 
-    let query_result: R = serde_json::from_slice(&output.stdout)
-        .map_err(|e| anyhow!("Error deserializing: {}", e))?;
+    // else
 
-    Ok(query_result)
+    // docker
+
+    // same request thing
+
+    // if let RelayMessage::SessionSetPubKey(proof) = msg {
+    //     command.arg(proof);
+    // }
 }
 
 // Note: time until tx commit is empiraclly 800ms on DO wasmd chain.
