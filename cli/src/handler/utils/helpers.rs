@@ -42,9 +42,7 @@ pub async fn run_relay_rust<R: DeserializeOwned>(
     mock_sgx: bool,
     relay_msg: RelayMessage,
 ) -> Result<R, anyhow::Error> {
-    println!("in relay");
     // Query the gRPC quartz enclave service
-    println!("endpoint: {}", enclave_rpc);
     let mut qc_client = CoreClient::connect(enclave_rpc).await?;
 
     let attested_msg = match &relay_msg {
@@ -70,7 +68,6 @@ pub async fn run_relay_rust<R: DeserializeOwned>(
             .clone(),
     };
     let mut attested_msg_json: serde_json::Value = serde_json::from_str(attested_msg)?;
-    println!("attested message: {}", attested_msg_json);
     let quote = attested_msg_json["quote"].take();
 
     if mock_sgx {
