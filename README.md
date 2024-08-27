@@ -3,36 +3,37 @@
 Quartz is a flexible framework for privacy-preserving computation via Trusted Execution
 Environments (TEEs) organized and secured by smart contracts.
 
-With Quartz, data in smart contracts can be encrypted, while computation happens
+_**Why?**_ Development of Quartz was motivated by the privacy needs of the [Cycles Protocol][cycles]. 
+It is designed to be more broadly useful. For background on how to think about different privacy preserving
+technologies (FHE vs MPC vs ZKP vs TEE), see [How to win friends and TEE-fluence
+people][how_to_win_friends_talk] and the associated [tweet
+thread][how_to_win_friends_thread].
+
+_**What?**_ With Quartz, data in smart contracts can be encrypted, while computation happens
 privately off-chain via enclaves. Each contract can control what code runs in the
 enclave, when it runs, and who is permitted to run it.
 
-Quartz currently targets the CosmWasm smart contract environment and the Intel SGX enclave. 
-Other environments and TEEs remain for future work.
-
-At the heart of quartz is a light-client protocol handshake between the enclave and the
+_**How?**_ At the heart of Quartz is a light-client protocol handshake between the enclave and the
 smart contract which gives the smart contract control over when, how, and by who
 the enclave code is run. This significantly reduces the surface area of TEEs.
+See [How it Works][how_it_works].
 
-NOTE: Quartz still requires secure protocol design from application developers.
-Quartz is a low-level framework that provides secure compute environments
-for private compute, but is not a complete  out-of-the box solution - application developers
-must still define a secure data privacy model. Quartz DOES NOT specify how application data is padded, structured,
- and stored on chain in order to not leak information. For now this remains the
-responsibility of the developer. While this provides maximum freedom and
-control to develop applications, with great power comes great responsibility.
+_**Where?**_ Quartz currently targets the CosmWasm smart contract environment and the Intel SGX enclave. 
+Other environments and TEEs remain for future work.
 
-For how to think about different privacy preserving
-technologies (FHE vs MPC vs ZKP vs TEE), see [How to win friends and TEE-fluence
-people](TODO) and the associated [tweet thread](TODO).
+_**Who?**_ Quartz is (currently) for any CosmWasm developer interested in adding privacy or secure off-chain compute to their contracts and applications.
+
+_**When?**_ Early, non-production versions of Quartz are available now for building
+example applications. Production features and requirements are in development.
+See [Future Work][future_work]
 
 ## Docs
 
-- [Getting Started](./docs/getting_started.md) - Get a simple example app up and running in 5 minutes
-- [How it Works](./docs/how_it_works.md) - How smart contracts and enclaves communicate securely
-- [TEE Security](./docs/tees.md) - Resources on TEE security 
-- [Building Applications](./docs/building_apps.md) - How to build Quartz applications
-- [Future Work](./docs/roadmap.md) - Roadmap and future work for security, flexibility, and
+- [Getting Started][getting_started] - Get a simple example app up and running in 5 minutes
+- [How it Works][how_it_works] - How smart contracts and enclaves communicate securely
+- [TEE Security][tees] - Resources on TEE security 
+- [Building Applications][building_apps] - How to build Quartz applications
+- [Future Work][future_work] - Roadmap and future work for security, flexibility, and
   more
 
 ## This Repo
@@ -75,12 +76,16 @@ Utilities for supporting Quartz development and  -
 If you're interested in contributing, please comment on a relevant issue (if there is one) or open a new one!
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Resources
-
-* [Cycles website](https://cycles.money/)
-* [Cycles Spec](docs/spec)
-* [Quartz protobuf definitions](core/quartz-proto)
 
 ## License
 
 TBD
+
+[cycles]: https://cycles.money
+[getting_started]: ./docs/getting_started.md
+[how_it_works]: ./docs/how_it_works.md
+[building_apps]: ./docs/building_apps.md
+[tees]: ./docs/tees.md
+[future_work]: ./docs/roadmap.md
+[how_to_win_friends_talk]: https://www.youtube.com/watch?v=XwKIt5XYyqw
+[how_to_win_friends_thread]: https://x.com/buchmanster/status/1816084691784720887
