@@ -25,7 +25,7 @@ echo "------------ shook some hands ------------"
 
 cd $DIR_CYCLES_SYNC
 cargo run --bin submit -- --epoch-pk $PUB_KEY --mtcs $CONTRACT --overdraft $OVERDRAFT
-echo "cargo run --bin submit -- --epoch-pk $PUB_KEY --mtcs $CONTRACT --overdraft $OVERDRAFT"
+echo "cargo run -- --epoch-pk $PUB_KEY --mtcs $CONTRACT --overdraft $OVERDRAFT"
 
 echo "------------ submitted obligations ------------"
 
