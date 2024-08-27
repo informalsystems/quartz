@@ -90,7 +90,6 @@ wasmd-client = { path = "cosmwasm/packages/wasmd-client", default-features = fal
 cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
 mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
 mtcs-enclave = { path = "apps/mtcs/enclave" }
-transfers-contract = { path = "apps/transfers/contracts", default-features = false }
 
 [profile.release]
 opt-level = 3

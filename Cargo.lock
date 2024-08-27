@@ -4184,6 +4184,7 @@ dependencies = [
  "serde_json",
  "subtle-encoding",
  "target-lexicon",
+ "tempfile",
  "tendermint 0.38.1",
  "tendermint-light-client",
  "tendermint-rpc",

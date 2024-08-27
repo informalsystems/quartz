@@ -57,3 +57,4 @@ quartz-common = { workspace = true, features=["contract"]}
 quartz-tee-ra = { workspace = true}
 mtcs-enclave = { workspace = true, optional = false}
 wasmd-client.workspace = true
+tempfile.workspace = true
