@@ -1,4 +1,4 @@
-use std::{env, fs, path::Path};
+use std::{fs, path::Path};
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
@@ -52,16 +52,19 @@ impl Handler for EnclaveStartRequest {
             handle_process(self.shutdown_rx, enclave_child).await?;
         } else {
             let enclave_dir = fs::canonicalize(config.app_dir.join("enclave"))?;
-            // set cwd to enclave app
-            env::set_current_dir(&enclave_dir).map_err(|e| Error::GenericErr(e.to_string()))?;
+            
             // gramine private key
-            gramine_sgx_gen_private_key().await?;
+            gramine_sgx_gen_private_key(&enclave_dir).await?;
+            
             // gramine manifest
-            gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string(), &enclave_dir.join("..")).await?;
+            let quartz_dir_canon = &enclave_dir.join("..");
+            gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string(), quartz_dir_canon, &enclave_dir).await?;
+            
             // gramine sign
-            gramine_sgx_sign().await?;
+            gramine_sgx_sign(&enclave_dir).await?;
+           
             // Run quartz enclave and block
-            let enclave_child = create_gramine_sgx_child().await?;
+            let enclave_child = create_gramine_sgx_child(&enclave_dir).await?;
             handle_process(self.shutdown_rx, enclave_child).await?;
         }
 
@@ -148,9 +151,10 @@ fn handle_child_status(status: std::process::ExitStatus) -> Result<(), Error> {
     Ok(())
 }
 
-async fn gramine_sgx_gen_private_key() -> Result<(), Error> {
+async fn gramine_sgx_gen_private_key(enclave_dir: &Path) -> Result<(), Error> {
     // Launch the gramine-sgx-gen-private-key command
     Command::new("gramine-sgx-gen-private-key")
+        .current_dir(enclave_dir)
         .output()
         .await
         .map_err(|e| {
@@ -165,7 +169,7 @@ async fn gramine_sgx_gen_private_key() -> Result<(), Error> {
     Ok(())
 }
 
-async fn gramine_manifest(trusted_height: &str, trusted_hash: &str, app_dir: &Path) -> Result<(), Error> {
+async fn gramine_manifest(trusted_height: &str, trusted_hash: &str, quartz_dir: &Path, enclave_dir: &Path) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
         "/lib/{}-{}-{}",
@@ -185,11 +189,12 @@ async fn gramine_manifest(trusted_height: &str, trusted_hash: &str, app_dir: &Pa
         .arg("-Dra_type=epid")
         .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
-        .arg(format!("-Dquartz_dir={}", app_dir.display().to_string()))
+        .arg(format!("-Dquartz_dir={}", quartz_dir.display().to_string()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
+        .current_dir(enclave_dir)
         .status()
         .await
         .map_err(|e| Error::GenericErr(e.to_string()))?;
@@ -204,12 +209,13 @@ async fn gramine_manifest(trusted_height: &str, trusted_hash: &str, app_dir: &Pa
     Ok(())
 }
 
-async fn gramine_sgx_sign() -> Result<(), Error> {
+async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<(), Error> {
     let status = Command::new("gramine-sgx-sign")
         .arg("--manifest")
         .arg("quartz.manifest")
         .arg("--output")
         .arg("quartz.manifest.sgx")
+        .current_dir(enclave_dir)
         .status()
         .await
         .map_err(|e| Error::GenericErr(e.to_string()))?;
@@ -224,10 +230,13 @@ async fn gramine_sgx_sign() -> Result<(), Error> {
     Ok(())
 }
 
-async fn create_gramine_sgx_child() -> Result<Child, Error> {
+async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
     info!("🚧 Spawning enclave process ...");
 
-    let child = Command::new("gramine-sgx").arg("./quartz").spawn()?;
+    let child = Command::new("gramine-sgx")
+        .arg("./quartz")
+        .current_dir(enclave_dir)
+        .spawn()?;
 
     Ok(child)
 }
