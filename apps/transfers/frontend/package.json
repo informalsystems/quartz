@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
     "generate": "node ./scripts/generate.js && node ./scripts/rebuild-component-index.js",
     "rebuild-component-index": "node ./scripts/rebuild-component-index.js"
   },
