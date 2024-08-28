@@ -20,6 +20,7 @@ use quartz_common::{
     enclave::{attestor::Attestor, server::ProofOfPublication},
 };
 use tonic::{Request, Response, Result as TonicResult, Status};
+use uuid::Uuid;
 
 use crate::{
     proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
@@ -79,14 +80,14 @@ where
         let (digests, ciphertexts): (Vec<_>, Vec<_>) = digests_ciphertexts.into_iter().unzip();
 
         let sk = self.sk.lock().unwrap();
-        let obligations: Vec<SimpleObligation<LiquiditySource, i64>> = ciphertexts
+        let obligations: Vec<SimpleObligation<LiquiditySource, i64, Uuid>> = ciphertexts
             .into_iter()
             .map(|ciphertext| decrypt_obligation(sk.as_ref().unwrap(), &ciphertext))
             .collect();
 
         let mut mtcs = ComplexIdMtcs::wrapping(DefaultMtcs::new(PrimalDual::default()));
 
-        let setoffs: Vec<SimpleSetoff<LiquiditySource, i64>> = mtcs.run(obligations).unwrap();
+        let setoffs: Vec<SimpleSetoff<LiquiditySource, i64, Uuid>> = mtcs.run(obligations).unwrap();
         let setoffs_enc: BTreeMap<RawHash, SettleOff> = setoffs
             .into_iter()
             .map(|so| into_settle_offs(so, &liquidity_sources))
@@ -109,7 +110,7 @@ where
 
 // TODO Switch from Vec<_> to Vec<LiquiditySource>
 fn into_settle_offs(
-    so: SimpleSetoff<LiquiditySource, i64>,
+    so: SimpleSetoff<LiquiditySource, i64, Uuid>,
     liquidity_sources: &Vec<LiquiditySource>,
 ) -> SettleOff {
     println!("\nsetoff: {:?}", so);
@@ -161,7 +162,7 @@ fn into_settle_offs(
 fn decrypt_obligation(
     sk: &SigningKey,
     ciphertext: &RawCipherText,
-) -> SimpleObligation<LiquiditySource, i64> {
+) -> SimpleObligation<LiquiditySource, i64, Uuid> {
     let o: ContractObligation = {
         let o = decrypt(&sk.to_bytes(), ciphertext).unwrap();
         serde_json::from_slice(&o).unwrap()

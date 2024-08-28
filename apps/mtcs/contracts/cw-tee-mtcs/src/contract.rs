@@ -93,7 +93,7 @@ pub fn execute(
             let SubmitSetoffsMsg { setoffs_enc } = attested_msg.msg.0;
             execute::submit_setoffs(deps, env, setoffs_enc)
         }
-        ExecuteMsg::InitClearing => execute::init_clearing(deps),
+        ExecuteMsg::InitClearing {} => execute::init_clearing(deps),
         ExecuteMsg::SetLiquiditySources(SetLiquiditySourcesMsg { liquidity_sources }) => {
             execute::append_liquidity_sources(deps, liquidity_sources)?;
             Ok(Response::new())
@@ -318,10 +318,18 @@ pub mod execute {
     }
 
     pub fn init_clearing(deps: DepsMut) -> Result<Response, ContractError> {
-        EPOCH_COUNTER.update(deps.storage, |counter| -> StdResult<_> {
-            counter.checked_add(Uint64::new(1))?;
+        EPOCH_COUNTER.update(deps.storage, |mut counter| -> StdResult<_> {
+            counter = counter.checked_add(Uint64::new(1))?;
             Ok(counter)
         })?;
+
+        // Initializing data for next Epoch
+        let liquidity_epoch_key = current_epoch_key(LIQUIDITY_SOURCES_KEY, deps.storage)?;
+
+        ObligationsItem::new_dyn(current_epoch_key(OBLIGATIONS_KEY, deps.storage)?)
+            .save(deps.storage, &Default::default())?;
+        LIQUIDITY_SOURCES.save(deps.storage, &liquidity_epoch_key, &vec![])?;
+
         Ok(Response::new().add_attribute("action", "init_clearing"))
     }
 }

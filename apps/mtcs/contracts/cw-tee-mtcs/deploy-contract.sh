@@ -26,20 +26,22 @@ CHAIN_ID=${CHAIN_ID:-testing}
 NODE_URL=${NODE_URL:-127.0.0.1:26657}
 LABEL=${LABEL:-bisenzone-mvp}
 COUNT=${COUNT:-0}
-INSTANTIATE_MSG=${INSTANTIATE_MSG:-"{}"}
+INSTANTIATE_MSG=${INSTANTIATE_MSG:-"null"}
 
 TXFLAG="--chain-id ${CHAIN_ID} --gas-prices 0.0025ucosm --gas auto --gas-adjustment 1.3"
 
 CMD="wasmd --node http://$NODE_URL"
 
 echo "🚀 Deploying WASM contract '${WASM_BIN}' on chain '${CHAIN_ID}' using account '${USER_ADDR}'..."
+echo " with cmd : $CMD"
 echo "===================================================================="
 
 RES=$($CMD tx wasm store "$WASM_BIN" --from "$USER_ADDR" $TXFLAG -y --output json)
+echo $RES
 TX_HASH=$(echo $RES | jq -r '.["txhash"]')
 
 while ! $CMD query tx $TX_HASH &> /dev/null; do
-    echo "... 🕐 waiting for contract to deploy"
+    echo "... 🕐 waiting for contract to deploy from tx hash $TX_HASH"
     sleep 1
 done
 
@@ -58,7 +60,7 @@ TX_HASH=$(echo $RES | jq -r '.["txhash"]')
 
 echo ""
 while ! $CMD query tx $TX_HASH &> /dev/null; do
-    echo "... 🕐 waiting for contract to be queryable"
+    echo "... 🕐 waiting for contract to be queryable from tx hash $TX_HASH"
     sleep 1
 done
 
