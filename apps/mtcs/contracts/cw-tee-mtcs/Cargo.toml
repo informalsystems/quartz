@@ -45,7 +45,7 @@ cw20 = "2.0.0"
 cw2 = "2.0.0"
 
 # quartz
-quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["contract"]}
+quartz-common = { path = "../../../../core/quartz-common", features = ["contract"]}
 
 # patch indirect deps
 getrandom = { version = "0.2.15", features = ["js"] }

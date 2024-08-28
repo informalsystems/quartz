@@ -115,7 +115,7 @@ async fn dev_driver(
                         info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
-                        eprintln!("Error running initial round");
+                        eprintln!("Error launching quartz app");
 
                         new_shutdown_tx
                             .send(())
