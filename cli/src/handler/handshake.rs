@@ -1,26 +1,26 @@
-use std::{env::current_dir, fs, str::FromStr};
+use std::{fs, str::FromStr};
 
 use anyhow::anyhow;
 use async_trait::async_trait;
+use color_eyre::owo_colors::OwoColorize;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
-use cycles_sync::wasmd_client::{CliWasmdClient, WasmdClient};
 use futures_util::stream::StreamExt;
 use reqwest::Url;
-use serde::Serialize;
 use serde_json::json;
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tm_prover::{config::Config as TmProverConfig, prover::prove};
-use tracing::{debug, info, trace};
+use tracing::{debug, info};
+use wasmd_client::{CliWasmdClient, WasmdClient};
 
-use super::utils::{
-    helpers::{block_tx_commit, run_relay},
-    types::WasmdTxResponse,
-};
+use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 use crate::{
     config::Config,
     error::Error,
     handler::{
-        utils::{helpers::get_hash_height, types::RelayMessage},
+        utils::{
+            helpers::{read_cached_hash_height, run_relay_rust},
+            types::RelayMessage,
+        },
         Handler,
     },
     request::handshake::HandshakeRequest,
@@ -38,7 +38,7 @@ impl Handler for HandshakeRequest {
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref().clone();
 
-        trace!("starting handshake...");
+        info!("{}", "\nPeforming Handshake".blue().bold());
 
         // TODO: may need to import verbosity here
         let pub_key = handshake(self, config)
@@ -49,25 +49,19 @@ impl Handler for HandshakeRequest {
     }
 }
 
-#[derive(Serialize)]
-struct Message<'a> {
-    message: &'a str,
-}
-
-async fn handshake(args: HandshakeRequest, mut config: Config) -> Result<String, anyhow::Error> {
+async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
     let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
     let wsurl = format!("ws://{}/websocket", config.node_url);
 
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
-    let (trusted_height, trusted_hash) = get_hash_height(false, &mut config)?;
-    // TODO: dir logic issue #125
-    let base_path = current_dir()?.join("../");
+    let (trusted_height, trusted_hash) = read_cached_hash_height(&config).await?;
 
     info!("Running SessionCreate");
-    let res: serde_json::Value = run_relay(
-        base_path.as_path(),
+
+    let res: serde_json::Value = run_relay_rust(
+        config.enclave_rpc(),
         config.mock_sgx,
         RelayMessage::SessionCreate,
     )
@@ -94,8 +88,7 @@ async fn handshake(args: HandshakeRequest, mut config: Config) -> Result<String,
     info!("Waiting 2 blocks for light client proof");
     two_block_waitoor(&wsurl).await?;
 
-    // TODO: dir logic issue #125
-    let proof_path = current_dir()?.join("../utils/tm-prover/light-client-proof.json");
+    let proof_path = config.cache_dir()?.join("light-client-proof.json");
     debug!("Proof path: {:?}", proof_path.to_str());
 
     // Call tm prover with trusted hash and height
@@ -118,16 +111,13 @@ async fn handshake(args: HandshakeRequest, mut config: Config) -> Result<String,
 
     // Read proof file
     let proof = fs::read_to_string(proof_path.as_path())?;
-    let proof_json = serde_json::to_string(&Message {
-        message: proof.trim(),
-    })?;
 
     // Execute SessionSetPubKey on enclave
     info!("Running SessionSetPubKey");
-    let res: serde_json::Value = run_relay(
-        base_path.as_path(),
+    let res: serde_json::Value = run_relay_rust(
+        config.enclave_rpc(),
         config.mock_sgx,
-        RelayMessage::SessionSetPubKey(proof_json),
+        RelayMessage::SessionSetPubKey(proof.trim().to_string()),
     )
     .await?;
 

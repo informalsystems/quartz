@@ -1,13 +1,18 @@
-use std::env;
+use std::{fs, path::Path};
 
 use async_trait::async_trait;
-use tokio::process::Command;
+use cargo_metadata::MetadataCommand;
+use color_eyre::owo_colors::OwoColorize;
+use tokio::{
+    process::{Child, Command},
+    sync::watch,
+};
 use tracing::{debug, info};
 
 use crate::{
     config::Config,
     error::Error,
-    handler::{utils::helpers::get_hash_height, Handler},
+    handler::{utils::helpers::write_cache_hash_height, Handler},
     request::enclave_start::EnclaveStartRequest,
     response::{enclave_start::EnclaveStartResponse, Response},
 };
@@ -21,11 +26,13 @@ impl Handler for EnclaveStartRequest {
         self,
         config: C,
     ) -> Result<Self::Response, Self::Error> {
-        let mut config = config.as_ref().clone();
-        // Get trusted height and hash
-        let (trusted_height, trusted_hash) = get_hash_height(self.use_latest_trusted, &mut config)?;
+        let config = config.as_ref().clone();
+        info!("{}", "\nPeforming Enclave Start".blue().bold());
 
-        let enclave_dir = config.app_dir.join("enclave");
+        // Get trusted height and hash
+        let (trusted_height, trusted_hash) = self.get_hash_height(&config)?;
+        println!("trusted height: {} hash: {}", trusted_height, trusted_hash);
+        write_cache_hash_height(trusted_height, trusted_hash, &config).await?;
 
         if config.mock_sgx {
             let enclave_args: Vec<String> = vec![
@@ -38,65 +45,121 @@ impl Handler for EnclaveStartRequest {
             ];
 
             // Run quartz enclave and block
-            let _res = run_enclave(
-                enclave_dir.join("Cargo.toml").display().to_string(),
-                config.mock_sgx,
-                enclave_args,
+            let enclave_child =
+                create_mock_enclave_child(config.app_dir.as_path(), config.release, enclave_args)
+                    .await?;
+            handle_process(self.shutdown_rx, enclave_child).await?;
+        } else {
+            let enclave_dir = fs::canonicalize(config.app_dir.join("enclave"))?;
+
+            // gramine private key
+            gramine_sgx_gen_private_key(&enclave_dir).await?;
+
+            // gramine manifest
+            let quartz_dir_canon = &enclave_dir.join("..");
+            gramine_manifest(
+                &trusted_height.to_string(),
+                &trusted_hash.to_string(),
+                quartz_dir_canon,
+                &enclave_dir,
             )
             .await?;
-        } else {
-            // set cwd to enclave app
-            env::set_current_dir(enclave_dir).map_err(|e| Error::GenericErr(e.to_string()))?;
-            // gramine private key
-            gramine_sgx_gen_private_key().await?;
-            // gramine manifest
-            gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string()).await?;
+
             // gramine sign
-            gramine_sgx_sign().await?;
+            gramine_sgx_sign(&enclave_dir).await?;
+
             // Run quartz enclave and block
-            gramine_sgx().await?;
+            let enclave_child = create_gramine_sgx_child(&enclave_dir).await?;
+            handle_process(self.shutdown_rx, enclave_child).await?;
         }
+
         Ok(EnclaveStartResponse.into())
     }
 }
 
-async fn run_enclave(
-    manifest_path: String,
-    mock_sgx: bool,
-    enclave_args: Vec<String>,
+async fn handle_process(
+    shutdown_rx: Option<watch::Receiver<()>>,
+    mut child: Child,
 ) -> Result<(), Error> {
-    let mut cargo = Command::new("cargo");
-    let command = cargo.args(["run", "--release", "--manifest-path", &manifest_path]);
-
-    if mock_sgx {
-        debug!("Running with mock-sgx enabled");
-        command.arg("--features=mock-sgx");
+    info!("{}", "Running enclave ...".green().bold());
+    match shutdown_rx {
+        Some(mut rx) => {
+            tokio::select! {
+                status = child.wait() => {
+                    handle_child_status(status.map_err(|e| Error::GenericErr(e.to_string()))?)?;
+                }
+                _ = rx.changed() => {
+                    info!("Enclave shutdown signal received.");
+                    let _ = child.kill().await;
+                }
+            }
+        }
+        None => {
+            // If no shutdown receiver is provided, just wait for the child process
+            let status = child
+                .wait()
+                .await
+                .map_err(|e| Error::GenericErr(e.to_string()))?;
+            handle_child_status(status)?;
+        }
     }
 
-    command.arg("--");
+    Ok(())
+}
+
+async fn create_mock_enclave_child(
+    app_dir: &Path,
+    release: bool,
+    enclave_args: Vec<String>,
+) -> Result<Child, Error> {
+    let enclave_dir = app_dir.join("enclave");
+    let target_dir = app_dir.join("target");
+
+    // Use the enclave package metadata to get the path to the program binary
+    let package_name = MetadataCommand::new()
+        .manifest_path(&enclave_dir.join("Cargo.toml"))
+        .exec()
+        .map_err(|e| Error::GenericErr(e.to_string()))?
+        .root_package()
+        .ok_or("No root package found in the metadata")
+        .map_err(|e| Error::GenericErr(e.to_string()))?
+        .name
+        .clone();
+
+    let executable = if release {
+        target_dir.join("release").join(package_name)
+    } else {
+        target_dir.join("debug").join(package_name)
+    };
+
+    let mut command = Command::new(executable.display().to_string());
+
     command.args(enclave_args);
 
-    println!("command: {:?}", command);
+    debug!("Enclave Start Command: {:?}", command);
 
-    info!("🚧 Running enclave ...");
-    let status = command
-        .status()
-        .await
+    info!("{}", "🚧 Spawning enclave process ...".green().bold());
+    let child = command
+        .spawn()
         .map_err(|e| Error::GenericErr(e.to_string()))?;
 
+    Ok(child)
+}
+
+fn handle_child_status(status: std::process::ExitStatus) -> Result<(), Error> {
     if !status.success() {
         return Err(Error::GenericErr(format!(
             "Couldn't build enclave. {:?}",
             status
         )));
     }
-
     Ok(())
 }
 
-async fn gramine_sgx_gen_private_key() -> Result<(), Error> {
+async fn gramine_sgx_gen_private_key(enclave_dir: &Path) -> Result<(), Error> {
     // Launch the gramine-sgx-gen-private-key command
     Command::new("gramine-sgx-gen-private-key")
+        .current_dir(enclave_dir)
         .output()
         .await
         .map_err(|e| {
@@ -111,9 +174,12 @@ async fn gramine_sgx_gen_private_key() -> Result<(), Error> {
     Ok(())
 }
 
-async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<(), Error> {
-    let current_dir = env::current_dir().map_err(|e| Error::GenericErr(e.to_string()))?;
-
+async fn gramine_manifest(
+    trusted_height: &str,
+    trusted_hash: &str,
+    quartz_dir: &Path,
+    enclave_dir: &Path,
+) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
         "/lib/{}-{}-{}",
@@ -133,11 +199,12 @@ async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<()
         .arg("-Dra_type=epid")
         .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
-        .arg(format!("-Dquartz_dir={}", current_dir.display()))
+        .arg(format!("-Dquartz_dir={}", quartz_dir.display().to_string()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
+        .current_dir(enclave_dir)
         .status()
         .await
         .map_err(|e| Error::GenericErr(e.to_string()))?;
@@ -152,12 +219,13 @@ async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<()
     Ok(())
 }
 
-async fn gramine_sgx_sign() -> Result<(), Error> {
+async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<(), Error> {
     let status = Command::new("gramine-sgx-sign")
         .arg("--manifest")
         .arg("quartz.manifest")
         .arg("--output")
         .arg("quartz.manifest.sgx")
+        .current_dir(enclave_dir)
         .status()
         .await
         .map_err(|e| Error::GenericErr(e.to_string()))?;
@@ -172,19 +240,13 @@ async fn gramine_sgx_sign() -> Result<(), Error> {
     Ok(())
 }
 
-async fn gramine_sgx() -> Result<(), Error> {
-    let status = Command::new("gramine-sgx")
+async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
+    info!("🚧 Spawning enclave process ...");
+
+    let child = Command::new("gramine-sgx")
         .arg("./quartz")
-        .status()
-        .await
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
+        .current_dir(enclave_dir)
+        .spawn()?;
 
-    if !status.success() {
-        return Err(Error::GenericErr(format!(
-            "gramine-sgx-sign command failed. {:?}",
-            status
-        )));
-    }
-
-    Ok(())
+    Ok(child)
 }

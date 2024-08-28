@@ -49,9 +49,9 @@ pub enum RelayMessage {
 impl std::fmt::Display for RelayMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RelayMessage::Instantiate => write!(f, "Instantiate"),
-            RelayMessage::SessionCreate => write!(f, "SessionCreate"),
-            RelayMessage::SessionSetPubKey(_) => write!(f, "SessionSetPubKey"),
+            RelayMessage::Instantiate => write!(f, "instantiate"),
+            RelayMessage::SessionCreate => write!(f, "session_create"),
+            RelayMessage::SessionSetPubKey(_) => write!(f, "session_set_pub_key"),
         }
     }
 }

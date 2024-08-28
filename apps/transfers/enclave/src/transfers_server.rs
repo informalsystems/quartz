@@ -85,6 +85,12 @@ impl HasUserData for QueryResponseMessage {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct StatusResponseMessage {
+    address: Addr,
+    encrypted_bal: HexBinary,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct AttestedMsg<M> {
     msg: M,
     quote: Vec<u8>,
