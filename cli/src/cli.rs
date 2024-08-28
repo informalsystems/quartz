@@ -230,7 +230,9 @@ impl ToFigment for Command {
                 EnclaveCommand::Build(args) => Figment::from(Serialized::defaults(args)),
                 EnclaveCommand::Start(args) => Figment::from(Serialized::defaults(args)),
             },
-            Command::Dev(args) => Figment::from(Serialized::defaults(args)),
+            Command::Dev(args) => Figment::from(Serialized::defaults(args))
+                .merge(Serialized::defaults(&args.contract_deploy))
+                .merge(Serialized::defaults(&args.enclave_build)),
         }
     }
 }

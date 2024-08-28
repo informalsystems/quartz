@@ -31,9 +31,8 @@ impl Handler for EnclaveStartRequest {
 
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = self.get_hash_height(&config)?;
-        if self.use_latest_trusted {
-            write_cache_hash_height(trusted_height, trusted_hash, &config).await?;
-        }
+        println!("trusted height: {} hash: {}", trusted_height, trusted_hash);
+        write_cache_hash_height(trusted_height, trusted_hash, &config).await?;
 
         if config.mock_sgx {
             let enclave_args: Vec<String> = vec![
@@ -52,17 +51,23 @@ impl Handler for EnclaveStartRequest {
             handle_process(self.shutdown_rx, enclave_child).await?;
         } else {
             let enclave_dir = fs::canonicalize(config.app_dir.join("enclave"))?;
-            
+
             // gramine private key
             gramine_sgx_gen_private_key(&enclave_dir).await?;
-            
+
             // gramine manifest
             let quartz_dir_canon = &enclave_dir.join("..");
-            gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string(), quartz_dir_canon, &enclave_dir).await?;
-            
+            gramine_manifest(
+                &trusted_height.to_string(),
+                &trusted_hash.to_string(),
+                quartz_dir_canon,
+                &enclave_dir,
+            )
+            .await?;
+
             // gramine sign
             gramine_sgx_sign(&enclave_dir).await?;
-           
+
             // Run quartz enclave and block
             let enclave_child = create_gramine_sgx_child(&enclave_dir).await?;
             handle_process(self.shutdown_rx, enclave_child).await?;
@@ -169,7 +174,12 @@ async fn gramine_sgx_gen_private_key(enclave_dir: &Path) -> Result<(), Error> {
     Ok(())
 }
 
-async fn gramine_manifest(trusted_height: &str, trusted_hash: &str, quartz_dir: &Path, enclave_dir: &Path) -> Result<(), Error> {
+async fn gramine_manifest(
+    trusted_height: &str,
+    trusted_hash: &str,
+    quartz_dir: &Path,
+    enclave_dir: &Path,
+) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
         "/lib/{}-{}-{}",

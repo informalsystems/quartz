@@ -17,7 +17,10 @@ use crate::{
     config::Config,
     error::Error,
     handler::{
-        utils::{helpers::run_relay_rust, types::RelayMessage},
+        utils::{
+            helpers::{read_cached_hash_height, run_relay_rust},
+            types::RelayMessage,
+        },
         Handler,
     },
     request::handshake::HandshakeRequest,
@@ -53,7 +56,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
-    let (trusted_height, trusted_hash) = args.get_hash_height(&config).await?;
+    let (trusted_height, trusted_hash) = read_cached_hash_height(&config).await?;
 
     info!("Running SessionCreate");
 
