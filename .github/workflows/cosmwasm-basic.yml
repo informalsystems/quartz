@@ -8,12 +8,16 @@ on:
       - .github/workflows/cosmwasm-basic.yml
       - apps/**
       - cosmwasm/**
+    paths-ignore:
+      - "**/frontend/**"
   push:
     branches: main
     paths:
       - .github/workflows/cosmwasm-basic.yml
       - apps/**
       - cosmwasm/**
+    paths-ignore:
+      - "**/frontend/**"
 
 env:
   CARGO_INCREMENTAL: 0
@@ -29,7 +33,6 @@ defaults:
     working-directory: apps/mtcs/contracts/cw-tee-mtcs
 
 jobs:
-
   test-wasm:
     name: Test Suite
     runs-on: ubuntu-latest
@@ -39,7 +42,7 @@ jobs:
 
       - name: Install protobuf-compiler
         run: sudo apt-get install -y protobuf-compiler
-        
+
       - name: Install wasm32-unknown-unknown toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
