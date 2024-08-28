@@ -6,18 +6,16 @@ on:
   pull_request:
     paths:
       - .github/workflows/cosmwasm-basic.yml
-      - apps/**
       - cosmwasm/**
-    paths-ignore:
-      - "**/frontend/**"
+      - apps/**
+      - "!apps/**/frontend/**"
   push:
     branches: main
     paths:
       - .github/workflows/cosmwasm-basic.yml
-      - apps/**
       - cosmwasm/**
-    paths-ignore:
-      - "**/frontend/**"
+      - apps/**
+      - "!apps/**/frontend/**"
 
 env:
   CARGO_INCREMENTAL: 0
