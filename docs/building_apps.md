@@ -20,9 +20,7 @@ The logic of a Quartz smart contract is divided roughly between the following do
 - private business logic - this is business logic that executes in the TEE on data that is encrypted on-chain.
 - public control logic - this is the logic that controls the enclave - who runs it, what code it runs, when it runs, etc.
 
-
-
-Each of these three logic written by application developers in the smart contract. Only the private business logic additionally requires app devs to write code that wil
+Each of these three logic written by application developers in the smart contract.
 
 ## Public Business Logic
 
@@ -37,9 +35,8 @@ in the first place via transparent on-chain logic. That said, these actions may 
 
 This is the core business logic that must be executed privately. It comprises roughly 3 components:
 
-- on-chain queieing of private inputs
+- on-chain queueing of private inputs
 - off-chain execution of code in an enclave
 - on-chain processing of results
-
 
 ## Public Control Logic
