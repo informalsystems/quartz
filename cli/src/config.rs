@@ -43,6 +43,7 @@ pub struct Config {
     #[serde(default)]
     pub trusted_hash: String,
 
+    /// Whether to build for release or debug
     #[serde(default)]
     pub release: bool,
 }

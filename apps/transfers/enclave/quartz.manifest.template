@@ -1,7 +1,7 @@
 # Quartz-based app manifest file
 
 loader.entrypoint = "file:{{ gramine.libos }}"
-libos.entrypoint = "{{ quartz_dir }}/target/release/enclave"
+libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-app-transfers-enclave"
 
 loader.log_level = "{{ log_level }}"
 
@@ -44,15 +44,15 @@ sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
 
 sgx.trusted_files = [
   "file:{{ gramine.libos }}",
-  "file:{{ quartz_dir }}/target/release/enclave",
+  "file:{{ quartz_dir }}/target/release/",
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
 ]
 
 sgx.allowed_files = [
-  "file:{{ enclave_dir }}/exchange.sk",
-  "file:{{ enclave_dir }}/request.json",
+  "file:{{ quartz_dir }}/exchange.sk",
+  "file:{{ quartz_dir }}/request.json",
 ]
 
 sys.insecure__allow_eventfd = true

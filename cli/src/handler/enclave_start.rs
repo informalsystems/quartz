@@ -1,4 +1,4 @@
-use std::{env, path::Path};
+use std::{env, fs, path::Path};
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
@@ -51,13 +51,13 @@ impl Handler for EnclaveStartRequest {
                     .await?;
             handle_process(self.shutdown_rx, enclave_child).await?;
         } else {
-            let enclave_dir = config.app_dir.join("enclave");
+            let enclave_dir = fs::canonicalize(config.app_dir.join("enclave"))?;
             // set cwd to enclave app
-            env::set_current_dir(enclave_dir).map_err(|e| Error::GenericErr(e.to_string()))?;
+            env::set_current_dir(&enclave_dir).map_err(|e| Error::GenericErr(e.to_string()))?;
             // gramine private key
             gramine_sgx_gen_private_key().await?;
             // gramine manifest
-            gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string()).await?;
+            gramine_manifest(&trusted_height.to_string(), &trusted_hash.to_string(), &enclave_dir.join("..")).await?;
             // gramine sign
             gramine_sgx_sign().await?;
             // Run quartz enclave and block
@@ -165,9 +165,7 @@ async fn gramine_sgx_gen_private_key() -> Result<(), Error> {
     Ok(())
 }
 
-async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<(), Error> {
-    let current_dir = env::current_dir().map_err(|e| Error::GenericErr(e.to_string()))?;
-
+async fn gramine_manifest(trusted_height: &str, trusted_hash: &str, app_dir: &Path) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
         "/lib/{}-{}-{}",
@@ -187,7 +185,7 @@ async fn gramine_manifest(trusted_height: &str, trusted_hash: &str) -> Result<()
         .arg("-Dra_type=epid")
         .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
-        .arg(format!("-Dquartz_dir={}", current_dir.display()))
+        .arg(format!("-Dquartz_dir={}", app_dir.display().to_string()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg("quartz.manifest.template")
