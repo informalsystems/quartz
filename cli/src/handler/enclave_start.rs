@@ -31,7 +31,7 @@ impl Handler for EnclaveStartRequest {
 
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = self.get_hash_height(&config)?;
-        println!("trusted height: {} hash: {}", trusted_height, trusted_hash);
+
         write_cache_hash_height(trusted_height, trusted_hash, &config).await?;
 
         if config.mock_sgx {
@@ -199,7 +199,7 @@ async fn gramine_manifest(
         .arg("-Dra_type=epid")
         .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
-        .arg(format!("-Dquartz_dir={}", quartz_dir.display().to_string()))
+        .arg(format!("-Dquartz_dir={}", quartz_dir.display()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg("quartz.manifest.template")

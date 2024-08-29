@@ -235,7 +235,7 @@ async fn deploy_and_handshake(
 ) -> Result<String, Error> {
     info!("Waiting for enclave start to deploy contract and handshake");
 
-    // Wait at most 30 seconds to connect to enclave
+    // Wait at most 60 seconds to connect to enclave
     let mut i = 30;
     while CoreClient::connect(format!(
         "{}:{}",
@@ -244,7 +244,7 @@ async fn deploy_and_handshake(
     .await
     .is_err()
     {
-        sleep(Duration::from_secs(1)).await;
+        sleep(Duration::from_secs(2)).await;
         i -= 1;
 
         if i == 0 {
