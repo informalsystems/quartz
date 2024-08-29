@@ -31,7 +31,6 @@ impl Handler for EnclaveStartRequest {
 
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = self.get_hash_height(&config)?;
-
         write_cache_hash_height(trusted_height, trusted_hash, &config).await?;
 
         if config.mock_sgx {
