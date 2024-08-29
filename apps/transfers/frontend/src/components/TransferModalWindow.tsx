@@ -73,7 +73,7 @@ export function TransferModalWindow({
       })
 
       executeContract({
-        signingClient,
+        signingClient: signingClient!,
         msg: contractMessageBuilders.transfer(encryptedMsg),
         funds: [
           {

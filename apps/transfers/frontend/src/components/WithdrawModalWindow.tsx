@@ -31,7 +31,7 @@ export function WithdrawModalWindow({
   async function handleWithdraw(): Promise<FormActionResponse> {
     try {
       executeContract({
-        signingClient,
+        signingClient: signingClient!,
         msg: contractMessageBuilders.withdraw(),
       })
 

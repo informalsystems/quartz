@@ -38,7 +38,7 @@ export function DepositModalWindow({
   ): Promise<FormActionResponse> {
     try {
       executeContract({
-        signingClient,
+        signingClient: signingClient!,
         msg: contractMessageBuilders.deposit(),
         funds: [
           {
