@@ -76,6 +76,7 @@ pub async fn prove(
         .latest_trusted()
         .ok_or_else(|| eyre!("No trusted state found for primary"))?;
 
+    info!("Getting status of node");
     let status = client.status().await?;
     let latest_height = status.sync_info.latest_block_height;
     let latest_app_hash = status.sync_info.latest_app_hash;

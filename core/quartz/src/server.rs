@@ -22,7 +22,6 @@ use quartz_proto::quartz::{
     SessionSetPubKeyRequest as RawSessionSetPubKeyRequest,
     SessionSetPubKeyResponse as RawSessionSetPubKeyResponse,
 };
-use quartz_relayer::types::{InstantiateResponse, SessionCreateResponse, SessionSetPubKeyResponse};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use tendermint_light_client::{
@@ -32,7 +31,10 @@ use tendermint_light_client::{
 use tm_stateless_verifier::make_provider;
 use tonic::{Request, Response, Result as TonicResult, Status};
 
-use crate::attestor::Attestor;
+use crate::{
+    attestor::Attestor,
+    types::{InstantiateResponse, SessionCreateResponse, SessionSetPubKeyResponse},
+};
 
 #[derive(Clone, Debug)]
 pub struct CoreService<A> {

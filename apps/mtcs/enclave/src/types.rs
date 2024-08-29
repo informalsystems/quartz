@@ -42,7 +42,7 @@ pub struct SubmitObligationsMsg {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SubmitObligationsMsgInner {
     pub obligations: Vec<RawEncryptedObligation>,
-    pub liquidity_sources: Vec<Addr>,
+    pub liquidity_sources: Vec<LiquiditySource>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

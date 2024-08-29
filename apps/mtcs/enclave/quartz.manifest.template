@@ -1,7 +1,7 @@
 # Quartz manifest file
 
 loader.entrypoint = "file:{{ gramine.libos }}"
-libos.entrypoint = "{{ quartz_dir }}/target/release/enclave"
+libos.entrypoint = "{{ quartz_dir }}/target/release/mtcs-enclave"
 
 loader.log_level = "{{ log_level }}"
 
@@ -43,7 +43,7 @@ sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
 
 sgx.trusted_files = [
   "file:{{ gramine.libos }}",
-  "file:{{ quartz_dir }}/target/release/enclave",
+  "file:{{ quartz_dir }}/target/release/mtcs-enclave",
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
