@@ -1,9 +1,10 @@
-import { tw } from "@/lib/tw";
-import { twMerge } from "tailwind-merge";
+import { tw } from '@/lib/tw'
+import { twMerge } from 'tailwind-merge'
 
 export const classNames = {
-  backdrop: ({ modalState = 'closed' }) => twMerge(
-    `
+  backdrop: ({ modalState = 'closed' }) =>
+    twMerge(
+      `
       fixed
       left-0
       top-0
@@ -13,25 +14,24 @@ export const classNames = {
       z-10
       duration-500
     `,
-    (modalState === 'opening' || modalState === 'open')
-      ?
-        `
+      modalState === 'opening' || modalState === 'open'
+        ? `
           opacity-100
           backdrop-blur-md
           pointer-events-auto
           bg-shadedBgColor/20
         `
-      :
-        `
+        : `
           opacity-0
           backdrop-blur-none
           pointer-events-none
           bg-transparent
-        `
-  ),
+        `,
+    ),
 
-  container: ({ modalState = 'closed' }) => twMerge(
-    `
+  container: ({ modalState = 'closed' }) =>
+    twMerge(
+      `
       fixed
       left-1/2
       top-1/2
@@ -44,19 +44,17 @@ export const classNames = {
       min-w-64
       shadow-xl
     `,
-    (modalState === 'opening' || modalState === 'open')
-      ?
-        `
+      modalState === 'opening' || modalState === 'open'
+        ? `
           opacity-100
           -translate-y-1/2
         `
-      :
-        `
+        : `
           opacity-0
           pointer-events-none
           -translate-y-full
-        `
-  ),
+        `,
+    ),
 
   header: tw`
     px-3
@@ -75,5 +73,5 @@ export const classNames = {
     flex-row-reverse
     gap-1
     p-3
-  `
+  `,
 }

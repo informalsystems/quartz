@@ -1,6 +1,7 @@
 'use client'
 
 import { ChangeEvent, useActionState, useState } from 'react'
+import { useCosmWasmSigningClient, useExecuteContract } from 'graz'
 
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ModalWindow, ModalWindowProps } from '@/components/ModalWindow'
@@ -8,38 +9,9 @@ import { Notifications } from '@/components/Notifications'
 import { StyledBox } from '@/components/StyledBox'
 import { StyledText } from '@/components/StyledText'
 import { contractMessageBuilders } from '@/lib/contractMessageBuilders'
-import { cosm } from '@/lib/cosm'
 import { tw } from '@/lib/tw'
 import { FormActionResponse } from '@/lib/types'
-
-// Deposit the specified amount calling the Transfer contract
-async function handleDeposit(
-  _: FormActionResponse,
-  formData: FormData,
-): Promise<FormActionResponse> {
-  const amount = String(formData.get('amount'))
-
-  try {
-    const result = await cosm.executeTransferContract({
-      messageBuilder: contractMessageBuilders.deposit,
-      fundsAmount: amount,
-    })
-
-    console.log(result)
-
-    return {
-      success: true,
-      messages: ['woo!'],
-    }
-  } catch (error) {
-    console.error(error)
-
-    return {
-      success: false,
-      messages: ['Something went wrong'],
-    }
-  }
-}
+import chain from '@/config/chain'
 
 export function DepositModalWindow({
   isOpen,
@@ -51,6 +23,44 @@ export function DepositModalWindow({
     handleDeposit,
     null,
   )
+  const { data: signingClient } = useCosmWasmSigningClient()
+  const { executeContract } = useExecuteContract({
+    contractAddress: process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS!,
+    onSuccess: (data) => {
+      console.log(data)
+    },
+  })
+
+  // Deposit the specified amount calling the Transfer contract
+  async function handleDeposit(
+    _: FormActionResponse,
+    formData: FormData,
+  ): Promise<FormActionResponse> {
+    try {
+      executeContract({
+        signingClient,
+        msg: contractMessageBuilders.deposit(),
+        funds: [
+          {
+            denom: chain.currencies[0].coinMinimalDenom,
+            amount: String(formData.get('amount')),
+          },
+        ],
+      })
+
+      return {
+        success: true,
+        messages: ['woo!'],
+      }
+    } catch (error) {
+      console.error(error)
+
+      return {
+        success: false,
+        messages: ['Something went wrong'],
+      }
+    }
+  }
 
   return (
     <ModalWindow

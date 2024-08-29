@@ -1,36 +1,14 @@
 'use client'
+
 import { useActionState } from 'react'
+import { useCosmWasmSigningClient, useExecuteContract } from 'graz'
 
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ModalWindow, ModalWindowProps } from '@/components/ModalWindow'
 import { Notifications } from '@/components/Notifications'
 import { StyledText } from '@/components/StyledText'
-import { cosm } from '@/lib/cosm'
 import { FormActionResponse } from '@/lib/types'
 import { contractMessageBuilders } from '@/lib/contractMessageBuilders'
-
-// Withdraw all funds from the wallet balance calling the Transfer contract
-async function handleWithdraw(): Promise<FormActionResponse> {
-  try {
-    const result = await cosm.executeTransferContract({
-      messageBuilder: contractMessageBuilders.withdraw,
-    })
-
-    console.log(result)
-
-    return {
-      success: true,
-      messages: ['woo!'],
-    }
-  } catch (error) {
-    console.error(error)
-
-    return {
-      success: false,
-      messages: ['Something went wrong'],
-    }
-  }
-}
 
 export function WithdrawModalWindow({
   isOpen,
@@ -41,6 +19,35 @@ export function WithdrawModalWindow({
     handleWithdraw,
     null,
   )
+  const { data: signingClient } = useCosmWasmSigningClient()
+  const { executeContract } = useExecuteContract({
+    contractAddress: process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS!,
+    onSuccess: (data) => {
+      console.log(data)
+    },
+  })
+
+  // Withdraw all funds from the wallet balance calling the Transfer contract
+  async function handleWithdraw(): Promise<FormActionResponse> {
+    try {
+      executeContract({
+        signingClient,
+        msg: contractMessageBuilders.withdraw(),
+      })
+
+      return {
+        success: true,
+        messages: ['woo!'],
+      }
+    } catch (error) {
+      console.error(error)
+
+      return {
+        success: false,
+        messages: ['Something went wrong'],
+      }
+    }
+  }
 
   return (
     <ModalWindow

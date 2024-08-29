@@ -3,21 +3,30 @@
 import { useEffect, useState } from 'react'
 import { isEmpty } from 'lodash'
 
-import {
-  DepositModalWindow,
-  Icon,
-  Notifications,
-  StyledText,
-  TransferModalWindow,
-  WithdrawModalWindow,
-} from '@/components'
 import { tw } from '@/lib/tw'
 import { wasmEventHandler } from '@/lib/wasmEventHandler'
 import { FormActionResponse } from '@/lib/types'
-import { chain } from '@/lib/chainConfig'
-import { cosm } from '@/lib/cosm'
-import { wallet } from '@/lib/wallet'
 import { contractMessageBuilders } from '@/lib/contractMessageBuilders'
+import { Notifications } from '@/components/Notifications'
+import { StyledText } from '@/components/StyledText'
+import { Icon } from '@/components/Icon'
+import { DepositModalWindow } from '@/components/DepositModalWindow'
+import { TransferModalWindow } from '@/components/TransferModalWindow'
+import { WithdrawModalWindow } from '@/components/WithdrawModalWindow'
+import {
+  useAccount,
+  useCosmWasmSigningClient,
+  useDisconnect,
+  useExecuteContract,
+  useQuerySmart,
+} from 'graz'
+import {
+  clearMnemonic,
+  decrypt,
+  getEphemeralKeypair,
+} from '@/lib/ephemeralKeypair'
+import chain from '@/config/chain'
+import { useGlobalState } from '@/state/useGlobalState'
 
 function formatAmount(value: number) {
   return value.toLocaleString('en-US', {
@@ -41,48 +50,42 @@ const retrieveBalance = (data: string) => {
   return balance
 }
 
-export default function Home() {
+export default function Dashboard() {
   const [requestBalanceResult, setRequestBalanceResult] =
     useState<FormActionResponse>()
   const [balance, setBalance] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-  const [walletAddress, setWalletAddress] = useState(
-    wallet.getAccount().address,
-  )
+  const [loading, setLoading] = useState(false)
+  const { data } = useAccount()
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
+  const { disconnect } = useDisconnect({
+    onSuccess: clearMnemonic,
+  })
+  const { data: signingClient } = useCosmWasmSigningClient()
+  const { executeContract } = useExecuteContract({
+    contractAddress: process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS!,
+    onSuccess: (data) => {
+      console.log(data)
+      setLoading(false)
+    },
+    onLoading: () => setLoading(true),
+    onError: (err: any) => {
+      setLoading(false)
+    },
+  })
+  const walletAddress = data?.bech32Address ?? ''
 
-  // Listen for Keplr wallet switches so we can refresh the Keplr & CosmWasm info
-  useEffect(() => {
-    const params: [string, () => void] = [
-      'keplr_keystorechange',
-      () => {
-        setIsLoading(true)
-
-        wallet
-          .refreshUser()
-          .then(cosm.init)
-          .finally(() => {
-            setWalletAddress(wallet.getAccount().address)
-            setIsLoading(false)
-          })
-      },
-    ]
-
-    window.addEventListener(...params)
-
-    return () => window.removeEventListener(...params)
-  }, [])
-
+  const { data: encryptedBalance } = useQuerySmart<string, any>(
+    data && {
+      address: process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS,
+      queryMsg: contractMessageBuilders.getBalance(walletAddress),
+    },
+  )
   // Set the current balance for the wallet. Whenever the wallet changes, we retrieve its balance
   useEffect(() => {
-    cosm
-      .queryTransferContract({
-        messageBuilder: () => contractMessageBuilders.getBalance(walletAddress),
-      })
-      .then((data) => setBalance(retrieveBalance(wallet.decrypt(data))))
-  }, [walletAddress])
+    decrypt(encryptedBalance!).then((data) => setBalance(retrieveBalance(data)))
+  }, [encryptedBalance])
 
   // Listen for the response event from the blockchain when requesting the current wallet new balance
   useEffect(() => {
@@ -92,31 +95,27 @@ export default function Home() {
         next: (event) => {
           console.log(event)
           if (!isEmpty(event?.events['wasm-store_balance.encrypted_balance'])) {
-            setBalance(
-              retrieveBalance(
-                wallet.decrypt(
-                  event.events['wasm-store_balance.encrypted_balance'][0],
-                ),
-              ),
-            )
+            decrypt(
+              event.events['wasm-store_balance.encrypted_balance'][0],
+            ).then((data) => setBalance(retrieveBalance(data)))
           }
         },
       },
     )
   }, [walletAddress])
 
-  // Request the current wallet new balance calling the transfer contract
   async function requestBalance(): Promise<void> {
     let result
 
     try {
-      setIsLoading(true)
-      const response = await cosm.executeTransferContract({
-        messageBuilder: () =>
-          contractMessageBuilders.requestBalance(wallet.getKeypair().pubkey),
+      setLoading(true)
+      executeContract({
+        signingClient,
+        msg: contractMessageBuilders.requestBalance(
+          (await getEphemeralKeypair()).pubkey,
+        ),
       })
-      console.log(response)
-      setIsLoading(false)
+      setLoading(false)
 
       result = {
         success: true,
@@ -124,7 +123,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error(error)
-      setIsLoading(false)
+      setLoading(false)
       result = {
         success: false,
         messages: ['Something went wrong'],
@@ -142,7 +141,6 @@ export default function Home() {
         flex-col
         items-center
         justify-center
-        bg-[url(/images/moroccan-flower.png)]
         p-12
       `}
     >
@@ -168,13 +166,13 @@ export default function Home() {
         </div>
 
         <StyledText
-          className="bg-blue-500 font-bold"
+          className="font-bold"
           variant="button.primary"
           as="button"
-          disabled={isLoading}
+          disabled={loading}
           onClick={requestBalance}
         >
-          {!isLoading ? (
+          {!loading ? (
             <Icon name="building-columns" />
           ) : (
             <div className="animate-spin">
@@ -184,10 +182,10 @@ export default function Home() {
           Get Balance
         </StyledText>
 
-        <div className="my-1 w-full border-black/20"></div>
+        <div className="my-1 w-full border-black/25"></div>
 
         <StyledText
-          className="w-full bg-emerald-500 font-bold"
+          className="w-full bg-emerald-500"
           variant="button.primary"
           onClick={() => setIsDepositModalOpen(true)}
         >
@@ -196,19 +194,39 @@ export default function Home() {
         </StyledText>
         <StyledText
           variant="button.primary"
-          className="w-full font-bold"
+          className="w-full bg-violet-500"
           onClick={() => setIsTransferModalOpen(true)}
         >
           <Icon name="arrows-left-right" />
           Transfer
         </StyledText>
         <StyledText
-          className="w-full bg-amber-500 font-bold"
+          className="w-full bg-amber-500"
           variant="button.primary"
           onClick={() => setIsWithdrawModalOpen(true)}
         >
           <Icon name="money-bills-simple" />
           Withdraw
+        </StyledText>
+        <div className="my-1 w-full border-black/25"></div>
+        <StyledText
+          className="w-full"
+          variant="button.secondary"
+          onClick={() => {
+            const res = confirm(
+              'Disconnecting your account will remove your mnemonic and private key and you will lose access to your data unless you have them backed up. Are you sure you want to continue?',
+            )
+
+            if (!res) {
+              return
+            }
+
+            useGlobalState.getState().setLoading(true)
+            disconnect()
+          }}
+        >
+          <Icon name="door-open" />
+          Disconnect
         </StyledText>
       </div>
 

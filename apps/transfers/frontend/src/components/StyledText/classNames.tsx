@@ -8,6 +8,7 @@ const buttonClassNames = tw`
   items-center
   justify-center
   gap-2
+  font-bold
   transition-all
   hover:scale-105
   disabled:pointer-events-none
@@ -25,41 +26,17 @@ const headingClassNames = tw`
 export const classNames = {
   'button.primary': twMerge(
     buttonClassNames,
-    `
-      whitespace-nowrap
-      rounded-md
-      bg-accentColor
-      px-3
-      py-1
-      text-white
-    `,
+    `whitespace-nowrap rounded-md bg-accentColor px-3 py-1 text-white`,
   ),
 
   'button.secondary': twMerge(
     buttonClassNames,
-    `
-      relative
-      z-10
-      whitespace-nowrap
-      rounded-md
-      border
-      bg-white
-      px-3
-      py-1
-      text-textColor
-      backdrop-blur-sm
-    `,
+    `relative z-10 whitespace-nowrap rounded-md border bg-gray-300 px-3 py-1 text-black backdrop-blur-sm`,
   ),
 
   'button.icon': twMerge(
     buttonClassNames,
-    `
-      size-10
-      rounded-full
-      bg-shadedBgColor
-      hover:bg-accentColor
-      hover:text-appBgColor
-    `,
+    `size-10 rounded-full bg-shadedBgColor hover:bg-accentColor hover:text-appBgColor`,
   ),
 
   'button.tool': tw`
@@ -80,33 +57,13 @@ export const classNames = {
     text-fadedTextColor
   `,
 
-  'h1': twJoin(
-    headingClassNames,
-    `
-      text-5xl
-    `,
-  ),
+  'h1': twJoin(headingClassNames, `text-5xl`),
 
-  'h2': twJoin(
-    headingClassNames,
-    `
-      text-4xl
-    `,
-  ),
+  'h2': twJoin(headingClassNames, `text-4xl`),
 
-  'h3': twJoin(
-    headingClassNames,
-    `
-      text-3xl
-    `,
-  ),
+  'h3': twJoin(headingClassNames, `text-3xl`),
 
-  'h4': twJoin(
-    headingClassNames,
-    `
-      text-lg
-    `,
-  ),
+  'h4': twJoin(headingClassNames, `text-lg`),
 
   'label': tw`
     text-sm
@@ -115,25 +72,12 @@ export const classNames = {
 
   'link': twMerge(
     buttonClassNames,
-    `
-      text-accentColor
-      underline
-      underline-offset-4
-      transition-all
-      hover:underline-offset-4
-    `,
+    `text-accentColor underline underline-offset-4 transition-all hover:underline-offset-4`,
   ),
 
   'link.subtle': twMerge(
     buttonClassNames,
-    `
-      text-inherit
-      underline-offset-4
-      transition-all
-      hover:text-accentColor
-      hover:underline
-      hover:underline-offset-4
-    `,
+    `text-inherit underline-offset-4 transition-all hover:text-accentColor hover:underline hover:underline-offset-4`,
   ),
 
   'logo': tw`

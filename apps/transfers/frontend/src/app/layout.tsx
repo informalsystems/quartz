@@ -1,9 +1,9 @@
-import { App } from '@/components'
 import type { Metadata } from 'next'
 import { Raleway } from 'next/font/google'
 import Script from 'next/script'
-import { twMerge } from 'tailwind-merge'
+
 import './globals.css'
+import Root from '@/components/Root'
 
 const bodyFont = Raleway({ subsets: ['latin'], variable: '--font-raleway' })
 
@@ -46,20 +46,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link
+          rel="shortcut icon"
+          href="/favicon.png"
+          type="image/png"
+        />
         <Script src="https://kit.fontawesome.com/ddaf2d7713.js" />
       </head>
-      <body
-        className={twMerge(
-          `
-            overflow-x-hidden
-            bg-appBgColor
-            text-textColor
-          `,
-          bodyFont.className,
-          bodyFont.variable,
-        )}
-      >
-        <App>{children}</App>
+      <body className={bodyFont.className}>
+        <Root>{children}</Root>
       </body>
     </html>
   )

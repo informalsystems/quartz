@@ -13,19 +13,17 @@
     "rebuild-component-index": "node ./scripts/rebuild-component-index.js"
   },
   "dependencies": {
-    "@cosmjs/cosmwasm-stargate": "^0.32.4",
-    "@cosmwasm/ts-codegen": "^1.11.1",
     "eciesjs": "^0.4.7",
+    "graz": "^0.1.0",
     "lodash": "^4.17.21",
-    "next": "^15.0.0-rc.0",
-    "react": "^19.0.0-rc-f994737d14-20240522",
-    "react-dom": "^19.0.0-rc-f994737d14-20240522",
+    "next": "15.0.0-rc.0",
+    "react": "19.0.0-rc-f994737d14-20240522",
+    "react-dom": "19.0.0-rc-f994737d14-20240522",
     "tailwind-merge": "^2.3.0",
-    "zod": "^3.23.8"
+    "zustand": "4.5.4"
   },
   "devDependencies": {
     "@keplr-wallet/types": "0.12.103",
-    "@netlify/plugin-nextjs": "^5.3.3",
     "@playwright/test": "^1.46.1",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.13",
@@ -47,6 +45,9 @@
     "unzipper": "^0.12.3"
   },
   "overrides": {
+    "graz": {
+      "react": "19.0.0-rc-f994737d14-20240522"
+    },
     "@types/react": "npm:types-react@rc",
     "@types/react-dom": "npm:types-react-dom@rc"
   }
