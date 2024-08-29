@@ -27,6 +27,7 @@ serde.workspace = true
 serde_json.workspace = true
 tonic.workspace = true
 tokio.workspace = true
+tower.workspace = true
 
 # cosmos
 cosmrs.workspace = true

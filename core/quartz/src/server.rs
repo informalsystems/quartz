@@ -1,4 +1,6 @@
 use std::{
+    convert::Infallible,
+    net::SocketAddr,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -16,8 +18,9 @@ use quartz_cw::{
     state::{Config, LightClientOpts, Nonce, Session},
 };
 use quartz_proto::quartz::{
-    core_server::Core, InstantiateRequest as RawInstantiateRequest,
-    InstantiateResponse as RawInstantiateResponse, SessionCreateRequest as RawSessionCreateRequest,
+    core_server::{Core, CoreServer},
+    InstantiateRequest as RawInstantiateRequest, InstantiateResponse as RawInstantiateResponse,
+    SessionCreateRequest as RawSessionCreateRequest,
     SessionCreateResponse as RawSessionCreateResponse,
     SessionSetPubKeyRequest as RawSessionSetPubKeyRequest,
     SessionSetPubKeyResponse as RawSessionSetPubKeyResponse,
@@ -29,12 +32,59 @@ use tendermint_light_client::{
     types::{LightBlock, TrustThreshold},
 };
 use tm_stateless_verifier::make_provider;
-use tonic::{Request, Response, Result as TonicResult, Status};
+use tonic::{
+    server::NamedService,
+    transport::{server::Router, Error, Server},
+    Request, Response, Result as TonicResult, Status,
+};
+use tower::Service;
 
 use crate::{
-    attestor::Attestor,
+    attestor::{Attestor, DefaultAttestor},
     types::{InstantiateResponse, SessionCreateResponse, SessionSetPubKeyResponse},
 };
+
+#[derive(Debug)]
+pub struct QuartzServer {
+    pub router: Router,
+}
+
+impl QuartzServer {
+    pub fn new(
+        config: Config,
+        sk: Arc<Mutex<Option<SigningKey>>>,
+        attestor: DefaultAttestor,
+    ) -> Self {
+        let core_service = CoreServer::new(CoreService::new(config, sk.clone(), attestor.clone()));
+
+        Self {
+            router: Server::builder().add_service(core_service),
+        }
+    }
+
+    pub fn add_service<S>(mut self, service: S) -> Self
+    where
+        S: Service<
+                tonic::codegen::http::request::Request<tonic::body::BoxBody>,
+                Response = tonic::codegen::http::response::Response<tonic::body::BoxBody>,
+                Error = Infallible,
+            >
+            + Send
+            + Clone
+            + 'static
+            + NamedService,
+        S::Future: Send + 'static,
+    {
+        self.router = self.router.add_service(service);
+
+        self
+    }
+
+    pub async fn serve(self, addr: SocketAddr) -> Result<(), Error> {
+        // spawn ws listener as a tokio task
+        self.router.serve(addr).await
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct CoreService<A> {

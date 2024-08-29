@@ -16,7 +16,6 @@ pub mod cli;
 pub mod proto;
 pub mod state;
 pub mod transfers_server;
-pub mod listen_server;
 
 use std::{
     sync::{Arc, Mutex}, time::Duration
@@ -29,13 +28,11 @@ use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{Attestor, DefaultAttestor},
-        server::CoreService,
+        server::{CoreService, QuartzServer},
     },
     proto::core_server::CoreServer,
 };
-use tonic::transport::Server;
 use transfers_server::TransfersService;
-use listen_server::EventListenerService;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -66,21 +63,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let sk = Arc::new(Mutex::new(None));
 
-    Server::builder()
-        .add_service(CoreServer::new(CoreService::new(
-            config.clone(),
-            sk.clone(),
-            attestor.clone(),
-        )))
+    QuartzServer::new(config.clone(), sk.clone(), attestor.clone())
         .add_service(TransfersServer::new(TransfersService::new(
-            config.clone(), sk.clone(), attestor.clone(),
-        )))
-        .add_service(EventListenerServer::new(EventListenerService::new(
-            config,
-            attestor,
+            config, sk, attestor,
         )))
         .serve(args.rpc_addr)
         .await?;
+
 
     Ok(())
 }
