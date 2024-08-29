@@ -1,1 +1,0 @@
-export { NewComponent } from './NewComponent'
