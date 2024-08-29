@@ -88,9 +88,7 @@ async fn dev_driver(
                 info!("{}", "Launching quartz app...".green().bold());
 
                 // Build enclave
-                let enclave_build = EnclaveBuildRequest {
-                    release: args.release,
-                };
+                let enclave_build = EnclaveBuildRequest {};
                 enclave_build.handle(&config).await?;
 
                 // Build contract

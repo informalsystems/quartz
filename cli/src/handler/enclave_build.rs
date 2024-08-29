@@ -37,7 +37,7 @@ impl Handler for EnclaveBuildRequest {
             command.arg("--features=mock-sgx");
         }
 
-        if self.release {
+        if config.release {
             debug!("Targetting release");
             command.arg("--release");
         }
