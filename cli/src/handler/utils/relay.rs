@@ -43,21 +43,21 @@ impl RelayMessage {
             .map_err(|e| Error::GenericErr(e.to_string()))?;
 
         let attested_msg = match self {
-            RelayMessage::Instantiate => &qc_client
+            RelayMessage::Instantiate => qc_client
                 .instantiate(tonic::Request::new(InstantiateRequest {}))
                 .await
                 .map_err(|e| Error::GenericErr(e.to_string()))?
                 .get_ref()
                 .message
                 .clone(),
-            RelayMessage::SessionCreate => &qc_client
+            RelayMessage::SessionCreate => qc_client
                 .session_create(tonic::Request::new(SessionCreateRequest {}))
                 .await
                 .map_err(|e| Error::GenericErr(e.to_string()))?
                 .get_ref()
                 .message
                 .clone(),
-            RelayMessage::SessionSetPubKey(proof) => &qc_client
+            RelayMessage::SessionSetPubKey(proof) => qc_client
                 .session_set_pub_key(SessionSetPubKeyRequest {
                     message: proof.to_string(),
                 })
@@ -68,7 +68,7 @@ impl RelayMessage {
                 .clone(),
         };
 
-        let mut msg_json: serde_json::Value = serde_json::from_str(attested_msg)?;
+        let mut msg_json: serde_json::Value = serde_json::from_str(&attested_msg)?;
         let quote = msg_json["quote"].take();
 
         if mock_sgx {
