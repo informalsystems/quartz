@@ -28,17 +28,20 @@ sha2 = { version = "0.10.8", default-features = false }
 thiserror = { version = "1.0.49", default-features = false }
 tokio = { version = "=1.39.2", default-features = false, features = ["macros", "rt"] }
 tonic = { version = "=0.12.1", default-features = false, features = ["codegen", "prost", "transport"] }
+futures-util = "0.3.30"
 
 # cosmos
 cosmrs = { version = "=0.17.0", default-features = false }
 cosmwasm-std = { version = "2.1.1", default-features = false, features = ["std"] }
 tendermint = { version = "=0.38.1", default-features = false }
+tendermint-rpc = { version = "=0.38.1", default-features = false }
 tendermint-light-client = { version = "=0.38.1", default-features = false, features = ["rust-crypto"] }
 transfers-contract = { path = "../contracts", default-features = false }
 
 # quartz
 # quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["full"]}
 quartz-common = { path = "../../../core/quartz-common", features=["full"]}
+async-trait = "0.1.81"
 
 [dev-dependencies]
 cw-multi-test = "2.1.0"

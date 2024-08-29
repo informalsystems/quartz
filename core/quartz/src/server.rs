@@ -33,6 +33,8 @@ use tendermint_light_client::{
 };
 use tm_stateless_verifier::make_provider;
 use tonic::{
+    body::BoxBody,
+    codegen::http,
     server::NamedService,
     transport::{server::Router, Error, Server},
     Request, Response, Result as TonicResult, Status,
@@ -44,9 +46,14 @@ use crate::{
     types::{InstantiateResponse, SessionCreateResponse, SessionSetPubKeyResponse},
 };
 
-#[derive(Debug)]
+#[async_trait::async_trait]
+pub trait WebSocketListener: Send + 'static {
+    async fn listen(&self) -> Result<(), Error>;
+}
+
 pub struct QuartzServer {
     pub router: Router,
+    ws_listeners: Vec<Box<dyn WebSocketListener>>,
 }
 
 impl QuartzServer {
@@ -59,29 +66,41 @@ impl QuartzServer {
 
         Self {
             router: Server::builder().add_service(core_service),
+            ws_listeners: Vec::new(),
         }
     }
 
     pub fn add_service<S>(mut self, service: S) -> Self
     where
         S: Service<
-                tonic::codegen::http::request::Request<tonic::body::BoxBody>,
-                Response = tonic::codegen::http::response::Response<tonic::body::BoxBody>,
+                http::request::Request<BoxBody>,
+                Response = http::response::Response<BoxBody>,
                 Error = Infallible,
             >
+            + WebSocketListener
             + Send
             + Clone
             + 'static
             + NamedService,
         S::Future: Send + 'static,
     {
-        self.router = self.router.add_service(service);
+        self.router = self.router.add_service(service.clone());
+        self.ws_listeners.push(Box::new(service));
 
         self
     }
 
     pub async fn serve(self, addr: SocketAddr) -> Result<(), Error> {
-        // spawn ws listener as a tokio task
+        // Launch all WebSocket handlers as separate Tokio tasks
+        for listener in self.ws_listeners {
+            tokio::spawn(async move {
+
+                if let Err(e) = listener.listen().await {
+                    eprintln!("Error in WebSocket listener: {:?}", e);
+                }
+            });
+        }
+
         self.router.serve(addr).await
     }
 }

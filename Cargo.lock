@@ -4158,6 +4158,7 @@ dependencies = [
 name = "quartz-enclave"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "clap",
  "color-eyre",
  "cosmrs",
@@ -4176,6 +4177,7 @@ dependencies = [
  "sha2 0.10.8",
  "tendermint 0.38.1",
  "tendermint-light-client",
+ "tendermint-rpc",
  "tm-stateless-verifier",
  "tokio",
  "tonic",
