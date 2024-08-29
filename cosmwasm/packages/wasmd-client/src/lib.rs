@@ -244,8 +244,10 @@ impl WasmdClient for CliWasmdClient {
             serde_json::from_slice(&output.stdout).unwrap_or_default();
 
         let trusted_height = query_result["SyncInfo"]["latest_block_height"]
-            .as_u64()
+            .as_str()
             .ok_or(anyhow!("Could not query height"))?;
+
+        let trusted_height = trusted_height.parse::<u64>()?;
 
         let trusted_hash = query_result["SyncInfo"]["latest_block_hash"]
             .as_str()

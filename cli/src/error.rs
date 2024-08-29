@@ -15,6 +15,8 @@ pub enum Error {
     TomlError(String),
     /// Tendermint error: {0}
     TendermintError(String),
+    /// Clearscreen error: {0}
+    ClearscreenError(String),
 }
 
 impl From<std::io::Error> for Error {
@@ -38,5 +40,11 @@ impl From<toml::ser::Error> for Error {
 impl From<tendermint::Error> for Error {
     fn from(err: tendermint::Error) -> Self {
         Error::TendermintError(err.to_string())
+    }
+}
+
+impl From<clearscreen::Error> for Error {
+    fn from(err: clearscreen::Error) -> Self {
+        Error::ClearscreenError(err.to_string())
     }
 }
