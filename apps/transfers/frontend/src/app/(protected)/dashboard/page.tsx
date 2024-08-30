@@ -12,9 +12,7 @@ import {
 
 import { tw } from '@/lib/tw'
 import { wasmEventHandler } from '@/lib/wasmEventHandler'
-import { FormActionResponse } from '@/lib/types'
 import { contractMessageBuilders } from '@/lib/contractMessageBuilders'
-import { Notifications } from '@/components/Notifications'
 import { StyledText } from '@/components/StyledText'
 import { Icon } from '@/components/Icon'
 import { DepositModalWindow } from '@/components/DepositModalWindow'
@@ -27,6 +25,7 @@ import {
 } from '@/lib/ephemeralKeypair'
 import chain from '@/config/chain'
 import { useGlobalState } from '@/state/useGlobalState'
+import { showError, showSuccess } from '@/lib/notifications'
 
 function formatAmount(value: number) {
   return value.toLocaleString('en-US', {
@@ -51,8 +50,6 @@ const retrieveBalance = (data: string) => {
 }
 
 export default function Dashboard() {
-  const [requestBalanceResult, setRequestBalanceResult] =
-    useState<FormActionResponse>()
   const [balance, setBalance] = useState(0)
   const [loading, setLoading] = useState(false)
   const { data } = useAccount()
@@ -65,8 +62,9 @@ export default function Dashboard() {
   const { data: signingClient } = useCosmWasmSigningClient()
   const { executeContract } = useExecuteContract({
     contractAddress: process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS!,
-    onError: (err: any) => {
+    onError: (error: any) => {
       setLoading(false)
+      showError(error.message)
     },
   })
   const walletAddress = data?.bech32Address ?? ''
@@ -80,7 +78,9 @@ export default function Dashboard() {
 
   // Set the current balance for the wallet. Whenever the wallet changes, we retrieve its balance
   useEffect(() => {
-    decrypt(encryptedBalance!).then((data) => setBalance(retrieveBalance(data)))
+    decrypt(encryptedBalance!)
+      .then((data) => setBalance(retrieveBalance(data)))
+      .catch((error: any) => showError(error.message))
   }, [encryptedBalance])
 
   // Listen for the response event from the blockchain when requesting the current wallet new balance
@@ -88,7 +88,7 @@ export default function Dashboard() {
     return wasmEventHandler(
       `execute._contract_address='${process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS}' AND wasm-store_balance.address='${walletAddress}'`,
       {
-        next: (event) => {
+        next: (event: any) => {
           console.log(event)
           if (!isEmpty(event?.events['wasm-store_balance.encrypted_balance'])) {
             decrypt(
@@ -96,6 +96,7 @@ export default function Dashboard() {
             ).then((data) => {
               setLoading(false)
               setBalance(retrieveBalance(data))
+              showSuccess('Balance updated correctly')
             })
           }
         },
@@ -103,32 +104,14 @@ export default function Dashboard() {
     )
   }, [walletAddress])
 
-  async function requestBalance(): Promise<void> {
-    let result
-
-    try {
-      setLoading(true)
-      executeContract({
-        signingClient: signingClient!,
-        msg: contractMessageBuilders.requestBalance(
-          (await getEphemeralKeypair()).pubkey,
-        ),
-      })
-
-      result = {
-        success: true,
-        messages: ['woo!'],
-      }
-    } catch (error) {
-      console.error(error)
-      setLoading(false)
-      result = {
-        success: false,
-        messages: ['Something went wrong'],
-      }
-    } finally {
-      setRequestBalanceResult(result)
-    }
+  async function requestBalance() {
+    setLoading(true)
+    executeContract({
+      signingClient: signingClient!,
+      msg: contractMessageBuilders.requestBalance(
+        (await getEphemeralKeypair()).pubkey,
+      ),
+    })
   }
 
   return (
@@ -142,7 +125,6 @@ export default function Dashboard() {
         p-12
       `}
     >
-      <Notifications formActionResponse={requestBalanceResult} />
       <div
         className={tw`
           flex

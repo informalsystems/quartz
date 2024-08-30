@@ -6,6 +6,6 @@ import dynamic from 'next/dynamic'
 // This avoids errors on first render
 const App = dynamic(() => import('./App'), { ssr: false })
 
-export default function Root({ children }: { children: React.ReactNode }) {
+export default function Root({ children }: React.PropsWithChildren) {
   return <App>{children}</App>
 }

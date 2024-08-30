@@ -44,6 +44,9 @@ export function EnterSeedModal({
     >
       <ModalWindow.Title>Enter recovery phrase</ModalWindow.Title>
       <ModalWindow.Body className="space-y-3">
+        {!isEmpty(error) && (
+          <div className="font-bold text-red-500">{error}</div>
+        )}
         <StyledBox
           as="input"
           min={0}
@@ -53,7 +56,6 @@ export function EnterSeedModal({
             setMnemonic(event.target.value)
           }
         />
-        {!isEmpty(error) && <div className="text-red-500">{error}</div>}
       </ModalWindow.Body>
       <ModalWindow.Buttons>
         <StyledText
