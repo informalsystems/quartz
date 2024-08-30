@@ -62,24 +62,18 @@ pub struct MtcsService<A> {
     config: Config, // TODO: this config is not used anywhere
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
-    node_url: String,
 }
 
 impl<A> MtcsService<A>
 where
     A: Attestor,
 {
-    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A, node_url: String) -> Self {
+    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
         Self {
             config,
             sk,
             attestor,
-            node_url,
         }
-    }
-
-    pub fn node_url(&self) -> String {
-        self.node_url.clone()
     }
 }
 

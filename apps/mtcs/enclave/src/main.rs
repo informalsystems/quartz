@@ -66,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sk = Arc::new(Mutex::new(None));
     
     QuartzServer::new(config.clone(), sk.clone(), attestor.clone())
-        .add_service(MtcsServer::new(MtcsService::new(config, sk, attestor, args.node_url)))
+        .add_service(MtcsServer::new(MtcsService::new(config, sk, attestor)))
         .serve(args.rpc_addr, "143.244.186.205:26657".to_string())
         .await?;
 
