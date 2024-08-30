@@ -132,12 +132,13 @@ export default function Dashboard() {
           gap-2
           divide-y
           rounded-md
-          border
-          border-black/20
           bg-white
           p-5
           py-3
-          shadow-2xl
+          shadow-md
+          outline
+          outline-1
+          outline-black/5
         `}
       >
         <div className="flex w-full justify-between">

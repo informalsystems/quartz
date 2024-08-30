@@ -36,13 +36,16 @@ export const classNames = {
       left-1/2
       top-1/2
       bg-appBgColor
-      rounded-lg
+      rounded-md
       overflow-hidden
       -translate-x-1/2
       z-10
       duration-500
       min-w-64
-      shadow-xl
+      shadow-md
+      outline
+      outline-1
+      outline-black/5
     `,
       modalState === 'opening' || modalState === 'open'
         ? `
