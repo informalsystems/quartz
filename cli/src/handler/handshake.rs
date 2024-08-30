@@ -17,10 +17,7 @@ use crate::{
     config::Config,
     error::Error,
     handler::{
-        utils::{
-            helpers::{read_cached_hash_height, run_relay_rust},
-            types::RelayMessage,
-        },
+        utils::{helpers::read_cached_hash_height, relay::RelayMessage},
         Handler,
     },
     request::handshake::HandshakeRequest,
@@ -60,12 +57,9 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
 
     info!("Running SessionCreate");
 
-    let res: serde_json::Value = run_relay_rust(
-        config.enclave_rpc(),
-        config.mock_sgx,
-        RelayMessage::SessionCreate,
-    )
-    .await?;
+    let res: serde_json::Value = RelayMessage::SessionCreate
+        .run_relay(config.enclave_rpc(), config.mock_sgx)
+        .await?;
 
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client
@@ -114,12 +108,9 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
 
     // Execute SessionSetPubKey on enclave
     info!("Running SessionSetPubKey");
-    let res: serde_json::Value = run_relay_rust(
-        config.enclave_rpc(),
-        config.mock_sgx,
-        RelayMessage::SessionSetPubKey(proof.trim().to_string()),
-    )
-    .await?;
+    let res: serde_json::Value = RelayMessage::SessionSetPubKey(proof.trim().to_string())
+        .run_relay(config.enclave_rpc(), config.mock_sgx)
+        .await?;
 
     // Submit SessionSetPubKey to contract
     let output: WasmdTxResponse = serde_json::from_str(

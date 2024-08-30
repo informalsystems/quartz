@@ -3,12 +3,7 @@ use std::path::Path;
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
-use quartz_common::contract::{
-    msg::execute::attested::{RawEpidAttestation, RawMockAttestation},
-    prelude::QuartzInstantiateMsg,
-};
 use reqwest::Url;
-use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use tendermint_rpc::HttpClient;
 use tracing::{debug, info};
@@ -21,10 +16,7 @@ use super::utils::{
 use crate::{
     config::Config,
     error::Error,
-    handler::{
-        utils::{helpers::run_relay_rust, types::RelayMessage},
-        Handler,
-    },
+    handler::{utils::relay::RelayMessage, Handler},
     request::contract_deploy::ContractDeployRequest,
     response::{contract_deploy::ContractDeployResponse, Response},
 };
@@ -59,15 +51,9 @@ impl Handler for ContractDeployRequest {
             .join(package_name)
             .with_extension("wasm");
 
-        let (code_id, contract_addr) = if config.mock_sgx {
-            deploy::<RawMockAttestation>(wasm_bin_path.as_path(), self, config)
-                .await
-                .map_err(|e| Error::GenericErr(e.to_string()))?
-        } else {
-            deploy::<RawEpidAttestation>(wasm_bin_path.as_path(), self, config)
-                .await
-                .map_err(|e| Error::GenericErr(e.to_string()))?
-        };
+        let (code_id, contract_addr) = deploy(wasm_bin_path.as_path(), self, config)
+            .await
+            .map_err(|e| Error::GenericErr(e.to_string()))?;
 
         Ok(ContractDeployResponse {
             code_id,
@@ -77,7 +63,7 @@ impl Handler for ContractDeployRequest {
     }
 }
 
-async fn deploy<DA: Serialize + DeserializeOwned>(
+async fn deploy(
     wasm_bin_path: &Path,
     args: ContractDeployRequest,
     config: &Config,
@@ -105,12 +91,9 @@ async fn deploy<DA: Serialize + DeserializeOwned>(
     };
 
     info!("🚀 Communicating with Relay to Instantiate...");
-    let raw_init_msg = run_relay_rust::<QuartzInstantiateMsg<DA>>(
-        config.enclave_rpc(),
-        config.mock_sgx,
-        RelayMessage::Instantiate,
-    )
-    .await?;
+    let raw_init_msg = RelayMessage::Instantiate
+        .run_relay(config.enclave_rpc(), config.mock_sgx)
+        .await?;
 
     info!("🚀 Instantiating {}", args.label);
     let mut init_msg = args.init_msg;
