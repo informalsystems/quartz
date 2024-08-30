@@ -3,7 +3,6 @@
 import { PublicKey, encrypt } from 'eciesjs'
 import { ChangeEvent, useState } from 'react'
 import { useAccount, useCosmWasmSigningClient, useExecuteContract } from 'graz'
-import invariant from 'tiny-invariant'
 
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ModalWindow, ModalWindowProps } from '@/components/ModalWindow'
@@ -22,11 +21,6 @@ function encryptMsg(data: {
   receiver: string
   amount: string
 }): string {
-  invariant(
-    process.env.NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY,
-    'NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY must be defined',
-  )
-
   // Create the public key from the hex
   const pubkey = PublicKey.fromHex(process.env.NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY)
   // Convert the data into a JSON string
