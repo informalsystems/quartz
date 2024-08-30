@@ -23,17 +23,14 @@ use std::{
 
 use clap::Parser;
 use cli::Cli;
-use futures_util::StreamExt;
-use proto::{settlement_server::SettlementServer as TransfersServer, event_listener_server::EventListenerServer};
+use proto::settlement_server::SettlementServer as TransfersServer;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{Attestor, DefaultAttestor},
-        server::{CoreService, QuartzServer, WebSocketListener},
-    },
-    proto::core_server::CoreServer,
+        server::QuartzServer,
+    }
 };
-use tendermint_rpc::{query::{EventType, Query}, SubscriptionClient, WebSocketClient};
 use transfers_server::TransfersService;
 
 #[tokio::main(flavor = "current_thread")]
@@ -64,47 +61,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let sk = Arc::new(Mutex::new(None));
-
+    
     QuartzServer::new(config.clone(), sk.clone(), attestor.clone())
         .add_service(TransfersServer::new(TransfersService::new(
-            config, sk, attestor,
+            config, sk, attestor
         )))
-        .serve(args.rpc_addr)
+        .serve(args.rpc_addr, "143.244.186.205:26657".to_string())
         .await?;
 
 
     Ok(())
 }
-
-// TODO: Need to prevent listener from taking actions until handshake is completed
-#[async_trait::async_trait]
-impl<A: Attestor> WebSocketListener for TransfersServer<TransfersService<A>> {
-    async fn listen(&self) -> Result<(), tonic::transport::Error> {
-        let wsurl = format!("ws://143.244.186.205:26657/websocket");
-        let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
-        let driver_handle = tokio::spawn(async move { driver.run().await });
-    
-        // let mut subs = client
-        //     .subscribe(Query::from(EventType::Tx).and_contains("wasm.action", "init_clearing"))
-        //     .await
-        //     .unwrap();
-
-        let mut subs = client
-            .subscribe(Query::from(EventType::NewBlock))
-            .await
-            .unwrap();
-    
-        while subs.next().await.is_some() {
-            // On init_clearing, run process
-            println!("Saw a block!");
-        }
-    
-        // Close connection
-        // Await the driver's termination to ensure proper connection closure.
-        client.close().unwrap();
-        let _ = driver_handle.await.unwrap();
-
-        Ok(())
-    }
-}
-    

@@ -10,6 +10,7 @@ use cw_tee_mtcs::{
     state::{LiquiditySource, LiquiditySourceType, RawHash, SettleOff, Transfer},
 };
 use ecies::decrypt;
+use futures_util::StreamExt;
 use k256::ecdsa::SigningKey;
 use mtcs::{
     algo::mcmf::primal_dual::PrimalDual, impls::complex_id::ComplexIdMtcs,
@@ -17,15 +18,42 @@ use mtcs::{
 };
 use quartz_common::{
     contract::{msg::execute::attested::RawAttested, state::Config},
-    enclave::{attestor::Attestor, server::ProofOfPublication},
+    enclave::{attestor::Attestor, server::{ProofOfPublication, WebSocketListener}},
 };
+use tendermint_rpc::{query::{EventType, Query}, SubscriptionClient, WebSocketClient};
 use tonic::{Request, Response, Result as TonicResult, Status};
 use uuid::Uuid;
 
 use crate::{
-    proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
+    proto::{clearing_server::{Clearing, ClearingServer}, RunClearingRequest, RunClearingResponse},
     types::{ContractObligation, RunClearingMessage},
 };
+
+// TODO: Need to prevent listener from taking actions until handshake is completed
+#[async_trait::async_trait]
+impl<A: Attestor> WebSocketListener for ClearingServer<MtcsService<A>> {
+    async fn listen(&self, node_url: String) -> Result<(), tonic::transport::Error> {
+        let wsurl = format!("ws://{}/websocket", node_url);
+        let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
+        let driver_handle = tokio::spawn(async move { driver.run().await });
+
+        let mut subs = client
+            .subscribe(Query::from(EventType::Tx).and_contains("wasm.action", "init_clearing"))
+            .await
+            .unwrap();
+    
+        while subs.next().await.is_some() {
+            // On init_clearing, run process
+            
+        }
+        // Close connection
+        // Await the driver's termination to ensure proper connection closure.
+        client.close().unwrap();
+        let _ = driver_handle.await.unwrap();
+
+        Ok(())
+    }
+}
 
 pub type RawCipherText = HexBinary;
 
@@ -34,18 +62,24 @@ pub struct MtcsService<A> {
     config: Config, // TODO: this config is not used anywhere
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
+    node_url: String,
 }
 
 impl<A> MtcsService<A>
 where
     A: Attestor,
 {
-    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A, node_url: String) -> Self {
         Self {
             config,
             sk,
             attestor,
+            node_url,
         }
+    }
+
+    pub fn node_url(&self) -> String {
+        self.node_url.clone()
     }
 }
 

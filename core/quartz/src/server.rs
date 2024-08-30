@@ -48,7 +48,7 @@ use crate::{
 
 #[async_trait::async_trait]
 pub trait WebSocketListener: Send + 'static {
-    async fn listen(&self) -> Result<(), Error>;
+    async fn listen(&self, node_url: String) -> Result<(), Error>;
 }
 
 pub struct QuartzServer {
@@ -90,12 +90,13 @@ impl QuartzServer {
         self
     }
 
-    pub async fn serve(self, addr: SocketAddr) -> Result<(), Error> {
+    pub async fn serve(self, addr: SocketAddr, node_url: String) -> Result<(), Error> {
         // Launch all WebSocket handlers as separate Tokio tasks
         for listener in self.ws_listeners {
+            let node = node_url.clone();
             tokio::spawn(async move {
 
-                if let Err(e) = listener.listen().await {
+                if let Err(e) = listener.listen(node).await {
                     eprintln!("Error in WebSocket listener: {:?}", e);
                 }
             });

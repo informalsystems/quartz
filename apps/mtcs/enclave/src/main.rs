@@ -30,7 +30,7 @@ use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{Attestor, DefaultAttestor},
-        server::CoreService,
+        server::{CoreService, QuartzServer, WebSocketListener},
     },
     proto::core_server::CoreServer,
 };
@@ -64,15 +64,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let sk = Arc::new(Mutex::new(None));
-
-    Server::builder()
-        .add_service(CoreServer::new(CoreService::new(
-            config.clone(),
-            sk.clone(),
-            attestor.clone(),
-        )))
-        .add_service(MtcsServer::new(MtcsService::new(config, sk, attestor)))
-        .serve(args.rpc_addr)
+    
+    QuartzServer::new(config.clone(), sk.clone(), attestor.clone())
+        .add_service(MtcsServer::new(MtcsService::new(config, sk, attestor, args.node_url)))
+        .serve(args.rpc_addr, "143.244.186.205:26657".to_string())
         .await?;
 
     Ok(())

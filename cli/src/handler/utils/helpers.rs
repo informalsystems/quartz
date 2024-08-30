@@ -262,7 +262,6 @@ pub async fn run_relay_rust<R: DeserializeOwned>(
         .ok_or_else(|| Error::GenericErr("quote is not a string".to_string()))?;
 
     let quote = decode(quote_str).map_err(|e| Error::GenericErr(e.to_string()))?;
-    println!("quote: {:?}", quote_str);
     let (report, report_sig) = run_docker_command(&quote).await?;
 
     match relay_msg {

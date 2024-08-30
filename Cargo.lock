@@ -3328,6 +3328,7 @@ dependencies = [
 name = "mtcs-enclave"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "clap",
  "color-eyre",
  "cosmrs",
@@ -3335,6 +3336,7 @@ dependencies = [
  "cw-multi-test",
  "cw-tee-mtcs",
  "ecies",
+ "futures-util",
  "hex",
  "k256",
  "mtcs",
@@ -3344,6 +3346,7 @@ dependencies = [
  "serde_json",
  "tendermint 0.38.1",
  "tendermint-light-client",
+ "tendermint-rpc",
  "thiserror",
  "tokio",
  "tonic",

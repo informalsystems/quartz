@@ -31,7 +31,6 @@ impl Handler for EnclaveStartRequest {
 
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = self.get_hash_height(&config)?;
-        println!("trusted height: {} hash: {}", trusted_height, trusted_hash);
         write_cache_hash_height(trusted_height, trusted_hash, &config).await?;
 
         if config.mock_sgx {
@@ -42,6 +41,8 @@ impl Handler for EnclaveStartRequest {
                 trusted_height.to_string(),
                 "--trusted-hash".to_string(),
                 trusted_hash.to_string(),
+                "--node-url".to_string(),
+                config.node_url
             ];
 
             // Run quartz enclave and block
