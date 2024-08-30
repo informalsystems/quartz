@@ -38,24 +38,20 @@ function encryptMsg(data: {
   return encryptedState.toString('hex')
 }
 
-export function TransferModalWindow({
-  isOpen,
-  onClose,
-  ...otherProps
-}: ModalWindowProps) {
+export function TransferModalWindow(props: ModalWindowProps) {
   const [amount, setAmount] = useState(0)
   const [receiver, setRecipient] = useState('')
-  const [formActionResponse, formAction, isLoading] = useActionState(
-    handleTransfer,
-    null,
-  )
+  const [loading, setLoading] = useState(false)
+  const [formActionResponse, formAction] = useActionState(handleTransfer, null)
   const { data: wallet } = useAccount()
   const { data: signingClient } = useCosmWasmSigningClient()
   const { executeContract } = useExecuteContract({
     contractAddress: process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS!,
     onSuccess: (data) => {
       console.log(data)
+      setLoading(false)
     },
+    onError: () => setLoading(false),
   })
 
   // Transfer an amount between wallets calling the Transfer contract with an encrypted request
@@ -64,6 +60,8 @@ export function TransferModalWindow({
     formData: FormData,
   ): Promise<FormActionResponse> {
     try {
+      setLoading(true)
+
       const receiver = String(formData.get('receiver'))
       const amount = String(formData.get('amount'))
       const encryptedMsg = encryptMsg({
@@ -99,11 +97,10 @@ export function TransferModalWindow({
 
   return (
     <ModalWindow
-      isOpen={isOpen}
-      onClose={onClose}
-      {...otherProps}
+      disableClosing={loading}
+      {...props}
     >
-      <LoadingSpinner isLoading={isLoading} />
+      <LoadingSpinner isLoading={loading} />
 
       <ModalWindow.Title className="bg-violet-500">Transfer</ModalWindow.Title>
 
@@ -158,7 +155,7 @@ export function TransferModalWindow({
           </StyledText>
           <StyledText
             variant="button.secondary"
-            onClick={onClose}
+            onClick={props.onClose}
           >
             Cancel
           </StyledText>

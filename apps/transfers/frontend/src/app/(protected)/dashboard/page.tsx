@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { isEmpty } from 'lodash'
+import {
+  useAccount,
+  useCosmWasmSigningClient,
+  useDisconnect,
+  useExecuteContract,
+  useQuerySmart,
+} from 'graz'
 
 import { tw } from '@/lib/tw'
 import { wasmEventHandler } from '@/lib/wasmEventHandler'
@@ -13,13 +20,6 @@ import { Icon } from '@/components/Icon'
 import { DepositModalWindow } from '@/components/DepositModalWindow'
 import { TransferModalWindow } from '@/components/TransferModalWindow'
 import { WithdrawModalWindow } from '@/components/WithdrawModalWindow'
-import {
-  useAccount,
-  useCosmWasmSigningClient,
-  useDisconnect,
-  useExecuteContract,
-  useQuerySmart,
-} from 'graz'
 import {
   clearMnemonic,
   decrypt,
@@ -65,11 +65,6 @@ export default function Dashboard() {
   const { data: signingClient } = useCosmWasmSigningClient()
   const { executeContract } = useExecuteContract({
     contractAddress: process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS!,
-    onSuccess: (data) => {
-      console.log(data)
-      setLoading(false)
-    },
-    onLoading: () => setLoading(true),
     onError: (err: any) => {
       setLoading(false)
     },
@@ -82,6 +77,7 @@ export default function Dashboard() {
       queryMsg: contractMessageBuilders.getBalance(walletAddress),
     },
   )
+
   // Set the current balance for the wallet. Whenever the wallet changes, we retrieve its balance
   useEffect(() => {
     decrypt(encryptedBalance!).then((data) => setBalance(retrieveBalance(data)))
@@ -97,7 +93,10 @@ export default function Dashboard() {
           if (!isEmpty(event?.events['wasm-store_balance.encrypted_balance'])) {
             decrypt(
               event.events['wasm-store_balance.encrypted_balance'][0],
-            ).then((data) => setBalance(retrieveBalance(data)))
+            ).then((data) => {
+              setLoading(false)
+              setBalance(retrieveBalance(data))
+            })
           }
         },
       },
@@ -110,12 +109,11 @@ export default function Dashboard() {
     try {
       setLoading(true)
       executeContract({
-        signingClient,
+        signingClient: signingClient!,
         msg: contractMessageBuilders.requestBalance(
           (await getEphemeralKeypair()).pubkey,
         ),
       })
-      setLoading(false)
 
       result = {
         success: true,
@@ -162,7 +160,13 @@ export default function Dashboard() {
       >
         <div className="flex w-full justify-between">
           <span className="font-bold">Balance:</span>
-          <span className="font-bold">{formatAmount(balance)}</span>
+          {!loading ? (
+            <span className="font-bold">{formatAmount(balance)}</span>
+          ) : (
+            <div className="animate-spin">
+              <Icon name="spinner" />
+            </div>
+          )}
         </div>
 
         <StyledText
@@ -172,13 +176,7 @@ export default function Dashboard() {
           disabled={loading}
           onClick={requestBalance}
         >
-          {!loading ? (
-            <Icon name="building-columns" />
-          ) : (
-            <div className="animate-spin">
-              <Icon name="spinner" />
-            </div>
-          )}
+          <Icon name="building-columns" />
           Get Balance
         </StyledText>
 

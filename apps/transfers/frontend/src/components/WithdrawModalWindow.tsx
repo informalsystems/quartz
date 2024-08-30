@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useCosmWasmSigningClient, useExecuteContract } from 'graz'
 
 import { LoadingSpinner } from '@/components/LoadingSpinner'
@@ -10,26 +10,23 @@ import { StyledText } from '@/components/StyledText'
 import { FormActionResponse } from '@/lib/types'
 import { contractMessageBuilders } from '@/lib/contractMessageBuilders'
 
-export function WithdrawModalWindow({
-  isOpen,
-  onClose,
-  ...otherProps
-}: ModalWindowProps) {
-  const [formActionResponse, formAction, isLoading] = useActionState(
-    handleWithdraw,
-    null,
-  )
+export function WithdrawModalWindow(props: ModalWindowProps) {
+  const [loading, setLoading] = useState(false)
+  const [formActionResponse, formAction] = useActionState(handleWithdraw, null)
   const { data: signingClient } = useCosmWasmSigningClient()
   const { executeContract } = useExecuteContract({
     contractAddress: process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS!,
     onSuccess: (data) => {
       console.log(data)
+      setLoading(false)
     },
+    onError: () => setLoading(false),
   })
 
   // Withdraw all funds from the wallet balance calling the Transfer contract
   async function handleWithdraw(): Promise<FormActionResponse> {
     try {
+      setLoading(true)
       executeContract({
         signingClient: signingClient!,
         msg: contractMessageBuilders.withdraw(),
@@ -51,11 +48,10 @@ export function WithdrawModalWindow({
 
   return (
     <ModalWindow
-      isOpen={isOpen}
-      onClose={onClose}
-      {...otherProps}
+      disableClosing={loading}
+      {...props}
     >
-      <LoadingSpinner isLoading={isLoading} />
+      <LoadingSpinner isLoading={loading} />
 
       <ModalWindow.Title className="bg-amber-500">Withdraw</ModalWindow.Title>
 
@@ -74,7 +70,7 @@ export function WithdrawModalWindow({
           </StyledText>
           <StyledText
             variant="button.secondary"
-            onClick={onClose}
+            onClick={props.onClose}
           >
             Cancel
           </StyledText>

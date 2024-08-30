@@ -5,6 +5,7 @@ import { useSuggestChainAndConnect } from 'graz'
 
 import chain from '@/config/chain'
 import { StyledText } from '@/components/StyledText'
+import { useGlobalState } from '@/state/useGlobalState'
 
 export default function Landing() {
   const router = useRouter()
@@ -13,7 +14,7 @@ export default function Landing() {
   })
 
   const connectWallet = () => {
-    // useGlobalState.getState().setLoading(true)
+    useGlobalState.getState().setLoading(true)
     suggestAndConnect({ chainInfo: chain })
   }
 

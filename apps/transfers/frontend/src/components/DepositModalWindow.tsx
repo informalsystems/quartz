@@ -13,22 +13,18 @@ import { tw } from '@/lib/tw'
 import { FormActionResponse } from '@/lib/types'
 import chain from '@/config/chain'
 
-export function DepositModalWindow({
-  isOpen,
-  onClose,
-  ...otherProps
-}: ModalWindowProps) {
+export function DepositModalWindow(props: ModalWindowProps) {
   const [amount, setAmount] = useState(0)
-  const [formActionResponse, formAction, isLoading] = useActionState(
-    handleDeposit,
-    null,
-  )
+  const [loading, setLoading] = useState(false)
+  const [formActionResponse, formAction] = useActionState(handleDeposit, null)
   const { data: signingClient } = useCosmWasmSigningClient()
   const { executeContract } = useExecuteContract({
     contractAddress: process.env.NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS!,
     onSuccess: (data) => {
       console.log(data)
+      setLoading(false)
     },
+    onError: () => setLoading(false),
   })
 
   // Deposit the specified amount calling the Transfer contract
@@ -37,6 +33,7 @@ export function DepositModalWindow({
     formData: FormData,
   ): Promise<FormActionResponse> {
     try {
+      setLoading(true)
       executeContract({
         signingClient: signingClient!,
         msg: contractMessageBuilders.deposit(),
@@ -64,11 +61,10 @@ export function DepositModalWindow({
 
   return (
     <ModalWindow
-      isOpen={isOpen}
-      onClose={onClose}
-      {...otherProps}
+      disableClosing={loading}
+      {...props}
     >
-      <LoadingSpinner isLoading={isLoading} />
+      <LoadingSpinner isLoading={loading} />
 
       <ModalWindow.Title className="bg-emerald-500">Deposit</ModalWindow.Title>
 
@@ -106,7 +102,7 @@ export function DepositModalWindow({
           </StyledText>
           <StyledText
             variant="button.secondary"
-            onClick={onClose}
+            onClick={props.onClose}
           >
             Cancel
           </StyledText>

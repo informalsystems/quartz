@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { EnterSeedModal } from '@/components/EnterSeedModal'
 import { generateMnemonic, saveMnemonic } from '@/lib/ephemeralKeypair'
 import { StyledText } from '@/components/StyledText'
-// import { useGlobalState } from '@/state/useGlobalState'
+import { useGlobalState } from '@/state/useGlobalState'
 
 const mnemonic = generateMnemonic()
 
@@ -15,7 +15,7 @@ export default function SetSeed() {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const acceptPhrase = () => {
-    // useGlobalState.getState().setLoading(true)
+    useGlobalState.getState().setLoading(true)
     saveMnemonic(mnemonic)
     router.replace('/dashboard')
   }
