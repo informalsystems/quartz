@@ -16,6 +16,7 @@ mod cli;
 mod mtcs_server;
 mod proto;
 mod types;
+mod wslistener;
 
 use std::{
     sync::{Arc, Mutex},
@@ -30,11 +31,9 @@ use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{Attestor, DefaultAttestor},
-        server::{CoreService, QuartzServer, WebSocketListener},
+        server::QuartzServer,
     },
-    proto::core_server::CoreServer,
 };
-use tonic::transport::Server;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -64,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let sk = Arc::new(Mutex::new(None));
-    
+
     QuartzServer::new(config.clone(), sk.clone(), attestor.clone())
         .add_service(MtcsServer::new(MtcsService::new(config, sk, attestor)))
         .serve(args.rpc_addr, "143.244.186.205:26657".to_string())

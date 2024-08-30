@@ -3328,7 +3328,9 @@ dependencies = [
 name = "mtcs-enclave"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-trait",
+ "base64 0.22.1",
  "clap",
  "color-eyre",
  "cosmrs",
@@ -3342,6 +3344,8 @@ dependencies = [
  "mtcs",
  "prost 0.13.1",
  "quartz-common",
+ "quartz-tee-ra",
+ "reqwest 0.12.7",
  "serde",
  "serde_json",
  "tendermint 0.38.1",
@@ -3352,6 +3356,7 @@ dependencies = [
  "tonic",
  "tonic-build",
  "uuid",
+ "wasmd-client",
 ]
 
 [[package]]

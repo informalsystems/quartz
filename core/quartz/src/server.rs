@@ -95,7 +95,6 @@ impl QuartzServer {
         for listener in self.ws_listeners {
             let node = node_url.clone();
             tokio::spawn(async move {
-
                 if let Err(e) = listener.listen(node).await {
                     eprintln!("Error in WebSocket listener: {:?}", e);
                 }

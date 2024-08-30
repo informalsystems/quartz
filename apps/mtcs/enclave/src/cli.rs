@@ -51,5 +51,5 @@ pub struct Cli {
     pub max_block_lag: u64,
 
     #[clap(long, default_value = "127.0.0.1:11090")]
-    pub node_url: String
+    pub node_url: String,
 }

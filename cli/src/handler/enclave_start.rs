@@ -42,7 +42,7 @@ impl Handler for EnclaveStartRequest {
                 "--trusted-hash".to_string(),
                 trusted_hash.to_string(),
                 "--node-url".to_string(),
-                config.node_url
+                config.node_url,
             ];
 
             // Run quartz enclave and block
