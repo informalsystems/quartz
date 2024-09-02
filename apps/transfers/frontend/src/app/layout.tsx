@@ -53,7 +53,7 @@ export default function RootLayout({
         />
         <Script src="https://kit.fontawesome.com/ddaf2d7713.js" />
       </head>
-      <body className={(bodyFont.className, 'bg-gray-200')}>
+      <body className={(bodyFont.className, 'bg-gray-500/25')}>
         <Root>{children}</Root>
       </body>
     </html>

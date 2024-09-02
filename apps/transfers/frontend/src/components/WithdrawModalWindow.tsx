@@ -8,6 +8,7 @@ import { ModalWindow, ModalWindowProps } from '@/components/ModalWindow'
 import { StyledText } from '@/components/StyledText'
 import { contractMessageBuilders } from '@/lib/contractMessageBuilders'
 import { showError, showSuccess } from '@/lib/notifications'
+import { Icon } from './Icon'
 
 export function WithdrawModalWindow(props: ModalWindowProps) {
   const [loading, setLoading] = useState(false)
@@ -41,10 +42,12 @@ export function WithdrawModalWindow(props: ModalWindowProps) {
     >
       <LoadingSpinner isLoading={loading} />
 
-      <ModalWindow.Title className="bg-amber-500">Withdraw</ModalWindow.Title>
+      <ModalWindow.Title className="bg-amber-500">
+        <Icon name="money-bills-simple" /> Withdraw
+      </ModalWindow.Title>
 
       <ModalWindow.Body className="space-y-3">
-        <p>This will return the entire remaining balance to your wallet.</p>
+        <p>Withdraw the entire balance back to your wallet.</p>
       </ModalWindow.Body>
       <ModalWindow.Buttons>
         <StyledText

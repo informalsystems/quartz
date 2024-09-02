@@ -3,6 +3,7 @@
 import { PublicKey, encrypt } from 'eciesjs'
 import { ChangeEvent, useState } from 'react'
 import { useAccount, useCosmWasmSigningClient, useExecuteContract } from 'graz'
+import { isEmpty } from 'lodash'
 
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ModalWindow, ModalWindowProps } from '@/components/ModalWindow'
@@ -13,7 +14,7 @@ import chain from '@/config/chain'
 import { tw } from '@/lib/tw'
 import { showError, showSuccess } from '@/lib/notifications'
 import { isValidAddress } from '@/lib/isValidAddress'
-import { isEmpty } from 'lodash'
+import { Icon } from './Icon'
 
 // Encrypt the transfer data using the enclave public key
 function encryptMsg(data: {
@@ -97,7 +98,9 @@ export function TransferModalWindow(props: ModalWindowProps) {
     >
       <LoadingSpinner isLoading={loading} />
 
-      <ModalWindow.Title className="bg-violet-500">Transfer</ModalWindow.Title>
+      <ModalWindow.Title className="bg-violet-500">
+        <Icon name="arrows-left-right" /> Transfer
+      </ModalWindow.Title>
 
       <ModalWindow.Body className="space-y-3">
         {!isEmpty(error) && (

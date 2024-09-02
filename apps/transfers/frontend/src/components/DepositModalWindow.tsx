@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useState } from 'react'
 import { useCosmWasmSigningClient, useExecuteContract } from 'graz'
+import { isEmpty } from 'lodash'
 
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ModalWindow, ModalWindowProps } from '@/components/ModalWindow'
@@ -11,7 +12,7 @@ import { contractMessageBuilders } from '@/lib/contractMessageBuilders'
 import { tw } from '@/lib/tw'
 import chain from '@/config/chain'
 import { showError, showSuccess } from '@/lib/notifications'
-import { isEmpty } from 'lodash'
+import { Icon } from './Icon'
 
 export function DepositModalWindow(props: ModalWindowProps) {
   const [amount, setAmount] = useState(0)
@@ -61,7 +62,9 @@ export function DepositModalWindow(props: ModalWindowProps) {
     >
       <LoadingSpinner isLoading={loading} />
 
-      <ModalWindow.Title className="bg-emerald-500">Deposit</ModalWindow.Title>
+      <ModalWindow.Title className="bg-emerald-500">
+        <Icon name="piggy-bank" /> Deposit
+      </ModalWindow.Title>
 
       <ModalWindow.Body className="space-y-3">
         {!isEmpty(error) && (

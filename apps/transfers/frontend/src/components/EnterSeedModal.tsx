@@ -63,7 +63,7 @@ export function EnterSeedModal({
           variant="button.primary"
           onClick={submitSeed}
         >
-          Continue with entered seed phrase
+          Continue
         </StyledText>
         <StyledText
           variant="button.secondary"

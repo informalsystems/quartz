@@ -31,7 +31,7 @@ export const classNames = {
 
   'button.secondary': twMerge(
     buttonClassNames,
-    `relative z-10 whitespace-nowrap rounded-md border bg-gray-300 px-3 py-1 text-black backdrop-blur-sm`,
+    `relative z-10 whitespace-nowrap rounded-md border bg-gray-400 px-3 py-1 text-white backdrop-blur-sm`,
   ),
 
   'button.icon': twMerge(

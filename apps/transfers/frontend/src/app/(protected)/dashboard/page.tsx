@@ -153,7 +153,7 @@ export default function Dashboard() {
         </div>
 
         <StyledText
-          className="font-bold"
+          className="justify-start font-bold"
           variant="button.primary"
           as="button"
           disabled={loading}
@@ -166,7 +166,7 @@ export default function Dashboard() {
         <div className="my-1 w-full border-black/25"></div>
 
         <StyledText
-          className="w-full bg-emerald-500"
+          className="w-full justify-start bg-emerald-500"
           variant="button.primary"
           onClick={() => setIsDepositModalOpen(true)}
         >
@@ -175,14 +175,14 @@ export default function Dashboard() {
         </StyledText>
         <StyledText
           variant="button.primary"
-          className="w-full bg-violet-500"
+          className="w-full justify-start bg-violet-500"
           onClick={() => setIsTransferModalOpen(true)}
         >
           <Icon name="arrows-left-right" />
           Transfer
         </StyledText>
         <StyledText
-          className="w-full bg-amber-500"
+          className="w-full justify-start bg-amber-500"
           variant="button.primary"
           onClick={() => setIsWithdrawModalOpen(true)}
         >
@@ -191,7 +191,7 @@ export default function Dashboard() {
         </StyledText>
         <div className="my-1 w-full border-black/25"></div>
         <StyledText
-          className="w-full"
+          className="w-full justify-start"
           variant="button.secondary"
           onClick={() => {
             const res = confirm(
