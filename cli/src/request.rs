@@ -95,10 +95,7 @@ impl TryFrom<EnclaveCommand> for Request {
 
     fn try_from(cmd: EnclaveCommand) -> Result<Request, Error> {
         match cmd {
-            EnclaveCommand::Build(args) => Ok(EnclaveBuildRequest {
-                release: args.release,
-            }
-            .into()),
+            EnclaveCommand::Build(_) => Ok(EnclaveBuildRequest {}.into()),
             EnclaveCommand::Start(args) => Ok(EnclaveStartRequest {
                 shutdown_rx: None,
                 use_latest_trusted: args.use_latest_trusted,
