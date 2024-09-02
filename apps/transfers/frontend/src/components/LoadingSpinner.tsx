@@ -24,7 +24,7 @@ export function LoadingSpinner({
           flex
           items-center
           justify-center
-          bg-appBgColor
+          bg-gray-500/25
           transition-all
         `,
         isLoading
