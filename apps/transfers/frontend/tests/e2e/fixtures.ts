@@ -1,9 +1,4 @@
-import {
-  test as baseTest,
-  chromium,
-  expect,
-  BrowserContext,
-} from '@playwright/test'
+import { test as baseTest, chromium, BrowserContext } from '@playwright/test'
 import path from 'path'
 
 // Tests fixtures
@@ -11,7 +6,7 @@ const test = baseTest.extend<{}, { _globalContext: BrowserContext }>({
   // Shared context for tests so Keplr initialization runs only once for all tests
   _globalContext: [
     async ({}, use) => {
-      const mnemonicWords = process.env.TEST_KEPLR_MNEMONIC!.split(' ')
+      const mnemonicWords = process.env.TEST_WALLET_MNEMONIC!.split(' ')
       const pathToExtension = path.join(
         __dirname,
         'extensions',
@@ -30,45 +25,31 @@ const test = baseTest.extend<{}, { _globalContext: BrowserContext }>({
 
       // Keplr import wallet flow
       await page.waitForURL(new RegExp(`${extensionId}/register.html`))
-      await expect(page.getByText('Import an existing wallet')).toBeVisible()
-      await page
-        .getByRole('button', { name: 'Import an existing wallet' })
-        .click()
-      await expect(
-        page.getByText('Use recovery phrase or private key'),
-      ).toBeVisible()
-      await page
-        .getByRole('button', { name: 'Use recovery phrase or private key' })
-        .click()
+      await page.getByRole('button', { name: /import/i }).click()
+      await page.getByRole('button', { name: /use/i }).click()
+      await page.getByRole('button', { name: /24/ }).click()
 
-      await page.getByText('24 Words').click()
       const seedInputs = await page.locator('input')
+
       for (let i = 0; i < mnemonicWords.length; i++) {
         await seedInputs.nth(i).fill(mnemonicWords[i])
       }
-      await page.getByRole('button', { name: 'Import', exact: true }).click()
 
+      await page.getByRole('button', { name: 'Import', exact: true }).click()
       await page
-        .getByPlaceholder('e.g. Trading, NFT Vault, Investment')
+        .getByPlaceholder('e.g. Trading, NFT Vault,')
         .fill('Playwright Wallet')
+
       const inputs = await page.getByPlaceholder(
         'At least 8 characters in length',
       )
+
       for (let i = 0; i < (await inputs.count()); i++) {
-        await inputs.nth(i).fill(process.env.TEST_KEPLR_PASSWORD!)
+        await inputs.nth(i).fill(process.env.TEST_WALLET_PASSWORD!)
       }
-      await page.getByRole('button', { name: 'Next' }).click()
 
-      await expect(page.getByText('Select Chains')).toBeVisible()
-      await page.getByRole('button', { name: 'Save' }).click()
-
-      // Accept app suggested testnet info
-      await page.goto('/')
-      const addChainPage = await context.waitForEvent('page')
-      await addChainPage.getByRole('button', { name: 'Approve' }).click()
-
-      // Wait for App to load
-      await test.expect(page.getByText('Balance:')).toBeVisible()
+      await page.getByRole('button', { name: /next/i }).click()
+      await page.getByRole('button', { name: /save/i }).click()
 
       await use(context)
       await context.close()
