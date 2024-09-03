@@ -4,7 +4,7 @@ import type { Config } from 'tailwindcss'
 import colors from 'tailwindcss/colors'
 import plugin from 'tailwindcss/plugin'
 
-const accentColorBucket = colors.violet
+const accentColorBucket = colors.blue
 const neutralColorBucket = colors.stone
 const borderColor = neutralColorBucket[200]
 
@@ -21,11 +21,6 @@ const config: Config = {
   darkMode: 'class',
   theme: {
     extend: {
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-      },
       borderColor: {
         DEFAULT: borderColor,
       },

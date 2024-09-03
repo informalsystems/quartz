@@ -1,4 +1,4 @@
-export { Icon } from "./Icon"
+export { Icon } from './Icon'
 export type {
   BrandIconName,
   IconName,
@@ -6,4 +6,4 @@ export type {
   IconRotationOption,
   IconVariant,
   RegularIconName,
-} from "./types"
+} from './types'
