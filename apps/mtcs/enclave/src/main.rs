@@ -31,7 +31,7 @@ use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{Attestor, DefaultAttestor},
-        server::QuartzServer,
+        server::{QuartzServer, WsListenerConfig},
     },
 };
 
@@ -62,11 +62,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         light_client_opts,
     );
 
+    let ws_config = WsListenerConfig {
+        node_url: "143.244.186.205:26657".to_string(),
+        contract: "".to_string(),
+        tx_sender: "admin".to_string(),
+    };
+
     let sk = Arc::new(Mutex::new(None));
 
-    QuartzServer::new(config.clone(), sk.clone(), attestor.clone())
+    QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
         .add_service(MtcsServer::new(MtcsService::new(config, sk, attestor)))
-        .serve(args.rpc_addr, "143.244.186.205:26657".to_string())
+        .serve(args.rpc_addr)
         .await?;
 
     Ok(())

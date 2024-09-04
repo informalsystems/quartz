@@ -49,8 +49,7 @@ mtcs.workspace = true
 # quartz
 quartz-common = { workspace = true, features = ["full"]}
 wasmd-client = { workspace = true }
-quartz-tee-ra = { workspace = true }
-anyhow.workspace = true
+anyhow.workspace = true 
 base64 = "0.22.1"
 reqwest.workspace = true
 [dev-dependencies]

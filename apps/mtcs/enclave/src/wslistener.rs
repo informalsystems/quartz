@@ -1,93 +1,101 @@
 //TODO: get rid of this
-use futures_util::StreamExt;
-use quartz_common::enclave::{attestor::Attestor, server::WebSocketListener};
-use reqwest::Url;
-use tendermint_rpc::{
-    query::{EventType, Query},
-    SubscriptionClient, WebSocketClient,
-};
+use std::{collections::BTreeMap, str::FromStr};
 
-use crate::{
-    mtcs_server::MtcsService,
-    proto::clearing_server::ClearingServer,
-};
-
-use std::{collections::BTreeMap, process::Command, str::FromStr};
-
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use base64::prelude::*;
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
-use cosmwasm_std::{Binary, HexBinary, Uint64};
+use cosmwasm_std::{HexBinary, Uint64};
 use cw_tee_mtcs::msg::{
     execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
     QueryMsg::GetLiquiditySources,
 };
-use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use mtcs_enclave::{
     proto::{clearing_client::ClearingClient, RunClearingRequest},
     types::RunClearingMessage,
 };
-use quartz_common::contract::msg::execute::attested::{
-    EpidAttestation, RawAttested, RawAttestedMsgSansHandler, RawEpidAttestation,
+use quartz_common::{
+    contract::msg::execute::attested::{
+        MockAttestation, RawAttested, RawAttestedMsgSansHandler, RawMockAttestation,
+    },
+    enclave::{
+        attestor::Attestor,
+        server::{WebSocketHandler, WsListenerConfig},
+    },
 };
-use quartz_tee_ra::{intel_sgx::epid::types::ReportBody, IASReport};
+use reqwest::Url;
+// use quartz_tee_ra::{intel_sgx::epid::types::ReportBody, IASReport};
 use serde_json::json;
-use tokio::{
-    fs::{self, File},
-    io::AsyncWriteExt,
-};
+use tendermint_rpc::{event::Event, query::EventType};
 use tonic::Request;
+use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 
+use crate::{mtcs_server::MtcsService, proto::clearing_server::ClearingServer};
 
 // TODO: Need to prevent listener from taking actions until handshake is completed
 #[async_trait::async_trait]
-impl<A: Attestor> WebSocketListener for ClearingServer<MtcsService<A>> {
-    async fn listen(&self, node_url: String) -> Result<(), tonic::transport::Error> {
-        println!("listening");
-        let wsurl = format!("ws://{}/websocket", node_url);
-        let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
-        let driver_handle = tokio::spawn(async move { driver.run().await });
+impl<A: Attestor> WebSocketHandler for ClearingServer<MtcsService<A>> {
+    async fn handle(&self, event: Event, config: WsListenerConfig) -> Result<()> {
+        // Validation
+        if !is_init_clearing_event(&event) {
+            return Ok(());
+        } else {
+            println!("Found clearing event");
 
-        let mut subs = client
-            .subscribe(Query::from(EventType::Tx).and_contains("wasm.action", "init_clearing"))
-            .await
-            .unwrap();
+            let mut sender = None;
+            let mut contract_address = None;
 
-        while subs.next().await.is_some() {
-            // On init_clearing, run process
-            println!("saw clearing event!");
-            // if let Err(e) = handler(
-            //     &cli.contract,
-            //     cli.sender.clone(),
-            //     format!("{}:{}", cli.rpc_addr, cli.port),
-            //     &cli.node_url,
-            //     &cli.user,
-            // )
-            // .await
-            // {
-            //     println!("{}", e);
-            // }
+            if let Some(events) = &event.events {
+                for (key, values) in events {
+                    match key.as_str() {
+                        "message.sender" => {
+                            sender = values.first().cloned();
+                        }
+                        "wasm._contract_address" => {
+                            contract_address = values.first().cloned();
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            // TODO: add some checks based on event messages
+
+            if sender.is_none() || contract_address.is_none() {
+                return Ok(()); // TODO: change return type
+            }
+
+            handler(
+                &contract_address
+                    .expect("infallible")
+                    .parse::<AccountId>()
+                    .map_err(|e| anyhow!(e))?,
+                sender.expect("infallible"),
+                &config.node_url,
+            )
+            .await?;
         }
-                // Close connection
-        // Await the driver's termination to ensure proper connection closure.
-        client.close().unwrap();
-        let _ = driver_handle.await.unwrap();
 
         Ok(())
     }
 }
 
-async fn handler(
-    contract: &AccountId,
-    sender: String,
-    rpc_addr: String,
-    node_url: &str,
-    user: &str,
-) -> Result<(), anyhow::Error> {
+fn is_init_clearing_event(event: &Event) -> bool {
+    // Check if the event is a transaction type
+    if let Some(EventType::Tx) = event.event_type() {
+        // Check for the "wasm.action" key with the value "init_clearing"
+        if let Some(events) = &event.events {
+            return events.iter().any(|(key, values)| {
+                key == "wasm.action" && values.contains(&"init_clearing".to_string())
+            });
+        }
+    }
+    false
+}
+
+async fn handler(contract: &AccountId, sender: String, node_url: &str) -> Result<()> {
     let chain_id = &ChainId::from_str("testing")?;
     let httpurl = Url::parse(&format!("http://{}", node_url))?;
     let wasmd_client = CliWasmdClient::new(httpurl);
-
     // Query obligations and liquidity sources from chain
     let clearing_contents = query_chain(&wasmd_client, contract).await?;
 
@@ -96,32 +104,30 @@ async fn handler(
         message: json!(clearing_contents).to_string(),
     });
 
-    let mut client = ClearingClient::connect(rpc_addr).await?;
+    let mut client = ClearingClient::connect("http://127.0.0.1:11090").await?;
     let clearing_response = client
         .run(request)
         .await
         .map_err(|e| anyhow!("Failed to communicate to relayer. {e}"))?
         .into_inner();
-
     // Extract json from the Protobuf message
-    let quote: RawAttested<SubmitSetoffsMsg, Vec<u8>> =
+    let attested: RawAttested<SubmitSetoffsMsg, Vec<u8>> =
         serde_json::from_str(&clearing_response.message)
             .map_err(|e| anyhow!("Error serializing SubmitSetoffs: {}", e))?;
 
-    // Get IAS report and build attested message
-    let attestation = gramine_ias_request(quote.attestation, user).await?;
-    let msg = RawAttestedMsgSansHandler(quote.msg);
+    // TODO add non-mock support, get IAS report and build attested message
+    let msg = RawAttestedMsgSansHandler(attested.msg);
 
-    let setoffs_msg = ExecuteMsg::SubmitSetoffs::<RawEpidAttestation>(AttestedMsg {
+    let setoffs_msg = ExecuteMsg::SubmitSetoffs::<RawMockAttestation>(AttestedMsg {
         msg,
-        attestation: attestation.into(),
+        attestation: MockAttestation(attested.attestation.try_into().unwrap()).into(),
     });
 
     // Send setoffs to mtcs contract on chain
     let output =
         wasmd_client.tx_execute(contract, chain_id, 2000000, &sender, json!(setoffs_msg))?;
 
-    println!("output: {}", output);
+    println!("Setoffs TX: {}", output);
     Ok(())
 }
 
@@ -129,13 +135,16 @@ async fn handler(
 async fn query_chain(
     wasmd_client: &CliWasmdClient,
     contract: &AccountId,
-) -> Result<RunClearingMessage, anyhow::Error> {
+) -> Result<RunClearingMessage> {
     // Get epoch counter
     let resp: QueryResult<String> = wasmd_client
         .query_raw(contract, hex::encode("epoch_counter"))
         .map_err(|e| anyhow!("Problem querying epoch: {}", e))?;
-    let mut epoch_counter: usize =
-        String::from_utf8(BASE64_STANDARD.decode(resp.data)?)?.parse::<usize>()?;
+
+    let mut epoch_counter: usize = String::from_utf8(BASE64_STANDARD.decode(resp.data)?)?
+        .trim_matches('"')
+        .parse::<usize>()?;
+
     if epoch_counter > 1 {
         epoch_counter -= 1;
     }
@@ -178,39 +187,39 @@ async fn query_chain(
 }
 
 // Request the IAS report for EPID attestations
-async fn gramine_ias_request(
-    attested_msg: Vec<u8>,
-    user: &str,
-) -> Result<EpidAttestation, anyhow::Error> {
-    let ias_api_key = String::from("669244b3e6364b5888289a11d2a1726d");
-    let ra_client_spid = String::from("51CAF5A48B450D624AEFE3286D314894");
-    let quote_file = format!("/tmp/{}_test.quote", user);
-    let report_file = format!("/tmp/{}_datareport", user);
-    let report_sig_file = format!("/tmp/{}_datareportsig", user);
+// async fn gramine_ias_request(
+//     attested_msg: Vec<u8>,
+//     user: &str,
+// ) -> Result<EpidAttestation, anyhow::Error> {
+//     let ias_api_key = String::from("669244b3e6364b5888289a11d2a1726d");
+//     let ra_client_spid = String::from("51CAF5A48B450D624AEFE3286D314894");
+//     let quote_file = format!("/tmp/{}_test.quote", user);
+//     let report_file = format!("/tmp/{}_datareport", user);
+//     let report_sig_file = format!("/tmp/{}_datareportsig", user);
 
-    // Write the binary data to a file
-    let mut file = File::create(&quote_file).await?;
-    file.write_all(&attested_msg)
-        .await
-        .map_err(|e| anyhow!("Couldn't write to file. {e}"))?;
+//     // Write the binary data to a file
+//     let mut file = File::create(&quote_file).await?;
+//     file.write_all(&attested_msg)
+//         .await
+//         .map_err(|e| anyhow!("Couldn't write to file. {e}"))?;
 
-    let mut gramine = Command::new("gramine-sgx-ias-request");
-    let command = gramine
-        .arg("report")
-        .args(["-g", &ra_client_spid])
-        .args(["-k", &ias_api_key])
-        .args(["-q", &quote_file])
-        .args(["-r", &report_file])
-        .args(["-s", &report_sig_file]);
+//     let mut gramine = Command::new("gramine-sgx-ias-request");
+//     let command = gramine
+//         .arg("report")
+//         .args(["-g", &ra_client_spid])
+//         .args(["-k", &ias_api_key])
+//         .args(["-q", &quote_file])
+//         .args(["-r", &report_file])
+//         .args(["-s", &report_sig_file]);
 
-    let output = command.output()?;
-    if !output.status.success() {
-        return Err(anyhow!("Couldn't run gramine. {:?}", output));
-    }
+//     let output = command.output()?;
+//     if !output.status.success() {
+//         return Err(anyhow!("Couldn't run gramine. {:?}", output));
+//     }
 
-    let report: ReportBody = serde_json::from_str(&fs::read_to_string(report_file).await?)?;
-    let report_sig_str = fs::read_to_string(report_sig_file).await?.replace('\r', "");
-    let report_sig: Binary = Binary::from_base64(report_sig_str.trim())?;
+//     let report: ReportBody = serde_json::from_str(&fs::read_to_string(report_file).await?)?;
+//     let report_sig_str = fs::read_to_string(report_sig_file).await?.replace('\r', "");
+//     let report_sig: Binary = Binary::from_base64(report_sig_str.trim())?;
 
-    Ok(EpidAttestation::new(IASReport { report, report_sig }))
-}
+//     Ok(EpidAttestation::new(IASReport { report, report_sig }))
+// }

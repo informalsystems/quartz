@@ -22,7 +22,7 @@ authors = ["Informal Systems <hello@informal.systems>"]
 
 [workspace.dependencies]
 # external
-anyhow = { version = "1.0.86", default-features = false }
+anyhow = { version = "1.0.86", features = ["std", "backtrace"] }
 async-trait = { version = "0.1.79", default-features = false }
 bip32 = { version = "0.5.1", default-features = false, features = ["alloc", "secp256k1", "bip39"] }
 cargo-generate = "0.21.3"

@@ -5,51 +5,35 @@ use std::{
 
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
-use futures_util::StreamExt;
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::{
     contract::{
         msg::execute::attested::{HasUserData, RawAttested},
         state::{Config, UserData},
     },
-    enclave::{attestor::Attestor, server::{ProofOfPublication, WebSocketListener}},
+    enclave::{
+        attestor::Attestor,
+        server::{ProofOfPublication, WebSocketHandler, WsListenerConfig},
+    },
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tendermint_rpc::{query::{EventType, Query}, SubscriptionClient, WebSocketClient};
+use tendermint_rpc::event::Event;
 use tonic::{Request, Response, Result as TonicResult, Status};
 use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
-use reqwest::Url;
 
 use crate::{
     proto::{
-        settlement_server::{Settlement, SettlementServer}, QueryRequest, QueryResponse, UpdateRequest, UpdateResponse
+        settlement_server::{Settlement, SettlementServer},
+        QueryRequest, QueryResponse, UpdateRequest, UpdateResponse,
     },
     state::{RawBalance, RawState, State},
 };
 
 // TODO: Need to prevent listener from taking actions until handshake is completed
 #[async_trait::async_trait]
-impl<A: Attestor> WebSocketListener for SettlementServer<TransfersService<A>> {
-    async fn listen(&self, node_url: String) -> Result<(), tonic::transport::Error> {
-        let wsurl = format!("ws://{}/websocket", node_url);
-        let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
-        let driver_handle = tokio::spawn(async move { driver.run().await });
-
-        let mut subs = client
-            .subscribe(Query::from(EventType::NewBlock))
-            .await
-            .unwrap();
-    
-        while subs.next().await.is_some() {
-            // On init_clearing, run process
-            println!("Saw a block!");
-        }
-        // Close connection
-        // Await the driver's termination to ensure proper connection closure.
-        client.close().unwrap();
-        let _ = driver_handle.await.unwrap();
-
+impl<A: Attestor> WebSocketHandler for SettlementServer<TransfersService<A>> {
+    async fn handle(&self, _event: Event, _config: WsListenerConfig) -> anyhow::Result<()> {
         Ok(())
     }
 }

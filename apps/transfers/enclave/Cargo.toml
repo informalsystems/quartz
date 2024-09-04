@@ -16,7 +16,7 @@ default = []
 [dependencies]
 # external
 async-trait = "0.1.81"
-anyhow = { version = "1.0.86", default-features = false }
+anyhow = { version = "1.0.86", features = ["backtrace"] }
 clap = { version = "4.1.8", default-features = false, features = ["derive", "std"] }
 color-eyre = { version = "0.6.2", default-features = false }
 ecies = { version = "0.2.3", default-features = false, features = ["pure"] }
@@ -30,7 +30,6 @@ thiserror = { version = "1.0.49", default-features = false }
 tokio = { version = "=1.39.2", default-features = false, features = ["macros", "rt"] }
 tonic = { version = "=0.12.1", default-features = false, features = ["codegen", "prost", "transport"] }
 futures-util = "0.3.30"
-reqwest = "0.12.7"
 
 # cosmos
 cosmrs = { version = "=0.17.0", default-features = false }

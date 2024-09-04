@@ -18,7 +18,8 @@ pub mod state;
 pub mod transfers_server;
 
 use std::{
-    sync::{Arc, Mutex}, time::Duration
+    sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use clap::Parser;
@@ -28,8 +29,8 @@ use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{Attestor, DefaultAttestor},
-        server::QuartzServer,
-    }
+        server::{QuartzServer, WsListenerConfig},
+    },
 };
 use transfers_server::TransfersService;
 
@@ -60,15 +61,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         light_client_opts,
     );
 
-    let sk = Arc::new(Mutex::new(None));
-    
-    QuartzServer::new(config.clone(), sk.clone(), attestor.clone())
-        .add_service(TransfersServer::new(TransfersService::new(
-            config, sk, attestor
-        )))
-        .serve(args.rpc_addr, "143.244.186.205:26657".to_string())
-        .await?;
+    let ws_config = WsListenerConfig {
+        node_url: "143.244.186.205:26657".to_string(),
+        contract: "".to_string(),
+        tx_sender: "admin".to_string(),
+    };
 
+    let sk = Arc::new(Mutex::new(None));
+
+    QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
+        .add_service(TransfersServer::new(TransfersService::new(
+            config, sk, attestor,
+        )))
+        .serve(args.rpc_addr)
+        .await?;
 
     Ok(())
 }

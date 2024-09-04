@@ -9,6 +9,7 @@ use cw_proof::proof::{
     cw::{CwProof, RawCwProof},
     Proof,
 };
+use futures_util::StreamExt;
 use k256::ecdsa::SigningKey;
 use quartz_cw::{
     msg::{
@@ -31,29 +32,43 @@ use tendermint_light_client::{
     light_client::Options,
     types::{LightBlock, TrustThreshold},
 };
+use tendermint_rpc::{
+    event::Event,
+    query::{EventType, Query},
+    SubscriptionClient, WebSocketClient,
+};
 use tm_stateless_verifier::make_provider;
 use tonic::{
     body::BoxBody,
     codegen::http,
     server::NamedService,
-    transport::{server::Router, Error, Server},
+    transport::{server::Router, Server},
     Request, Response, Result as TonicResult, Status,
 };
 use tower::Service;
 
 use crate::{
     attestor::{Attestor, DefaultAttestor},
+    error::QuartzError,
     types::{InstantiateResponse, SessionCreateResponse, SessionSetPubKeyResponse},
 };
 
-#[async_trait::async_trait]
-pub trait WebSocketListener: Send + 'static {
-    async fn listen(&self, node_url: String) -> Result<(), Error>;
+#[tonic::async_trait]
+pub trait WebSocketHandler: Send + Sync + 'static {
+    async fn handle(&self, event: Event, ws_config: WsListenerConfig) -> anyhow::Result<()>; // TODO: replace anyhow
+}
+
+#[derive(Debug, Clone)]
+pub struct WsListenerConfig {
+    pub node_url: String,
+    pub contract: String,
+    pub tx_sender: String,
 }
 
 pub struct QuartzServer {
     pub router: Router,
-    ws_listeners: Vec<Box<dyn WebSocketListener>>,
+    ws_handlers: Vec<Box<dyn WebSocketHandler>>,
+    pub ws_config: WsListenerConfig,
 }
 
 impl QuartzServer {
@@ -61,12 +76,14 @@ impl QuartzServer {
         config: Config,
         sk: Arc<Mutex<Option<SigningKey>>>,
         attestor: DefaultAttestor,
+        ws_config: WsListenerConfig,
     ) -> Self {
         let core_service = CoreServer::new(CoreService::new(config, sk.clone(), attestor.clone()));
 
         Self {
             router: Server::builder().add_service(core_service),
-            ws_listeners: Vec::new(),
+            ws_handlers: Vec::new(),
+            ws_config,
         }
     }
 
@@ -77,7 +94,7 @@ impl QuartzServer {
                 Response = http::response::Response<BoxBody>,
                 Error = Infallible,
             >
-            + WebSocketListener
+            + WebSocketHandler
             + Send
             + Clone
             + 'static
@@ -85,23 +102,45 @@ impl QuartzServer {
         S::Future: Send + 'static,
     {
         self.router = self.router.add_service(service.clone());
-        self.ws_listeners.push(Box::new(service));
+        self.ws_handlers.push(Box::new(service));
 
         self
     }
 
-    pub async fn serve(self, addr: SocketAddr, node_url: String) -> Result<(), Error> {
+    pub async fn serve(self, addr: SocketAddr) -> Result<(), QuartzError> {
         // Launch all WebSocket handlers as separate Tokio tasks
-        for listener in self.ws_listeners {
-            let node = node_url.clone();
-            tokio::spawn(async move {
-                if let Err(e) = listener.listen(node).await {
-                    eprintln!("Error in WebSocket listener: {:?}", e);
+        tokio::spawn(async move {
+            if let Err(e) = Self::websocket_events_listener(&self.ws_handlers, self.ws_config).await
+            {
+                eprintln!("Error in WebSocket event handler: {:?}", e);
+            }
+        });
+
+        Ok(self.router.serve(addr).await?)
+    }
+
+    async fn websocket_events_listener(
+        ws_handlers: &Vec<Box<dyn WebSocketHandler>>,
+        ws_config: WsListenerConfig,
+    ) -> Result<(), QuartzError> {
+        let wsurl = format!("ws://{}/websocket", ws_config.node_url);
+        let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
+        let driver_handle = tokio::spawn(async move { driver.run().await });
+        let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
+
+        while let Some(Ok(event)) = subs.next().await {
+            for handler in ws_handlers {
+                if let Err(e) = handler.handle(event.clone(), ws_config.clone()).await {
+                    eprintln!("Error in event handler: {:?}", e);
                 }
-            });
+            }
         }
 
-        self.router.serve(addr).await
+        // Close connection
+        client.close()?;
+        let _ = driver_handle.await;
+
+        Ok(())
     }
 }
 
