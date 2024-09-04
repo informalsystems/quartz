@@ -61,7 +61,6 @@ pub trait WebSocketHandler: Send + Sync + 'static {
 #[derive(Debug, Clone)]
 pub struct WsListenerConfig {
     pub node_url: String,
-    pub contract: String,
     pub tx_sender: String,
 }
 

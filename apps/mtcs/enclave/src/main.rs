@@ -64,7 +64,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let ws_config = WsListenerConfig {
         node_url: "143.244.186.205:26657".to_string(),
-        contract: "".to_string(),
         tx_sender: "admin".to_string(),
     };
 
