@@ -69,9 +69,6 @@ impl Handler for DcapAttestation {
         // Query the tcbinfo contract with the FMSPC retrieved and validated
         let tcb_info_query = query_tcbinfo(deps.as_ref(), fmspc_hex)?;
         let tcb_info_response: GetTcbInfoResponse = from_json(tcb_info_query)?;
-        let new_tcb_info = serde_json::to_string(&tcb_info_response.tcb_info).map_err(|e| {
-            Error::TcbInfoQueryError(format!("Failed to parse new tcb info from contract: {}", e))
-        })?;
 
         // Serialize the existing collateral
         let mut collateral_json: serde_json::Value =
@@ -80,16 +77,7 @@ impl Handler for DcapAttestation {
             })?;
 
         // Update the tcb_info in the serialized data
-        if let Some(obj) = collateral_json.as_object_mut() {
-            obj.insert(
-                "tcb_info".to_string(),
-                serde_json::Value::String(new_tcb_info),
-            );
-        } else {
-            return Err(Error::TcbInfoQueryError(
-                "Failed to update serialized collateral".to_string(),
-            ));
-        }
+        collateral_json["tcb_info"] = tcb_info_response.tcb_info;
 
         // Deserialize back into a Collateral
         let updated_collateral: Collateral =
