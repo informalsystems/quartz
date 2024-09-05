@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
-use cosmrs::tendermint::Hash;
+use cosmrs::{tendermint::Hash, AccountId};
 use quartz_common::enclave::types::Fmspc;
 use tendermint_light_client::types::{Height, TrustThreshold};
 
@@ -30,6 +30,10 @@ pub struct Cli {
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU)
     #[clap(long)]
     pub fmspc: Fmspc,
+
+    /// TcbInfo contract address
+    #[clap(long)]
+    pub tcbinfo_contract: AccountId,
 
     /// Height of the trusted header (AKA root-of-trust)
     #[clap(long)]

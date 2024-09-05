@@ -19,6 +19,7 @@ export const classNames = {
     border-borderColor
     !outline-accentColor
     !ring-accentColor
+    accent-accentColor
     checked:text-accentColor
   `,
 

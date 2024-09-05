@@ -1,47 +1,49 @@
 {
-  "name": "transfer-fe",
+  "name": "transfers-fe",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "generate": "node ./scripts/generate.js && node ./scripts/rebuild-component-index.js",
-    "rebuild-component-index": "node ./scripts/rebuild-component-index.js"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@cosmjs/cosmwasm-stargate": "^0.32.4",
-    "@cosmwasm/ts-codegen": "^1.11.1",
     "eciesjs": "^0.4.7",
+    "graz": "^0.1.19",
     "lodash": "^4.17.21",
-    "next": "^15.0.0-rc.0",
-    "react": "^19.0.0-rc-f994737d14-20240522",
-    "react-dom": "^19.0.0-rc-f994737d14-20240522",
+    "next": "14.2.7",
+    "notistack": "3.0.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "tailwind-merge": "^2.3.0",
-    "zod": "^3.23.8"
+    "zustand": "4.5.4"
   },
   "devDependencies": {
     "@keplr-wallet/types": "0.12.103",
-    "@netlify/plugin-nextjs": "^5.3.3",
+    "@playwright/test": "^1.46.1",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.13",
     "@types/lodash": "^4.17.5",
     "@types/node": "^20",
-    "@types/react": "npm:types-react@rc",
-    "@types/react-dom": "npm:types-react-dom@rc",
-    "babel-plugin-react-compiler": "0.0.0-experimental-696af53-20240625",
+    "@types/react": "18.3.4",
+    "@types/react-dom": "18.3.0",
+    "@types/unzipper": "^0.10.10",
+    "dotenv": "16.4.5",
     "eslint": "^8",
-    "eslint-plugin-react-compiler": "^0.0.0",
+    "eslint-config-next": "^14.2.7",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-tailwindcss": "^3.17.4",
+    "pino-pretty": "^11.2.2",
     "postcss": "^8",
     "prettier": "^3.3.2",
-    "prettier-plugin-tailwindcss": "^0.6.5",
     "tailwindcss": "^3.4.4",
     "tiny-invariant": "^1.3.3",
-    "typescript": "^5"
-  },
-  "overrides": {
-    "@types/react": "npm:types-react@rc",
-    "@types/react-dom": "npm:types-react-dom@rc"
+    "typescript": "^5",
+    "unzipper": "^0.12.3"
   }
 }

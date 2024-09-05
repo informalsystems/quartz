@@ -15,7 +15,6 @@ export function LoadingSpinner({
     <div
       className={twMerge(
         `
-          pointer-events-none
           absolute
           bottom-0
           left-0
@@ -25,15 +24,16 @@ export function LoadingSpinner({
           flex
           items-center
           justify-center
-          bg-appBgColor
+          bg-gray-500/25
           transition-all
         `,
         isLoading
           ? `
               opacity-100
-            `
+              `
           : `
               opacity-0
+              pointer-events-none
             `,
         className,
       )}

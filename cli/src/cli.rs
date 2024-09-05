@@ -36,8 +36,8 @@ pub struct Cli {
     /// Enable mock SGX mode for testing purposes.
     /// This flag disables the use of an Intel SGX processor and allows the system to run without remote attestations.
     #[arg(long)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub mock_sgx: Option<bool>,
+    #[serde(skip_serializing_if = "is_false")]
+    pub mock_sgx: bool,
 
     /// Path to Quartz app directory
     /// Defaults to current working dir
@@ -49,6 +49,10 @@ pub struct Cli {
     /// Main command
     #[command(subcommand)]
     pub command: Command,
+}
+
+fn is_false(b: &bool) -> bool {
+    !(*b)
 }
 
 #[derive(Debug, Subcommand, Serialize, Clone)]
@@ -70,6 +74,9 @@ pub enum Command {
         #[command(subcommand)]
         enclave_command: EnclaveCommand,
     },
+
+    /// Build, deploy, perform handshake, and run quartz app while listening for changes
+    Dev(DevArgs),
 }
 
 #[derive(Debug, Clone, Subcommand, Serialize)]
@@ -99,6 +106,10 @@ pub struct HandshakeArgs {
     #[arg(short, long, value_parser = wasmaddr_to_id)]
     pub contract: AccountId,
 
+    /// Fetch latest trusted hash and height from the chain instead of existing configuration
+    #[arg(long)]
+    pub use_latest_trusted: bool,
+
     /// Name or address of private key with which to sign
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -127,8 +138,9 @@ pub struct HandshakeArgs {
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct ContractBuildArgs {
+    /// Path to Cargo manifest file for CosmWasm contract package
     #[arg(long)]
-    pub manifest_path: PathBuf,
+    pub contract_manifest: PathBuf,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
@@ -156,16 +168,17 @@ pub struct ContractDeployArgs {
     #[arg(long, default_value = "Quartz App Contract")]
     pub label: String,
 
-    /// Path to contract wasm binary for deployment
+    /// Path to Cargo manifest file for CosmWasm contract package
     #[arg(long)]
-    pub wasm_bin_path: PathBuf,
+    pub contract_manifest: PathBuf,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct EnclaveBuildArgs {
-    /// Path to Cargo.toml file of the Quartz app's enclave package, defaults to './enclave/Cargo.toml' if unspecified
-    #[arg(long, default_value = "./enclave/Cargo.toml")]
-    pub manifest_path: PathBuf,
+    /// Whether to target release or dev
+    #[arg(long)]
+    #[serde(skip_serializing_if = "is_false")]
+    pub release: bool,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
@@ -183,6 +196,28 @@ pub struct EnclaveStartArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fmspc: Option<Fmspc>,
+
+    /// Whether to target release or dev
+    #[arg(long)]
+    #[serde(skip_serializing_if = "is_false")]
+    pub release: bool,
+}
+
+#[derive(Debug, Parser, Clone, Serialize, Deserialize)]
+pub struct DevArgs {
+    /// Automatically deploy and instantiate new cosmwasm contract instance upon changes to source
+    #[arg(long)]
+    pub watch: bool,
+
+    /// Fetch latest trusted hash and height from the chain instead of existing configuration
+    #[arg(long)]
+    pub use_latest_trusted: bool,
+
+    #[command(flatten)]
+    pub contract_deploy: ContractDeployArgs,
+
+    #[command(flatten)]
+    pub enclave_build: EnclaveBuildArgs,
 }
 
 pub trait ToFigment {
@@ -202,6 +237,9 @@ impl ToFigment for Command {
                 EnclaveCommand::Build(args) => Figment::from(Serialized::defaults(args)),
                 EnclaveCommand::Start(args) => Figment::from(Serialized::defaults(args)),
             },
+            Command::Dev(args) => Figment::from(Serialized::defaults(args))
+                .merge(Serialized::defaults(&args.contract_deploy))
+                .merge(Serialized::defaults(&args.enclave_build)),
         }
     }
 }

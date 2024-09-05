@@ -38,20 +38,3 @@ pub struct Log {
     pub events: Vec<Event>,
     pub msg_index: u32,
 }
-
-#[derive(Debug, PartialEq, PartialOrd)]
-pub enum RelayMessage {
-    Instantiate,
-    SessionCreate,
-    SessionSetPubKey(String),
-}
-
-impl std::fmt::Display for RelayMessage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            RelayMessage::Instantiate => write!(f, "Instantiate"),
-            RelayMessage::SessionCreate => write!(f, "SessionCreate"),
-            RelayMessage::SessionSetPubKey(_) => write!(f, "SessionSetPubKey"),
-        }
-    }
-}

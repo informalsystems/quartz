@@ -2,13 +2,12 @@
 description = "An functioning example of a quartz app"
 
 ignore = [
+    "target/",  
     "contracts/Cargo.lock",
     "contracts/target",
-    "contracts/target/*",
+    "contracts/schema",
+    "enclave/Cargo.lock",
     "enclave/target",
-    "enclave/target/*",
+    "enclave/src/prost/*",
     "frontend/package-lock.json",
-    "frontend/public/images",
-    "trusted.hash",
-    "trusted.height"
 ]

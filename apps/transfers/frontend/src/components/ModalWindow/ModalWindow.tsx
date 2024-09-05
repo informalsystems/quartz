@@ -6,6 +6,7 @@ import { twMerge } from 'tailwind-merge'
 import { classNames } from './classNames'
 
 export interface ModalWindowProps extends ComponentProps<'div'> {
+  disableClosing?: boolean
   isOpen: boolean
   onClose: () => void
 }
@@ -13,6 +14,7 @@ export interface ModalWindowProps extends ComponentProps<'div'> {
 export function ModalWindow({
   children,
   className,
+  disableClosing,
   isOpen,
   onClose,
   ...otherProps
@@ -69,8 +71,8 @@ export function ModalWindow({
   }, [isOpen])
 
   useEffect(() => {
-    if (isOpen) {
-      function handleEscape(event: KeyboardEvent) {
+    if (!disableClosing && isOpen) {
+      const handleEscape = (event: KeyboardEvent) => {
         if (event.key === 'Escape') {
           handleClose()
         }
@@ -78,11 +80,9 @@ export function ModalWindow({
 
       window.addEventListener('keydown', handleEscape)
 
-      return () => {
-        window.removeEventListener('keydown', handleEscape)
-      }
+      return () => window.removeEventListener('keydown', handleEscape)
     }
-  }, [isOpen, onClose])
+  }, [disableClosing, isOpen, onClose])
 
   if (!isClient) {
     return null
@@ -92,9 +92,8 @@ export function ModalWindow({
     <>
       <div
         className={classNames.backdrop({ modalState })}
-        onClick={handleClose}
+        {...(!disableClosing && { onClick: handleClose })}
       />
-
       <div
         className={twMerge(classNames.container({ modalState }), className)}
         ref={windowContentsContainerRef}

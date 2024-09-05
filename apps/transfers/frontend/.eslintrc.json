@@ -1,7 +1,7 @@
 {
-  "extends": "next/core-web-vitals",
-  "plugins": ["react-compiler"],
-  "rules": {
-    "react-compiler/react-compiler": "error"
-  }
+  "extends": [
+    "next",
+    "plugin:tailwindcss/recommended",
+    "plugin:prettier/recommended"
+  ]
 }

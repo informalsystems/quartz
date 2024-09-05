@@ -8,7 +8,6 @@ usage() {
     exit 1
 }
 
-ROOT=${ROOT:-$HOME}
 DIR_QUARTZ=$(git rev-parse --show-toplevel)
 DIR_PROTO="$DIR_QUARTZ/core/quartz-proto/proto"
 
@@ -25,7 +24,7 @@ ATTESTED_MSG=$(grpcurl -plaintext -import-path "$DIR_PROTO" -proto quartz.proto 
 QUOTE=$(echo "$ATTESTED_MSG" | jq -c '.quote')
 MSG=$(echo "$ATTESTED_MSG" | jq 'del(.quote)')
 
-if [ -n "$MOCK_SGX" ]; then
+if [ "$MOCK_SGX" ]; then
     case "$REQUEST" in
         "Instantiate")
             jq -nc --argjson msg "$MSG" --argjson "attestation" "$QUOTE" '$ARGS.named'
