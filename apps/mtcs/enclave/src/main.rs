@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let attestor = attestor::DcapAttestor { fmspc: args.fmspc };
 
     #[cfg(feature = "mock-sgx")]
-    let attestor = attestor::MockAttestor::default();
+    let attestor = attestor::MockAttestor;
 
     let config: Config = Config::new(
         attestor.mr_enclave()?,

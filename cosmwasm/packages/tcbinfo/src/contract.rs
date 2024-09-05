@@ -160,7 +160,7 @@ pub mod query {
 mod tests {
     use cosmwasm_std::{
         coins,
-        testing::{mock_dependencies, mock_env, mock_info},
+        testing::{message_info, mock_dependencies, mock_env},
     };
 
     use super::*;
@@ -172,7 +172,10 @@ mod tests {
     #[test]
     fn verify_init_and_exec() {
         let time = "2024-07-11T15:19:13Z";
-        let info = mock_info("creator", &coins(1000, "earth"));
+        let deps = mock_dependencies();
+        let creator = deps.api.addr_make("creator");
+
+        let info = message_info(&creator, &coins(1000, "earth"));
         let init_msg = InstantiateMsg {
             root_cert: ROOT_CA.to_string(),
         };
@@ -185,7 +188,7 @@ mod tests {
             certificate: TCB_SIGNER.to_string(),
             time: Some(time.to_string()),
         };
-        let info = mock_info("creator", &coins(1000, "earth"));
+        let info = message_info(&creator, &coins(1000, "earth"));
         let exec = execute(deps.as_mut(), mock_env(), info, exec_msg);
         assert!(exec.is_ok());
         let query = query(
