@@ -29,7 +29,7 @@ use proto::clearing_server::ClearingServer as MtcsServer;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
-        attestor::{Attestor, DcapAttestor, MockAttestor},
+        attestor::{self, Attestor},
         server::CoreService,
     },
     proto::core_server::CoreServer,
@@ -56,10 +56,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     #[cfg(not(feature = "mock-sgx"))]
-    let attestor = DcapAttestor { fmspc: args.fmspc };
+    let attestor = attestor::DcapAttestor { fmspc: args.fmspc };
 
     #[cfg(feature = "mock-sgx")]
-    let attestor = MockAttestor::default();
+    let attestor = attestor::MockAttestor::default();
 
     let config: Config = Config::new(
         attestor.mr_enclave()?,

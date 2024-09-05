@@ -179,7 +179,7 @@ impl Attestor for DcapAttestor {
         let quote = self.quote(user_data)?;
 
         // FIXME(hu55a1n1): replace `pck_crl_chain` and `pck_crl` in the collateral (below) with data queried from PCCS (above)
-        let collateral = serde_json::to_value(&collateral(&self.fmspc.to_string()))?;
+        let collateral = serde_json::to_value(collateral(&self.fmspc.to_string()))?;
 
         Ok(RawDcapAttestation {
             quote: quote.into(),
