@@ -1,15 +1,15 @@
 import { Page } from '@playwright/test'
 
 export const importWallet = async ({
-  mnemonic,
   extensionUrl,
-  page,
+  mnemonic,
   name,
+  page,
 }: {
-  mnemonic: string
   extensionUrl: string
-  page: Page
+  mnemonic: string
   name: string
+  page: Page
 }) => {
   await page.goto(`${extensionUrl}/register.html`)
 

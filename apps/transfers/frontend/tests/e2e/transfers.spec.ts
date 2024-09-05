@@ -1,36 +1,21 @@
-import { Page } from '@playwright/test'
-
-import { routes } from '@/config/routes'
 import test from './fixtures'
 import { importWallet } from './helpers/importWallet'
 import { getBalance } from './helpers/getBalance'
 import { swapWallet } from './helpers/swapWallet'
 import { signTx } from './helpers/signTx'
-
-let page: Page
+import { connectWallet } from './helpers/connectWalet'
+import { setSeedPhrase } from './helpers/setSeedPhrase'
 
 test.describe.configure({ mode: 'serial' })
-test.beforeAll(async ({ context }) => {
-  page = await context.newPage()
-  // Connect to Keplr wallet
-  await page.goto(routes.landing)
-  await page.getByRole('button', { name: /connect/i }).click()
-
-  // Accept app suggested testnet info
-  const addChainPage = await context.waitForEvent('page')
-
-  await addChainPage.getByRole('button', { name: /approve/i }).click()
-  await addChainPage.waitForEvent('close')
-  await page.getByRole('button', { name: /continue with/i }).click()
-})
-test.afterAll(async () => {
-  await page.close()
+test.beforeEach(async ({ context, page }) => {
+  await connectWallet({ context, page })
+  await setSeedPhrase({ page, seedPhrase: process.env.TEST_WALLET_MNEMONIC! })
 })
 
 let mainBalance: number
 
 test.describe('Transfers', () => {
-  test('can deposit a sum successfully', async ({ context }) => {
+  test('can deposit a sum successfully', async ({ context, page }) => {
     // Initialize the balance
     mainBalance = Number(
       (await getBalance({ context, page }))!.replace('$', ''),
@@ -62,18 +47,15 @@ test.describe('Transfers', () => {
   test('can transfer to another wallet successfully', async ({
     context,
     extensionUrl,
+    page,
   }) => {
-    const popupPage = await context.newPage()
-
     // Import a secondary wallet to transfer to
     await importWallet({
       extensionUrl,
       mnemonic: process.env.TEST_SECONDARY_WALLET_MNEMONIC!,
-      page: popupPage,
+      page: await context.newPage(),
       name: 'secondary',
     })
-
-    await popupPage.close()
 
     // Initialize the secondary account balance after importing
     const secondaryBalance = Number(
@@ -129,7 +111,7 @@ test.describe('Transfers', () => {
     await swapWallet({ context, extensionUrl, name: 'main' })
   })
 
-  test('can withdraw deposited sum successfully', async ({ context }) => {
+  test('can withdraw deposited sum successfully', async ({ context, page }) => {
     await page.getByRole('button', { name: /withdraw/i }).click()
     await page
       .getByRole('button', { name: /withdraw/i })
