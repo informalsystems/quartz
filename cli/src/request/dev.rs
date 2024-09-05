@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use quartz_common::enclave::types::Fmspc;
+
 use crate::request::Request;
 
 #[derive(Clone, Debug)]
@@ -10,6 +12,7 @@ pub struct DevRequest {
     pub label: String,
     pub contract_manifest: PathBuf,
     pub release: bool,
+    pub fmspc: Option<Fmspc>,
 }
 
 impl From<DevRequest> for Request {

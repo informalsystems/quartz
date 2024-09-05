@@ -218,6 +218,11 @@ pub struct DevArgs {
 
     #[command(flatten)]
     pub enclave_build: EnclaveBuildArgs,
+
+    /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fmspc: Option<Fmspc>,
 }
 
 pub trait ToFigment {

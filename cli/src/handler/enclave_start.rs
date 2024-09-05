@@ -124,7 +124,7 @@ async fn create_mock_enclave_child(
 
     // Use the enclave package metadata to get the path to the program binary
     let package_name = MetadataCommand::new()
-        .manifest_path(&enclave_dir.join("Cargo.toml"))
+        .manifest_path(enclave_dir.join("Cargo.toml"))
         .exec()
         .map_err(|e| Error::GenericErr(e.to_string()))?
         .root_package()

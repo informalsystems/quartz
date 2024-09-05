@@ -48,6 +48,7 @@ impl TryFrom<Command> for Request {
                 label: args.contract_deploy.label,
                 contract_manifest: args.contract_deploy.contract_manifest,
                 release: args.enclave_build.release,
+                fmspc: args.fmspc,
             }
             .into()),
         }

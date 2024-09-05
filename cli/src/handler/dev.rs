@@ -212,6 +212,7 @@ async fn spawn_enclave_start(
     let enclave_start = EnclaveStartRequest {
         shutdown_rx: Some(shutdown_rx),
         use_latest_trusted: args.use_latest_trusted,
+        fmspc: args.fmspc.clone(),
     };
 
     let config_cpy = config.clone();
