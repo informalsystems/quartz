@@ -18,7 +18,6 @@ Install rust by executing a script from the internet (😅):
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-
 Check the version with `cargo version`.
 
 Finally add the wasm target:
@@ -242,37 +241,7 @@ data come through.
 
 ### Run the Frontend
 
-Now on your own machine, checkout the
-https://github.com/informalsystems/cycles-hackathon-app.
-
-Copy the `.env.example` file to `.env.local`:
-
-```bash
-cp .env.example .env.local
-```
-
-and set the relevant fields. You should have the contract address and TEE pubkey
-from the output of the `deploy.sh` and `handshake.sh` scripts, respectfully. The
-chain id is probably `testing` and the IP address for the URLs is probably
-`143.244.186.205`. Modify accordingly. For example:
-
-```bash
-#.env.local
-NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=wasm1ch9ed27cdu3a4fkx37gnagm7jcthj0rggnmmjwwwe4xhwmk0d65q8fn9pz
-NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=030c25e39743fd4c7553d87873919281d567b5c328fb903cbfbe9541518736a2d2
-NEXT_PUBLIC_CHAIN_ID=testing
-NEXT_PUBLIC_CHAIN_RPC_URL=http://143.244.186.205:26657
-NEXT_PUBLIC_CHAIN_REST_URL=http://143.244.186.205:1317
-```
-
-Install and run the app:
-
-```bash
-npm install -f
-npm run dev
-```
-
-You can now open the app in http://localhost:3000/.
+Now on your own machine, follow [these steps](./frontend/README.md#development).
 
 Make sure you have Keplr installed in your browser and you should now be able to
 use the app!
