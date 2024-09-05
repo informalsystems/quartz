@@ -19,7 +19,7 @@ test.describe('Seed Phrase', () => {
   })
 
   test('can enter and use a custom seed phrase', async ({ page }) => {
-    await setSeedPhrase({ page, seedPhrase: process.env.TEST_WALLET_MNEMONIC! })
+    await setSeedPhrase({ page, seedPhrase: process.env.TEST_WALLET_MNEMONIC })
     await test
       .expect(
         await page.evaluate(() =>

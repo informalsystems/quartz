@@ -31,7 +31,7 @@ export const importWallet = async ({
   const inputs = await page.getByPlaceholder('At least 8 characters in length')
 
   for (let i = 0; i < (await inputs.count()); i++) {
-    await inputs.nth(i).fill(process.env.TEST_WALLET_PASSWORD!)
+    await inputs.nth(i).fill(process.env.TEST_WALLET_PASSWORD)
   }
 
   await page.getByRole('button', { name: /next/i }).click()

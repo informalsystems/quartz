@@ -32,7 +32,7 @@ const test = baseTest.extend<{
     // Import a wallet to be used in tests
     await importWallet({
       extensionUrl,
-      mnemonic: process.env.TEST_WALLET_MNEMONIC!,
+      mnemonic: process.env.TEST_WALLET_MNEMONIC,
       name: 'main',
       page: await context.waitForEvent('page'),
     })

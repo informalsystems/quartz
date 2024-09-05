@@ -9,7 +9,7 @@ import { setSeedPhrase } from './helpers/setSeedPhrase'
 test.describe.configure({ mode: 'serial' })
 test.beforeEach(async ({ context, page }) => {
   await connectWallet({ context, page })
-  await setSeedPhrase({ page, seedPhrase: process.env.TEST_WALLET_MNEMONIC! })
+  await setSeedPhrase({ page, seedPhrase: process.env.TEST_WALLET_MNEMONIC })
 })
 
 let mainBalance: number
@@ -52,7 +52,7 @@ test.describe('Transfers', () => {
     // Import a secondary wallet to transfer to
     await importWallet({
       extensionUrl,
-      mnemonic: process.env.TEST_SECONDARY_WALLET_MNEMONIC!,
+      mnemonic: process.env.TEST_SECONDARY_WALLET_MNEMONIC,
       page: await context.newPage(),
       name: 'secondary',
     })
@@ -67,7 +67,7 @@ test.describe('Transfers', () => {
 
     // Transfer to the secondary wallet
     await page.getByRole('button', { name: /transfer/i }).click()
-    await page.keyboard.type(process.env.TEST_SECONDARY_WALLET_ADDRESS!)
+    await page.keyboard.type(process.env.TEST_SECONDARY_WALLET_ADDRESS)
     await page.getByPlaceholder('0.00').fill('10')
     await page
       .getByRole('button', { name: /transfer/i })
