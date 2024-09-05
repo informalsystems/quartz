@@ -1,8 +1,12 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
-use quartz_tee_ra::{
-    intel_sgx::dcap::TrustedMrEnclaveIdentity, verify_dcap_attestation, verify_epid_attestation,
-    Error as RaVerificationError,
+use cosmwasm_std::{
+    from_json, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
+    WasmQuery,
 };
+use quartz_tee_ra::{
+    intel_sgx::dcap::{Collateral, TrustedMrEnclaveIdentity},
+    verify_dcap_attestation, verify_epid_attestation, Error as RaVerificationError,
+};
+use tcbinfo::msg::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
     error::Error,
@@ -13,6 +17,28 @@ use crate::{
     },
     state::CONFIG,
 };
+
+pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
+    let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
+    let tcbinfo_addr = config.tcb_info();
+
+    let fmspc_bytes =
+        hex::decode(&fmspc).map_err(|_| Error::InvalidFmspc("Invalid FMSPC format".to_string()))?;
+    if fmspc_bytes.len() != 6 {
+        return Err(Error::InvalidFmspc("FMSPC must be 6 bytes".to_string()));
+    }
+
+    let query_msg = TcbInfoQueryMsg::GetTcbInfo { fmspc };
+
+    let request = QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: tcbinfo_addr,
+        msg: to_json_binary(&query_msg).map_err(Error::Std)?,
+    });
+
+    deps.querier
+        .query(&request)
+        .map_err(|err| Error::TcbInfoQueryError(err.to_string()))
+}
 
 impl Handler for EpidAttestation {
     fn handle(
@@ -33,17 +59,37 @@ impl Handler for EpidAttestation {
 }
 
 impl Handler for DcapAttestation {
-    fn handle(
-        self,
-        _deps: DepsMut<'_>,
-        _env: &Env,
-        _info: &MessageInfo,
-    ) -> Result<Response, Error> {
+    fn handle(self, deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {
         let (quote, collateral) = self.clone().into_tuple();
         let mr_enclave = TrustedMrEnclaveIdentity::new(self.mr_enclave().into(), [""; 0], [""; 0]);
 
+        // Retrieve the FMSPC from the collateral
+        let fmspc_hex = collateral.tcb_info().to_string();
+
+        // Query the tcbinfo contract with the FMSPC retrieved and validated
+        let tcb_info_query = query_tcbinfo(deps.as_ref(), fmspc_hex)?;
+        let tcb_info_response: GetTcbInfoResponse = from_json(tcb_info_query)?;
+
+        // Serialize the existing collateral
+        let mut collateral_json: serde_json::Value =
+            serde_json::to_value(&collateral).map_err(|e| {
+                Error::TcbInfoQueryError(format!("Failed to serialize collateral: {}", e))
+            })?;
+
+        // Update the tcb_info in the serialized data
+        collateral_json["tcb_info"] = tcb_info_response.tcb_info;
+
+        // Deserialize back into a Collateral
+        let updated_collateral: Collateral =
+            serde_json::from_value(collateral_json).map_err(|e| {
+                Error::TcbInfoQueryError(format!("Failed to deserialize updated collateral: {}", e))
+            })?;
+
         // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
-        let verification_output = verify_dcap_attestation(quote, collateral, &[mr_enclave.into()]);
+        let verification_output =
+            verify_dcap_attestation(quote, updated_collateral, &[mr_enclave.into()]);
+
+        // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
         if verification_output.is_success().into() {
             Ok(Response::default())
         } else {
