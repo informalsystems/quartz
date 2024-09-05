@@ -1,8 +1,15 @@
 import { test as baseTest, chromium, BrowserContext } from '@playwright/test'
 import path from 'path'
 
+import { importWallet } from './helpers/importWallet'
+
+let extensionUrl: string
+
 // Tests fixtures
-const test = baseTest.extend<{}, { _globalContext: BrowserContext }>({
+const test = baseTest.extend<
+  { extensionUrl: string },
+  { _globalContext: BrowserContext }
+>({
   // Shared context for tests so Keplr initialization runs only once for all tests
   _globalContext: [
     async ({}, use) => {
@@ -21,35 +28,16 @@ const test = baseTest.extend<{}, { _globalContext: BrowserContext }>({
         ],
       })
       const page = await context.waitForEvent('page')
+
       const extensionId = /\/\/(.*?)\//.exec(page.url())![1]
+      extensionUrl = `chrome-extension://${extensionId}`
 
-      // Keplr import wallet flow
-      await page.waitForURL(new RegExp(`${extensionId}/register.html`))
-      await page.getByRole('button', { name: /import/i }).click()
-      await page.getByRole('button', { name: /use/i }).click()
-      await page.getByRole('button', { name: /24/ }).click()
-
-      const seedInputs = await page.locator('input')
-
-      for (let i = 0; i < mnemonicWords.length; i++) {
-        await seedInputs.nth(i).fill(mnemonicWords[i])
-      }
-
-      await page.getByRole('button', { name: 'Import', exact: true }).click()
-      await page
-        .getByPlaceholder('e.g. Trading, NFT Vault,')
-        .fill('Playwright Wallet')
-
-      const inputs = await page.getByPlaceholder(
-        'At least 8 characters in length',
-      )
-
-      for (let i = 0; i < (await inputs.count()); i++) {
-        await inputs.nth(i).fill(process.env.TEST_WALLET_PASSWORD!)
-      }
-
-      await page.getByRole('button', { name: /next/i }).click()
-      await page.getByRole('button', { name: /save/i }).click()
+      await importWallet({
+        extensionUrl,
+        mnemonic: process.env.TEST_WALLET_MNEMONIC!,
+        page,
+        name: 'main',
+      })
 
       await use(context)
       await context.close()
@@ -64,6 +52,9 @@ const test = baseTest.extend<{}, { _globalContext: BrowserContext }>({
 
     await use(page)
     await page.close()
+  },
+  extensionUrl: async ({}, use) => {
+    await use(extensionUrl)
   },
 })
 
