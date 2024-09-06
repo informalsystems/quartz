@@ -64,6 +64,20 @@ pub struct WsListenerConfig {
     pub tx_sender: String,
 }
 
+/// A trait for wrapping a tonic service with the gRPC server handler
+pub trait IntoServer {
+    type Server: Service<
+            http::request::Request<BoxBody>,
+            Response = http::response::Response<BoxBody>,
+            Error = Infallible,
+        > + NamedService
+        + Clone
+        + Send
+        + 'static;
+
+    fn into_server(self) -> Self::Server;
+}
+
 pub struct QuartzServer {
     pub router: Router,
     ws_handlers: Vec<Box<dyn WebSocketHandler>>,
@@ -88,20 +102,18 @@ impl QuartzServer {
 
     pub fn add_service<S>(mut self, service: S) -> Self
     where
-        S: Service<
-                http::request::Request<BoxBody>,
-                Response = http::response::Response<BoxBody>,
-                Error = Infallible,
-            >
-            + WebSocketHandler
-            + Send
-            + Clone
-            + 'static
-            + NamedService,
-        S::Future: Send + 'static,
+        S: IntoServer + WebSocketHandler + Clone + Send,
+        S::Server: Service<
+            http::request::Request<BoxBody>,
+            Response = http::response::Response<BoxBody>,
+            Error = Infallible,
+        >,
+        <S::Server as Service<http::request::Request<BoxBody>>>::Future: Send + 'static,
     {
-        self.router = self.router.add_service(service.clone());
-        self.ws_handlers.push(Box::new(service));
+        self.ws_handlers.push(Box::new(service.clone()));
+
+        let tonic_server = service.into_server();
+        self.router = self.router.add_service(tonic_server);
 
         self
     }

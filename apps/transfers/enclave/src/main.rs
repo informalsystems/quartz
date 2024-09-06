@@ -24,7 +24,6 @@ use std::{
 
 use clap::Parser;
 use cli::Cli;
-use proto::settlement_server::SettlementServer as TransfersServer;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
@@ -69,9 +68,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sk = Arc::new(Mutex::new(None));
 
     QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
-        .add_service(TransfersServer::new(TransfersService::new(
-            config, sk, attestor,
-        )))
+        .add_service(TransfersService::new(
+            config, sk, attestor))
         .serve(args.rpc_addr)
         .await?;
 

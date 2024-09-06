@@ -13,7 +13,7 @@ use quartz_common::{
     },
     enclave::{
         attestor::Attestor,
-        server::{ProofOfPublication, WebSocketHandler, WsListenerConfig},
+        server::{ProofOfPublication, WebSocketHandler, WsListenerConfig, IntoServer},
     },
 };
 use serde::{Deserialize, Serialize};
@@ -32,9 +32,17 @@ use crate::{
 
 // TODO: Need to prevent listener from taking actions until handshake is completed
 #[async_trait::async_trait]
-impl<A: Attestor> WebSocketHandler for SettlementServer<TransfersService<A>> {
+impl<A: Attestor> WebSocketHandler for TransfersService<A> {
     async fn handle(&self, _event: Event, _config: WsListenerConfig) -> anyhow::Result<()> {
         Ok(())
+    }
+}
+
+impl<A: Attestor> IntoServer for TransfersService<A> {
+    type Server = SettlementServer<TransfersService<A>>;
+
+    fn into_server(self) -> Self::Server {
+        SettlementServer::new(self)
     }
 }
 

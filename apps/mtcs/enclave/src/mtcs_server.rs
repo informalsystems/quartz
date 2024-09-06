@@ -17,17 +17,28 @@ use mtcs::{
 };
 use quartz_common::{
     contract::{msg::execute::attested::RawAttested, state::Config},
-    enclave::attestor::Attestor,
+    enclave::{attestor::Attestor, server::IntoServer},
 };
 use tonic::{Request, Response, Result as TonicResult, Status};
 use uuid::Uuid;
 
 use crate::{
-    proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
+    proto::{
+        clearing_server::{Clearing, ClearingServer},
+        RunClearingRequest, RunClearingResponse,
+    },
     types::{ContractObligation, RunClearingMessage},
 };
 
 pub type RawCipherText = HexBinary;
+
+impl<A: Attestor> IntoServer for MtcsService<A> {
+    type Server = ClearingServer<MtcsService<A>>;
+
+    fn into_server(self) -> Self::Server {
+        ClearingServer::new(self)
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {

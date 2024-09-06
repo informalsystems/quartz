@@ -26,7 +26,6 @@ use std::{
 use clap::Parser;
 use cli::Cli;
 use mtcs_server::MtcsService;
-use proto::clearing_server::ClearingServer as MtcsServer;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
@@ -70,7 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sk = Arc::new(Mutex::new(None));
 
     QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
-        .add_service(MtcsServer::new(MtcsService::new(config, sk, attestor)))
+        .add_service(MtcsService::new(config, sk, attestor))
         .serve(args.rpc_addr)
         .await?;
 

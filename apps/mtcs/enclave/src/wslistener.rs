@@ -9,10 +9,6 @@ use cw_tee_mtcs::msg::{
     execute::SubmitSetoffsMsg, AttestedMsg, ExecuteMsg, GetLiquiditySourcesResponse,
     QueryMsg::GetLiquiditySources,
 };
-use mtcs_enclave::{
-    proto::{clearing_client::ClearingClient, RunClearingRequest},
-    types::RunClearingMessage,
-};
 use quartz_common::{
     contract::msg::execute::attested::{
         MockAttestation, RawAttested, RawAttestedMsgSansHandler, RawMockAttestation,
@@ -29,10 +25,15 @@ use tendermint_rpc::{event::Event, query::EventType};
 use tonic::Request;
 use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 
-use crate::{mtcs_server::MtcsService, proto::clearing_server::ClearingServer};
+use crate::{
+    mtcs_server::MtcsService,
+    proto::{clearing_server::Clearing, RunClearingRequest},
+    types::RunClearingMessage,
+};
+
 // TODO: Need to prevent listener from taking actions until handshake is completed
 #[async_trait::async_trait]
-impl<A: Attestor> WebSocketHandler for ClearingServer<MtcsService<A>> {
+impl<A: Attestor> WebSocketHandler for MtcsService<A> {
     async fn handle(&self, event: Event, config: WsListenerConfig) -> Result<()> {
         // Validation
         if !is_init_clearing_event(&event) {
@@ -64,6 +65,7 @@ impl<A: Attestor> WebSocketHandler for ClearingServer<MtcsService<A>> {
             }
 
             handler(
+                self,
                 &contract_address
                     .expect("infallible")
                     .parse::<AccountId>()
@@ -91,10 +93,16 @@ fn is_init_clearing_event(event: &Event) -> bool {
     false
 }
 
-async fn handler(contract: &AccountId, sender: String, node_url: &str) -> Result<()> {
+async fn handler<A: Attestor>(
+    client: &MtcsService<A>,
+    contract: &AccountId,
+    sender: String,
+    node_url: &str,
+) -> Result<()> {
     let chain_id = &ChainId::from_str("testing")?;
     let httpurl = Url::parse(&format!("http://{}", node_url))?;
     let wasmd_client = CliWasmdClient::new(httpurl);
+
     // Query obligations and liquidity sources from chain
     let clearing_contents = query_chain(&wasmd_client, contract).await?;
 
@@ -103,7 +111,6 @@ async fn handler(contract: &AccountId, sender: String, node_url: &str) -> Result
         message: json!(clearing_contents).to_string(),
     });
 
-    let mut client = ClearingClient::connect("http://127.0.0.1:11090").await?;
     let clearing_response = client
         .run(request)
         .await
