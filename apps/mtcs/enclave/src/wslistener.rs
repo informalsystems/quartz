@@ -29,10 +29,7 @@ use tendermint_rpc::{event::Event, query::EventType};
 use tonic::Request;
 use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 
-use crate::{
-    mtcs_server::MtcsService,
-    proto::clearing_server::ClearingServer,
-};
+use crate::{mtcs_server::MtcsService, proto::clearing_server::ClearingServer};
 // TODO: Need to prevent listener from taking actions until handshake is completed
 #[async_trait::async_trait]
 impl<A: Attestor> WebSocketHandler for ClearingServer<MtcsService<A>> {

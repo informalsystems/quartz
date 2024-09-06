@@ -57,7 +57,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
 
     info!("Running SessionCreate");
 
-    let res: serde_json::Value = RelayMessage::SessionCreate
+    let res = RelayMessage::SessionCreate
         .run_relay(config.enclave_rpc(), config.mock_sgx)
         .await?;
 
@@ -108,7 +108,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
 
     // Execute SessionSetPubKey on enclave
     info!("Running SessionSetPubKey");
-    let res: serde_json::Value = RelayMessage::SessionSetPubKey(proof.trim().to_string())
+    let res = RelayMessage::SessionSetPubKey(proof.trim().to_string())
         .run_relay(config.enclave_rpc(), config.mock_sgx)
         .await?;
 
