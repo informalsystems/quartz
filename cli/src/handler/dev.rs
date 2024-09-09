@@ -213,6 +213,7 @@ async fn spawn_enclave_start(
         shutdown_rx: Some(shutdown_rx),
         use_latest_trusted: args.use_latest_trusted,
         fmspc: args.fmspc.clone(),
+        tcbinfo_contract: args.tcbinfo_contract.clone(),
     };
 
     let config_cpy = config.clone();

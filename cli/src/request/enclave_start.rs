@@ -1,3 +1,4 @@
+use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 use tendermint::{block::Height, Hash};
 use tokio::sync::watch;
@@ -13,6 +14,7 @@ pub struct EnclaveStartRequest {
     pub shutdown_rx: Option<watch::Receiver<()>>,
     pub use_latest_trusted: bool,
     pub fmspc: Option<Fmspc>,
+    pub tcbinfo_contract: Option<AccountId>,
 }
 
 impl From<EnclaveStartRequest> for Request {

@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 
 use crate::request::Request;
@@ -13,6 +14,7 @@ pub struct DevRequest {
     pub contract_manifest: PathBuf,
     pub release: bool,
     pub fmspc: Option<Fmspc>,
+    pub tcbinfo_contract: Option<AccountId>,
 }
 
 impl From<DevRequest> for Request {

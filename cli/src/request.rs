@@ -49,6 +49,7 @@ impl TryFrom<Command> for Request {
                 contract_manifest: args.contract_deploy.contract_manifest,
                 release: args.enclave_build.release,
                 fmspc: args.fmspc,
+                tcbinfo_contract: args.tcbinfo_contract,
             }
             .into()),
         }
@@ -101,6 +102,7 @@ impl TryFrom<EnclaveCommand> for Request {
                 shutdown_rx: None,
                 use_latest_trusted: args.use_latest_trusted,
                 fmspc: args.fmspc,
+                tcbinfo_contract: args.tcbinfo_contract,
             }
             .into()),
         }

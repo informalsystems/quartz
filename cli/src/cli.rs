@@ -197,6 +197,11 @@ pub struct EnclaveStartArgs {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fmspc: Option<Fmspc>,
 
+    /// Address of the TcbInfo contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tcbinfo_contract: Option<AccountId>,
+
     /// Whether to target release or dev
     #[arg(long)]
     #[serde(skip_serializing_if = "is_false")]
@@ -223,6 +228,11 @@ pub struct DevArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fmspc: Option<Fmspc>,
+
+    /// Address of the TcbInfo contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tcbinfo_contract: Option<AccountId>,
 }
 
 pub trait ToFigment {

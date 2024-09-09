@@ -3,6 +3,7 @@ use std::{fs, path::Path};
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
+use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 use tokio::{
     process::{Child, Command},
@@ -56,6 +57,12 @@ impl Handler for EnclaveStartRequest {
                 ));
             };
 
+            let Some(tcbinfo_contract) = self.tcbinfo_contract else {
+                return Err(Error::GenericErr(
+                    "tcbinfo_contract is required if MOCK_SGX isn't set".to_string(),
+                ));
+            };
+
             let enclave_dir = fs::canonicalize(config.app_dir.join("enclave"))?;
 
             // gramine private key
@@ -69,6 +76,7 @@ impl Handler for EnclaveStartRequest {
                 quartz_dir_canon,
                 &enclave_dir,
                 fmspc,
+                tcbinfo_contract,
             )
             .await?;
 
@@ -187,6 +195,7 @@ async fn gramine_manifest(
     quartz_dir: &Path,
     enclave_dir: &Path,
     fmspc: Fmspc,
+    tcbinfo_contract: AccountId,
 ) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
@@ -211,6 +220,10 @@ async fn gramine_manifest(
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
+        .arg(format!(
+            "-Dtcbinfo_contract={}",
+            tcbinfo_contract.to_string()
+        ))
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
         .current_dir(enclave_dir)
