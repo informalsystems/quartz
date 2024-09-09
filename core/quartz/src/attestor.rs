@@ -10,12 +10,8 @@ use quartz_cw::{
     state::{MrEnclave, UserData},
 };
 use quartz_tee_ra::intel_sgx::dcap::Collateral;
-use reqwest::{
-    blocking::Client,
-    header::{ACCEPT, CONTENT_TYPE},
-};
+use reqwest::blocking::Client;
 use serde::Serialize;
-use serde_json::Value as JsonValue;
 
 use crate::types::Fmspc;
 
@@ -85,40 +81,32 @@ impl Attestor for DcapAttestor {
     }
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
-        fn pccs_query_pck() -> Result<(JsonValue, JsonValue), Box<dyn Error>> {
-            // FIXME(hu55a1n1): get the URL from CLI
+        fn pccs_query_pck() -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
             let url = "https://127.0.0.1:11089/sgx/certification/v4/pckcrl?ca=processor";
 
-            let client = Client::new();
-            let response = client
-                .get(&url)
-                .header(ACCEPT, "application/json")
-                .header(CONTENT_TYPE, "application/json")
-                .send()?;
+            let client = Client::builder()
+                .danger_accept_invalid_certs(true) // FIXME(hu55a1n1): required?
+                .build()?;
+            let response = client.get(url).send()?;
 
-            if response.status().is_success() {
-                let json_response: JsonValue = response.json()?;
-                // response has pck-crl and header has issuer chain!
-                if let (Some(pck_crl), Some(pck_crl_issuer_chain)) = (
-                    json_response.get("pck_crl"),
-                    json_response.get("pck_crl_issuer_chain"),
-                ) {
-                    Ok((pck_crl.clone(), pck_crl_issuer_chain.clone()))
-                } else {
-                    Err(Box::new(IoError::new(
-                        ErrorKind::Other,
-                        "PCCS query: bad response",
-                    )))
-                }
-            } else {
-                Err(Box::new(IoError::new(
-                    ErrorKind::Other,
-                    "PCCS query: failed",
-                )))
-            }
+            // Parse relevant headers
+            let pck_crl_issuer_chain = response
+                .headers()
+                .get("SGX-PCK-CRL-Issuer-Chain")
+                .ok_or("Missing PCK-Issuer-Chain header")?
+                .as_bytes()
+                .to_vec();
+
+            let pck_crl = response.bytes()?;
+
+            Ok((pck_crl.to_vec(), pck_crl_issuer_chain.to_vec()))
         }
 
-        fn collateral(tcb_info: &str) -> Collateral {
+        fn collateral(
+            tcb_info: &str,
+            mut pck_crl: Vec<u8>,
+            mut pck_crl_issuer_chain: Vec<u8>,
+        ) -> Collateral {
             let mut sgx_collateral = sgx_ql_qve_collateral_t::default();
 
             // SAFETY: Version is a union which is inherently unsafe
@@ -127,16 +115,6 @@ impl Attestor for DcapAttestor {
             version.major_version = 3;
             version.minor_version = 1;
 
-            let pck_issuer_cert =
-                include_str!("../../../cosmwasm/packages/quartz-tee-ra/data/processor_ca.pem");
-            let root_cert =
-                include_str!("../../../cosmwasm/packages/quartz-tee-ra/data/root_ca.pem");
-
-            let mut pck_crl_chain = [pck_issuer_cert, root_cert].join("\n").as_bytes().to_vec();
-            pck_crl_chain.push(0);
-            sgx_collateral.pck_crl_issuer_chain = pck_crl_chain.as_ptr() as _;
-            sgx_collateral.pck_crl_issuer_chain_size = pck_crl_chain.len() as u32;
-
             let mut root_crl =
                 include_bytes!("../../../cosmwasm/packages/quartz-tee-ra/data/root_crl.der")
                     .to_vec();
@@ -144,13 +122,16 @@ impl Attestor for DcapAttestor {
             sgx_collateral.root_ca_crl = root_crl.as_ptr() as _;
             sgx_collateral.root_ca_crl_size = root_crl.len() as u32;
 
-            let mut pck_crl =
-                include_bytes!("../../../cosmwasm/packages/quartz-tee-ra/data/processor_crl.der")
-                    .to_vec();
             pck_crl.push(0);
             sgx_collateral.pck_crl = pck_crl.as_ptr() as _;
             sgx_collateral.pck_crl_size = pck_crl.len() as u32;
 
+            pck_crl_issuer_chain.push(0);
+            sgx_collateral.pck_crl_issuer_chain = pck_crl_issuer_chain.as_ptr() as _;
+            sgx_collateral.pck_crl_issuer_chain_size = pck_crl_issuer_chain.len() as u32;
+
+            let root_cert =
+                include_str!("../../../cosmwasm/packages/quartz-tee-ra/data/root_ca.pem");
             let tcb_cert =
                 include_str!("../../../cosmwasm/packages/quartz-tee-ra/data/tcb_signer.pem");
             let mut tcb_chain = [tcb_cert, root_cert].join("\n").as_bytes().to_vec();
@@ -173,17 +154,17 @@ impl Attestor for DcapAttestor {
             Collateral::try_from(&sgx_collateral).expect("Failed to parse collateral")
         }
 
-        let (_pck_crl, _pck_crl_issuer_chain) =
-            pccs_query_pck().map_err(|e| IoError::new(ErrorKind::Other, e.to_string()))?;
-
         let quote = self.quote(user_data)?;
 
-        // FIXME(hu55a1n1): replace `pck_crl_chain` and `pck_crl` in the collateral (below) with data queried from PCCS (above)
-        let collateral = serde_json::to_value(collateral(&self.fmspc.to_string()))?;
+        let collateral = {
+            let (pck_crl, pck_crl_issuer_chain) =
+                pccs_query_pck().map_err(|e| IoError::new(ErrorKind::Other, e.to_string()))?;
+            collateral(&self.fmspc.to_string(), pck_crl, pck_crl_issuer_chain)
+        };
 
         Ok(RawDcapAttestation {
             quote: quote.into(),
-            collateral,
+            collateral: serde_json::to_value(&collateral)?,
         })
     }
 }
