@@ -6,19 +6,25 @@ use std::{
 
 use mc_sgx_dcap_sys_types::sgx_ql_qve_collateral_t;
 use quartz_cw::{
-    msg::execute::attested::{HasUserData, RawDcapAttestation},
+    msg::{
+        execute::attested::{
+            Attestation, DcapAttestation, EpidAttestation, HasUserData, MockAttestation,
+            RawDcapAttestation, RawEpidAttestation, RawMockAttestation,
+        },
+        HasDomainType,
+    },
     state::{MrEnclave, UserData},
 };
-use quartz_tee_ra::intel_sgx::dcap::Collateral;
+use quartz_tee_ra::intel_sgx::dcap::{Collateral, Quote3Error};
 use reqwest::blocking::Client;
-use serde::Serialize;
 
 use crate::types::Fmspc;
 
 /// The trait defines the interface for generating attestations from within an enclave.
 pub trait Attestor {
     type Error: ToString;
-    type Attestation: Serialize;
+    type Attestation: Attestation;
+    type RawAttestation: HasDomainType<DomainType = Self::Attestation>;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error>;
 
@@ -33,7 +39,8 @@ pub struct EpidAttestor;
 
 impl Attestor for EpidAttestor {
     type Error = IoError;
-    type Attestation = Vec<u8>;
+    type Attestation = EpidAttestation;
+    type RawAttestation = RawEpidAttestation;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
         let user_data = user_data.user_data();
@@ -50,8 +57,8 @@ impl Attestor for EpidAttestor {
             .expect("hardcoded array size"))
     }
 
-    fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
-        self.quote(user_data)
+    fn attestation(&self, _user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
+        unimplemented!()
     }
 }
 
@@ -63,7 +70,8 @@ pub struct DcapAttestor {
 
 impl Attestor for DcapAttestor {
     type Error = IoError;
-    type Attestation = RawDcapAttestation;
+    type Attestation = DcapAttestation;
+    type RawAttestation = RawDcapAttestation;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
         let user_data = user_data.user_data();
@@ -162,10 +170,12 @@ impl Attestor for DcapAttestor {
             collateral(&self.fmspc.to_string(), pck_crl, pck_crl_issuer_chain)
         };
 
-        Ok(RawDcapAttestation {
-            quote: quote.into(),
-            collateral: serde_json::to_value(&collateral)?,
-        })
+        Ok(DcapAttestation::new(
+            quote
+                .try_into()
+                .map_err(|e: Quote3Error| IoError::other(e.to_string()))?,
+            collateral,
+        ))
     }
 }
 
@@ -176,7 +186,8 @@ pub struct MockAttestor;
 
 impl Attestor for MockAttestor {
     type Error = String;
-    type Attestation = Vec<u8>;
+    type Attestation = MockAttestation;
+    type RawAttestation = RawMockAttestation;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
         let user_data = user_data.user_data();
@@ -188,7 +199,7 @@ impl Attestor for MockAttestor {
     }
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
-        self.quote(user_data)
+        Ok(MockAttestation(user_data.user_data()))
     }
 }
 
