@@ -1189,7 +1189,6 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
- "hex",
  "k256",
  "quartz-tee-ra",
  "serde",
