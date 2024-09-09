@@ -23,7 +23,7 @@ loader.env.QUARTZ_PORT = { passthrough = true }
 loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "testing",
                 "--fmspc", "{{ fmspc }}",
-                "--tcbinfo_contract", "{{ tcbinfo_contract }}",
+                "--tcbinfo-contract", "{{ tcbinfo_contract }}",
                 "--rpc-addr", "0.0.0.0:11090",
                 "--trusted-height", "{{ trusted_height }}",
                 "--trusted-hash", "{{ trusted_hash }}"]
