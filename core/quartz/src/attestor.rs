@@ -85,10 +85,9 @@ impl Attestor for DcapAttestor {
     }
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
-        fn pccs_query(fmspc: &Fmspc) -> Result<(JsonValue, JsonValue), Box<dyn Error>> {
+        fn pccs_query_pck() -> Result<(JsonValue, JsonValue), Box<dyn Error>> {
             // FIXME(hu55a1n1): get the URL from CLI
-            let pccs_url = "https://127.0.0.1:11089/sgx/certification/v4/pckcrl";
-            let url = format!("{}?fmspc={}", pccs_url, hex::encode(fmspc));
+            let url = "https://127.0.0.1:11089/sgx/certification/v4/pckcrl?ca=processor";
 
             let client = Client::new();
             let response = client
@@ -99,6 +98,7 @@ impl Attestor for DcapAttestor {
 
             if response.status().is_success() {
                 let json_response: JsonValue = response.json()?;
+                // response has pck-crl and header has issuer chain!
                 if let (Some(pck_crl), Some(pck_crl_issuer_chain)) = (
                     json_response.get("pck_crl"),
                     json_response.get("pck_crl_issuer_chain"),
@@ -174,7 +174,7 @@ impl Attestor for DcapAttestor {
         }
 
         let (_pck_crl, _pck_crl_issuer_chain) =
-            pccs_query(&self.fmspc).map_err(|e| IoError::new(ErrorKind::Other, e.to_string()))?;
+            pccs_query_pck().map_err(|e| IoError::new(ErrorKind::Other, e.to_string()))?;
 
         let quote = self.quote(user_data)?;
 
