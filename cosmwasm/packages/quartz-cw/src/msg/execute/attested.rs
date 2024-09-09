@@ -282,7 +282,7 @@ pub struct AttestedMsgSansHandler<T>(pub T);
 #[cw_serde]
 pub struct RawAttestedMsgSansHandler<T>(pub T);
 
-impl<T> HasDomainType for RawAttestedMsgSansHandler<T> {
+impl<T: Serialize> HasDomainType for RawAttestedMsgSansHandler<T> {
     type DomainType = AttestedMsgSansHandler<T>;
 }
 
