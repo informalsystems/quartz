@@ -1,14 +1,18 @@
 use std::{
     fmt::{Display, Formatter},
+    marker::PhantomData,
     str::FromStr,
 };
 
-use cosmwasm_std::{HexBinary, StdError};
 use hex::FromHexError;
-use k256::ecdsa::VerifyingKey;
-use quartz_cw::{
-    error::Error as QuartzCwError,
-    state::{Config, Nonce, RawConfig},
+use quartz_cw::msg::{
+    execute::{
+        attested::{Attested, RawAttested},
+        session_create::{RawSessionCreate, SessionCreate},
+        session_set_pub_key::{RawSessionSetPubKey, SessionSetPubKey},
+    },
+    instantiate::{CoreInstantiate, RawCoreInstantiate},
+    HasDomainType,
 };
 use quartz_proto::quartz::{
     InstantiateResponse as RawInstantiateResponse,
@@ -18,41 +22,29 @@ use quartz_proto::quartz::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InstantiateResponse {
-    message: InstantiateResponseMsg,
+pub struct InstantiateResponse<A, RA> {
+    message: Attested<CoreInstantiate, A>,
+    _phantom: PhantomData<RA>,
 }
 
-impl InstantiateResponse {
-    pub fn new(config: Config, quote: Vec<u8>) -> Self {
+impl<A, RA> InstantiateResponse<A, RA> {
+    pub fn new(message: Attested<CoreInstantiate, A>) -> Self {
         Self {
-            message: InstantiateResponseMsg { config, quote },
+            message,
+            _phantom: Default::default(),
         }
     }
-
-    pub fn quote(&self) -> &[u8] {
-        &self.message.quote
-    }
-
-    pub fn into_message(self) -> InstantiateResponseMsg {
+    pub fn into_message(self) -> Attested<CoreInstantiate, A> {
         self.message
     }
 }
 
-impl TryFrom<RawInstantiateResponse> for InstantiateResponse {
-    type Error = StdError;
-
-    fn try_from(value: RawInstantiateResponse) -> Result<Self, Self::Error> {
-        let raw_message: RawInstantiateResponseMsg = serde_json::from_str(&value.message)
-            .map_err(|e| StdError::parse_err("RawInstantiateResponseMsg", e))?;
-        Ok(Self {
-            message: raw_message.try_into()?,
-        })
-    }
-}
-
-impl From<InstantiateResponse> for RawInstantiateResponse {
-    fn from(value: InstantiateResponse) -> Self {
-        let raw_message: RawInstantiateResponseMsg = value.message.into();
+impl<A, RA> From<InstantiateResponse<A, RA>> for RawInstantiateResponse
+where
+    RA: HasDomainType<DomainType = A>,
+{
+    fn from(value: InstantiateResponse<A, RA>) -> Self {
+        let raw_message: RawAttested<RawCoreInstantiate, RA> = value.message.into();
         Self {
             message: serde_json::to_string(&raw_message).expect("infallible serializer"),
         }
@@ -60,79 +52,30 @@ impl From<InstantiateResponse> for RawInstantiateResponse {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InstantiateResponseMsg {
-    config: Config,
-    quote: Vec<u8>,
+pub struct SessionCreateResponse<A, RA> {
+    message: Attested<SessionCreate, A>,
+    _phantom: PhantomData<RA>,
 }
 
-impl InstantiateResponseMsg {
-    pub fn into_tuple(self) -> (Config, Vec<u8>) {
-        (self.config, self.quote)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RawInstantiateResponseMsg {
-    config: RawConfig,
-    quote: HexBinary,
-}
-
-impl TryFrom<RawInstantiateResponseMsg> for InstantiateResponseMsg {
-    type Error = StdError;
-
-    fn try_from(value: RawInstantiateResponseMsg) -> Result<Self, Self::Error> {
-        Ok(Self {
-            config: value.config.try_into()?,
-            quote: value.quote.into(),
-        })
-    }
-}
-
-impl From<InstantiateResponseMsg> for RawInstantiateResponseMsg {
-    fn from(value: InstantiateResponseMsg) -> Self {
+impl<A, RA> SessionCreateResponse<A, RA> {
+    pub fn new(message: Attested<SessionCreate, A>) -> Self {
         Self {
-            config: value.config.into(),
-            quote: value.quote.into(),
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct SessionCreateResponse {
-    message: SessionCreateResponseMsg,
-}
-
-impl SessionCreateResponse {
-    pub fn new(nonce: Nonce, quote: Vec<u8>) -> Self {
-        Self {
-            message: SessionCreateResponseMsg { nonce, quote },
+            message,
+            _phantom: Default::default(),
         }
     }
 
-    pub fn quote(&self) -> &[u8] {
-        &self.message.quote
-    }
-
-    pub fn into_message(self) -> SessionCreateResponseMsg {
+    pub fn into_message(self) -> Attested<SessionCreate, A> {
         self.message
     }
 }
 
-impl TryFrom<RawSessionCreateResponse> for SessionCreateResponse {
-    type Error = StdError;
-
-    fn try_from(value: RawSessionCreateResponse) -> Result<Self, Self::Error> {
-        let raw_message: RawSessionCreateResponseMsg = serde_json::from_str(&value.message)
-            .map_err(|e| StdError::parse_err("RawSessionCreateResponseMsg", e))?;
-        Ok(Self {
-            message: raw_message.try_into()?,
-        })
-    }
-}
-
-impl From<SessionCreateResponse> for RawSessionCreateResponse {
-    fn from(value: SessionCreateResponse) -> Self {
-        let raw_message: RawSessionCreateResponseMsg = value.message.into();
+impl<A, RA> From<SessionCreateResponse<A, RA>> for RawSessionCreateResponse
+where
+    RA: HasDomainType<DomainType = A>,
+{
+    fn from(value: SessionCreateResponse<A, RA>) -> Self {
+        let raw_message: RawAttested<RawSessionCreate, RA> = value.message.into();
         Self {
             message: serde_json::to_string(&raw_message).expect("infallible serializer"),
         }
@@ -140,130 +83,32 @@ impl From<SessionCreateResponse> for RawSessionCreateResponse {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct SessionCreateResponseMsg {
-    nonce: Nonce,
-    quote: Vec<u8>,
+pub struct SessionSetPubKeyResponse<A, RA> {
+    message: Attested<SessionSetPubKey, A>,
+    _phantom: PhantomData<RA>,
 }
 
-impl SessionCreateResponseMsg {
-    pub fn into_tuple(self) -> (Nonce, Vec<u8>) {
-        (self.nonce, self.quote)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RawSessionCreateResponseMsg {
-    nonce: HexBinary,
-    quote: HexBinary,
-}
-
-impl TryFrom<RawSessionCreateResponseMsg> for SessionCreateResponseMsg {
-    type Error = StdError;
-
-    fn try_from(value: RawSessionCreateResponseMsg) -> Result<Self, Self::Error> {
-        Ok(Self {
-            nonce: value.nonce.to_array()?,
-            quote: value.quote.into(),
-        })
-    }
-}
-
-impl From<SessionCreateResponseMsg> for RawSessionCreateResponseMsg {
-    fn from(value: SessionCreateResponseMsg) -> Self {
+impl<A, RA> SessionSetPubKeyResponse<A, RA> {
+    pub fn new(message: Attested<SessionSetPubKey, A>) -> Self {
         Self {
-            nonce: value.nonce.into(),
-            quote: value.quote.into(),
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct SessionSetPubKeyResponse {
-    message: SessionSetPubKeyResponseMsg,
-}
-
-impl SessionSetPubKeyResponse {
-    pub fn new(nonce: Nonce, pub_key: VerifyingKey, quote: Vec<u8>) -> Self {
-        Self {
-            message: SessionSetPubKeyResponseMsg {
-                nonce,
-                pub_key,
-                quote,
-            },
+            message,
+            _phantom: Default::default(),
         }
     }
 
-    pub fn quote(&self) -> &[u8] {
-        &self.message.quote
-    }
-
-    pub fn into_message(self) -> SessionSetPubKeyResponseMsg {
+    pub fn into_message(self) -> Attested<SessionSetPubKey, A> {
         self.message
     }
 }
 
-impl TryFrom<RawSessionSetPubKeyResponse> for SessionSetPubKeyResponse {
-    type Error = StdError;
-
-    fn try_from(value: RawSessionSetPubKeyResponse) -> Result<Self, Self::Error> {
-        let raw_message: RawSessionSetPubKeyResponseMsg = serde_json::from_str(&value.message)
-            .map_err(|e| StdError::parse_err("RawSessionSetPubKeyResponseMsg", e))?;
-        Ok(Self {
-            message: raw_message.try_into()?,
-        })
-    }
-}
-
-impl From<SessionSetPubKeyResponse> for RawSessionSetPubKeyResponse {
-    fn from(value: SessionSetPubKeyResponse) -> Self {
-        let raw_message: RawSessionSetPubKeyResponseMsg = value.message.into();
+impl<A, RA> From<SessionSetPubKeyResponse<A, RA>> for RawSessionSetPubKeyResponse
+where
+    RA: HasDomainType<DomainType = A>,
+{
+    fn from(value: SessionSetPubKeyResponse<A, RA>) -> Self {
+        let raw_message: RawAttested<RawSessionSetPubKey, RA> = value.message.into();
         Self {
             message: serde_json::to_string(&raw_message).expect("infallible serializer"),
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct SessionSetPubKeyResponseMsg {
-    nonce: Nonce,
-    pub_key: VerifyingKey,
-    quote: Vec<u8>,
-}
-
-impl SessionSetPubKeyResponseMsg {
-    pub fn into_tuple(self) -> (VerifyingKey, Vec<u8>) {
-        (self.pub_key, self.quote)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RawSessionSetPubKeyResponseMsg {
-    nonce: HexBinary,
-    pub_key: HexBinary,
-    quote: HexBinary,
-}
-
-impl TryFrom<RawSessionSetPubKeyResponseMsg> for SessionSetPubKeyResponseMsg {
-    type Error = StdError;
-
-    fn try_from(value: RawSessionSetPubKeyResponseMsg) -> Result<Self, Self::Error> {
-        let pub_key = VerifyingKey::from_sec1_bytes(&value.pub_key)
-            .map_err(QuartzCwError::from)
-            .map_err(|e| StdError::generic_err(e.to_string()))?;
-        Ok(Self {
-            nonce: value.nonce.to_array()?,
-            pub_key,
-            quote: value.quote.into(),
-        })
-    }
-}
-
-impl From<SessionSetPubKeyResponseMsg> for RawSessionSetPubKeyResponseMsg {
-    fn from(value: SessionSetPubKeyResponseMsg) -> Self {
-        Self {
-            nonce: value.nonce.into(),
-            pub_key: value.pub_key.to_sec1_bytes().into_vec().into(),
-            quote: value.quote.into(),
         }
     }
 }
