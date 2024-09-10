@@ -41,7 +41,7 @@ impl<A, RA> InstantiateResponse<A, RA> {
 
 impl<A, RA> From<InstantiateResponse<A, RA>> for RawInstantiateResponse
 where
-    RA: HasDomainType<DomainType = A>,
+    RA: HasDomainType<DomainType = A> + Serialize,
 {
     fn from(value: InstantiateResponse<A, RA>) -> Self {
         let raw_message: RawAttested<RawCoreInstantiate, RA> = value.message.into();
@@ -72,7 +72,7 @@ impl<A, RA> SessionCreateResponse<A, RA> {
 
 impl<A, RA> From<SessionCreateResponse<A, RA>> for RawSessionCreateResponse
 where
-    RA: HasDomainType<DomainType = A>,
+    RA: HasDomainType<DomainType = A> + Serialize,
 {
     fn from(value: SessionCreateResponse<A, RA>) -> Self {
         let raw_message: RawAttested<RawSessionCreate, RA> = value.message.into();
@@ -103,7 +103,7 @@ impl<A, RA> SessionSetPubKeyResponse<A, RA> {
 
 impl<A, RA> From<SessionSetPubKeyResponse<A, RA>> for RawSessionSetPubKeyResponse
 where
-    RA: HasDomainType<DomainType = A>,
+    RA: HasDomainType<DomainType = A> + Serialize,
 {
     fn from(value: SessionSetPubKeyResponse<A, RA>) -> Self {
         let raw_message: RawAttested<RawSessionSetPubKey, RA> = value.message.into();

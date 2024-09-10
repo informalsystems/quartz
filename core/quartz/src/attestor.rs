@@ -17,6 +17,7 @@ use quartz_cw::{
 };
 use quartz_tee_ra::intel_sgx::dcap::{Collateral, Quote3Error};
 use reqwest::blocking::Client;
+use serde::Serialize;
 
 use crate::types::Fmspc;
 
@@ -24,7 +25,7 @@ use crate::types::Fmspc;
 pub trait Attestor {
     type Error: ToString;
     type Attestation: Attestation;
-    type RawAttestation: HasDomainType<DomainType = Self::Attestation>;
+    type RawAttestation: HasDomainType<DomainType = Self::Attestation> + Serialize;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error>;
 
