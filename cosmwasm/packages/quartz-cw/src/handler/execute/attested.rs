@@ -20,7 +20,9 @@ use crate::{
 
 pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
     let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
-    let tcbinfo_addr = config.tcb_info();
+    let tcbinfo_addr = config
+        .tcb_info()
+        .expect("TcbInfo contract address is required for DCAP");
 
     let fmspc_bytes =
         hex::decode(&fmspc).map_err(|_| Error::InvalidFmspc("Invalid FMSPC format".to_string()))?;

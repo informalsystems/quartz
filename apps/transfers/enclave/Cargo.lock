@@ -870,7 +870,6 @@ dependencies = [
 [[package]]
 name = "cw-proof"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#a9ea3fa9aee52e4dd7bcbe641762de187187b855"
 dependencies = [
  "clap",
  "cosmrs",
@@ -1209,6 +1208,7 @@ dependencies = [
  "ff",
  "generic-array",
  "group",
+ "pem-rfc7468",
  "pkcs8",
  "rand_core",
  "sec1",
@@ -1488,6 +1488,7 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
  "allocator-api2",
+ "serde",
 ]
 
 [[package]]
@@ -2507,7 +2508,6 @@ dependencies = [
 [[package]]
 name = "quartz-common"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#a9ea3fa9aee52e4dd7bcbe641762de187187b855"
 dependencies = [
  "quartz-cw",
  "quartz-enclave",
@@ -2517,24 +2517,24 @@ dependencies = [
 [[package]]
 name = "quartz-cw"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#a9ea3fa9aee52e4dd7bcbe641762de187187b855"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
+ "hex",
  "k256",
  "quartz-tee-ra",
  "serde",
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
+ "tcbinfo",
  "thiserror",
 ]
 
 [[package]]
 name = "quartz-enclave"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#a9ea3fa9aee52e4dd7bcbe641762de187187b855"
 dependencies = [
  "clap",
  "color-eyre",
@@ -2562,7 +2562,6 @@ dependencies = [
 [[package]]
 name = "quartz-proto"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#a9ea3fa9aee52e4dd7bcbe641762de187187b855"
 dependencies = [
  "prost 0.13.1",
  "tonic",
@@ -2572,7 +2571,6 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#a9ea3fa9aee52e4dd7bcbe641762de187187b855"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -3280,6 +3278,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "tcbinfo"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "der",
+ "getrandom",
+ "hashbrown 0.14.5",
+ "hex",
+ "mc-attestation-verifier",
+ "p256",
+ "quartz-tee-ra",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "x509-cert",
+ "x509-parser",
+]
+
+[[package]]
 name = "tempfile"
 version = "3.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3537,7 +3558,6 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 [[package]]
 name = "tm-stateless-verifier"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#a9ea3fa9aee52e4dd7bcbe641762de187187b855"
 dependencies = [
  "displaydoc",
  "tendermint 0.38.1",
