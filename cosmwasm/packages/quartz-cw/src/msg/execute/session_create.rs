@@ -1,5 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError};
+use sha2::{Sha256, Digest};
 
 use crate::{
     msg::{execute::attested::HasUserData, HasDomainType},
@@ -49,8 +50,15 @@ impl HasDomainType for RawSessionCreate {
 
 impl HasUserData for SessionCreate {
     fn user_data(&self) -> UserData {
+        let mut hasher = Sha256::new();
+        hasher.update(
+            serde_json::to_string(&RawSessionCreate::from(self.clone()))
+                .expect("infallible serializer"),
+        );
+        let digest: [u8; 32] = hasher.finalize().into();
+
         let mut user_data = [0u8; 64];
-        user_data[0..32].copy_from_slice(&self.nonce);
+        user_data[0..32].copy_from_slice(&digest);
         user_data
     }
 }
