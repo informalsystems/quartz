@@ -55,6 +55,23 @@ App will be running on http://localhost:3000/ and now everything is up & running
 
 ## E2E Testing
 
+For tests to work, you need to set up the following required environment variables:
+
+```
+# Frontend base url
+TEST_BASE_URL=<url>
+# Keplr browser extension version
+TEST_KEPLR_EXTENSION_VERSION=<version>
+# Main wallet mnemonic
+TEST_WALLET_MNEMONIC=<mnemonic>
+# Secondary wallet mnemonic
+TEST_SECONDARY_WALLET_MNEMONIC=<mnemonic>
+# Secondary wallet address
+TEST_SECONDARY_WALLET_ADDRESS=<wallet_address>
+# Keplr wallet password. It can be whatever
+TEST_WALLET_PASSWORD=<password>
+```
+
 Run all E2E tests:
 
 ```bash
