@@ -67,11 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         attestor.mr_enclave()?,
         Duration::from_secs(30 * 24 * 60),
         light_client_opts,
-        Some(
-            args.tcbinfo_contract
-                .map(|c| c.to_string())
-                .expect("TCBInfo Contract not provided"),
-        ),
+        args.tcbinfo_contract.map(|c| c.to_string()),
     );
 
     let sk = Arc::new(Mutex::new(None));
