@@ -2513,7 +2513,7 @@ dependencies = [
  "hex",
  "k256",
  "prost 0.13.1",
- "quartz-common 0.1.0",
+ "quartz-common",
  "serde",
  "serde_json",
  "sha2 0.10.8",
@@ -2530,20 +2530,12 @@ dependencies = [
 name = "quartz-common"
 version = "0.1.0"
 dependencies = [
- "quartz-cw 0.1.0",
+ "quartz-cw",
  "quartz-enclave",
  "quartz-proto",
 ]
 
 [[package]]
-name = "quartz-common"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#53c10273faf6bb0b0fc35ef5215962ee337b0e27"
-dependencies = [
- "quartz-cw 0.1.0 (git+ssh://git@github.com/informalsystems/cycles-quartz.git)",
-]
-
-[[package]]
 name = "quartz-cw"
 version = "0.1.0"
 dependencies = [
@@ -2552,31 +2544,12 @@ dependencies = [
  "cw-storage-plus",
  "hex",
  "k256",
- "quartz-tee-ra 0.1.0",
+ "quartz-tee-ra",
  "serde",
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
- "tcbinfo 0.1.0",
- "thiserror",
-]
-
-[[package]]
-name = "quartz-cw"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#53c10273faf6bb0b0fc35ef5215962ee337b0e27"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "hex",
- "k256",
- "quartz-tee-ra 0.1.0 (git+ssh://git@github.com/informalsystems/cycles-quartz.git)",
- "serde",
- "serde_json",
- "serde_with",
- "sha2 0.10.8",
- "tcbinfo 0.1.0 (git+ssh://git@github.com/informalsystems/cycles-quartz.git)",
+ "tcbinfo",
  "thiserror",
 ]
 
@@ -2594,9 +2567,9 @@ dependencies = [
  "k256",
  "mc-sgx-dcap-sys-types",
  "mtcs",
- "quartz-cw 0.1.0",
+ "quartz-cw",
  "quartz-proto",
- "quartz-tee-ra 0.1.0",
+ "quartz-tee-ra",
  "rand",
  "reqwest 0.12.7",
  "serde",
@@ -2621,30 +2594,6 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "der",
- "displaydoc",
- "hex-literal",
- "mc-attestation-verifier",
- "mc-sgx-core-types",
- "mc-sgx-dcap-sys-types",
- "mc-sgx-dcap-types",
- "num-bigint",
- "serde",
- "serde_json",
- "sha2 0.10.8",
- "thiserror",
- "x509-cert",
- "x509-parser",
- "zeroize",
-]
-
-[[package]]
-name = "quartz-tee-ra"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#53c10273faf6bb0b0fc35ef5215962ee337b0e27"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -3506,31 +3455,7 @@ dependencies = [
  "hex",
  "mc-attestation-verifier",
  "p256",
- "quartz-tee-ra 0.1.0",
- "schemars",
- "serde",
- "serde_json",
- "thiserror",
- "x509-cert",
- "x509-parser",
-]
-
-[[package]]
-name = "tcbinfo"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#53c10273faf6bb0b0fc35ef5215962ee337b0e27"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "cw2",
- "der",
- "getrandom",
- "hashbrown 0.14.5",
- "hex",
- "mc-attestation-verifier",
- "p256",
- "quartz-tee-ra 0.1.0 (git+ssh://git@github.com/informalsystems/cycles-quartz.git)",
+ "quartz-tee-ra",
  "schemars",
  "serde",
  "serde_json",
@@ -4026,7 +3951,7 @@ dependencies = [
  "cw2",
  "cw20-base",
  "getrandom",
- "quartz-common 0.1.0 (git+ssh://git@github.com/informalsystems/cycles-quartz.git)",
+ "quartz-common",
  "serde",
  "serde_json",
  "sha2 0.10.8",
