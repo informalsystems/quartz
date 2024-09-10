@@ -103,7 +103,10 @@ where
             .attestation(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = RawAttested { msg, attestation };
+        let attested_msg = RawAttested {
+            msg,
+            attestation: A::RawAttestation::from(attestation),
+        };
         let message = serde_json::to_string(&attested_msg).unwrap();
         Ok(Response::new(RunClearingResponse { message }))
     }

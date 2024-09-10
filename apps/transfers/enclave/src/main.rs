@@ -28,7 +28,7 @@ use proto::settlement_server::SettlementServer as TransfersServer;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
-        attestor::{Attestor, DcapAttestor, MockAttestor},
+        attestor::{self, Attestor},
         server::CoreService,
     },
     proto::core_server::CoreServer,
@@ -56,16 +56,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     #[cfg(not(feature = "mock-sgx"))]
-    let attestor = DcapAttestor { fmspc: args.fmspc };
+    let attestor = attestor::DcapAttestor {
+        fmspc: args.fmspc.expect("FMSPC is required for DCAP"),
+    };
 
     #[cfg(feature = "mock-sgx")]
-    let attestor = MockAttestor::default();
+    let attestor = attestor::MockAttestor::default();
 
     let config = Config::new(
         attestor.mr_enclave()?,
         Duration::from_secs(30 * 24 * 60),
         light_client_opts,
-        args.tcbinfo_contract.to_string(),
+        args.tcbinfo_contract.map(|c| c.to_string()),
     );
 
     let sk = Arc::new(Mutex::new(None));

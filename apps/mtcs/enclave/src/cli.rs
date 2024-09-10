@@ -29,11 +29,11 @@ pub struct Cli {
 
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU)
     #[clap(long)]
-    pub fmspc: Fmspc,
+    pub fmspc: Option<Fmspc>,
 
     /// TcbInfo contract address
     #[clap(long)]
-    pub tcbinfo_contract: AccountId,
+    pub tcbinfo_contract: Option<AccountId>,
 
     /// Height of the trusted header (AKA root-of-trust)
     #[clap(long)]
