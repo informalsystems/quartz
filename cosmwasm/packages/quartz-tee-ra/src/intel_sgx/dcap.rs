@@ -1,9 +1,6 @@
 pub mod certificate_chain;
 pub mod mc_attest_verifier;
 
-/// Root anchor PEM file for use with DCAP
-pub const DCAP_ROOT_ANCHOR: &str = include_str!("../../data/DcapRootCACert.pem");
-
 use mc_attestation_verifier::Evidence;
 pub use mc_attestation_verifier::{
     TrustedIdentity, TrustedMrEnclaveIdentity, TrustedMrSignerIdentity, VerificationOutput,

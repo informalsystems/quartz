@@ -8,8 +8,8 @@ use mc_sgx_dcap_sys_types::sgx_ql_qve_collateral_t;
 use quartz_cw::{
     msg::{
         execute::attested::{
-            Attestation, DcapAttestation, EpidAttestation, HasUserData, MockAttestation,
-            RawDcapAttestation, RawEpidAttestation, RawMockAttestation,
+            Attestation, DcapAttestation, HasUserData, MockAttestation, RawDcapAttestation,
+            RawMockAttestation,
         },
         HasDomainType,
     },
@@ -32,35 +32,6 @@ pub trait Attestor {
     fn mr_enclave(&self) -> Result<MrEnclave, Self::Error>;
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error>;
-}
-
-/// An `Attestor` for generating EPID attestations for Gramine based enclaves.
-#[derive(Clone, PartialEq, Debug, Default)]
-pub struct EpidAttestor;
-
-impl Attestor for EpidAttestor {
-    type Error = IoError;
-    type Attestation = EpidAttestation;
-    type RawAttestation = RawEpidAttestation;
-
-    fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
-        let user_data = user_data.user_data();
-        let mut user_report_data = File::create("/dev/attestation/user_report_data")?;
-        user_report_data.write_all(user_data.as_slice())?;
-        user_report_data.flush()?;
-        read("/dev/attestation/quote")
-    }
-
-    fn mr_enclave(&self) -> Result<MrEnclave, Self::Error> {
-        let quote = self.quote(NullUserData)?;
-        Ok(quote[112..(112 + 32)]
-            .try_into()
-            .expect("hardcoded array size"))
-    }
-
-    fn attestation(&self, _user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
-        unimplemented!()
-    }
 }
 
 /// An `Attestor` for generating DCAP attestations for Gramine based enclaves.

@@ -45,7 +45,7 @@ schemars = "0.8.16"
 serde = { version = "1.0.197", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.58" }
 x509-cert = { version = "0.2.5", default-features = false, features = ["pem"] }
-x509-parser = {version = "0.16.0", features = ["verify"] }
+x509-parser = {version = "0.16.0", default-features = false, features = ["verify"] }
 der = { version = "0.7.9" }
 quartz-tee-ra = { path = "../quartz-tee-ra" }
 mc-attestation-verifier = {git = "https://github.com/informalsystems/attestation", default-features = false}
