@@ -58,7 +58,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     info!("Running SessionCreate");
 
     let res: serde_json::Value = RelayMessage::SessionCreate
-        .run_relay(config.enclave_rpc(), config.mock_sgx)
+        .run_relay(config.enclave_rpc())
         .await?;
 
     let output: WasmdTxResponse = serde_json::from_str(
@@ -104,12 +104,12 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     }
 
     // Read proof file
-    let proof = fs::read_to_string(proof_path.as_path())?;
+    let proof = fs::read_to_string(proof_path.as_path())?.trim().to_string();
 
     // Execute SessionSetPubKey on enclave
     info!("Running SessionSetPubKey");
-    let res: serde_json::Value = RelayMessage::SessionSetPubKey(proof.trim().to_string())
-        .run_relay(config.enclave_rpc(), config.mock_sgx)
+    let res: serde_json::Value = RelayMessage::SessionSetPubKey { proof }
+        .run_relay(config.enclave_rpc())
         .await?;
 
     // Submit SessionSetPubKey to contract
