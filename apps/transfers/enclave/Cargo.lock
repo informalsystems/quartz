@@ -2526,6 +2526,7 @@ dependencies = [
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
+ "tcbinfo",
  "thiserror",
 ]
 
@@ -3272,6 +3273,26 @@ checksum = "a75fb188eb626b924683e3b95e3a48e63551fcfb51949de2f06a9d91dbee93c9"
 dependencies = [
  "core-foundation-sys",
  "libc",
+]
+
+[[package]]
+name = "tcbinfo"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "der",
+ "hex",
+ "mc-attestation-verifier",
+ "p256",
+ "quartz-tee-ra",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "x509-cert",
 ]
 
 [[package]]
