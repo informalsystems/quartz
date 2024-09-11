@@ -1,6 +1,17 @@
-use quartz_common::{contract::msg::{execute::{attested::{RawAttested, RawDcapAttestation, RawMockAttestation}, session_create::RawSessionCreate, session_set_pub_key::RawSessionSetPubKey}, instantiate::RawCoreInstantiate, RawExecuteMsg}, proto::{
-    core_client::CoreClient, InstantiateRequest, SessionCreateRequest, SessionSetPubKeyRequest,
-}};
+use quartz_common::{
+    contract::msg::{
+        execute::{
+            attested::{RawAttested, RawDcapAttestation, RawMockAttestation},
+            session_create::RawSessionCreate,
+            session_set_pub_key::RawSessionSetPubKey,
+        },
+        instantiate::RawCoreInstantiate,
+        RawExecuteMsg,
+    },
+    proto::{
+        core_client::CoreClient, InstantiateRequest, SessionCreateRequest, SessionSetPubKeyRequest,
+    },
+};
 use serde_json::json;
 
 use crate::error::Error;
@@ -13,7 +24,6 @@ pub enum RelayMessage {
 }
 
 impl RelayMessage {
-
     pub async fn run_relay(
         &self,
         enclave_rpc: String,
@@ -47,14 +57,11 @@ impl RelayMessage {
                 .map_err(|e| Error::GenericErr(e.to_string()))?
                 .map(|res| serde_json::from_str::<serde_json::Value>(&res.message).unwrap())
                 .map(|msg| json!({ "quartz":  {"session_set_pub_key": msg}}).to_string())
-                .into_inner()
+                .into_inner(),
         };
         serde_json::from_str(&attested_msg).map_err(Into::into)
+    }
 }
-
-        
-}    
-
 
 // fn create_attested_msg<RA: serde::Serialize>(
 //     &self,

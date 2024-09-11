@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError};
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
 use crate::{
     msg::{execute::attested::HasUserData, HasDomainType},

@@ -1,3 +1,4 @@
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{
     from_json, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
     WasmQuery,
@@ -17,8 +18,6 @@ use crate::{
     state::CONFIG,
 };
 
-use cosmwasm_schema::{cw_serde, QueryResponses};
-
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum TcbInfoQueryMsg {
@@ -30,7 +29,6 @@ pub enum TcbInfoQueryMsg {
 pub struct GetTcbInfoResponse {
     pub tcb_info: serde_json::Value,
 }
-
 
 fn decode_hex(s: &str) -> Result<Vec<u8>, Error> {
     if s.len() % 2 != 0 {
@@ -45,7 +43,6 @@ fn decode_hex(s: &str) -> Result<Vec<u8>, Error> {
         })
         .collect()
 }
-
 
 pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
     let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
