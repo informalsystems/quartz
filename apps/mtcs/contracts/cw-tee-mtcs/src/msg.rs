@@ -19,7 +19,7 @@ pub struct InstantiateMsg<RA = RawDefaultAttestation> {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg<RA = RawDefaultAttestation> {
-    Quartz(QuartzExecuteMsg),
+    Quartz(QuartzExecuteMsg<RA>),
     FaucetMint(execute::FaucetMintMsg),
     Transfer(execute::Cw20Transfer),
     SubmitObligation(execute::SubmitObligationMsg),

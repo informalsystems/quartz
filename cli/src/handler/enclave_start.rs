@@ -220,10 +220,7 @@ async fn gramine_manifest(
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
-        .arg(format!(
-            "-Dtcbinfo_contract={}",
-            tcbinfo_contract.to_string()
-        ))
+        .arg(format!("-Dtcbinfo_contract={}", tcbinfo_contract))
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
         .current_dir(enclave_dir)

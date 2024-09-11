@@ -1205,7 +1205,6 @@ dependencies = [
  "cosmwasm-std",
  "der",
  "displaydoc",
- "hex",
  "hex-literal",
  "mc-attestation-verifier",
  "mc-sgx-core-types",

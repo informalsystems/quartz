@@ -14,7 +14,6 @@ readme = "README.md"
 der.workspace = true
 displaydoc.workspace = true
 hex-literal.workspace = true
-hex.workspace = true
 num-bigint.workspace = true
 serde.workspace = true
 serde_json.workspace = true

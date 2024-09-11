@@ -30,27 +30,14 @@ pub struct GetTcbInfoResponse {
     pub tcb_info: serde_json::Value,
 }
 
-fn decode_hex(s: &str) -> Result<Vec<u8>, Error> {
-    if s.len() % 2 != 0 {
-        return Err(Error::InvalidFmspc("Odd number of hex digits".to_string()));
-    }
-
-    (0..s.len())
-        .step_by(2)
-        .map(|i| {
-            u8::from_str_radix(&s[i..i + 2], 16)
-                .map_err(|_| Error::InvalidFmspc("Invalid hex digit".to_string()))
-        })
-        .collect()
-}
-
 pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
     let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
     let tcbinfo_addr = config
         .tcb_info()
         .expect("TcbInfo contract address is required for DCAP");
 
-    let fmspc_bytes = decode_hex(&fmspc)?;
+    let fmspc_bytes =
+        hex::decode(&fmspc).map_err(|_| Error::InvalidFmspc("Invalid FMSPC format".to_string()))?;
     if fmspc_bytes.len() != 6 {
         return Err(Error::InvalidFmspc("FMSPC must be 6 bytes".to_string()));
     }

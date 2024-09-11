@@ -119,5 +119,3 @@ async fn deploy(
 
     Ok((code_id, contract_addr.to_owned()))
 }
-
-//RES=$($CMD tx wasm instantiate "$CODE_ID" "$INSTANTIATE_MSG" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin --output json)
