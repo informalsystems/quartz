@@ -1,4 +1,3 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{
     from_json, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
     WasmQuery,
@@ -7,6 +6,7 @@ use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, TrustedMrEnclaveIdentity},
     verify_dcap_attestation, verify_epid_attestation, Error as RaVerificationError,
 };
+use tcbinfo::msg::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
     error::Error,
@@ -17,18 +17,6 @@ use crate::{
     },
     state::CONFIG,
 };
-
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum TcbInfoQueryMsg {
-    #[returns(GetTcbInfoResponse)]
-    GetTcbInfo { fmspc: String },
-}
-
-#[cw_serde]
-pub struct GetTcbInfoResponse {
-    pub tcb_info: serde_json::Value,
-}
 
 pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
     let config = CONFIG.load(deps.storage).map_err(Error::Std)?;

@@ -77,11 +77,12 @@ mc-attestation-verifier = { git = "https://github.com/informalsystems/attestatio
 
 # quartz
 cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = false }
-quartz-common = { path = "core/quartz-common"}
+quartz-common = { path = "core/quartz-common" }
 quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
 quartz-enclave = { path = "core/quartz", default-features = false }
 quartz-proto = { path = "core/quartz-proto", default-features = false }
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
+tcbinfo = { path = "cosmwasm/packages/tcbinfo", features = ["library"] }
 tm-prover = { path = "utils/tm-prover", default-features = false }
 tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
 wasmd-client = { path = "cosmwasm/packages/wasmd-client", default-features = false }

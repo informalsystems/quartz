@@ -23,6 +23,7 @@ serde_with.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
 hex.workspace = true
+
 # cosmos
 cw-storage-plus.workspace = true
 cosmwasm-schema.workspace = true
@@ -30,8 +31,7 @@ cosmwasm-std.workspace = true
 
 # quartz
 quartz-tee-ra.workspace = true
-
-
+tcbinfo.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
