@@ -34,9 +34,9 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 [dependencies]
 cosmwasm-schema = "2.0.1"
 cosmwasm-std = { version = "2.0.1", features = [
-  # "cosmwasm_1_3",
+  "cosmwasm_1_3",
   # Enable this if you only deploy to chains that have CosmWasm 1.4 or higher
-  "cosmwasm_1_4",
+  # "cosmwasm_1_4",
 ] }
 cw-storage-plus = "2.0.0"
 cw2 = "2.0.0"
@@ -44,9 +44,10 @@ getrandom = { version = "0.2.5", default-features = false, features = ["js"] }
 schemars = "0.8.16"
 serde = { version = "1.0.197", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.58" }
-x509-cert = { version = "0.2.5", default-features = false, features = ["pem"] }
-x509-parser = {version = "0.16.0", features = ["verify"] }
+# x509-cert = { version = "0.2.5", default-features = false, features = ["pem"] }
+x509-parser = {version = "0.16.0", default-features = false,  features = ["verify"] }
 der = { version = "0.7.9" }
+pem ={ version = "*"}
 quartz-tee-ra = { path = "../quartz-tee-ra" }
 mc-attestation-verifier = {git = "https://github.com/informalsystems/attestation", default-features = false}
 p256 = "0.13.2"

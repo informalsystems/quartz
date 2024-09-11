@@ -1,7 +1,8 @@
-use der::{pem::LineEnding, DateTime, EncodePem};
+use der::{DateTime, Encode};
+use ecdsa::{signature::Verifier, Signature, VerifyingKey};
 use mc_attestation_verifier::{CertificateChainVerifier, CertificateChainVerifierError};
+use p256::NistP256;
 use x509_cert::{crl::CertificateList, Certificate};
-use x509_parser::{parse_x509_certificate, pem::parse_x509_pem};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
 pub struct TlsCertificateChainVerifier;
@@ -12,7 +13,6 @@ impl TlsCertificateChainVerifier {
         Self
     }
 }
-
 impl CertificateChainVerifier for TlsCertificateChainVerifier {
     fn verify_certificate_chain<'a, 'b>(
         &self,
@@ -20,44 +20,41 @@ impl CertificateChainVerifier for TlsCertificateChainVerifier {
         _crls: impl IntoIterator<Item = &'b CertificateList>,
         _time: impl Into<Option<DateTime>>,
     ) -> Result<(), CertificateChainVerifierError> {
-        let enc_certs = certificate_chain
-            .into_iter()
-            .map(|cert| cert.to_pem(LineEnding::LF))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
+        let cert_chain: Vec<_> = certificate_chain.into_iter().cloned().collect();
 
-        let pem_chain = enc_certs
-            .iter()
-            .map(|enc_cert| parse_x509_pem(enc_cert.as_ref()))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-        let cert_chain = pem_chain
-            .iter()
-            .map(|pem| parse_x509_certificate(&pem.1.contents))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-        // Skip applying the Certificate Revocation List entirely
-        /*
-           let enc_crls = crls
-               .into_iter()
-               .map(|crl| der_encode(crl))
-               .collect::<Result<Vec<_>, _>>()
-               .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-           let _crls = enc_crls
-               .iter()
-               .map(|enc_crl| parse_x509_crl(enc_crl.as_ref()))
-               .collect::<Result<Vec<_>, _>>();
-           .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-        */
+        let mut issuers: Vec<usize> = (1..cert_chain.len()).collect();
+        issuers.push(cert_chain.len() - 1);
+        let subjects: Vec<usize> = (0..cert_chain.len()).collect();
 
-        let v: Vec<_> = cert_chain.to_vec();
-        let mut issuers: Vec<usize> = (1..v.len()).collect();
-        issuers.push(v.len() - 1);
-        let subjects: Vec<usize> = (0..v.len()).collect();
         for (i, s) in core::iter::zip(issuers, subjects) {
-            let r = v[s].1.verify_signature(Some(v[i].1.public_key()));
-            r.map_err(|_| CertificateChainVerifierError::SignatureVerification)?
+            let issuer_public_key = cert_chain[i]
+                .tbs_certificate
+                .subject_public_key_info
+                .subject_public_key
+                .as_bytes()
+                .ok_or(CertificateChainVerifierError::GeneralCertificateError)?;
+
+            let verifying_key = VerifyingKey::<NistP256>::from_sec1_bytes(issuer_public_key)
+                .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
+
+            let tbs_certificate = cert_chain[s]
+                .tbs_certificate
+                .to_der()
+                .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
+
+            let signature = Signature::<NistP256>::from_der(
+                cert_chain[s]
+                    .signature
+                    .as_bytes()
+                    .expect("Signature bytes should be present"),
+            )
+            .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
+
+            verifying_key
+                .verify(&tbs_certificate, &signature)
+                .map_err(|_| CertificateChainVerifierError::SignatureVerification)?;
         }
+
         Ok(())
     }
 }

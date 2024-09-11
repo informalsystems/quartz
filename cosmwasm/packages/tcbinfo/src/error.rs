@@ -10,14 +10,22 @@ pub enum ContractError {
     Unauthorized {},
     // Add any other custom errors you like here.
     // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
-    #[error("Certificate verification failed")]
-    CertificateVerificationError,
-    #[error("failed to verify tcbinfo")]
-    TcbInfoVerificationError,
-    #[error("invalid public key")]
-    PublicKeyReadError,
-    #[error("invalid date and time")]
-    DateTimeReadError,
-    #[error("invalid tcbinfo")]
-    TcbInfoReadError,
+
+        #[error("Certificate verification error")]
+        CertificateVerificationError,
+    
+        #[error("TCB Info verification error")]
+        TcbInfoVerificationError,
+    
+        #[error("Certificate parsing error")]
+        CertificateParsingError,
+    
+        #[error("TCB Info parsing error")]
+        TcbInfoParsingError,
+    
+        #[error("DateTime parsing error")]
+        DateTimeParsingError,
+    
+        #[error("Public key parsing error")]
+        PublicKeyParsingError,
 }
