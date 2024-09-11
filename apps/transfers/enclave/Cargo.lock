@@ -1208,7 +1208,6 @@ dependencies = [
  "ff",
  "generic-array",
  "group",
- "pem-rfc7468",
  "pkcs8",
  "rand_core",
  "sec1",
@@ -1491,7 +1490,6 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
  "allocator-api2",
- "serde",
 ]
 
 [[package]]
@@ -2549,7 +2547,6 @@ dependencies = [
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
- "tcbinfo",
  "thiserror",
 ]
 
@@ -2599,6 +2596,7 @@ dependencies = [
  "cosmwasm-std",
  "der",
  "displaydoc",
+ "hex",
  "hex-literal",
  "mc-attestation-verifier",
  "mc-sgx-core-types",
@@ -3439,29 +3437,6 @@ checksum = "a75fb188eb626b924683e3b95e3a48e63551fcfb51949de2f06a9d91dbee93c9"
 dependencies = [
  "core-foundation-sys",
  "libc",
-]
-
-[[package]]
-name = "tcbinfo"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "cw2",
- "der",
- "getrandom",
- "hashbrown 0.14.5",
- "hex",
- "mc-attestation-verifier",
- "p256",
- "quartz-tee-ra",
- "schemars",
- "serde",
- "serde_json",
- "thiserror",
- "x509-cert",
- "x509-parser",
 ]
 
 [[package]]

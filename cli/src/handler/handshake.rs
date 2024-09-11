@@ -60,6 +60,10 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     let res: serde_json::Value = RelayMessage::SessionCreate
         .run_relay(config.enclave_rpc(), config.mock_sgx)
         .await?;
+    info!("\n\n SessionCreate response: {:?}", serde_json::to_string(&res).unwrap());
+
+
+    
 
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client

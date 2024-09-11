@@ -54,7 +54,7 @@ tracing = { version = "0.1.39", default-features = false }
 tracing-subscriber = { version = "0.3.17", default-features = false, features = ["fmt"] }
 uuid = { version = "1.4.1", default-features = false, features = ["serde"] }
 x509-cert = { version = "0.2.5", default-features = false }
-x509-parser = { version = "0.16.0", features = ["default", "verify"] }
+x509-parser = { version = "0.16.0", default-features = false, features = ["default", "verify"] }
 zeroize = { version = "1.7.0", default-features = false }
 
 # cosmos
@@ -77,7 +77,7 @@ mc-attestation-verifier = { git = "https://github.com/informalsystems/attestatio
 
 # quartz
 cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = false }
-quartz-common = { path = "core/quartz-common"}
+quartz-common = { path = "core/quartz-common", default-features = false }
 quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
 quartz-enclave = { path = "core/quartz", default-features = false }
 quartz-proto = { path = "core/quartz-proto", default-features = false }

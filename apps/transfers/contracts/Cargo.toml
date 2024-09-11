@@ -45,9 +45,9 @@ cw-utils = { version = "2.0.0", default-features = false }
 
 # quartz
 quartz-common = { path = "../../../core/quartz-common", default-features = false, features=["contract"] }
-
+# quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["contract"]}
 # patch indirect deps
-getrandom = { version = "0.2.15", default-features = false, features = ["js"] }
+getrandom = { version = "0.2.15", features = ["js"] }
 
 [dev-dependencies]
 cw-multi-test = { version = "2.1.0", default-features = false }

@@ -13,6 +13,7 @@ readme = "README.md"
 default = []
 mock-sgx = []
 std = ["k256/std", "serde/std", "serde_json/std", "sha2/std", "cosmwasm-std/std"]
+library = []
 
 [dependencies]
 # external
@@ -30,9 +31,6 @@ cosmwasm-std.workspace = true
 
 # quartz
 quartz-tee-ra.workspace = true
-
-# tcbinfo
-tcbinfo = { path = "../tcbinfo", features = ["library"] }
 
 [dev-dependencies]
 serde_json.workspace = true
