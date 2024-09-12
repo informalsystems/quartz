@@ -4,7 +4,7 @@ use quartz_common::contract::{
     prelude::*,
 };
 
-type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
+pub type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawAttestedMsgSansHandler<M>, RA>;
 
 #[cw_serde]
 pub struct InstantiateMsg<RA = RawDefaultAttestation> {
@@ -15,6 +15,8 @@ pub struct InstantiateMsg<RA = RawDefaultAttestation> {
 #[cw_serde]
 pub enum QueryMsg {
     GetBalance { address: String },
+    GetRequests {},
+    GetState {},
 }
 
 #[cw_serde]

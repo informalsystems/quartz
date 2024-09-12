@@ -16,6 +16,7 @@ pub mod cli;
 pub mod proto;
 pub mod state;
 pub mod transfers_server;
+pub mod wslistener;
 
 use std::{
     sync::{Arc, Mutex},
@@ -68,8 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sk = Arc::new(Mutex::new(None));
 
     QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
-        .add_service(TransfersService::new(
-            config, sk, attestor))
+        .add_service(TransfersService::new(config, sk, attestor))
         .serve(args.rpc_addr)
         .await?;
 

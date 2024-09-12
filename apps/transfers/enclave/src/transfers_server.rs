@@ -11,14 +11,10 @@ use quartz_common::{
         msg::execute::attested::{HasUserData, RawAttested},
         state::{Config, UserData},
     },
-    enclave::{
-        attestor::Attestor,
-        server::{ProofOfPublication, WebSocketHandler, WsListenerConfig, IntoServer},
-    },
+    enclave::{attestor::Attestor, server::IntoServer},
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tendermint_rpc::event::Event;
 use tonic::{Request, Response, Result as TonicResult, Status};
 use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
 
@@ -29,14 +25,6 @@ use crate::{
     },
     state::{RawBalance, RawState, State},
 };
-
-// TODO: Need to prevent listener from taking actions until handshake is completed
-#[async_trait::async_trait]
-impl<A: Attestor> WebSocketHandler for TransfersService<A> {
-    async fn handle(&self, _event: Event, _config: WsListenerConfig) -> anyhow::Result<()> {
-        Ok(())
-    }
-}
 
 impl<A: Attestor> IntoServer for TransfersService<A> {
     type Server = SettlementServer<TransfersService<A>>;
@@ -57,15 +45,15 @@ pub struct TransfersService<A> {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateRequestMessage {
-    state: HexBinary,
-    requests: Vec<TransfersRequest>,
+    pub state: HexBinary,
+    pub requests: Vec<TransfersRequest>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryRequestMessage {
-    state: HexBinary,
-    address: Addr,
-    ephemeral_pubkey: HexBinary,
+    pub state: HexBinary,
+    pub address: Addr,
+    pub ephemeral_pubkey: HexBinary,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -137,20 +125,25 @@ where
 {
     async fn run(&self, request: Request<UpdateRequest>) -> TonicResult<Response<UpdateResponse>> {
         // Serialize request into struct containing State and the Requests vec
-        let message: ProofOfPublication<UpdateRequestMessage> = {
+        // let message: ProofOfPublication<UpdateRequestMessage> = {
+        //     let message = request.into_inner().message;
+        //     serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
+        // };
+
+        // let (proof_value, message) = message
+        //     .verify(self.config.light_client_opts())
+        //     .map_err(Status::failed_precondition)?;
+
+        // let proof_value_matches_msg =
+        //     serde_json::to_string(&message.requests).is_ok_and(|s| s.as_bytes() == proof_value);
+        // if !proof_value_matches_msg {
+        //     return Err(Status::failed_precondition("proof verification"));
+        // }
+
+        let message: UpdateRequestMessage = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
-
-        let (proof_value, message) = message
-            .verify(self.config.light_client_opts())
-            .map_err(Status::failed_precondition)?;
-
-        let proof_value_matches_msg =
-            serde_json::to_string(&message.requests).is_ok_and(|s| s.as_bytes() == proof_value);
-        if !proof_value_matches_msg {
-            return Err(Status::failed_precondition("proof verification"));
-        }
 
         // Decrypt and deserialize the state
         let mut state = {
