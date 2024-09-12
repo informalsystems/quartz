@@ -62,9 +62,9 @@ For tests to work, you need to set up the following required environment variabl
 TEST_BASE_URL=<url>
 # Keplr browser extension version
 TEST_KEPLR_EXTENSION_VERSION=<version>
-# Main wallet mnemonic
+# Main wallet mnemonic (Use only funded wallets)
 TEST_WALLET_MNEMONIC=<mnemonic>
-# Secondary wallet mnemonic
+# Secondary wallet mnemonic (Use only funded wallets)
 TEST_SECONDARY_WALLET_MNEMONIC=<mnemonic>
 # Secondary wallet address
 TEST_SECONDARY_WALLET_ADDRESS=<wallet_address>
