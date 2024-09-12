@@ -4,7 +4,6 @@ use std::{
 };
 
 use cosmwasm_std::{Addr, HexBinary, Uint128};
-//TODO: get rid of this
 use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
     state::{LiquiditySource, LiquiditySourceType, RawHash, SettleOff, Transfer},
