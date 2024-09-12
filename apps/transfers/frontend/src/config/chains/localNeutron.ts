@@ -1,25 +1,11 @@
 import { ChainInfo } from '@keplr-wallet/types'
-import invariant from 'tiny-invariant'
 
-invariant(
-  process.env.NEXT_PUBLIC_CHAIN_ID,
-  'NEXT_PUBLIC_CHAIN_ID must be defined',
-)
-invariant(
-  process.env.NEXT_PUBLIC_CHAIN_RPC_URL,
-  'NEXT_PUBLIC_CHAIN_RPC_URL must be defined',
-)
-invariant(
-  process.env.NEXT_PUBLIC_CHAIN_REST_URL,
-  'NEXT_PUBLIC_CHAIN_REST_URL must be defined',
-)
-
-// Testchain definition
-export const chain: ChainInfo = {
-  rpc: process.env.NEXT_PUBLIC_CHAIN_RPC_URL,
-  rest: process.env.NEXT_PUBLIC_CHAIN_REST_URL,
-  chainId: process.env.NEXT_PUBLIC_CHAIN_ID,
-  chainName: 'Neutron Local Chain',
+// Neutron local chain definition
+export const localNeutron: ChainInfo = {
+  chainId: 'testing',
+  chainName: 'Local Neutron Testchain',
+  rpc: 'http://localhost:26657',
+  rest: 'http://localhost:1317',
   stakeCurrency: {
     coinDenom: 'NEUTRON',
     coinMinimalDenom: 'untrn',

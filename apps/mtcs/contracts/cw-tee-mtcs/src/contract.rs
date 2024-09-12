@@ -337,7 +337,7 @@ pub mod execute {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetAllSetoffs => to_json_binary(&query::get_all_setoffs(deps)?),
+        QueryMsg::GetAllSetoffs {} => to_json_binary(&query::get_all_setoffs(deps)?),
         QueryMsg::GetLiquiditySources { epoch } => {
             to_json_binary(&query::get_liquidity_sources(deps, epoch)?)
         }

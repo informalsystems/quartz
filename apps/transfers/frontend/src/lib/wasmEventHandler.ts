@@ -1,20 +1,15 @@
 import { WebsocketClient } from '@cosmjs/tendermint-rpc'
-import invariant from 'tiny-invariant'
 import { Listener } from 'xstream'
+
+import chain from '@/config/chain'
 
 // Connect and listen to blockchain events
 export const wasmEventHandler = (
   query: string,
   listener: Partial<Listener<any>>,
 ): (() => void) => {
-  invariant(
-    process.env.NEXT_PUBLIC_CHAIN_RPC_URL,
-    'NEXT_PUBLIC_CHAIN_RPC_URL must be defined',
-  )
   // Create websocket connection to terdermint
-  const websocketClient = new WebsocketClient(
-    process.env.NEXT_PUBLIC_CHAIN_RPC_URL.replace('http', 'ws'),
-  )
+  const websocketClient = new WebsocketClient(chain.rpc.replace('http', 'ws'))
 
   // Listen to target query
   websocketClient

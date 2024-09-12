@@ -17,6 +17,7 @@ pub struct Config {
     mr_enclave: MrEnclave,
     epoch_duration: Duration,
     light_client_opts: LightClientOpts,
+    tcbinfo_contract: String,
 }
 
 impl Config {
@@ -24,11 +25,13 @@ impl Config {
         mr_enclave: MrEnclave,
         epoch_duration: Duration,
         light_client_opts: LightClientOpts,
+        tcbinfo_contract: String,
     ) -> Self {
         Self {
             mr_enclave,
             epoch_duration,
             light_client_opts,
+            tcbinfo_contract,
         }
     }
 
@@ -39,6 +42,10 @@ impl Config {
     pub fn mr_enclave(&self) -> MrEnclave {
         self.mr_enclave
     }
+
+    pub fn tcbinfo_contract(&self) -> &str {
+        &self.tcbinfo_contract
+    }
 }
 
 #[cw_serde]
@@ -46,11 +53,16 @@ pub struct RawConfig {
     mr_enclave: HexBinary,
     epoch_duration: Duration,
     light_client_opts: RawLightClientOpts,
+    tcbinfo_contract: String,
 }
 
 impl RawConfig {
     pub fn mr_enclave(&self) -> &[u8] {
         self.mr_enclave.as_slice()
+    }
+
+    pub fn tcb_info(&self) -> String {
+        self.tcbinfo_contract.to_string()
     }
 }
 
@@ -65,6 +77,7 @@ impl TryFrom<RawConfig> for Config {
                 .light_client_opts
                 .try_into()
                 .map_err(|e| StdError::parse_err("light_client_opts", e))?,
+            tcbinfo_contract: value.tcbinfo_contract,
         })
     }
 }
@@ -75,6 +88,7 @@ impl From<Config> for RawConfig {
             mr_enclave: value.mr_enclave.into(),
             epoch_duration: value.epoch_duration,
             light_client_opts: value.light_client_opts.into(),
+            tcbinfo_contract: value.tcbinfo_contract,
         }
     }
 }
