@@ -1208,12 +1208,14 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
+ "hex",
  "k256",
  "quartz-tee-ra",
  "serde",
  "serde_json",
  "serde_with",
  "sha2",
+ "tcbinfo",
  "thiserror",
 ]
 
@@ -1225,7 +1227,6 @@ dependencies = [
  "cosmwasm-std",
  "der",
  "displaydoc",
- "hex",
  "hex-literal",
  "mc-attestation-verifier",
  "mc-sgx-core-types",
@@ -1564,6 +1565,26 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.76",
+]
+
+[[package]]
+name = "tcbinfo"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "der",
+ "hex",
+ "mc-attestation-verifier",
+ "p256",
+ "quartz-tee-ra",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "x509-cert",
 ]
 
 [[package]]

@@ -1194,6 +1194,7 @@ dependencies = [
  "serde_json",
  "serde_with",
  "sha2",
+ "tcbinfo",
  "thiserror",
 ]
 
@@ -1543,6 +1544,26 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.75",
+]
+
+[[package]]
+name = "tcbinfo"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "der",
+ "hex",
+ "mc-attestation-verifier",
+ "p256",
+ "quartz-tee-ra",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "x509-cert",
 ]
 
 [[package]]

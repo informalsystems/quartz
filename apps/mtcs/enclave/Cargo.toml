@@ -44,7 +44,7 @@ cw-tee-mtcs.workspace = true
 mtcs.workspace = true
 
 # quartz
-quartz-common = { workspace = true, features = ["full"]}
+quartz-common = { workspace = true, features = ["full"] }
 
 [dev-dependencies]
 cw-multi-test = "2.1.0"
