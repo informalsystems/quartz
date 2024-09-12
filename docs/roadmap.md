@@ -4,6 +4,7 @@ Quartz is being actively developed by Informal Systems as the core privacy
 framework powering the Cycles Protocol. It is designed to be useful more
 generally for providing private computation to smart contract platforms.
 
+- ZKPs
 - ORAM
 - Forward Secrecy (Key Rotation)
 - Managing State
