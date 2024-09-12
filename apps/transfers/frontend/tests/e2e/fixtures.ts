@@ -25,16 +25,18 @@ const test = baseTest.extend<{
       ],
     })
 
+    const page = await context.waitForEvent('page')
+
     // Retrieve target URL to interact with Keplr extension
-    let [background] = context.serviceWorkers()
-    extensionUrl = `chrome-extension://${background.url().split('/')[2]}`
+    const extensionId = /\/\/(.*?)\//.exec(page.url())![1]
+    extensionUrl = `chrome-extension://${extensionId}`
 
     // Import a wallet to be used in tests
     await importWallet({
       extensionUrl,
       mnemonic: process.env.TEST_WALLET_MNEMONIC,
       name: 'main',
-      page: await context.waitForEvent('page'),
+      page,
     })
 
     await use(context)
