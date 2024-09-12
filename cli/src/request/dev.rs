@@ -5,7 +5,7 @@ use crate::request::Request;
 #[derive(Clone, Debug)]
 pub struct DevRequest {
     pub watch: bool,
-    pub use_latest_trusted: bool,
+    pub use_unsafe_trusted: bool,
     pub init_msg: serde_json::Value,
     pub label: String,
     pub contract_manifest: PathBuf,

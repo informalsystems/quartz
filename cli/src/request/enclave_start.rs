@@ -1,5 +1,4 @@
 use tendermint::{block::Height, Hash};
-use tokio::sync::watch;
 use tracing::debug;
 
 use crate::{
@@ -9,8 +8,7 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub struct EnclaveStartRequest {
-    pub shutdown_rx: Option<watch::Receiver<()>>,
-    pub use_latest_trusted: bool,
+    pub use_unsafe_trusted: bool,
 }
 
 impl From<EnclaveStartRequest> for Request {
@@ -22,7 +20,7 @@ impl From<EnclaveStartRequest> for Request {
 impl EnclaveStartRequest {
     /// Returns the trusted hash and height
     pub fn get_hash_height(&self, config: &Config) -> Result<(Height, Hash), Error> {
-        if self.use_latest_trusted || config.trusted_height == 0 || config.trusted_hash.is_empty() {
+        if self.use_unsafe_trusted || config.trusted_height == 0 || config.trusted_hash.is_empty() {
             debug!("querying latest trusted hash & height from node");
             let (trusted_height, trusted_hash) = query_latest_height_hash(&config.node_url)?;
 

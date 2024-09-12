@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf};
+use std::path::PathBuf;
 
 use cosmrs::tendermint::chain::Id as ChainId;
 use serde::{Deserialize, Serialize};

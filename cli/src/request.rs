@@ -35,14 +35,14 @@ impl TryFrom<Command> for Request {
             Command::Init(args) => Ok(InitRequest { name: args.name }.try_into()?),
             Command::Handshake(args) => Ok(HandshakeRequest {
                 contract: args.contract,
-                use_latest_trusted: args.use_latest_trusted,
+                use_unsafe_trusted: args.use_unsafe_trusted,
             }
             .into()),
             Command::Contract { contract_command } => contract_command.try_into(),
             Command::Enclave { enclave_command } => enclave_command.try_into(),
             Command::Dev(args) => Ok(DevRequest {
                 watch: args.watch,
-                use_latest_trusted: args.use_latest_trusted,
+                use_unsafe_trusted: args.use_unsafe_trusted,
                 init_msg: serde_json::from_str(&args.contract_deploy.init_msg)
                     .map_err(|e| Error::GenericErr(e.to_string()))?,
                 label: args.contract_deploy.label,
@@ -97,8 +97,7 @@ impl TryFrom<EnclaveCommand> for Request {
         match cmd {
             EnclaveCommand::Build(_) => Ok(EnclaveBuildRequest {}.into()),
             EnclaveCommand::Start(args) => Ok(EnclaveStartRequest {
-                shutdown_rx: None,
-                use_latest_trusted: args.use_latest_trusted,
+                use_unsafe_trusted: args.use_unsafe_trusted,
             }
             .into()),
         }

@@ -106,7 +106,7 @@ pub struct HandshakeArgs {
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
     #[arg(long)]
-    pub use_latest_trusted: bool,
+    pub use_unsafe_trusted: bool,
 
     /// Name or address of private key with which to sign
     #[arg(long)]
@@ -188,7 +188,7 @@ pub struct EnclaveStartArgs {
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
     #[arg(long)]
-    pub use_latest_trusted: bool,
+    pub use_unsafe_trusted: bool,
 
     /// Whether to target release or dev
     #[arg(long)]
@@ -204,7 +204,7 @@ pub struct DevArgs {
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
     #[arg(long)]
-    pub use_latest_trusted: bool,
+    pub use_unsafe_trusted: bool,
 
     #[command(flatten)]
     pub contract_deploy: ContractDeployArgs,

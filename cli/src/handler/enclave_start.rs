@@ -3,10 +3,7 @@ use std::{fs, path::Path};
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
-use tokio::{
-    process::{Child, Command},
-    sync::watch,
-};
+use tokio::process::{Child, Command};
 use tracing::{debug, info};
 
 use crate::{
@@ -47,7 +44,7 @@ impl Handler for EnclaveStartRequest {
             let enclave_child =
                 create_mock_enclave_child(config.app_dir.as_path(), config.release, enclave_args)
                     .await?;
-            handle_process(self.shutdown_rx, enclave_child).await?;
+            handle_process(enclave_child).await?;
         } else {
             let enclave_dir = fs::canonicalize(config.app_dir.join("enclave"))?;
 
@@ -69,40 +66,25 @@ impl Handler for EnclaveStartRequest {
 
             // Run quartz enclave and block
             let enclave_child = create_gramine_sgx_child(&enclave_dir).await?;
-            handle_process(self.shutdown_rx, enclave_child).await?;
+            handle_process(enclave_child).await?;
         }
 
         Ok(EnclaveStartResponse.into())
     }
 }
 
-async fn handle_process(
-    shutdown_rx: Option<watch::Receiver<()>>,
-    mut child: Child,
-) -> Result<(), Error> {
-    info!("{}", "Running enclave ...".green().bold());
-    match shutdown_rx {
-        Some(mut rx) => {
-            tokio::select! {
-                status = child.wait() => {
-                    handle_child_status(status.map_err(|e| Error::GenericErr(e.to_string()))?)?;
-                }
-                _ = rx.changed() => {
-                    info!("Enclave shutdown signal received.");
-                    let _ = child.kill().await;
-                }
-            }
-        }
-        None => {
-            // If no shutdown receiver is provided, just wait for the child process
-            let status = child
-                .wait()
-                .await
-                .map_err(|e| Error::GenericErr(e.to_string()))?;
-            handle_child_status(status)?;
-        }
-    }
+async fn handle_process(mut child: Child) -> Result<(), Error> {
+    let status = child
+        .wait()
+        .await
+        .map_err(|e| Error::GenericErr(e.to_string()))?;
 
+    if !status.success() {
+        return Err(Error::GenericErr(format!(
+            "Couldn't build enclave. {:?}",
+            status
+        )));
+    }
     Ok(())
 }
 
@@ -139,20 +121,11 @@ async fn create_mock_enclave_child(
 
     info!("{}", "🚧 Spawning enclave process ...".green().bold());
     let child = command
+        .kill_on_drop(true)
         .spawn()
         .map_err(|e| Error::GenericErr(e.to_string()))?;
 
     Ok(child)
-}
-
-fn handle_child_status(status: std::process::ExitStatus) -> Result<(), Error> {
-    if !status.success() {
-        return Err(Error::GenericErr(format!(
-            "Couldn't build enclave. {:?}",
-            status
-        )));
-    }
-    Ok(())
 }
 
 async fn gramine_sgx_gen_private_key(enclave_dir: &Path) -> Result<(), Error> {
@@ -244,6 +217,7 @@ async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
 
     let child = Command::new("gramine-sgx")
         .arg("./quartz")
+        .kill_on_drop(true)
         .current_dir(enclave_dir)
         .spawn()?;
 
