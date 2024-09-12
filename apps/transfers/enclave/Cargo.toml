@@ -42,9 +42,8 @@ tendermint-light-client = { version = "=0.38.1", default-features = false, featu
 transfers-contract = { path = "../contracts", default-features = false }
 
 # quartz
-# quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["full"]}
-quartz-common = { path = "../../../core/quartz-common", features=["full"]}
 wasmd-client = { path = "../../../cosmwasm/packages/wasmd-client"}
+quartz-common = { path = "../../../core/quartz-common", features = ["full"] }
 
 [dev-dependencies]
 cw-multi-test = "2.1.0"

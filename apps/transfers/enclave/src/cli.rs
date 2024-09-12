@@ -28,7 +28,7 @@ pub struct Cli {
 
     /// TcbInfo contract address
     #[clap(long)]
-    pub tcbinfo_contract: AccountId,
+    pub tcbinfo_contract: Option<AccountId>,
 
     /// Height of the trusted header (AKA root-of-trust)
     #[clap(long)]

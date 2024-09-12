@@ -47,7 +47,7 @@ struct Cli {
     #[arg(
         short,
         long,
-        default_value = "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"
+        default_value = "wasm19azg82cx3qx88gar8nl08rz7x0p27amtmadfep"
     )]
     admin: String,
 }
@@ -56,8 +56,8 @@ struct Cli {
 async fn main() -> Result<(), anyhow::Error> {
     let cli = Cli::parse();
 
-    let mut alice = Addr::unchecked("wasm124tuy67a9dcvfgcr4gjmz60syd8ddaugl33v0n");
-    let mut bob = Addr::unchecked("wasm1ctkqmg45u85jnf5ur9796h7ze4hj6ep5y7m7l6");
+    let mut alice = Addr::unchecked("wasm14ma05us5ykqfcxc7k5xjtpnhcug0twf9vd69l9");
+    let mut bob = Addr::unchecked("wasm1dzs9vhgwvhtymylvjpg3gcnfrcxpwlzar6qn6e");
     let overdraft = Addr::unchecked(cli.overdraft);
 
     if cli.flip {
@@ -99,7 +99,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let msg = create_wasm_msg(intents_enc, liquidity_sources)?;
 
-    let node_url = Url::parse("http://143.244.186.205:26657")?;
+    let node_url = Url::parse("http://127.0.0.1:26657")?;
     let chain_id = TmChainId::from_str("testing")?;
 
     let wasmd_client = CliWasmdClient::new(node_url);
