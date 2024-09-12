@@ -211,7 +211,7 @@ async fn spawn_enclave_start(
     let (shutdown_tx, shutdown_rx) = watch::channel(());
     let enclave_start = EnclaveStartRequest {
         shutdown_rx: Some(shutdown_rx),
-        use_latest_trusted: args.use_latest_trusted,
+        unsafe_trust_latest: args.unsafe_trust_latest,
     };
 
     let config_cpy = config.clone();
@@ -281,7 +281,7 @@ async fn deploy_and_handshake(
     info!("Running handshake on contract `{}`", contract);
     let handshake = HandshakeRequest {
         contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
-        use_latest_trusted: args.use_latest_trusted,
+        unsafe_trust_latest: args.unsafe_trust_latest,
     };
 
     let h_res = handshake.handle(config).await;
