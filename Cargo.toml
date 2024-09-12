@@ -36,10 +36,12 @@ hex = { version = "0.4.3", default-features = false }
 hex-literal = { version = "0.4.1", default-features = false }
 k256 = { version = "0.13.2", default-features = false, features = ["ecdsa", "alloc"] }
 num-bigint = { version = "0.4.4", default-features = false }
+p256 = { version = "0.13.2", default-features = false }
 prost = { version = "=0.13.1", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["getrandom"] }
 rand_core = { version = "0.6", default-features = false, features = ["std"] }
 reqwest = { version = "0.12.2", default-features = false, features = ["json", "rustls-tls"] }
+schemars = { version = "0.8.16", default-features = false }
 serde = { version = "1.0.203", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.94", default-features = false, features = ["alloc"] }
 serde_with = { version = "3.4.0", default-features = false, features = ["hex", "macros"] }
@@ -63,6 +65,7 @@ cosmrs = { version = "=0.17.0", default-features = false }
 cosmwasm-schema = { version = "2.1.1", default-features = false }
 cosmwasm-std = { version = "2.1.1", default-features = false, features = ["std"] }
 cw-storage-plus = { version = "2.0.0", default-features = false }
+cw2 = { version = "2.0.0", default-features = false }
 ics23 = { version = "0.12.0", default-features = false, features = ["host-functions"] }
 tendermint = { version = "=0.38.1", default-features = false }
 tendermint-light-client = { version = "=0.38.1", default-features = false, features = ["rust-crypto"] }
