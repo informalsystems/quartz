@@ -1,5 +1,5 @@
-#![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
+#![doc = include_str!("../README.md")]
 #![warn(
     clippy::checked_conversions,
     clippy::panic,
@@ -63,8 +63,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let ws_config = WsListenerConfig {
-        node_url: "143.244.186.205:26657".to_string(),
-        tx_sender: "admin".to_string(),
+        node_url: args.node_url,
+        tx_sender: args.tx_sender,
     };
 
     let sk = Arc::new(Mutex::new(None));

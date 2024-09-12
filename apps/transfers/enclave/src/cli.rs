@@ -56,6 +56,9 @@ pub struct Cli {
 
     #[clap(long, default_value = "127.0.0.1:11090")]
     pub node_url: String,
+
+    #[clap(long, default_value = "admin")]
+    pub tx_sender: String,
 }
 
 fn default_rpc_addr() -> SocketAddr {
