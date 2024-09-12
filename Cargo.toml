@@ -25,7 +25,7 @@ authors = ["Informal Systems <hello@informal.systems>"]
 anyhow = { version = "1.0.86", default-features = false }
 async-trait = { version = "0.1.79", default-features = false }
 bip32 = { version = "0.5.1", default-features = false, features = ["alloc", "secp256k1", "bip39"] }
-cargo-generate = "0.21.3"
+cargo-generate = { version = "0.21.3", default-features = false }
 clap = { version = "4.1.8", default-features = false, features = ["derive", "std"] }
 color-eyre = { version = "0.6.2", default-features = false }
 der = { version = "0.7.9", default-features = false }
@@ -60,7 +60,7 @@ x509-parser = { version = "0.16.0", default-features = false, features = ["verif
 zeroize = { version = "1.7.0", default-features = false }
 
 # cosmos
-cosmos-sdk-proto = { version = "0.22.0" }
+cosmos-sdk-proto = { version = "0.22.0", default-features = false }
 cosmrs = { version = "=0.17.0", default-features = false }
 cosmwasm-schema = { version = "2.1.1", default-features = false }
 cosmwasm-std = { version = "2.1.1", default-features = false, features = ["std"] }
@@ -73,7 +73,6 @@ tendermint-light-client-detector = { version = "=0.38.1", default-features = fal
 tendermint-rpc = { version = "=0.38.1", default-features = false, features = ["http-client"] }
 
 # mobilecoin
-mc-sgx-core-types = { git = "https://github.com/informalsystems/sgx", default-features = false }
 mc-sgx-dcap-types = { git = "https://github.com/informalsystems/sgx", default-features = false }
 mc-sgx-dcap-sys-types = { git = "https://github.com/informalsystems/sgx", default-features = false }
 mc-attestation-verifier = { git = "https://github.com/informalsystems/attestation", default-features = false }
@@ -85,7 +84,7 @@ quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
 quartz-enclave = { path = "core/quartz", default-features = false }
 quartz-proto = { path = "core/quartz-proto", default-features = false }
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
-tcbinfo = { path = "cosmwasm/packages/tcbinfo", features = ["library"] }
+tcbinfo = { path = "cosmwasm/packages/tcbinfo", default-features = false, features = ["library"] }
 tm-prover = { path = "utils/tm-prover", default-features = false }
 tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
 wasmd-client = { path = "cosmwasm/packages/wasmd-client", default-features = false }
@@ -93,7 +92,7 @@ wasmd-client = { path = "cosmwasm/packages/wasmd-client", default-features = fal
 # quartz apps
 cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
 mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
-mtcs-enclave = { path = "apps/mtcs/enclave" }
+mtcs-enclave = { path = "apps/mtcs/enclave", default-features = false }
 
 [profile.release]
 opt-level = 3

@@ -4199,12 +4199,9 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "der",
- "displaydoc",
  "hex",
  "hex-literal",
  "mc-attestation-verifier",
- "mc-sgx-core-types",
- "mc-sgx-dcap-sys-types",
  "mc-sgx-dcap-types",
  "num-bigint",
  "serde",
@@ -4213,7 +4210,6 @@ dependencies = [
  "thiserror",
  "x509-cert",
  "x509-parser",
- "zeroize",
 ]
 
 [[package]]
