@@ -13,7 +13,7 @@ path = "bin/schema.rs"
 crate-type = ["cdylib", "rlib"]
 
 [profile.release]
-opt-level = 3
+opt-level = "s"
 debug = false
 rpath = false
 lto = true
