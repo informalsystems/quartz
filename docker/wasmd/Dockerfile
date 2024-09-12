@@ -32,7 +32,6 @@ RUN <<EOF
 sed -i 's/keyring-backend = "os"/keyring-backend = "test"/g' /root/.wasmd/config/client.toml
 sed -i 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' /root/.wasmd/config/app.toml
 sed -i 's/address = \"tcp:\/\/localhost:1317\"/address = \"tcp:\/\/0.0.0.0:1317\"/g' /root/.wasmd/config/app.toml
-sed -i 's/address = \"localhost:909/address = \"0.0.0.0:909/g' /root/.wasmd/config/app.toml
 sed -i 's/enable = false/enable = true/g' /root/.wasmd/config/app.toml
 sed -i 's/rpc-max-body-bytes = 1000000$/rpc-max-body-bytes = 1000000000/g' /root/.wasmd/config/app.toml
 sed -i 's/laddr = \"tcp:\/\/127.0.0.1:26657\"/laddr = \"tcp:\/\/0.0.0.0:26657\"/g' /root/.wasmd/config/config.toml

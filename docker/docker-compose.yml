@@ -1,0 +1,9 @@
+name: "transfers"
+
+services:
+  node:
+    build: "./wasmd"
+    ports:
+      - "26657:26657"
+      - "26656:26656"
+      - "1317:1317"
