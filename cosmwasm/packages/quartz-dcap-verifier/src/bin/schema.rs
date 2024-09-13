@@ -1,5 +1,5 @@
 use cosmwasm_schema::write_api;
-use cw_epid_verifier::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use quartz_dcap_verifier::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {
