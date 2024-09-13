@@ -1555,6 +1555,7 @@ dependencies = [
  "cw-storage-plus",
  "cw2",
  "der",
+ "getrandom",
  "hex",
  "mc-attestation-verifier",
  "p256",
