@@ -12,7 +12,7 @@ readme = "README.md"
 [dependencies]
 async-trait.workspace = true
 cargo-generate.workspace = true
-clap = { workspace = true, features=["env"] }
+clap = { workspace = true, features = ["env"] }
 color-eyre.workspace = true
 displaydoc.workspace = true
 dirs = "5.0.1"
@@ -38,10 +38,10 @@ watchexec = "4.1.0"
 watchexec-events = "3.0.0"
 watchexec-signals = "3.0.0"
 miette = "7.2.0"
-ctrlc = { version = "3.4.5", features=["termination"]}
-xxhash-rust = { version = "0.8.12", features=["xxh3"] }
+ctrlc = { version = "3.4.5", features = ["termination"] }
+xxhash-rust = { version = "0.8.12", features = ["xxh3"] }
 toml = "0.8.19"
-figment = { version = "0.10.19", features=["env", "toml"] }
+figment = { version = "0.10.19", features = ["env", "toml"] }
 clearscreen = "3.0.0"
 cargo_metadata = "0.18.1"
 
@@ -50,11 +50,11 @@ cosmrs.workspace = true
 cosmwasm-std.workspace = true
 tendermint.workspace = true
 tendermint-light-client.workspace = true
-tendermint-rpc = { workspace = true, features=["websocket-client", "http-client"]}
+tendermint-rpc = { workspace = true, features = ["websocket-client", "http-client"] }
 
-tm-prover = { workspace = true}
-quartz-common = { workspace = true, features=["contract"]}
-quartz-tee-ra = { workspace = true}
-mtcs-enclave = { workspace = true, optional = false}
+tm-prover = { workspace = true }
+quartz-common = { workspace = true, features = ["contract"] }
+quartz-tee-ra = { workspace = true }
+mtcs-enclave = { workspace = true, optional = false }
 wasmd-client.workspace = true
 tempfile.workspace = true

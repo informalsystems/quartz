@@ -96,8 +96,6 @@ cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = fal
 mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
 mtcs-enclave = { path = "apps/mtcs/enclave", default-features = false }
 
-[workspace.dev-dependencies]
-
 [profile.release]
 opt-level = "z"
 debug = false
