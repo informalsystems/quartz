@@ -13,9 +13,9 @@ async function globalSetup() {
     const resp = await fetch(downloadUrl)
 
     if (resp.ok && resp.body) {
-      Readable.fromWeb(resp.body as any).pipe(
-        unzipper.Extract({ path: folderPath }),
-      )
+      await Readable.fromWeb(resp.body as any)
+        .pipe(unzipper.Extract({ path: folderPath }))
+        .promise()
     }
   }
 }

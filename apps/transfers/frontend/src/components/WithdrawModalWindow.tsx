@@ -59,6 +59,7 @@ export function WithdrawModalWindow(props: ModalWindowProps) {
           Withdraw
         </StyledText>
         <StyledText
+          as="button"
           variant="button.secondary"
           onClick={props.onClose}
         >
