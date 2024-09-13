@@ -96,7 +96,7 @@ mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features
 mtcs-enclave = { path = "apps/mtcs/enclave", default-features = false }
 
 [profile.release]
-opt-level = 3
+opt-level = "s"
 debug = false
 rpath = false
 lto = true

@@ -37,13 +37,10 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 [dependencies]
 # external
 serde_json.workspace = true
-thiserror.workspace = true
 
 # cosmos
 cosmwasm-schema.workspace = true
 cosmwasm-std.workspace = true
-cw2.workspace = true
-cw-storage-plus.workspace = true
 
 # quartz
 quartz-tee-ra.workspace = true

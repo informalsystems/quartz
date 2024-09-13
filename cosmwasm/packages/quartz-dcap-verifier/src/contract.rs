@@ -1,39 +1,24 @@
 use cosmwasm_std::{
     entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
-use cw2::set_contract_version;
 use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, Quote3, TrustedIdentity},
     verify_dcap_attestation, Error,
 };
 
 use crate::{
-    error::{into_std_err, ContractError},
+    error::into_std_err,
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
-    state::{State, STATE},
 };
-
-// version info for migration info
-const CONTRACT_NAME: &str = "crates.io:quartz-dcap-verifier";
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    deps: DepsMut,
+    _deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     _msg: InstantiateMsg,
-) -> Result<Response, ContractError> {
-    let state = State {
-        owner: info.sender.to_string(),
-    };
-
-    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    STATE.save(deps.storage, &state)?;
-
-    Ok(Response::new()
-        .add_attribute("method", "instantiate")
-        .add_attribute("owner", info.sender))
+) -> Result<Response, StdError> {
+    Ok(Response::default())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
