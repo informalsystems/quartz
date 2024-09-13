@@ -1228,7 +1228,6 @@ dependencies = [
  "ff",
  "generic-array",
  "group",
- "pem-rfc7468",
  "pkcs8",
  "rand_core",
  "sec1",
@@ -1536,7 +1535,6 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
  "allocator-api2",
- "serde",
 ]
 
 [[package]]
@@ -3646,8 +3644,6 @@ dependencies = [
  "cw-storage-plus",
  "cw2",
  "der",
- "getrandom",
- "hashbrown 0.14.5",
  "hex",
  "mc-attestation-verifier",
  "p256",
@@ -3657,7 +3653,6 @@ dependencies = [
  "serde_json",
  "thiserror",
  "x509-cert",
- "x509-parser",
 ]
 
 [[package]]

@@ -50,7 +50,7 @@ impl<A: Attestor> WebSocketHandler for TransfersService<A> {
                         "message.sender" => {
                             sender = values.first().cloned();
                         }
-                        "wasm._contract_address" => {
+                        "execute._contract_address" => {
                             contract_address = values.first().cloned();
                         }
                         "wasm.query_balance.emphemeral_pubkey" => {
@@ -103,9 +103,9 @@ fn is_transfer_event(event: &Event) -> bool {
     if let Some(EventType::Tx) = event.event_type() {
         // Check for the "wasm.action" key with the value "init_clearing"
         if let Some(events) = &event.events {
-            return events.iter().any(|(key, values)| {
-                key == "wasm.action" && values.contains(&"transfer".to_string())
-            });
+            return events
+                .iter()
+                .any(|(key, values)| key == "wasm-transfer.action");
         }
     }
     false
@@ -116,9 +116,9 @@ fn is_query_event(event: &Event) -> bool {
     if let Some(EventType::Tx) = event.event_type() {
         // Check for the "wasm.action" key with the value "init_clearing"
         if let Some(events) = &event.events {
-            return events.iter().any(|(key, values)| {
-                key == "wasm.action" && values.contains(&"query_balance".to_string())
-            });
+            return events
+                .iter()
+                .any(|(key, values)| key == "wasm-query_balance");
         }
     }
     false
@@ -161,14 +161,22 @@ async fn transfer_handler<A: Attestor>(
         .into_inner();
 
     // Extract json from enclave response
-    let attested: RawAttested<UpdateMsg, Vec<u8>> = serde_json::from_str(&update_response.message)
-        .map_err(|e| anyhow!("Error serializing SubmitSetoffs: {}", e))?;
+    let attested: RawAttested<UpdateMsg, HexBinary> =
+        serde_json::from_str(&update_response.message)
+            .map_err(|e| anyhow!("Error deserializing UpdateMsg from enclave: {}", e))?;
 
     // Build on-chain response
     // TODO add non-mock support
     let setoffs_msg = ExecuteMsg::Update::<RawMockAttestation>(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
-        attestation: MockAttestation(attested.attestation.try_into().unwrap()).into(),
+        attestation: MockAttestation(
+            attested
+                .attestation
+                .as_slice()
+                .try_into()
+                .map_err(|_| anyhow!("slice with incorrect length"))?,
+        )
+        .into(),
     });
 
     // Post response to chain
@@ -218,7 +226,7 @@ async fn query_handler<A: Attestor>(
     // Extract json from the enclave response
     let attested: RawAttested<QueryResponseMsg, Vec<u8>> =
         serde_json::from_str(&query_response.message)
-            .map_err(|e| anyhow!("Error serializing SubmitSetoffs: {}", e))?;
+            .map_err(|e| anyhow!("Error deserializing QueryResponseMsg from enclave: {}", e))?;
 
     // Build on-chain response
     // TODO add non-mock support

@@ -97,13 +97,13 @@ impl QuartzServer {
     where
         S: IntoServer + WebSocketHandler + Clone,
         S::Server: Service<
-            http::request::Request<BoxBody>,
-            Response = http::response::Response<BoxBody>,
-            Error = Infallible,
-        > + NamedService
-        + Clone
-        + Send
-        + 'static,
+                http::request::Request<BoxBody>,
+                Response = http::response::Response<BoxBody>,
+                Error = Infallible,
+            > + NamedService
+            + Clone
+            + Send
+            + 'static,
         <S::Server as Service<http::request::Request<BoxBody>>>::Future: Send + 'static,
     {
         self.ws_handlers.push(Box::new(service.clone()));
