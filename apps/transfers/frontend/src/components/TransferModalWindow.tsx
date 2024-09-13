@@ -154,6 +154,7 @@ export function TransferModalWindow(props: ModalWindowProps) {
           Transfer
         </StyledText>
         <StyledText
+          as="button"
           variant="button.secondary"
           onClick={props.onClose}
         >

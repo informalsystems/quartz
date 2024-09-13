@@ -22,6 +22,7 @@ export default function Landing() {
     <main className="flex min-h-screen flex-col items-center gap-4 p-24">
       <p>Connect your Keplr wallet to log in</p>
       <StyledText
+        as="button"
         variant="button.primary"
         onClick={connectWallet}
       >

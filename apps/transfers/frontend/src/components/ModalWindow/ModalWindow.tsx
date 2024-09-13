@@ -100,7 +100,7 @@ export function ModalWindow({
         onTransitionEnd={handleTransitionEnd}
         {...otherProps}
       >
-        {children}
+        {isOpen && children}
       </div>
     </>,
     document.body,
