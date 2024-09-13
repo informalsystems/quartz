@@ -2,8 +2,9 @@
 mod tests {
     use cosmwasm_std::{testing::MockApi, Addr, Coin, Empty, Uint128};
     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+    use tcbinfo_msgs::InstantiateMsg;
 
-    use crate::{helpers::CwTemplateContract, msg::InstantiateMsg};
+    use crate::{helpers::CwTemplateContract};
 
     pub fn contract_template() -> Box<dyn Contract<Empty>> {
         let contract = ContractWrapper::new(
@@ -68,7 +69,8 @@ mod tests {
 
     mod add_tcbinfo {
         use super::*;
-        use crate::msg::ExecuteMsg;
+
+        use tcbinfo_msgs::ExecuteMsg;
 
         #[test]
         fn add_tcbinfo() {

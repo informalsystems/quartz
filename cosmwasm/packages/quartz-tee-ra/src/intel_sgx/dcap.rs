@@ -25,8 +25,8 @@ pub fn verify(
 
 #[cfg(test)]
 mod tests {
-    use hex::FromHex;
     use hex_literal::hex;
+    use hex::FromHex;
     use mc_attestation_verifier::{Evidence, EvidenceVerifier, TrustedMrEnclaveIdentity, Verifier};
     use mc_sgx_core_types::MrEnclave;
     use mc_sgx_dcap_sys_types::sgx_ql_qve_collateral_t;

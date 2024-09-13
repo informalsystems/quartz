@@ -73,6 +73,7 @@ tendermint-light-client-detector = { version = "=0.38.1", default-features = fal
 tendermint-rpc = { version = "=0.38.1", default-features = false, features = ["http-client"] }
 
 # mobilecoin
+mc-sgx-core-types = { git = "https://github.com/informalsystems/sgx", default-features = false }
 mc-sgx-dcap-types = { git = "https://github.com/informalsystems/sgx", default-features = false }
 mc-sgx-dcap-sys-types = { git = "https://github.com/informalsystems/sgx", default-features = false }
 mc-attestation-verifier = { git = "https://github.com/informalsystems/attestation", default-features = false }
@@ -94,6 +95,8 @@ wasmd-client = { path = "cosmwasm/packages/wasmd-client", default-features = fal
 cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
 mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
 mtcs-enclave = { path = "apps/mtcs/enclave", default-features = false }
+
+[workspace.dev-dependencies]
 
 [profile.release]
 opt-level = "z"

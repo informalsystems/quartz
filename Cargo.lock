@@ -4213,6 +4213,8 @@ dependencies = [
  "hex",
  "hex-literal",
  "mc-attestation-verifier",
+ "mc-sgx-core-types",
+ "mc-sgx-dcap-sys-types",
  "mc-sgx-dcap-types",
  "num-bigint",
  "serde",
