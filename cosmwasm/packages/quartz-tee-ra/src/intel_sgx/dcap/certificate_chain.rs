@@ -28,7 +28,7 @@ impl CertificateChainVerifier for TlsCertificateChainVerifier {
 
         let cert_chain = enc_certs
             .iter()
-            .map(|der| parse_x509_certificate(&der))
+            .map(|der| parse_x509_certificate(der))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
         // Skip applying the Certificate Revocation List entirely

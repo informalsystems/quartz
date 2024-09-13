@@ -4,7 +4,7 @@ mod tests {
     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
     use tcbinfo_msgs::InstantiateMsg;
 
-    use crate::{helpers::CwTemplateContract};
+    use crate::helpers::CwTemplateContract;
 
     pub fn contract_template() -> Box<dyn Contract<Empty>> {
         let contract = ContractWrapper::new(
@@ -68,9 +68,9 @@ mod tests {
     }
 
     mod add_tcbinfo {
-        use super::*;
-
         use tcbinfo_msgs::ExecuteMsg;
+
+        use super::*;
 
         #[test]
         fn add_tcbinfo() {
