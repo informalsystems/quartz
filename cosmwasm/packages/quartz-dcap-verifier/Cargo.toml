@@ -1,0 +1,54 @@
+[package]
+name = "quartz-dcap-verifier"
+version = "0.1.0"
+edition = "2021"
+
+exclude = [
+    # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
+    "contract.wasm",
+    "hash.txt",
+]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = "z"
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
+
+[features]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[package.metadata.scripts]
+optimize = """docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/rust-optimizer:0.14.0
+"""
+
+[dependencies]
+# external
+serde_json.workspace = true
+thiserror.workspace = true
+
+# cosmos
+cosmwasm-schema.workspace = true
+cosmwasm-std.workspace = true
+cw2.workspace = true
+cw-storage-plus.workspace = true
+
+# quartz
+quartz-tee-ra.workspace = true
+
+# patch indirect deps
+getrandom = { version = "0.2.15", features = ["js"] }
+
+[dev-dependencies]
