@@ -1,8 +1,11 @@
 [package]
 name = "tcbinfo"
-version = "0.1.0"
-authors = ["quinine"]
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -53,6 +56,10 @@ cw-storage-plus.workspace = true
 
 # quartz
 quartz-tee-ra.workspace = true
+tcbinfo-msgs.workspace = true
+
+# patch indirect deps
+getrandom = { version = "0.2.15", features = ["js"] }
 
 [dev-dependencies]
 cw-multi-test = "2.0.0"

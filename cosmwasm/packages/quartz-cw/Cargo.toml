@@ -32,7 +32,7 @@ cosmwasm-std.workspace = true
 
 # quartz
 quartz-tee-ra.workspace = true
-tcbinfo.workspace = true
+tcbinfo-msgs.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

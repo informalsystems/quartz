@@ -907,21 +907,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw2"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b04852cd38f044c0751259d5f78255d07590d136b8a86d4e09efdd7666bd6d27"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "schemars",
- "semver",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "darling"
 version = "0.20.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2517,7 +2502,7 @@ dependencies = [
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
- "tcbinfo",
+ "tcbinfo-msgs",
  "thiserror",
 ]
 
@@ -3406,23 +3391,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "tcbinfo"
+name = "tcbinfo-msgs"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "cw2",
- "der",
- "hex",
- "mc-attestation-verifier",
- "p256",
- "quartz-tee-ra",
- "schemars",
- "serde",
  "serde_json",
- "thiserror",
- "x509-cert",
 ]
 
 [[package]]

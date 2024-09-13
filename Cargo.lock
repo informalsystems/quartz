@@ -4150,7 +4150,7 @@ dependencies = [
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
- "tcbinfo",
+ "tcbinfo-msgs",
  "thiserror",
 ]
 
@@ -5237,6 +5237,7 @@ dependencies = [
  "cw-storage-plus",
  "cw2",
  "der",
+ "getrandom",
  "hex",
  "mc-attestation-verifier",
  "p256",
@@ -5244,8 +5245,17 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "tcbinfo-msgs",
  "thiserror",
  "x509-cert",
+]
+
+[[package]]
+name = "tcbinfo-msgs"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "serde_json",
 ]
 
 [[package]]

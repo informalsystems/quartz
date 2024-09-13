@@ -6,7 +6,7 @@ use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, TrustedMrEnclaveIdentity},
     verify_dcap_attestation, verify_epid_attestation, Error as RaVerificationError,
 };
-use tcbinfo::msg::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
+use tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
     error::Error,

@@ -85,6 +85,7 @@ quartz-enclave = { path = "core/quartz", default-features = false }
 quartz-proto = { path = "core/quartz-proto", default-features = false }
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
 tcbinfo = { path = "cosmwasm/packages/tcbinfo", default-features = false, features = ["library"] }
+tcbinfo-msgs = { path = "cosmwasm/packages/tcbinfo/msgs", default-features = false }
 tm-prover = { path = "utils/tm-prover", default-features = false }
 tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
 wasmd-client = { path = "cosmwasm/packages/wasmd-client", default-features = false }

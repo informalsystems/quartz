@@ -9,11 +9,11 @@ use mc_attestation_verifier::{CertificateChainVerifier, SignedTcbInfo};
 use p256::ecdsa::VerifyingKey;
 use quartz_tee_ra::intel_sgx::dcap::certificate_chain::TlsCertificateChainVerifier;
 use serde_json::Value;
+use tcbinfo_msgs::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg};
 use x509_cert::Certificate;
 
 use crate::{
     error::ContractError,
-    msg::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg},
     state::{TcbInfo, DATABASE, ROOT_CERTIFICATE},
 };
 // version info for migration info

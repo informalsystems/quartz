@@ -1,0 +1,15 @@
+[package]
+name = "tcbinfo-msgs"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# external
+serde_json.workspace = true
+
+# cosmos
+cosmwasm-schema.workspace = true
