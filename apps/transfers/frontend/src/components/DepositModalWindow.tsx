@@ -101,6 +101,7 @@ export function DepositModalWindow(props: ModalWindowProps) {
           Deposit
         </StyledText>
         <StyledText
+          as="button"
           variant="button.secondary"
           onClick={props.onClose}
         >

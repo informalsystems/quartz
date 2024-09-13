@@ -96,7 +96,7 @@ export default function Dashboard() {
             ).then((data) => {
               setLoading(false)
               setBalance(retrieveBalance(data))
-              showSuccess('Balance updated correctly')
+              showSuccess('Balance updated successfully')
             })
           }
         },
@@ -167,6 +167,7 @@ export default function Dashboard() {
 
         <StyledText
           className="w-full justify-start bg-emerald-500"
+          as="button"
           variant="button.primary"
           onClick={() => setIsDepositModalOpen(true)}
         >
@@ -174,6 +175,7 @@ export default function Dashboard() {
           Deposit
         </StyledText>
         <StyledText
+          as="button"
           variant="button.primary"
           className="w-full justify-start bg-violet-500"
           onClick={() => setIsTransferModalOpen(true)}
@@ -182,6 +184,7 @@ export default function Dashboard() {
           Transfer
         </StyledText>
         <StyledText
+          as="button"
           className="w-full justify-start bg-amber-500"
           variant="button.primary"
           onClick={() => setIsWithdrawModalOpen(true)}
@@ -192,6 +195,7 @@ export default function Dashboard() {
         <div className="my-1 w-full border-black/25"></div>
         <StyledText
           className="w-full justify-start"
+          as="button"
           variant="button.secondary"
           onClick={() => {
             const res = confirm(

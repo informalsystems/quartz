@@ -3,14 +3,15 @@
 Quartz is a flexible framework for privacy-preserving computation via Trusted Execution
 Environments (TEEs) organized and secured by smart contracts.
 
-_**Why?**_ Development of Quartz was motivated by the privacy needs of the [Cycles Protocol][cycles]. 
-It is designed to be more broadly useful. For background on how to think about different privacy preserving
+_**Why?**_ Development of Quartz was motivated by the privacy needs of the [Cycles Protocol][cycles],
+which adopts a TEE-based ZK execution sidecar for private smart contracts. 
+For background on how to think about different privacy preserving
 technologies (FHE vs MPC vs ZKP vs TEE), see [How to win friends and TEE-fluence
 people][how_to_win_friends_talk] and the associated [tweet
 thread][how_to_win_friends_thread].
 
 _**What?**_ With Quartz, data in smart contracts can be encrypted, while computation happens
-privately off-chain via enclaves. Each contract can control what code runs in the
+privately off-chain via TEEs like SGX. Each contract can control what code runs in the
 enclave, when it runs, and who is permitted to run it.
 
 _**How?**_ At the heart of Quartz is a light-client protocol handshake between the enclave and the

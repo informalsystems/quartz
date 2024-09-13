@@ -17,7 +17,7 @@ pub struct Config {
     mr_enclave: MrEnclave,
     epoch_duration: Duration,
     light_client_opts: LightClientOpts,
-    tcbinfo_contract: String,
+    tcbinfo_contract: Option<String>,
 }
 
 impl Config {
@@ -25,7 +25,7 @@ impl Config {
         mr_enclave: MrEnclave,
         epoch_duration: Duration,
         light_client_opts: LightClientOpts,
-        tcbinfo_contract: String,
+        tcbinfo_contract: Option<String>,
     ) -> Self {
         Self {
             mr_enclave,
@@ -43,8 +43,8 @@ impl Config {
         self.mr_enclave
     }
 
-    pub fn tcbinfo_contract(&self) -> &str {
-        &self.tcbinfo_contract
+    pub fn tcbinfo_contract(&self) -> Option<&str> {
+        self.tcbinfo_contract.as_deref()
     }
 }
 
@@ -53,7 +53,7 @@ pub struct RawConfig {
     mr_enclave: HexBinary,
     epoch_duration: Duration,
     light_client_opts: RawLightClientOpts,
-    tcbinfo_contract: String,
+    tcbinfo_contract: Option<String>,
 }
 
 impl RawConfig {
@@ -61,8 +61,8 @@ impl RawConfig {
         self.mr_enclave.as_slice()
     }
 
-    pub fn tcb_info(&self) -> String {
-        self.tcbinfo_contract.to_string()
+    pub fn tcb_info(&self) -> Option<String> {
+        self.tcbinfo_contract.clone().map(|c| c.to_string())
     }
 }
 
