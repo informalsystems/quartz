@@ -1,6 +1,6 @@
-use cosmwasm_std::{
-    entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-};
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, Quote3, TrustedIdentity},
     verify_dcap_attestation, Error,
