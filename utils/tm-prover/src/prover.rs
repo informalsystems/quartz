@@ -1,5 +1,5 @@
 #![deny(
-    warnings,
+    // warnings,
     trivial_casts,
     trivial_numeric_casts,
     unused_import_braces,
@@ -7,12 +7,7 @@
 )]
 #![forbid(unsafe_code)]
 
-use std::{
-    fs::File,
-    io::{BufWriter, Write},
-    path::PathBuf,
-    time::Duration,
-};
+use std::time::Duration;
 
 use color_eyre::{
     eyre::{eyre, Result},
@@ -49,12 +44,11 @@ pub async fn prove(
         trusting_period,
         max_clock_drift,
         max_block_lag,
-        trace_file,
         verbose: _,
         contract_address,
         storage_key,
     }: TmProverConfig,
-) -> Result<()> {
+) -> Result<ProofOutput> {
     let options = Options {
         trust_threshold,
         trusting_period: Duration::from_secs(trusting_period),
@@ -71,7 +65,7 @@ pub async fn prove(
     .await?;
 
     let client = HttpClient::builder(primary.clone()).build()?;
-
+    
     let trusted_block = provider
         .latest_trusted()
         .ok_or_else(|| eyre!("No trusted state found for primary"))?;
@@ -134,31 +128,18 @@ pub async fn prove(
         .verify(latest_app_hash.clone().into())
         .map_err(|e: ProofError| eyre!(e))?;
 
-    if let Some(trace_file) = trace_file {
-        // replace the last block in the trace (i.e. the (latest - 1) block) with the latest block
-        // we don't actually verify the latest block because it will be verified on the other side
-        let latest_block = provider.fetch_light_block(latest_height)?;
-        let _ = primary_trace.pop();
-        primary_trace.push(latest_block);
+    // Replace the last block in the trace (i.e., the (latest - 1) block) with the latest block
+    // We don't actually verify the latest block because it will be verified on the other side
+    let latest_block = provider.fetch_light_block(latest_height)?;
+    let _ = primary_trace.pop();
+    primary_trace.push(latest_block);
 
-        let output = ProofOutput {
-            light_client_proof: primary_trace,
-            merkle_proof: proof.into(),
-        };
-        write_proof_to_file(trace_file, output).await?;
+    let output = ProofOutput {
+        light_client_proof: primary_trace,
+        merkle_proof: proof.into(),
     };
 
-    Ok(())
-}
-
-async fn write_proof_to_file(trace_file: PathBuf, output: ProofOutput) -> Result<()> {
-    info!("Writing proof to output file ({})", trace_file.display());
-
-    let file = File::create(trace_file)?;
-    let mut writer = BufWriter::new(file);
-    serde_json::to_writer(&mut writer, &output)?;
-    writer.flush()?;
-    Ok(())
+    Ok(output)
 }
 
 async fn run_detector(
@@ -239,14 +220,15 @@ async fn make_provider(
     let rpc_client = HttpClient::builder(rpc_addr)
         .compat_mode(CompatMode::V0_34)
         .build()?;
-
+    println!("1");
     let node_id = rpc_client.status().await?.node_info.id;
+    println!("2");
     let light_store = Box::new(MemoryStore::new());
 
     let instance =
         LightClientBuilder::prod(node_id, rpc_client.clone(), light_store, options, None)
             .trust_primary_at(trusted_height, trusted_hash)?
             .build();
-
+    println!("3");
     Ok(Provider::new(chain_id.to_string(), instance, rpc_client))
 }

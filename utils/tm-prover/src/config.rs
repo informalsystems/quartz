@@ -82,7 +82,6 @@ impl Default for Config {
             trusting_period: 1209600u64,
             max_clock_drift: 5u64,
             max_block_lag: 5u64,
-            trace_file: None,
             verbose: Verbosity::default(),
             contract_address: "wasm14qdftsfk6fwn40l0xmruga08xlczl4g05npy70"
                 .parse()
@@ -130,10 +129,6 @@ pub struct Config {
     /// Maximum block lag, in seconds
     #[clap(long, default_value = "5")]
     pub max_block_lag: u64,
-
-    /// Output file to store light client proof (AKA verification trace)
-    #[clap(long)]
-    pub trace_file: Option<PathBuf>,
 
     /// Increase verbosity
     #[clap(flatten)]

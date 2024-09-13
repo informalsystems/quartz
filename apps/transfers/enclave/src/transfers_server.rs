@@ -11,7 +11,7 @@ use quartz_common::{
         msg::execute::attested::{HasUserData, RawAttested},
         state::{Config, UserData},
     },
-    enclave::{attestor::Attestor, server::IntoServer},
+    enclave::{attestor::Attestor, server::{IntoServer, ProofOfPublication}},
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -125,25 +125,25 @@ where
 {
     async fn run(&self, request: Request<UpdateRequest>) -> TonicResult<Response<UpdateResponse>> {
         // Serialize request into struct containing State and the Requests vec
-        // let message: ProofOfPublication<UpdateRequestMessage> = {
-        //     let message = request.into_inner().message;
-        //     serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
-        // };
-
-        // let (proof_value, message) = message
-        //     .verify(self.config.light_client_opts())
-        //     .map_err(Status::failed_precondition)?;
-
-        // let proof_value_matches_msg =
-        //     serde_json::to_string(&message.requests).is_ok_and(|s| s.as_bytes() == proof_value);
-        // if !proof_value_matches_msg {
-        //     return Err(Status::failed_precondition("proof verification"));
-        // }
-
-        let message: UpdateRequestMessage = {
+        let message: ProofOfPublication<UpdateRequestMessage> = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
+
+        let (proof_value, message) = message
+            .verify(self.config.light_client_opts())
+            .map_err(Status::failed_precondition)?;
+
+        let proof_value_matches_msg =
+            serde_json::to_string(&message.requests).is_ok_and(|s| s.as_bytes() == proof_value);
+        if !proof_value_matches_msg {
+            return Err(Status::failed_precondition("proof verification"));
+        }
+
+        // let message: UpdateRequestMessage = {
+        //     let message = request.into_inner().message;
+        //     serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
+        // };
 
         // Decrypt and deserialize the state
         let mut state = {

@@ -4,6 +4,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Addr, HexBinary};
+use futures_util::StreamExt;
 use quartz_common::{
     contract::msg::execute::attested::{
         MockAttestation, RawAttested, RawAttestedMsgSansHandler, RawMockAttestation,
@@ -15,7 +16,7 @@ use quartz_common::{
 };
 use reqwest::Url;
 use serde_json::json;
-use tendermint_rpc::{event::Event, query::EventType};
+use tendermint_rpc::{event::Event, query::EventType, SubscriptionClient, WebSocketClient};
 use tonic::Request;
 use transfers_contract::msg::{
     execute::{QueryResponseMsg, Request as TransferRequest, UpdateMsg},
@@ -23,6 +24,7 @@ use transfers_contract::msg::{
     QueryMsg::{GetRequests, GetState},
 };
 use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
+use tm_prover::{config::Config as TmProverConfig, prover::prove};
 
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
@@ -75,7 +77,7 @@ impl<A: Attestor> WebSocketHandler for TransfersService<A> {
                         .parse::<AccountId>()
                         .map_err(|e| anyhow!(e))?,
                     sender.expect("must be included in transfers event"),
-                    &config.node_url,
+                    &config,
                 )
                 .await?;
             } else if is_query {
@@ -128,11 +130,11 @@ async fn transfer_handler<A: Attestor>(
     client: &TransfersService<A>,
     contract: &AccountId,
     sender: String,
-    node_url: &str,
+    wsconfig: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str("testing")?;
-    let httpurl = Url::parse(&format!("http://{}", node_url))?;
-    let wasmd_client = CliWasmdClient::new(httpurl);
+    let httpurl = Url::parse(&format!("http://{}", wsconfig.node_url))?;
+    let wasmd_client = CliWasmdClient::new(httpurl.clone());
 
     // Query chain
     // Get epoch, obligations, liquidity sources
@@ -146,14 +148,40 @@ async fn transfer_handler<A: Attestor>(
         .map_err(|e| anyhow!("Problem querying epoch: {}", e))?;
     let state = resp.data;
 
-    // Build request
+    // Request body contents
     let update_contents = UpdateRequestMessage { state, requests };
 
+    // Wait 2 blocks
+    println!("Waiting 2 blocks for light client proof");
+    let wsurl = format!("ws://{}/websocket", wsconfig.node_url);
+    two_block_waitoor(&wsurl).await?;
+
+    // Call tm prover with trusted hash and height
+    let prover_config = TmProverConfig {
+        primary: httpurl.as_str().parse()?,
+        witnesses: httpurl.as_str().parse()?,
+        trusted_height: wsconfig.trusted_height,
+        trusted_hash: wsconfig.trusted_hash,
+        verbose: "1".parse()?, // TODO: both tm-prover and cli define the same Verbosity struct. Need to define this once and import
+        contract_address: contract.clone(),
+        storage_key: "quartz_session".to_string(),
+        chain_id: wsconfig.chain_id.to_string(),
+        ..Default::default()
+    };
+
+    println!("config: {:?}", prover_config);
+    let proof_output = prove(prover_config).await.map_err(|report| anyhow!("Tendermint prover failed. Report: {}", report))?;
+
+    // Merge the UpdateRequestMessage with the proof
+    let mut proof_json = serde_json::to_value(proof_output)?;
+    proof_json["msg"] = serde_json::to_value(&update_contents)?;
+
+    // Build final request object
     let request = Request::new(UpdateRequest {
-        message: json!(update_contents).to_string(),
+        message: json!(proof_json).to_string(),
     });
 
-    // Send UpdateRequestMessage to enclave over tonic gRPC client
+    // Send UpdateRequestMessage request to enclave over tonic gRPC client
     let update_response = client
         .run(request)
         .await
@@ -240,5 +268,32 @@ async fn query_handler<A: Attestor>(
         wasmd_client.tx_execute(contract, chain_id, 2000000, &sender, json!(setoffs_msg))?;
 
     println!("Output TX: {}", output);
+    Ok(())
+}
+
+async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {
+    let (client, driver) = WebSocketClient::new(wsurl).await?;
+
+    let driver_handle = tokio::spawn(async move { driver.run().await });
+
+    // Subscription functionality
+    let mut subs = client.subscribe(EventType::NewBlock.into()).await?;
+
+    // Wait 2 NewBlock events
+    let mut ev_count = 2_i32;
+
+    while let Some(res) = subs.next().await {
+        let _ev = res?;
+        ev_count -= 1;
+        if ev_count == 0 {
+            break;
+        }
+    }
+
+    // Signal to the driver to terminate.
+    client.close()?;
+    // Await the driver's termination to ensure proper connection closure.
+    let _ = driver_handle.await?;
+
     Ok(())
 }

@@ -28,6 +28,7 @@ use quartz_proto::quartz::{
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use tendermint::{block::Height, Hash};
 use tendermint_light_client::{
     light_client::Options,
     types::{LightBlock, TrustThreshold},
@@ -62,6 +63,9 @@ pub trait WebSocketHandler: Send + Sync + 'static {
 pub struct WsListenerConfig {
     pub node_url: String,
     pub tx_sender: String,
+    pub trusted_hash: Hash,
+    pub trusted_height: Height,
+    pub chain_id: String,
 }
 
 /// A trait for wrapping a tonic service with the gRPC server handler
