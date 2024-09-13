@@ -47,14 +47,51 @@ const BANNER: &str = r"
                                                                                     
 ";
 
+use std::process::Command;
+
 #[tokio::main]
 async fn main() -> Result<()> {
+
+    fn get_git_commit_hash() -> String {
+        // let output = Command::new("git")
+        //     .args(&["rev-parse", "--short", "HEAD"])
+        //     .output();
+    
+        let output = Command::new("git")
+        .args(&["rev-parse", "HEAD"])
+        .output();
+
+        match output {
+            Ok(output) if output.status.success() => {
+                String::from_utf8_lossy(&output.stdout).trim().to_string()
+            }
+            _ => "unknown".to_string(),
+        }
+    }
+
+
     color_eyre::install()?;
+
+    let git_commit_hash = get_git_commit_hash();
+    eprintln!("Git commit hash: {}", git_commit_hash.yellow().bold());
 
     println!("{}", BANNER.yellow().bold());
 
     let args: Cli = Cli::parse();
     check_path(&args.app_dir)?;
+
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(args.verbose.to_level_filter().into())
+        .from_env_lossy();
+
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .with_writer(std::io::stderr)
+        .with_env_filter(env_filter)
+        .finish()
+        .init();
+
+    tracing::info!("Git commit hash: {}", git_commit_hash);
 
     let config: Config = Figment::new()
         .merge(Toml::file(
@@ -68,27 +105,9 @@ async fn main() -> Result<()> {
         .merge(args.command.to_figment())
         .extract()?;
 
-    let env_filter = EnvFilter::builder()
-        .with_default_directive(args.verbose.to_level_filter().into())
-        .from_env_lossy();
-
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .with_writer(std::io::stderr)
-        .with_env_filter(env_filter)
-        .finish()
-        .init();
-
-    // The idea is to parse the input args and convert them into `Requests` which are
-    // correct-by-construction types that this tool can handle. All validation should happen during
-    // this conversion.
     let request = Request::try_from(args.command)?;
-
-    // Each `Request` defines an associated `Handler` (i.e. logic) and `Response`. All handlers are
-    // free to log to the terminal and these logs are sent to `stderr`.
     let response = request.handle(config).await?;
 
-    // `Handlers` must use `Responses` to output to `stdout`.
     println!(
         "{}",
         serde_json::to_string(&response).expect("infallible serializer")
