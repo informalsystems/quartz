@@ -66,6 +66,7 @@ export function EnterSeedModal({
           Continue
         </StyledText>
         <StyledText
+          as="button"
           variant="button.secondary"
           onClick={onClose}
         >
