@@ -11,7 +11,7 @@ use wasmd_client::{CliWasmdClient, WasmdClient};
 
 use super::utils::{
     helpers::block_tx_commit,
-    types::{Log, WasmdTxResponse},
+    types::WasmdTxResponse,
 };
 use crate::{
     config::Config,
@@ -72,7 +72,6 @@ async fn deploy(
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
-
     info!("🚀 Deploying {} Contract", args.label);
     let code_id = if config.contract_has_changed(wasm_bin_path).await? {
         let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
@@ -80,65 +79,45 @@ async fn deploy(
             &config.tx_sender,
             wasm_bin_path.display().to_string(),
         )?)?;
-        
-        // Add a debug statement to print the deploy output
-        info!("TxHash string: {}", deploy_output.txhash);
 
-        
+        // Add a debug statement to print the deploy output
+        // info!("TxHash string: {}", deploy_output.txhash);
+
         // Attempt to parse the deploy output
         let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
-        
+
         // info!("Response from deploy: {:?}", res);
-        
+
         // Extract code_id from the transaction result
-        let code_id = res.tx_result.events
-        .iter()
-        .find(|event| event.kind == "store_code")
-        .and_then(|event| event.attributes.iter().find(|attr| attr.key_str().unwrap_or("") == "code_id"))
-        .and_then(|attr| attr.value_str().ok().and_then(|v| v.parse().ok()))
-        .ok_or_else(|| anyhow::anyhow!("Failed to find code_id in the transaction result"))?;
+        let code_id = res
+            .tx_result
+            .events
+            .iter()
+            .find(|event| event.kind == "store_code")
+            .and_then(|event| {
+                event
+                    .attributes
+                    .iter()
+                    .find(|attr| attr.key_str().unwrap_or("") == "code_id")
+            })
+            .and_then(|attr| attr.value_str().ok().and_then(|v| v.parse().ok()))
+            .ok_or_else(|| anyhow::anyhow!("Failed to find code_id in the transaction result"))?;
         config.save_codeid_to_cache(wasm_bin_path, code_id).await?;
         code_id
     } else {
         config.get_cached_codeid(wasm_bin_path).await?
     };
-    // V1 
-    // info!("🚀 Deploying {} Contract", args.label);
-    // let code_id = if config.contract_has_changed(wasm_bin_path).await? {
-    //     let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
-    //         &config.chain_id,
-    //         &config.tx_sender,
-    //         wasm_bin_path.display().to_string(),
-    //     )?)?;
-        
-    //     // Add a debug statement to print the deploy output
-    //     info!("TxHash string: {}", deploy_output.txhash);
-
-        
-    //     // Attempt to parse the deploy output
-    //     let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
-        
-    //     // info!("Response from deploy: {:?}", res);
-
-    //     let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-    //     info!("Log: {:?}", log );
-
-    //     let code_id: u64 = log[0].events[1].attributes[1].value.parse()?;
-    //     config.save_codeid_to_cache(wasm_bin_path, code_id).await?;
-    //     code_id
-        
-    // } else {
-    //     config.get_cached_codeid(wasm_bin_path).await?
-    // };
 
     info!("🚀 Communicating with Relay to Instantiate...");
     let raw_init_msg = RelayMessage::Instantiate
         .run_relay(config.enclave_rpc(), config.mock_sgx)
         .await?;
+    // info!("Relay response {:#?}", raw_init_msg);
 
     info!("🚀 Instantiating {}", args.label);
     let mut init_msg = args.init_msg;
     init_msg["quartz"] = json!(raw_init_msg);
+    // debug!("Instantiating message {:#?}", init_msg);
 
     // Existing code
     let init_output_str = wasmd_client.init(
@@ -150,11 +129,13 @@ async fn deploy(
     )?;
 
     // Add a debug statement to print the init output
-    debug!("Init output string: {}", init_output_str);
+    info!("Init output string: {}", init_output_str);
 
     // Check if the output is empty
     if init_output_str.trim().is_empty() {
-        return Err(anyhow::anyhow!("wasmd_client.init returned an empty response"));
+        return Err(anyhow::anyhow!(
+            "wasmd_client.init returned an empty response"
+        ));
     }
 
     // Attempt to parse the init output
@@ -162,8 +143,27 @@ async fn deploy(
 
     let res = block_tx_commit(&tmrpc_client, init_output.txhash).await?;
 
-    let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-    let contract_addr: &String = &log[0].events[1].attributes[0].value;
+    // let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
+    // let contract_addr: &String = &log[0].events[1].attributes[0].value;
+    // info!("Response from deploy: {:?}", res);
+
+    // Extract contract_address from the transaction result
+    let contract_addr: String = res
+        .tx_result
+        .events
+        .iter()
+        .find(|event| event.kind == "instantiate")
+        .and_then(|event| {
+            event
+                .attributes
+                .iter()
+                .find(|attr| attr.key_str().unwrap_or("") == "_contract_address")
+        })
+        .and_then(|attr| attr.value_str().ok())
+        .ok_or_else(|| {
+            anyhow::anyhow!("Failed to find contract_address in the transaction result")
+        })?
+        .to_string();
 
     info!("🚀 Successfully deployed and instantiated contract!");
     info!("🆔 Code ID: {}", code_id);
