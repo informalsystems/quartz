@@ -9,10 +9,7 @@ use tendermint_rpc::HttpClient;
 use tracing::{debug, info};
 use wasmd_client::{CliWasmdClient, WasmdClient};
 
-use super::utils::{
-    helpers::block_tx_commit,
-    types::WasmdTxResponse,
-};
+use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 
 use crate::{
     config::Config,
