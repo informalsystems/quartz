@@ -11,7 +11,10 @@ use quartz_common::{
         msg::execute::attested::{HasUserData, RawAttested},
         state::{Config, UserData},
     },
-    enclave::{attestor::Attestor, server::{IntoServer, ProofOfPublication}},
+    enclave::{
+        attestor::Attestor,
+        server::{IntoServer, ProofOfPublication},
+    },
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -139,11 +142,6 @@ where
         if !proof_value_matches_msg {
             return Err(Status::failed_precondition("proof verification"));
         }
-
-        // let message: UpdateRequestMessage = {
-        //     let message = request.into_inner().message;
-        //     serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
-        // };
 
         // Decrypt and deserialize the state
         let mut state = {

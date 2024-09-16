@@ -1,4 +1,4 @@
-use std::{num::ParseIntError, path::PathBuf, str::FromStr};
+use std::{num::ParseIntError, str::FromStr};
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};

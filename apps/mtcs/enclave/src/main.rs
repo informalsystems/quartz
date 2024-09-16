@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tx_sender: args.tx_sender,
         trusted_hash: args.trusted_hash,
         trusted_height: args.trusted_height,
-        chain_id: args.chain_id
+        chain_id: args.chain_id,
     };
 
     let sk = Arc::new(Mutex::new(None));

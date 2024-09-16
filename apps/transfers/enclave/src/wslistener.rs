@@ -17,14 +17,15 @@ use quartz_common::{
 use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::{event::Event, query::EventType, SubscriptionClient, WebSocketClient};
+use tm_prover::{config::Config as TmProverConfig, prover::prove};
 use tonic::Request;
+use tracing::info;
 use transfers_contract::msg::{
     execute::{QueryResponseMsg, Request as TransferRequest, UpdateMsg},
     AttestedMsg, ExecuteMsg,
     QueryMsg::{GetRequests, GetState},
 };
 use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
-use tm_prover::{config::Config as TmProverConfig, prover::prove};
 
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
@@ -105,9 +106,7 @@ fn is_transfer_event(event: &Event) -> bool {
     if let Some(EventType::Tx) = event.event_type() {
         // Check for the "wasm.action" key with the value "init_clearing"
         if let Some(events) = &event.events {
-            return events
-                .iter()
-                .any(|(key, values)| key == "wasm-transfer.action");
+            return events.iter().any(|(key, _)| key == "wasm-transfer.action");
         }
     }
     false
@@ -118,9 +117,7 @@ fn is_query_event(event: &Event) -> bool {
     if let Some(EventType::Tx) = event.event_type() {
         // Check for the "wasm.action" key with the value "init_clearing"
         if let Some(events) = &event.events {
-            return events
-                .iter()
-                .any(|(key, values)| key == "wasm-query_balance");
+            return events.iter().any(|(key, _)| key == "wasm-query_balance");
         }
     }
     false
@@ -152,7 +149,7 @@ async fn transfer_handler<A: Attestor>(
     let update_contents = UpdateRequestMessage { state, requests };
 
     // Wait 2 blocks
-    println!("Waiting 2 blocks for light client proof");
+    info!("Waiting 2 blocks for light client proof");
     let wsurl = format!("ws://{}/websocket", wsconfig.node_url);
     two_block_waitoor(&wsurl).await?;
 
@@ -164,13 +161,21 @@ async fn transfer_handler<A: Attestor>(
         trusted_hash: wsconfig.trusted_hash,
         verbose: "1".parse()?, // TODO: both tm-prover and cli define the same Verbosity struct. Need to define this once and import
         contract_address: contract.clone(),
-        storage_key: "quartz_session".to_string(),
+        storage_key: "requests".to_string(),
         chain_id: wsconfig.chain_id.to_string(),
         ..Default::default()
     };
 
-    println!("config: {:?}", prover_config);
-    let proof_output = prove(prover_config).await.map_err(|report| anyhow!("Tendermint prover failed. Report: {}", report))?;
+    let proof_output = tokio::task::spawn_blocking(move || {
+        // Create a new runtime inside the blocking thread.
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            prove(prover_config)
+                .await
+                .map_err(|report| anyhow!("Tendermint prover failed. Report: {}", report))
+        })
+    })
+    .await??; // Handle both JoinError and your custom error
 
     // Merge the UpdateRequestMessage with the proof
     let mut proof_json = serde_json::to_value(proof_output)?;

@@ -2659,6 +2659,7 @@ dependencies = [
  "tokio",
  "tonic",
  "tonic-build",
+ "tracing",
  "transfers-contract",
  "wasmd-client",
 ]

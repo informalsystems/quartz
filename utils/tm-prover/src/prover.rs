@@ -65,7 +65,7 @@ pub async fn prove(
     .await?;
 
     let client = HttpClient::builder(primary.clone()).build()?;
-    
+
     let trusted_block = provider
         .latest_trusted()
         .ok_or_else(|| eyre!("No trusted state found for primary"))?;
