@@ -2,9 +2,10 @@ use cosmwasm_std::{
     from_json, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
     WasmQuery,
 };
+use quartz_dcap_verifier_msgs::QueryMsg as DcapVerifierQueryMsg;
 use quartz_tee_ra::{
-    intel_sgx::dcap::{Collateral, TrustedMrEnclaveIdentity},
-    verify_dcap_attestation, verify_epid_attestation, Error as RaVerificationError,
+    intel_sgx::dcap::{Collateral, TrustedIdentity, TrustedMrEnclaveIdentity},
+    verify_epid_attestation, Error as RaVerificationError,
 };
 use tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
@@ -21,7 +22,7 @@ use crate::{
 pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
     let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
     let tcbinfo_addr = config
-        .tcb_info()
+        .tcbinfo_contract()
         .expect("TcbInfo contract address is required for DCAP");
 
     let fmspc_bytes =
@@ -33,7 +34,7 @@ pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
     let query_msg = TcbInfoQueryMsg::GetTcbInfo { fmspc };
 
     let request = QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: tcbinfo_addr,
+        contract_addr: tcbinfo_addr.to_string(),
         msg: to_json_binary(&query_msg).map_err(Error::Std)?,
     });
 
@@ -87,18 +88,26 @@ impl Handler for DcapAttestation {
                 Error::TcbInfoQueryError(format!("Failed to deserialize updated collateral: {}", e))
             })?;
 
-        // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
-        let verification_output =
-            verify_dcap_attestation(quote, updated_collateral, &[mr_enclave.into()]);
+        let query_msg = DcapVerifierQueryMsg::VerifyDcapAttestation {
+            quote: quote.as_ref().to_vec(),
+            collateral: serde_json::to_value(&updated_collateral).expect("infallible serializer"),
+            identities: serde_json::to_value(&[TrustedIdentity::from(mr_enclave)])
+                .expect("infallible serializer"),
+        };
 
-        // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
-        if verification_output.is_success().into() {
-            Ok(Response::default())
-        } else {
-            Err(Error::RaVerification(RaVerificationError::Dcap(
-                verification_output,
-            )))
-        }
+        let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
+        let verifier_contract = config
+            .dcap_verifier_contract()
+            .expect("verifier_contract address is required for DCAP");
+
+        let request = QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: verifier_contract.to_string(),
+            msg: to_json_binary(&query_msg).map_err(Error::Std)?,
+        });
+
+        deps.querier
+            .query(&request)
+            .map_err(|err| Error::DcapVerificationQueryError(err.to_string()))
     }
 }
 

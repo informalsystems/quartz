@@ -61,8 +61,12 @@ impl RawConfig {
         self.mr_enclave.as_slice()
     }
 
-    pub fn tcb_info(&self) -> Option<String> {
-        self.tcbinfo_contract.clone().map(|c| c.to_string())
+    pub fn tcbinfo_contract(&self) -> Option<&str> {
+        self.tcbinfo_contract.as_deref()
+    }
+
+    pub fn dcap_verifier_contract(&self) -> Option<&str> {
+        self.dcap_verifier_contract.as_deref()
     }
 }
 
