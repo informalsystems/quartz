@@ -1,12 +1,13 @@
 use cosmwasm_std::{
     from_json, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
-    WasmQuery,
+    StdResult, WasmQuery,
 };
 use quartz_dcap_verifier_msgs::QueryMsg as DcapVerifierQueryMsg;
 use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, TrustedIdentity, TrustedMrEnclaveIdentity},
     verify_epid_attestation, Error as RaVerificationError,
 };
+use serde::Serialize;
 use tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
@@ -14,16 +15,32 @@ use crate::{
     handler::Handler,
     msg::execute::attested::{
         Attestation, Attested, AttestedMsgSansHandler, DcapAttestation, EpidAttestation,
-        HasUserData, MockAttestation,
+        HasUserData, MockAttestation, Quote,
     },
     state::CONFIG,
 };
 
-pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
-    let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
-    let tcbinfo_addr = config
-        .tcbinfo_contract()
-        .expect("TcbInfo contract address is required for DCAP");
+fn query_contract(
+    deps: Deps<'_>,
+    contract_addr: String,
+    query_msg: impl Serialize,
+) -> StdResult<Binary> {
+    let request = QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr,
+        msg: to_json_binary(&query_msg)?,
+    });
+
+    deps.querier.query(&request)
+}
+
+fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
+    let tcbinfo_addr = {
+        let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
+        config
+            .tcbinfo_contract()
+            .expect("TcbInfo contract address is required for DCAP")
+            .to_string()
+    };
 
     let fmspc_bytes =
         hex::decode(&fmspc).map_err(|_| Error::InvalidFmspc("Invalid FMSPC format".to_string()))?;
@@ -33,14 +50,32 @@ pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
 
     let query_msg = TcbInfoQueryMsg::GetTcbInfo { fmspc };
 
-    let request = QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: tcbinfo_addr.to_string(),
-        msg: to_json_binary(&query_msg).map_err(Error::Std)?,
-    });
-
-    deps.querier
-        .query(&request)
+    query_contract(deps, tcbinfo_addr, &query_msg)
         .map_err(|err| Error::TcbInfoQueryError(err.to_string()))
+}
+
+fn query_dcap_verifier(
+    deps: Deps<'_>,
+    quote: Quote,
+    mr_enclave: impl Into<TrustedIdentity>,
+    updated_collateral: Collateral,
+) -> Result<Binary, Error> {
+    let query_msg = DcapVerifierQueryMsg::VerifyDcapAttestation {
+        quote: quote.as_ref().to_vec(),
+        collateral: serde_json::to_value(&updated_collateral).expect("infallible serializer"),
+        identities: serde_json::to_value(&[mr_enclave.into()]).expect("infallible serializer"),
+    };
+
+    let dcap_verifier_contract = {
+        let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
+        config
+            .dcap_verifier_contract()
+            .expect("verifier_contract address is required for DCAP")
+            .to_string()
+    };
+
+    query_contract(deps, dcap_verifier_contract, &query_msg)
+        .map_err(|err| Error::DcapVerificationQueryError(err.to_string()))
 }
 
 impl Handler for EpidAttestation {
@@ -88,26 +123,8 @@ impl Handler for DcapAttestation {
                 Error::TcbInfoQueryError(format!("Failed to deserialize updated collateral: {}", e))
             })?;
 
-        let query_msg = DcapVerifierQueryMsg::VerifyDcapAttestation {
-            quote: quote.as_ref().to_vec(),
-            collateral: serde_json::to_value(&updated_collateral).expect("infallible serializer"),
-            identities: serde_json::to_value(&[TrustedIdentity::from(mr_enclave)])
-                .expect("infallible serializer"),
-        };
-
-        let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
-        let verifier_contract = config
-            .dcap_verifier_contract()
-            .expect("verifier_contract address is required for DCAP");
-
-        let request = QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: verifier_contract.to_string(),
-            msg: to_json_binary(&query_msg).map_err(Error::Std)?,
-        });
-
-        deps.querier
-            .query(&request)
-            .map_err(|err| Error::DcapVerificationQueryError(err.to_string()))
+        query_dcap_verifier(deps.as_ref(), quote, mr_enclave, updated_collateral)
+            .map(|_| Response::default())
     }
 }
 
