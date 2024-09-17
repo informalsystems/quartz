@@ -35,6 +35,10 @@ pub struct Cli {
     #[clap(long)]
     pub tcbinfo_contract: Option<AccountId>,
 
+    /// DCAP verifier contract address
+    #[clap(long)]
+    pub dcap_verifier_contract: Option<AccountId>,
+
     /// Height of the trusted header (AKA root-of-trust)
     #[clap(long)]
     pub trusted_height: Height,

@@ -185,6 +185,7 @@ mod tests {
                                 "max_block_lag": 5
                             },
                             "tcbinfo_contract": "wasm14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s0phg4d"
+                            "dcap_verifier_contract": "wasm14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s0phg4d"
                         }
                     },
                     "attestation": {

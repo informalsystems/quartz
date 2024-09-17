@@ -68,6 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Duration::from_secs(30 * 24 * 60),
         light_client_opts,
         args.tcbinfo_contract.map(|c| c.to_string()),
+        args.dcap_verifier_contract.map(|c| c.to_string()),
     );
 
     let sk = Arc::new(Mutex::new(None));

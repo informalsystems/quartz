@@ -63,6 +63,12 @@ impl Handler for EnclaveStartRequest {
                 ));
             };
 
+            let Some(dcap_verifier_contract) = self.dcap_verifier_contract else {
+                return Err(Error::GenericErr(
+                    "dcap_verifier_contract is required if MOCK_SGX isn't set".to_string(),
+                ));
+            };
+
             let enclave_dir = fs::canonicalize(config.app_dir.join("enclave"))?;
 
             // gramine private key
@@ -77,6 +83,7 @@ impl Handler for EnclaveStartRequest {
                 &enclave_dir,
                 fmspc,
                 tcbinfo_contract,
+                dcap_verifier_contract,
             )
             .await?;
 
@@ -196,6 +203,7 @@ async fn gramine_manifest(
     enclave_dir: &Path,
     fmspc: Fmspc,
     tcbinfo_contract: AccountId,
+    dcap_verifier_contract: AccountId,
 ) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
@@ -221,6 +229,10 @@ async fn gramine_manifest(
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
         .arg(format!("-Dtcbinfo_contract={}", tcbinfo_contract))
+        .arg(format!(
+            "-Ddcap_verifier_contract={}",
+            dcap_verifier_contract
+        ))
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
         .current_dir(enclave_dir)
