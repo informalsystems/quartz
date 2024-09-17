@@ -4161,7 +4161,16 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "getrandom",
+ "quartz-dcap-verifier-msgs",
  "quartz-tee-ra",
+ "serde_json",
+]
+
+[[package]]
+name = "quartz-dcap-verifier-msgs"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
  "serde_json",
 ]
 
