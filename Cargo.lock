@@ -4145,6 +4145,7 @@ dependencies = [
  "cw-storage-plus",
  "hex",
  "k256",
+ "quartz-dcap-verifier-msgs",
  "quartz-tee-ra",
  "serde",
  "serde_json",
