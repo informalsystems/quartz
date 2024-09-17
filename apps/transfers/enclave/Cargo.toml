@@ -16,7 +16,7 @@ default = []
 [dependencies]
 # external
 async-trait = "0.1.81"
-anyhow = { version = "1.0.86", features = ["backtrace"] }
+anyhow = { version = "1.0.86" }
 base64 = "0.22.1"
 clap = { version = "4.1.8", default-features = false, features = ["derive", "std"] }
 color-eyre = { version = "0.6.2", default-features = false }

@@ -220,15 +220,14 @@ async fn make_provider(
     let rpc_client = HttpClient::builder(rpc_addr)
         .compat_mode(CompatMode::V0_34)
         .build()?;
-    println!("1");
+
     let node_id = rpc_client.status().await?.node_info.id;
-    println!("2");
     let light_store = Box::new(MemoryStore::new());
 
     let instance =
         LightClientBuilder::prod(node_id, rpc_client.clone(), light_store, options, None)
             .trust_primary_at(trusted_height, trusted_hash)?
             .build();
-    println!("3");
+
     Ok(Provider::new(chain_id.to_string(), instance, rpc_client))
 }

@@ -63,7 +63,7 @@ pub struct Cli {
 }
 
 fn default_rpc_addr() -> SocketAddr {
-    let port = env::var("QUARTZ_ENCLAVE_RPC_ADDR").unwrap_or_else(|_| "11090".to_string());
+    let port = env::var("QUARTZ_ENCLAVE_RPC_PORT").unwrap_or_else(|_| "11090".to_string());
     format!("127.0.0.1:{}", port)
         .parse()
         .expect("Invalid socket address")

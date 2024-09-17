@@ -77,7 +77,6 @@ impl<A: Attestor> WebSocketHandler for TransfersService<A> {
                         .expect("must be included in transfers event")
                         .parse::<AccountId>()
                         .map_err(|e| anyhow!(e))?,
-                    sender.expect("must be included in transfers event"),
                     &config,
                 )
                 .await?;
@@ -91,7 +90,7 @@ impl<A: Attestor> WebSocketHandler for TransfersService<A> {
                         .map_err(|e| anyhow!(e))?,
                     sender.expect("must be included in query event"),
                     emphemeral_pubkey.expect("must be included in query event"),
-                    &config.node_url,
+                    &config,
                 )
                 .await?;
             }
@@ -126,11 +125,10 @@ fn is_query_event(event: &Event) -> bool {
 async fn transfer_handler<A: Attestor>(
     client: &TransfersService<A>,
     contract: &AccountId,
-    sender: String,
-    wsconfig: &WsListenerConfig,
+    ws_config: &WsListenerConfig,
 ) -> Result<()> {
-    let chain_id = &ChainId::from_str("testing")?;
-    let httpurl = Url::parse(&format!("http://{}", wsconfig.node_url))?;
+    let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
+    let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
 
     // Query chain
@@ -150,19 +148,19 @@ async fn transfer_handler<A: Attestor>(
 
     // Wait 2 blocks
     info!("Waiting 2 blocks for light client proof");
-    let wsurl = format!("ws://{}/websocket", wsconfig.node_url);
+    let wsurl = format!("ws://{}/websocket", ws_config.node_url);
     two_block_waitoor(&wsurl).await?;
 
     // Call tm prover with trusted hash and height
     let prover_config = TmProverConfig {
         primary: httpurl.as_str().parse()?,
         witnesses: httpurl.as_str().parse()?,
-        trusted_height: wsconfig.trusted_height,
-        trusted_hash: wsconfig.trusted_hash,
+        trusted_height: ws_config.trusted_height,
+        trusted_hash: ws_config.trusted_hash,
         verbose: "1".parse()?, // TODO: both tm-prover and cli define the same Verbosity struct. Need to define this once and import
         contract_address: contract.clone(),
         storage_key: "requests".to_string(),
-        chain_id: wsconfig.chain_id.to_string(),
+        chain_id: ws_config.chain_id.to_string(),
         ..Default::default()
     };
 
@@ -214,7 +212,7 @@ async fn transfer_handler<A: Attestor>(
 
     // Post response to chain
     let output =
-        wasmd_client.tx_execute(contract, chain_id, 2000000, &sender, json!(setoffs_msg))?;
+        wasmd_client.tx_execute(contract, chain_id, 2000000, &ws_config.tx_sender, json!(setoffs_msg))?;
 
     println!("Output TX: {}", output);
     Ok(())
@@ -223,12 +221,12 @@ async fn transfer_handler<A: Attestor>(
 async fn query_handler<A: Attestor>(
     client: &TransfersService<A>,
     contract: &AccountId,
-    sender: String,
+    msg_sender: String,
     pubkey: String,
-    node_url: &str,
+    ws_config: &WsListenerConfig,
 ) -> Result<()> {
-    let chain_id = &ChainId::from_str("testing")?;
-    let httpurl = Url::parse(&format!("http://{}", node_url))?;
+    let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
+    let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
     let wasmd_client = CliWasmdClient::new(httpurl);
 
     // Query Chain
@@ -241,7 +239,7 @@ async fn query_handler<A: Attestor>(
     // Build request
     let update_contents = QueryRequestMessage {
         state,
-        address: Addr::unchecked(&sender), // sender comes from TX event, therefore is checked
+        address: Addr::unchecked(&msg_sender), // sender comes from TX event, therefore is checked
         ephemeral_pubkey: HexBinary::from_hex(&pubkey)?,
     };
 
@@ -270,7 +268,7 @@ async fn query_handler<A: Attestor>(
 
     // Post response to chain
     let output =
-        wasmd_client.tx_execute(contract, chain_id, 2000000, &sender, json!(setoffs_msg))?;
+        wasmd_client.tx_execute(contract, chain_id, 2000000, &ws_config.tx_sender, json!(setoffs_msg))?;
 
     println!("Output TX: {}", output);
     Ok(())
