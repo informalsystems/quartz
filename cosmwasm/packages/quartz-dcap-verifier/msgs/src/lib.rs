@@ -7,8 +7,6 @@ pub struct InstantiateMsg;
 #[cw_serde]
 pub enum ExecuteMsg {}
 
-pub mod execute {}
-
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
@@ -20,5 +18,3 @@ pub enum QueryMsg {
         identities: JsonValue,
     },
 }
-
-pub mod query {}

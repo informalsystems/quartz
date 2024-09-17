@@ -82,6 +82,7 @@ mc-attestation-verifier = { git = "https://github.com/informalsystems/attestatio
 cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = false }
 quartz-common = { path = "core/quartz-common", default-features = false }
 quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
+quartz-dcap-verifier-msgs = { path = "cosmwasm/packages/quartz-dcap-verifier/msgs", default-features = false }
 quartz-enclave = { path = "core/quartz", default-features = false }
 quartz-proto = { path = "core/quartz-proto", default-features = false }
 quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }

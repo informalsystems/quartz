@@ -1,15 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use quartz_dcap_verifier_msgs::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, Quote3, TrustedIdentity},
     verify_dcap_attestation, Error,
 };
 
-use crate::{
-    error::into_std_err,
-    msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
-};
+use crate::error::into_std_err;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
