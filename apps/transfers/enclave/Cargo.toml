@@ -45,7 +45,7 @@ transfers-contract = { path = "../contracts", default-features = false }
 # quartz
 # quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["full"]}
 quartz-common = { path = "../../../crates/quartz-common", features = ["full"] }
-wasmd-client = { path = "../../../crates/packages/wasmd-client"}
+wasmd-client = { path = "../../../crates/wasmd-client"}
 tm-prover = { path = "../../../crates/tm-prover", default-features = false }
 
 [dev-dependencies]
