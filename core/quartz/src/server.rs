@@ -62,7 +62,7 @@ use crate::{
 /// # Arguments
 ///
 /// * `event` - The WebSocket event received from the Tendermint RPC server.
-/// * `ws_config` - Configuration values used for handling the WebSocket events, 
+/// * `ws_config` - Configuration values used for handling the WebSocket events,
 ///   such as node URL, a signer for transactions, and trusted block information.
 ///
 /// # Returns

@@ -66,7 +66,7 @@ impl<A: Attestor> WebSocketHandler for TransfersService<A> {
             }
 
             if contract_address.is_none() {
-                return Ok(()); 
+                return Ok(());
             }
 
             if is_transfer {
@@ -116,7 +116,9 @@ fn is_query_event(event: &Event) -> bool {
     if let Some(EventType::Tx) = event.event_type() {
         // Check for the "wasm.action" key with the value "init_clearing"
         if let Some(events) = &event.events {
-            return events.iter().any(|(key, _)| key.starts_with("wasm-query_balance"));
+            return events
+                .iter()
+                .any(|(key, _)| key.starts_with("wasm-query_balance"));
         }
     }
     false
@@ -211,8 +213,13 @@ async fn transfer_handler<A: Attestor>(
     });
 
     // Post response to chain
-    let output =
-        wasmd_client.tx_execute(contract, chain_id, 2000000, &ws_config.tx_sender, json!(setoffs_msg))?;
+    let output = wasmd_client.tx_execute(
+        contract,
+        chain_id,
+        2000000,
+        &ws_config.tx_sender,
+        json!(setoffs_msg),
+    )?;
 
     println!("Output TX: {}", output);
     Ok(())
@@ -274,8 +281,13 @@ async fn query_handler<A: Attestor>(
     });
 
     // Post response to chain
-    let output =
-        wasmd_client.tx_execute(contract, chain_id, 2000000, &ws_config.tx_sender, json!(setoffs_msg))?;
+    let output = wasmd_client.tx_execute(
+        contract,
+        chain_id,
+        2000000,
+        &ws_config.tx_sender,
+        json!(setoffs_msg),
+    )?;
 
     println!("Output TX: {}", output);
     Ok(())
