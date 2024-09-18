@@ -1,5 +1,4 @@
 use tendermint::{block::Height, Hash};
-use tokio::sync::watch;
 use tracing::debug;
 
 use crate::{
@@ -9,7 +8,6 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub struct EnclaveStartRequest {
-    pub shutdown_rx: Option<watch::Receiver<()>>,
     pub unsafe_trust_latest: bool,
 }
 
