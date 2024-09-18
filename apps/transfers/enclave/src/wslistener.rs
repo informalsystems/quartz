@@ -56,7 +56,7 @@ impl<A: Attestor> WebSocketHandler for TransfersService<A> {
                         "execute._contract_address" => {
                             contract_address = values.first().cloned();
                         }
-                        "wasm.query_balance.emphemeral_pubkey" => {
+                        "wasm-query_balance.emphemeral_pubkey" => {
                             // TODO: fix typo
                             emphemeral_pubkey = values.first().cloned();
                         }
@@ -65,8 +65,8 @@ impl<A: Attestor> WebSocketHandler for TransfersService<A> {
                 }
             }
 
-            if sender.is_none() || contract_address.is_none() {
-                return Ok(()); // TODO: change return type
+            if contract_address.is_none() {
+                return Ok(()); 
             }
 
             if is_transfer {
@@ -116,7 +116,7 @@ fn is_query_event(event: &Event) -> bool {
     if let Some(EventType::Tx) = event.event_type() {
         // Check for the "wasm.action" key with the value "init_clearing"
         if let Some(events) = &event.events {
-            return events.iter().any(|(key, _)| key == "wasm-query_balance");
+            return events.iter().any(|(key, _)| key.starts_with("wasm-query_balance"));
         }
     }
     false
@@ -255,7 +255,7 @@ async fn query_handler<A: Attestor>(
         .into_inner();
 
     // Extract json from the enclave response
-    let attested: RawAttested<QueryResponseMsg, Vec<u8>> =
+    let attested: RawAttested<QueryResponseMsg, HexBinary> =
         serde_json::from_str(&query_response.message)
             .map_err(|e| anyhow!("Error deserializing QueryResponseMsg from enclave: {}", e))?;
 
@@ -263,7 +263,14 @@ async fn query_handler<A: Attestor>(
     // TODO add non-mock support
     let setoffs_msg = ExecuteMsg::QueryResponse::<RawMockAttestation>(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
-        attestation: MockAttestation(attested.attestation.try_into().unwrap()).into(),
+        attestation: MockAttestation(
+            attested
+                .attestation
+                .as_slice()
+                .try_into()
+                .map_err(|_| anyhow!("slice with incorrect length"))?,
+        )
+        .into(),
     });
 
     // Post response to chain

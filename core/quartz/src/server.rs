@@ -54,6 +54,20 @@ use crate::{
     types::{InstantiateResponse, SessionCreateResponse, SessionSetPubKeyResponse},
 };
 
+/// Trait for Quartz enclaves to process on-chain events.
+///
+/// Implementors of this trait should define how to process incoming WebSocket events,
+/// using the provided `event` and `ws_config` parameters.
+///
+/// # Arguments
+///
+/// * `event` - The WebSocket event received from the Tendermint RPC server.
+/// * `ws_config` - Configuration values used for handling the WebSocket events, 
+///   such as node URL, a signer for transactions, and trusted block information.
+///
+/// # Returns
+///
+/// An `anyhow::Result<()>` indicating success or failure in handling the event.
 #[tonic::async_trait]
 pub trait WebSocketHandler: Send + Sync + 'static {
     async fn handle(&self, event: Event, ws_config: WsListenerConfig) -> anyhow::Result<()>; // TODO: replace anyhow
@@ -62,10 +76,10 @@ pub trait WebSocketHandler: Send + Sync + 'static {
 #[derive(Debug, Clone)]
 pub struct WsListenerConfig {
     pub node_url: String,
+    pub chain_id: String,
     pub tx_sender: String,
     pub trusted_hash: Hash,
     pub trusted_height: Height,
-    pub chain_id: String,
 }
 
 /// A trait for wrapping a tonic service with the gRPC server handler
