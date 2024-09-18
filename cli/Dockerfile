@@ -18,9 +18,12 @@ RUN --mount=type=ssh cargo build --locked --release ${CARGO_FLAGS}
 
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt install -y openssl
+RUN apt-get update && apt install -y openssl cargo
 
 # Copy the enclave binary we built in the previous stage
 COPY --from=build /opt/target/release/quartz /usr/local/bin/
+
+# Copy the transfer app files
+COPY --from=build /opt /cycles-quartz
 
 CMD ["quartz"]
