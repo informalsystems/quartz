@@ -230,6 +230,8 @@ pub mod execute {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetBalance { address } => to_json_binary(&query::get_balance(deps, address)?),
+        QueryMsg::GetRequests {} => to_json_binary(&query::get_requests(deps)?),
+        QueryMsg::GetState {} => to_json_binary(&query::get_state(deps)?),
     }
 }
 mod query {
@@ -238,5 +240,13 @@ mod query {
     pub fn get_balance(deps: Deps, address: String) -> StdResult<HexBinary> {
         let balance = BALANCES.may_load(deps.storage, &address)?;
         Ok(balance.unwrap_or_default())
+    }
+
+    pub fn get_requests(deps: Deps) -> StdResult<Vec<Request>> {
+        Ok(REQUESTS.load(deps.storage)?)
+    }
+
+    pub fn get_state(deps: Deps) -> StdResult<HexBinary> {
+        Ok(STATE.load(deps.storage)?)
     }
 }
