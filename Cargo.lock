@@ -144,6 +144,9 @@ name = "anyhow"
 version = "1.0.88"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e1496f8fb1fbf272686b8d37f523dab3e4a7443300055e74cdaa449f3114356"
+dependencies = [
+ "backtrace",
+]
 
 [[package]]
 name = "anymap2"
@@ -462,7 +465,7 @@ dependencies = [
  "rustversion",
  "serde",
  "sync_wrapper 1.0.1",
- "tower",
+ "tower 0.4.13",
  "tower-layer",
  "tower-service",
 ]
@@ -2656,7 +2659,7 @@ dependencies = [
  "pin-project-lite",
  "socket2",
  "tokio",
- "tower",
+ "tower 0.4.13",
  "tower-service",
  "tracing",
 ]
@@ -3316,6 +3319,9 @@ dependencies = [
 name = "mtcs-enclave"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
  "clap",
  "color-eyre",
  "cosmrs",
@@ -3323,20 +3329,24 @@ dependencies = [
  "cw-multi-test",
  "cw-tee-mtcs",
  "ecies",
+ "futures-util",
  "hex",
  "k256",
  "mtcs",
  "prost 0.13.2",
  "quartz-common",
+ "reqwest 0.12.7",
  "serde",
  "serde_json",
  "tendermint 0.38.1",
  "tendermint-light-client",
+ "tendermint-rpc",
  "thiserror",
  "tokio",
  "tonic",
  "tonic-build",
  "uuid",
+ "wasmd-client",
 ]
 
 [[package]]
@@ -4087,7 +4097,6 @@ dependencies = [
  "hex",
  "k256",
  "miette",
- "mtcs-enclave",
  "once_cell",
  "prost 0.13.2",
  "quartz-common",
@@ -4147,12 +4156,15 @@ dependencies = [
 name = "quartz-enclave"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "async-trait",
  "clap",
  "color-eyre",
  "cosmrs",
  "cosmwasm-std",
  "cw-proof",
  "ecies",
+ "futures-util",
  "hex",
  "k256",
  "mtcs",
@@ -4165,9 +4177,12 @@ dependencies = [
  "sha2 0.10.8",
  "tendermint 0.38.1",
  "tendermint-light-client",
+ "tendermint-rpc",
+ "thiserror",
  "tm-stateless-verifier",
  "tokio",
  "tonic",
+ "tower 0.5.1",
 ]
 
 [[package]]
@@ -5750,7 +5765,7 @@ dependencies = [
  "socket2",
  "tokio",
  "tokio-stream",
- "tower",
+ "tower 0.4.13",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -5787,6 +5802,16 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+]
+
+[[package]]
+name = "tower"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2873938d487c3cfb9aed7546dc9f2711d867c9f90c46b889989a2cb84eba6b4f"
+dependencies = [
+ "tower-layer",
+ "tower-service",
 ]
 
 [[package]]

@@ -38,6 +38,10 @@ impl Handler for EnclaveStartRequest {
                 trusted_height.to_string(),
                 "--trusted-hash".to_string(),
                 trusted_hash.to_string(),
+                "--node-url".to_string(),
+                config.node_url,
+                "--tx-sender".to_string(),
+                config.tx_sender,
             ];
 
             // Run quartz enclave and block
@@ -98,7 +102,7 @@ async fn create_mock_enclave_child(
 
     // Use the enclave package metadata to get the path to the program binary
     let package_name = MetadataCommand::new()
-        .manifest_path(&enclave_dir.join("Cargo.toml"))
+        .manifest_path(enclave_dir.join("Cargo.toml"))
         .exec()
         .map_err(|e| Error::GenericErr(e.to_string()))?
         .root_package()
