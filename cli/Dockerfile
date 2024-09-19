@@ -1,29 +1,58 @@
-FROM rust:1.76 AS build
+FROM rust:1.79 AS build
 
-ENV TARGET=x86_64-unknown-linux-musl
-
+ENV TARGET=wasm32-unknown-unknown
 ARG CARGO_FLAGS=""
 
 COPY . /opt
 
-RUN apt-get update && apt-get install -y protobuf-compiler && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    protobuf-compiler \
+    openssl \
+    clang \
+    ca-certificates && \
     mkdir -m 0700 /root/.ssh && \
     ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 RUN rustup target add "$TARGET"
 WORKDIR /opt/cli
 RUN --mount=type=ssh cargo build --locked --release ${CARGO_FLAGS}
+RUN cp /opt/target/release/quartz /usr/local/bin/
+
+# Install Go
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget && \
+    wget https://go.dev/dl/go1.20.5.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.20.5.linux-amd64.tar.gz && \
+    rm go1.20.5.linux-amd64.tar.gz && \
+    apt-get remove -y wget && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+RUN go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+
+RUN cargo install websocat
+
+
+WORKDIR /opt/cli
+RUN --mount=type=ssh cargo build --locked --release ${CARGO_FLAGS}
+
+RUN cp /opt/target/release/quartz /usr/local/bin/
+
+CMD ["quartz", "--mock-sgx", "--app-dir", "/opt/apps/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/apps/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"ucosm\"}"]
 
 #------------------------------------------------------------------------------
 
-FROM debian:bookworm-slim
+# FROM rust:latest
 
-RUN apt-get update && apt install -y openssl cargo
+# RUN apt-get update && apt install -y openssl
 
-# Copy the enclave binary we built in the previous stage
-COPY --from=build /opt/target/release/quartz /usr/local/bin/
+# # Copy the enclave binary we built in the previous stage
+# COPY --from=build /opt/target/release/quartz /usr/local/bin/
 
-# Copy the transfer app files
-COPY --from=build /opt /cycles-quartz
+# # Copy the transfer app files
+# COPY --from=build /opt /cycles-quartz
 
-CMD ["quartz"]
+# CMD ["quartz"]

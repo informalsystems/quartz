@@ -1,0 +1,25 @@
+name: E2E tests
+on: [push]
+defaults:
+  run:
+    working-directory: apps/transfers/frontend
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+      - name: Setup Node for frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          check-latest: true
+      - name: Run containers wasmd and enclave
+        working-directory: .
+        run: docker compose -f docker/docker-compose.yml up -d --build
+      - name: Install dependencies for the frontend
+        run: npm ci
+      - name: Setup environment variables
+        run: cp .env.example .env.local
+      - name: Run all E2E tests
+        run: npm run test
