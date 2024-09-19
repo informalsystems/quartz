@@ -99,7 +99,7 @@ async fn handler<A: Attestor>(
     sender: String,
     node_url: &str,
 ) -> Result<()> {
-    let chain_id = &ChainId::from_str("testing")?;
+    let chain_id = &ChainId::from_str("test-1")?;
     let httpurl = Url::parse(&format!("http://{}", node_url))?;
     let wasmd_client = CliWasmdClient::new(httpurl);
 

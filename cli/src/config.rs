@@ -57,7 +57,7 @@ fn default_node_url() -> String {
 }
 
 fn default_tx_sender() -> String {
-    String::from("admin")
+    String::from("val1")
 }
 
 fn default_chain_id() -> ChainId {

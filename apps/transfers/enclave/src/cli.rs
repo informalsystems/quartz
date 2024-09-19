@@ -58,7 +58,7 @@ pub struct Cli {
     #[clap(long, default_value = "127.0.0.1:11090")]
     pub node_url: String,
 
-    #[clap(long, default_value = "admin")]
+    #[clap(long, default_value = "val1")]
     pub tx_sender: String,
 }
 
