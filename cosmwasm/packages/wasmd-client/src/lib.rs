@@ -34,6 +34,7 @@ pub trait WasmdClient {
         gas: u64,
         sender: &str,
         msg: M,
+        fee: &str,
     ) -> Result<String, Self::Error>;
 
     fn deploy<M: ToString>(
@@ -147,6 +148,7 @@ impl WasmdClient for CliWasmdClient {
         gas: u64,
         sender: &str,
         msg: M,
+        fee: &str,
     ) -> Result<String, Self::Error> {
         let mut wasmd = Command::new("neutrond");
         let command = wasmd
@@ -155,6 +157,7 @@ impl WasmdClient for CliWasmdClient {
             .args(["tx", "wasm"])
             .args(["execute", contract.as_ref(), &msg.to_string()])
             .args(["--gas", &gas.to_string()])
+            .args(["--fees", fee]) // Add fees argument
             .args(["--from", sender])
             .args(["--output", "json"])
             .arg("-y");
