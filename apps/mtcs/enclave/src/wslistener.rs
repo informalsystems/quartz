@@ -131,7 +131,7 @@ async fn handler<A: Attestor>(
 
     // Send setoffs to mtcs contract on chain
     let output =
-        wasmd_client.tx_execute(contract, chain_id, 2000000, &sender, json!(setoffs_msg))?;
+        wasmd_client.tx_execute(contract, chain_id, 2000000, &sender, json!(setoffs_msg),"1000untrn")?;
 
     println!("Setoffs TX: {}", output);
     Ok(())

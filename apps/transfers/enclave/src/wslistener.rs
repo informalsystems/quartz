@@ -219,6 +219,7 @@ async fn transfer_handler<A: Attestor>(
         2000000,
         &ws_config.tx_sender,
         json!(setoffs_msg),
+        "5000untrn",
     )?;
 
     println!("Output TX: {}", output);
@@ -287,6 +288,7 @@ async fn query_handler<A: Attestor>(
         2000000,
         &ws_config.tx_sender,
         json!(setoffs_msg),
+        "5000untrn",
     )?;
 
     println!("Output TX: {}", output);
