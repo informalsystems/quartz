@@ -15,7 +15,7 @@ pub type DefaultAttestor = EpidAttestor;
 pub type DefaultAttestor = MockAttestor;
 
 /// The trait defines the interface for generating attestations from within an enclave.
-pub trait Attestor {
+pub trait Attestor: Send + Sync + 'static {
     type Error: ToString;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error>;

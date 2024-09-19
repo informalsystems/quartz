@@ -12,9 +12,9 @@ authors.workspace = true
 path="src/lib.rs"
 
 [dependencies]
-anyhow.workspace = true
 cosmrs.workspace = true
 hex.workspace = true
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+anyhow.workspace = true
