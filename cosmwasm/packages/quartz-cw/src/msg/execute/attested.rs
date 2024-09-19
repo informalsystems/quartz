@@ -179,7 +179,7 @@ impl DcapAttestation {
 #[cw_serde]
 pub struct RawDcapAttestation {
     pub quote: HexBinary,
-    pub collateral: serde_json::Value,
+    pub collateral: Vec<u8>,
 }
 
 impl TryFrom<RawDcapAttestation> for DcapAttestation {
@@ -190,7 +190,7 @@ impl TryFrom<RawDcapAttestation> for DcapAttestation {
         let quote = quote_bytes
             .try_into()
             .map_err(|e: Quote3Error| StdError::parse_err("Quote", e.to_string()))?;
-        let collateral = serde_json::from_value(value.collateral)
+        let collateral = serde_cbor::from_slice(&value.collateral)
             .map_err(|e| StdError::parse_err("Collateral", e.to_string()))?;
 
         Ok(Self { quote, collateral })
@@ -201,7 +201,7 @@ impl From<DcapAttestation> for RawDcapAttestation {
     fn from(value: DcapAttestation) -> Self {
         Self {
             quote: value.quote.as_ref().to_vec().into(),
-            collateral: serde_json::to_vec(&value.collateral)
+            collateral: serde_cbor::to_vec(&value.collateral)
                 .expect("infallible serializer")
                 .into(),
         }
