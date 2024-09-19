@@ -79,11 +79,27 @@ async fn deploy(
             &config.tx_sender,
             wasm_bin_path.display().to_string(),
         )?)?;
-        let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
-        info!("Deploy response {:?}", res);
+        info!("Deploy output: {:?}", deploy_output);
 
-        let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-        let code_id: u64 = log[0].events[1].attributes[1].value.parse()?;
+
+        let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
+        // info!("Deploy response {:?}", res);
+        info!("TX result log: {}", res.tx_result.log);
+
+
+        // let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
+        // let code_id: u64 = log[0].events[1].attributes[1].value.parse()?;
+        // config.save_codeid_to_cache(wasm_bin_path, code_id).await?;
+
+        // Find the 'code_id' attribute
+        let code_id = res.tx_result.events
+        .iter()
+        .find(|event| event.kind == "store_code")
+        .and_then(|event| event.attributes.iter().find(|attr| attr.key_str().unwrap_or("") == "code_id"))
+        .and_then(|attr| attr.value_str().ok().and_then(|v| v.parse().ok()))
+        .ok_or_else(|| anyhow::anyhow!("Failed to find code_id in the transaction result"))?;
+
+        info!("Code ID: {}", code_id);
         config.save_codeid_to_cache(wasm_bin_path, code_id).await?;
 
         code_id
@@ -109,9 +125,16 @@ async fn deploy(
     )?)?;
     let res = block_tx_commit(&tmrpc_client, init_output.txhash).await?;
 
-    let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-    let contract_addr: &String = &log[0].events[1].attributes[0].value;
+    // info!("Init response: {:?}", res);
 
+    // Find the '_contract_address' attribute
+    let contract_addr: String = res.tx_result.events
+    .iter()
+    .find(|event| event.kind == "instantiate")
+    .and_then(|event| event.attributes.iter().find(|attr| attr.key_str().unwrap_or("") == "_contract_address"))
+    .and_then(|attr| attr.value_str().ok().and_then(|v| v.parse().ok()))
+    .ok_or_else(|| anyhow::anyhow!("Failed to find contract_address in the transaction result"))?;
+    
     info!("🚀 Successfully deployed and instantiated contract!");
     info!("🆔 Code ID: {}", code_id);
     info!("📌 Contract Address: {}", contract_addr);
