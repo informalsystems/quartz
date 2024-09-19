@@ -31,6 +31,7 @@ thiserror.workspace = true
 tonic.workspace = true
 tokio.workspace = true
 tower.workspace = true
+urlencoding.workspace = true
 
 # mobilecoin
 mc-sgx-dcap-sys-types.workspace = true

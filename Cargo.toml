@@ -56,6 +56,7 @@ tonic-build = { version = "=0.12.1", default-features = false, features = ["pros
 tower = { version = "0.5.0" }
 tracing = { version = "0.1.39", default-features = false }
 tracing-subscriber = { version = "0.3.17", default-features = false, features = ["fmt"] }
+urlencoding = { version = "2.1.3", default-features = false }
 uuid = { version = "1.4.1", default-features = false, features = ["serde"] }
 x509-cert = { version = "0.2.5", default-features = false }
 x509-parser = { version = "0.16.0", default-features = false, features = ["verify"] }
