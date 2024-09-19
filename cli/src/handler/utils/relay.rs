@@ -2,6 +2,7 @@ use quartz_common::proto::{
     core_client::CoreClient, InstantiateRequest, SessionCreateRequest, SessionSetPubKeyRequest,
 };
 use serde_json::{json, Value as JsonValue};
+use tm_prover::config::ProofOutput;
 
 use crate::error::Error;
 
@@ -9,7 +10,7 @@ use crate::error::Error;
 pub enum RelayMessage {
     Instantiate { init_msg: JsonValue },
     SessionCreate,
-    SessionSetPubKey { proof: String },
+    SessionSetPubKey { proof: ProofOutput },
 }
 
 impl RelayMessage {
@@ -37,7 +38,7 @@ impl RelayMessage {
                 .map(|msg| json!({ "quartz": {"session_create": msg}}).to_string())?,
             RelayMessage::SessionSetPubKey { proof } => qc_client
                 .session_set_pub_key(SessionSetPubKeyRequest {
-                    message: proof.to_string(),
+                    message: serde_json::to_string(&proof)?,
                 })
                 .await
                 .map_err(|e| Error::GenericErr(e.to_string()))

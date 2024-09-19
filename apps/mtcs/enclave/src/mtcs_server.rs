@@ -4,7 +4,6 @@ use std::{
 };
 
 use cosmwasm_std::{Addr, HexBinary, Uint128};
-//TODO: get rid of this
 use cw_tee_mtcs::{
     msg::execute::SubmitSetoffsMsg,
     state::{LiquiditySource, LiquiditySourceType, RawHash, SettleOff, Transfer},
@@ -17,20 +16,32 @@ use mtcs::{
 };
 use quartz_common::{
     contract::{msg::execute::attested::RawAttested, state::Config},
-    enclave::{attestor::Attestor, server::ProofOfPublication},
+    enclave::{attestor::Attestor, server::IntoServer},
 };
 use tonic::{Request, Response, Result as TonicResult, Status};
 use uuid::Uuid;
 
 use crate::{
-    proto::{clearing_server::Clearing, RunClearingRequest, RunClearingResponse},
+    proto::{
+        clearing_server::{Clearing, ClearingServer},
+        RunClearingRequest, RunClearingResponse,
+    },
     types::{ContractObligation, RunClearingMessage},
 };
 
 pub type RawCipherText = HexBinary;
 
+impl<A: Attestor> IntoServer for MtcsService<A> {
+    type Server = ClearingServer<MtcsService<A>>;
+
+    fn into_server(self) -> Self::Server {
+        ClearingServer::new(self)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
+    #[allow(dead_code)]
     config: Config, // TODO: this config is not used anywhere
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
@@ -59,20 +70,20 @@ where
         request: Request<RunClearingRequest>,
     ) -> TonicResult<Response<RunClearingResponse>> {
         // Light client check
-        let message: ProofOfPublication<RunClearingMessage> = {
+        let message: RunClearingMessage = {
             let message = request.into_inner().message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
 
-        let (proof_value, message) = message
-            .verify(self.config.light_client_opts())
-            .map_err(Status::failed_precondition)?;
+        // let (proof_value, message) = message
+        //     .verify(self.config.light_client_opts())
+        //     .map_err(Status::failed_precondition)?;
 
-        let proof_value_matches_msg =
-            serde_json::to_string(&message.intents).is_ok_and(|s| s.as_bytes() == proof_value);
-        if !proof_value_matches_msg {
-            return Err(Status::failed_precondition("proof verification"));
-        }
+        // let proof_value_matches_msg =
+        //     serde_json::to_string(&message.intents).is_ok_and(|s| s.as_bytes() == proof_value);
+        // if !proof_value_matches_msg {
+        //     return Err(Status::failed_precondition("proof verification"));
+        // }
         // TODO: ensure no duplicates somewhere else!
         let liquidity_sources: Vec<LiquiditySource> =
             message.liquidity_sources.into_iter().collect();

@@ -22,7 +22,7 @@ use serde::Serialize;
 use crate::types::Fmspc;
 
 /// The trait defines the interface for generating attestations from within an enclave.
-pub trait Attestor {
+pub trait Attestor: Send + Sync + 'static {
     type Error: ToString;
     type Attestation: Attestation;
     type RawAttestation: HasDomainType<DomainType = Self::Attestation> + Serialize;

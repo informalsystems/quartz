@@ -100,7 +100,6 @@ impl TryFrom<EnclaveCommand> for Request {
         match cmd {
             EnclaveCommand::Build(_) => Ok(EnclaveBuildRequest {}.into()),
             EnclaveCommand::Start(args) => Ok(EnclaveStartRequest {
-                shutdown_rx: None,
                 unsafe_trust_latest: args.unsafe_trust_latest,
                 fmspc: args.fmspc,
                 tcbinfo_contract: args.tcbinfo_contract,

@@ -11,7 +11,10 @@ use quartz_common::{
         msg::execute::attested::{HasUserData, RawAttested},
         state::{Config, UserData},
     },
-    enclave::{attestor::Attestor, server::ProofOfPublication},
+    enclave::{
+        attestor::Attestor,
+        server::{IntoServer, ProofOfPublication},
+    },
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -20,10 +23,19 @@ use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as T
 
 use crate::{
     proto::{
-        settlement_server::Settlement, QueryRequest, QueryResponse, UpdateRequest, UpdateResponse,
+        settlement_server::{Settlement, SettlementServer},
+        QueryRequest, QueryResponse, UpdateRequest, UpdateResponse,
     },
     state::{RawBalance, RawState, State},
 };
+
+impl<A: Attestor> IntoServer for TransfersService<A> {
+    type Server = SettlementServer<TransfersService<A>>;
+
+    fn into_server(self) -> Self::Server {
+        SettlementServer::new(self)
+    }
+}
 
 pub type RawCipherText = HexBinary;
 
@@ -34,17 +46,17 @@ pub struct TransfersService<A> {
     attestor: A,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateRequestMessage {
-    state: HexBinary,
-    requests: Vec<TransfersRequest>,
+    pub state: HexBinary,
+    pub requests: Vec<TransfersRequest>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryRequestMessage {
-    state: HexBinary,
-    address: Addr,
-    ephemeral_pubkey: HexBinary,
+    pub state: HexBinary,
+    pub address: Addr,
+    pub ephemeral_pubkey: HexBinary,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

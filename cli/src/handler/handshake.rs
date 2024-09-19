@@ -1,4 +1,4 @@
-use std::{fs, str::FromStr};
+use std::str::FromStr;
 
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -82,35 +82,30 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     info!("Waiting 2 blocks for light client proof");
     two_block_waitoor(&wsurl).await?;
 
-    let proof_path = config.cache_dir()?.join("light-client-proof.json");
-    debug!("Proof path: {:?}", proof_path.to_str());
-
     // Call tm prover with trusted hash and height
     let prover_config = TmProverConfig {
         primary: httpurl.as_str().parse()?,
         witnesses: httpurl.as_str().parse()?,
         trusted_height,
         trusted_hash,
-        trace_file: Some(proof_path.clone()),
         verbose: "1".parse()?, // TODO: both tm-prover and cli define the same Verbosity struct. Need to define this once and import
         contract_address: args.contract.clone(),
         storage_key: "quartz_session".to_string(),
         chain_id: config.chain_id.to_string(),
         ..Default::default()
     };
-    debug!("config: {:?}", prover_config);
-    if let Err(report) = prove(prover_config).await {
-        return Err(anyhow!("Tendermint prover failed. Report: {}", report));
-    }
 
-    // Read proof file
-    let proof = fs::read_to_string(proof_path.as_path())?.trim().to_string();
+    let proof_output = prove(prover_config)
+        .await
+        .map_err(|report| anyhow!("Tendermint prover failed. Report: {}", report))?;
 
     // Execute SessionSetPubKey on enclave
     info!("Running SessionSetPubKey");
-    let res: serde_json::Value = RelayMessage::SessionSetPubKey { proof }
-        .run_relay(config.enclave_rpc())
-        .await?;
+    let res: serde_json::Value = RelayMessage::SessionSetPubKey {
+        proof: proof_output,
+    }
+    .run_relay(config.enclave_rpc())
+    .await?;
 
     // Submit SessionSetPubKey to contract
     let output: WasmdTxResponse = serde_json::from_str(

@@ -1,5 +1,5 @@
-#![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
+#![doc = include_str!("../README.md")]
 #![warn(
     clippy::checked_conversions,
     clippy::panic,
@@ -16,6 +16,7 @@ mod cli;
 mod mtcs_server;
 mod proto;
 mod types;
+mod wslistener;
 
 use std::{
     sync::{Arc, Mutex},
@@ -25,23 +26,20 @@ use std::{
 use clap::Parser;
 use cli::Cli;
 use mtcs_server::MtcsService;
-use proto::clearing_server::ClearingServer as MtcsServer;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{self, Attestor},
-        server::CoreService,
+        server::{QuartzServer, WsListenerConfig},
     },
-    proto::core_server::CoreServer,
 };
-use tonic::transport::Server;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
     let light_client_opts = LightClientOpts::new(
-        args.chain_id,
+        args.chain_id.clone(),
         args.trusted_height.into(),
         Vec::from(args.trusted_hash)
             .try_into()
@@ -71,15 +69,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.dcap_verifier_contract.map(|c| c.to_string()),
     );
 
+    let ws_config = WsListenerConfig {
+        node_url: args.node_url,
+        tx_sender: args.tx_sender,
+        trusted_hash: args.trusted_hash,
+        trusted_height: args.trusted_height,
+        chain_id: args.chain_id,
+    };
+
     let sk = Arc::new(Mutex::new(None));
 
-    Server::builder()
-        .add_service(CoreServer::new(CoreService::new(
-            config.clone(),
-            sk.clone(),
-            attestor.clone(),
-        )))
-        .add_service(MtcsServer::new(MtcsService::new(config, sk, attestor)))
+    QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
+        .add_service(MtcsService::new(config, sk, attestor))
         .serve(args.rpc_addr)
         .await?;
 
