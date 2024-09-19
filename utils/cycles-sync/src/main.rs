@@ -20,7 +20,7 @@ use wasmd_client::{CliWasmdClient, WasmdClient};
 
 // const MNEMONIC_PHRASE: &str = "clutch debate vintage foster barely primary clown leader sell manual leopard ladder wet must embody story oyster imitate cable alien six square rice wedding";
 
-const ADDRESS_PREFIX: &str = "wasm";
+const ADDRESS_PREFIX: &str = "neutron";
 
 type Sha256Digest = [u8; 32];
 

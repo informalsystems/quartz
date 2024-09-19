@@ -6,5 +6,5 @@ pub trait ConstPrefix {
 pub struct PrefixWasm;
 
 impl ConstPrefix for PrefixWasm {
-    const PREFIX: &'static str = "wasm";
+    const PREFIX: &'static str = "neutron";
 }

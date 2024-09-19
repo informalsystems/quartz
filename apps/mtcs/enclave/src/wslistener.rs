@@ -50,7 +50,7 @@ impl<A: Attestor> WebSocketHandler for MtcsService<A> {
                         "message.sender" => {
                             sender = values.first().cloned();
                         }
-                        "wasm._contract_address" => {
+                        "neutron._contract_address" => {
                             contract_address = values.first().cloned();
                         }
                         _ => {}

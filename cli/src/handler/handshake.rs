@@ -110,7 +110,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
         wasmd_client
             .tx_execute(
                 &args.contract.clone(),
-                &ChainId::from_str("testing")?,
+                &ChainId::from_str("test-1")?,
                 2000000,
                 &config.tx_sender,
                 json!(res),

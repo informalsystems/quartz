@@ -80,6 +80,7 @@ async fn deploy(
             wasm_bin_path.display().to_string(),
         )?)?;
         let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
+        info!("Deploy response {:?}", res);
 
         let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
         let code_id: u64 = log[0].events[1].attributes[1].value.parse()?;
