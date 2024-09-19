@@ -91,7 +91,7 @@ impl Attestor for DcapAttestor {
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
         fn pccs_query_pck() -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
-            let url = "https://127.0.0.1:11089/sgx/certification/v4/pckcrl?ca=processor";
+            let url = "https://127.0.0.1:8081/sgx/certification/v4/pckcrl?ca=processor";
 
             let client = Client::builder()
                 .danger_accept_invalid_certs(true) // FIXME(hu55a1n1): required?
