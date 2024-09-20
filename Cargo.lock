@@ -4411,6 +4411,7 @@ dependencies = [
 name = "quartz-cw"
 version = "0.1.0"
 dependencies = [
+ "ciborium",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
@@ -4419,7 +4420,6 @@ dependencies = [
  "quartz-dcap-verifier-msgs",
  "quartz-tee-ra",
  "serde",
- "serde_cbor",
  "serde_json",
  "serde_with",
  "sha2 0.10.8",

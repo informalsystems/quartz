@@ -190,7 +190,7 @@ impl TryFrom<RawDcapAttestation> for DcapAttestation {
         let quote = quote_bytes
             .try_into()
             .map_err(|e: Quote3Error| StdError::parse_err("Quote", e.to_string()))?;
-        let collateral = serde_cbor::from_slice(&value.collateral)
+        let collateral = ciborium::from_reader(value.collateral.as_slice())
             .map_err(|e| StdError::parse_err("Collateral", e.to_string()))?;
 
         Ok(Self { quote, collateral })
@@ -199,9 +199,13 @@ impl TryFrom<RawDcapAttestation> for DcapAttestation {
 
 impl From<DcapAttestation> for RawDcapAttestation {
     fn from(value: DcapAttestation) -> Self {
+        let mut collateral_serialized = Vec::new();
+        ciborium::into_writer(&value.collateral, &mut collateral_serialized)
+            .expect("infallible serializer");
+
         Self {
             quote: value.quote.as_ref().to_vec().into(),
-            collateral: serde_cbor::to_vec(&value.collateral).expect("infallible serializer"),
+            collateral: collateral_serialized,
         }
     }
 }
