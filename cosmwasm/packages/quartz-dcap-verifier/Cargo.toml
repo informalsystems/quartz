@@ -25,7 +25,7 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 
 [dependencies]
 # external
-serde_json.workspace = true
+ciborium.workspace = true
 
 # cosmos
 cosmwasm-schema.workspace = true

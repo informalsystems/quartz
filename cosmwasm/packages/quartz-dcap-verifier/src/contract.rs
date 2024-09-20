@@ -39,9 +39,9 @@ pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => {
             let quote = Quote3::<Vec<u8>>::try_from(quote).map_err(into_std_err)?;
             let collateral: Collateral =
-                serde_json::from_value(collateral).map_err(into_std_err)?;
+                ciborium::from_reader(collateral.as_slice()).map_err(into_std_err)?;
             let identities: Vec<TrustedIdentity> =
-                serde_json::from_value(identities).map_err(into_std_err)?;
+                ciborium::from_reader(identities.as_slice()).map_err(into_std_err)?;
 
             // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
             let verification_output =

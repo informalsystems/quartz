@@ -8,10 +8,10 @@ use quartz_tee_ra::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 use serde_cbor::{
+    to_vec as to_cbor_vec,
     value::{from_value as from_cbor_value, to_value as to_cbor_value},
     Value as CborValue,
 };
-use serde_json::to_value as to_json_value;
 use tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
@@ -66,8 +66,8 @@ fn query_dcap_verifier(
 ) -> Result<(), Error> {
     let query_msg = DcapVerifierQueryMsg::VerifyDcapAttestation {
         quote: quote.as_ref().to_vec(),
-        collateral: to_json_value(&updated_collateral).expect("infallible serializer"),
-        identities: to_json_value(&[mr_enclave.into()]).expect("infallible serializer"),
+        collateral: to_cbor_vec(&updated_collateral).expect("infallible serializer"),
+        identities: to_cbor_vec(&[mr_enclave.into()]).expect("infallible serializer"),
     };
 
     let dcap_verifier_contract = {

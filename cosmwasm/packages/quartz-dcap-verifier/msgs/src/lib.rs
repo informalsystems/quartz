@@ -1,5 +1,4 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use serde_json::Value as JsonValue;
 
 #[cw_serde]
 pub struct InstantiateMsg;
@@ -14,7 +13,7 @@ pub enum QueryMsg {
     #[returns(())]
     VerifyDcapAttestation {
         quote: Vec<u8>,
-        collateral: JsonValue,
-        identities: JsonValue,
+        collateral: Vec<u8>,
+        identities: Vec<u8>,
     },
 }

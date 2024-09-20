@@ -25,6 +25,7 @@ authors = ["Informal Systems <hello@informal.systems>"]
 anyhow = { version = "1.0.86", features = ["std", "backtrace"] }
 async-trait = { version = "0.1.79", default-features = false }
 bip32 = { version = "0.5.1", default-features = false, features = ["alloc", "secp256k1", "bip39"] }
+ciborium = { version = "0.2.2", default-features = false }
 cargo-generate = { version = "0.21.3", default-features = false }
 clap = { version = "4.1.8", default-features = false, features = ["derive", "std"] }
 color-eyre = { version = "0.6.2", default-features = false }
