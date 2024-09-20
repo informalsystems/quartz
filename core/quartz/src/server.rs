@@ -154,9 +154,15 @@ impl QuartzServer {
         let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
 
         while let Some(Ok(event)) = subs.next().await {
+            println!("Received event: {:?}", event);  // Log the entire event
             for handler in ws_handlers {
-                if let Err(e) = handler.handle(event.clone(), ws_config.clone()).await {
-                    eprintln!("Error in event handler: {:?}", e);
+                match handler.handle(event.clone(), ws_config.clone()).await {
+                    Ok(_) => println!("Event processed successfully"),
+                    Err(e) => {
+                        eprintln!("Error in event handler: {:?}", e);
+                        eprintln!("Failed event: {:?}", event);
+                        // You might want to add more specific error logging here
+                    }
                 }
             }
         }

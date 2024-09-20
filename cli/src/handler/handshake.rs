@@ -69,6 +69,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 2000000,
                 &config.tx_sender,
                 json!(res),
+                "500000untrn", // Add the fee here
             )?
             .as_str(),
     )?;
@@ -114,6 +115,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 2000000,
                 &config.tx_sender,
                 json!(res),
+                "500000untrn", // Add the fee here
             )?
             .as_str(),
     )?;
