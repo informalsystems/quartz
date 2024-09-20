@@ -201,9 +201,7 @@ impl From<DcapAttestation> for RawDcapAttestation {
     fn from(value: DcapAttestation) -> Self {
         Self {
             quote: value.quote.as_ref().to_vec().into(),
-            collateral: serde_cbor::to_vec(&value.collateral)
-                .expect("infallible serializer")
-                .into(),
+            collateral: serde_cbor::to_vec(&value.collateral).expect("infallible serializer"),
         }
     }
 }
