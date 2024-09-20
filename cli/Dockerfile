@@ -1,4 +1,4 @@
-FROM rust:1.79 AS build
+FROM rust:1.81 AS build
 
 ENV TARGET=wasm32-unknown-unknown
 ARG CARGO_FLAGS=""
@@ -31,13 +31,13 @@ RUN apt-get update && \
 
 ENV PATH="/usr/local/go/bin:${PATH}"
 
-RUN go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
-
-RUN cargo install websocat
-
+RUN go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest && \
+    cargo install websocat
 
 WORKDIR /opt/cli
 RUN --mount=type=ssh cargo build --locked --release ${CARGO_FLAGS}
+
+RUN sed -i 's/node_url = "127.0.0.1:26657"/node_url = "wasmd:26657"/' /opt/apps/transfers/quartz.toml
 
 RUN cp /opt/target/release/quartz /usr/local/bin/
 

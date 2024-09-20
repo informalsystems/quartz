@@ -8,14 +8,25 @@ services:
       - "26657:26657"
       - "26656:26656"
       - "1317:1317"
-  # enclave:
-  #   container_name: quartz-cli-2
-  #   environment:
-  #     DOCKER_BUILDKIT: 1
-  #   build:
-  #     context: ".."
-  #     dockerfile: "./cli/Dockerfile"
-  #     ssh:
-  #       - default
-  #   depends_on:
-  #     - node
+    networks:
+      - quartz-network
+    
+  enclave:
+    container_name: quartz-cli-2
+    environment:
+      DOCKER_BUILDKIT: 1
+    build:
+      context: ".."
+      dockerfile: "./cli/Dockerfile"
+      ssh:
+        - default
+    depends_on:
+      - node
+    ports:
+      - "11090:11090"
+    networks:
+      - quartz-network
+
+networks:
+  quartz-network:
+    driver: bridge
