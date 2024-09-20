@@ -1,13 +1,12 @@
 use cosmwasm_std::{
-    from_json, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
-    StdResult, WasmQuery,
+    to_json_binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response, StdResult, WasmQuery,
 };
 use quartz_dcap_verifier_msgs::QueryMsg as DcapVerifierQueryMsg;
 use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, TrustedIdentity, TrustedMrEnclaveIdentity},
     verify_epid_attestation, Error as RaVerificationError,
 };
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 use tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
@@ -20,11 +19,11 @@ use crate::{
     state::CONFIG,
 };
 
-fn query_contract(
+fn query_contract<T: DeserializeOwned>(
     deps: Deps<'_>,
     contract_addr: String,
     query_msg: impl Serialize,
-) -> StdResult<Binary> {
+) -> StdResult<T> {
     let request = QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr,
         msg: to_json_binary(&query_msg)?,
@@ -33,7 +32,7 @@ fn query_contract(
     deps.querier.query(&request)
 }
 
-fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
+fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<GetTcbInfoResponse, Error> {
     let tcbinfo_addr = {
         let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
         config
@@ -59,7 +58,7 @@ fn query_dcap_verifier(
     quote: Quote,
     mr_enclave: impl Into<TrustedIdentity>,
     updated_collateral: Collateral,
-) -> Result<Binary, Error> {
+) -> Result<(), Error> {
     let query_msg = DcapVerifierQueryMsg::VerifyDcapAttestation {
         quote: quote.as_ref().to_vec(),
         collateral: serde_json::to_value(&updated_collateral).expect("infallible serializer"),
