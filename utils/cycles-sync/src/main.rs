@@ -97,14 +97,23 @@ async fn main() -> Result<(), anyhow::Error> {
         source_type: LiquiditySourceType::Overdraft,
     }];
 
-    let msg = create_wasm_msg(intents_enc, liquidity_sources)?;
+    let msg: &str = &create_wasm_msg(intents_enc, liquidity_sources)
+        .expect("cannot parse")
+        .to_string();
 
     let node_url = Url::parse("http://143.244.186.205:26657")?;
     let chain_id = TmChainId::from_str("testing")?;
 
     let wasmd_client = CliWasmdClient::new(node_url);
 
-    wasmd_client.tx_execute(&cli.mtcs, &chain_id, 3000000, &cli.admin.to_string(), msg)?;
+    wasmd_client.tx_execute(
+        &cli.mtcs,
+        &chain_id,
+        3000000,
+        &cli.admin.to_string(),
+        "5000untrn",
+        msg,
+    )?;
 
     Ok(())
 }

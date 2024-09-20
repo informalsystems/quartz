@@ -41,7 +41,7 @@ impl<A: Attestor> IntoServer for MtcsService<A> {
 
 #[derive(Clone, Debug)]
 pub struct MtcsService<A> {
-    config: Config, // TODO: this config is not used anywhere
+    // config: Config, // TODO: this config is not used anywhere
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
 }
@@ -50,9 +50,9 @@ impl<A> MtcsService<A>
 where
     A: Attestor,
 {
-    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+    pub fn new(_config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
         Self {
-            config,
+            // config,
             sk,
             attestor,
         }

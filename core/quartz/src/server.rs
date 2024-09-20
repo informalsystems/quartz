@@ -154,7 +154,7 @@ impl QuartzServer {
         let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
 
         while let Some(Ok(event)) = subs.next().await {
-            println!("Received event: {:?}", event);  // Log the entire event
+            // println!("Received event: {:?}", event); // Log the entire event
             for handler in ws_handlers {
                 match handler.handle(event.clone(), ws_config.clone()).await {
                     Ok(_) => println!("Event processed successfully"),
