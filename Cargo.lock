@@ -4161,6 +4161,7 @@ version = "0.1.0"
 dependencies = [
  "dcap-qvl",
  "hex",
+ "serde_json",
  "tokio",
 ]
 
