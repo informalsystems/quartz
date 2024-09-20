@@ -7,6 +7,11 @@ use quartz_tee_ra::{
     verify_epid_attestation, Error as RaVerificationError,
 };
 use serde::{de::DeserializeOwned, Serialize};
+use serde_cbor::{
+    value::{from_value as from_cbor_value, to_value as to_cbor_value},
+    Value as CborValue,
+};
+use serde_json::to_value as to_json_value;
 use tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
@@ -61,8 +66,8 @@ fn query_dcap_verifier(
 ) -> Result<(), Error> {
     let query_msg = DcapVerifierQueryMsg::VerifyDcapAttestation {
         quote: quote.as_ref().to_vec(),
-        collateral: serde_json::to_value(&updated_collateral).expect("infallible serializer"),
-        identities: serde_json::to_value(&[mr_enclave.into()]).expect("infallible serializer"),
+        collateral: to_json_value(&updated_collateral).expect("infallible serializer"),
+        identities: to_json_value(&[mr_enclave.into()]).expect("infallible serializer"),
     };
 
     let dcap_verifier_contract = {
@@ -104,23 +109,28 @@ impl Handler for DcapAttestation {
         let fmspc_hex = collateral.tcb_info().to_string();
 
         // Query the tcbinfo contract with the FMSPC retrieved and validated
-        let tcb_info_query = query_tcbinfo(deps.as_ref(), fmspc_hex)?;
-        let tcb_info_response: GetTcbInfoResponse = from_json(tcb_info_query)?;
+        let tcb_info_response = query_tcbinfo(deps.as_ref(), fmspc_hex)?;
 
         // Serialize the existing collateral
-        let mut collateral_json: serde_json::Value =
-            serde_json::to_value(&collateral).map_err(|e| {
-                Error::TcbInfoQueryError(format!("Failed to serialize collateral: {}", e))
-            })?;
+        let mut collateral_value: CborValue = to_cbor_value(collateral).map_err(|e| {
+            Error::TcbInfoQueryError(format!("Failed to serialize collateral: {}", e))
+        })?;
 
         // Update the tcb_info in the serialized data
-        collateral_json["tcb_info"] = tcb_info_response.tcb_info;
+        fn try_get_tcb_info(collateral_value: &mut CborValue) -> Option<&mut CborValue> {
+            if let CborValue::Map(map) = collateral_value {
+                return map.get_mut(&CborValue::Text("tcb_info".to_string()));
+            }
+            None
+        }
+
+        let tcb_info_value = try_get_tcb_info(&mut collateral_value).expect("infallible serde");
+        *tcb_info_value = CborValue::Text(tcb_info_response.tcb_info.to_string());
 
         // Deserialize back into a Collateral
-        let updated_collateral: Collateral =
-            serde_json::from_value(collateral_json).map_err(|e| {
-                Error::TcbInfoQueryError(format!("Failed to deserialize updated collateral: {}", e))
-            })?;
+        let updated_collateral: Collateral = from_cbor_value(collateral_value).map_err(|e| {
+            Error::TcbInfoQueryError(format!("Failed to deserialize updated collateral: {}", e))
+        })?;
 
         query_dcap_verifier(deps.as_ref(), quote, mr_enclave, updated_collateral)
             .map(|_| Response::default())
