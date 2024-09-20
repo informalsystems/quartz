@@ -1,3 +1,4 @@
+use ciborium::{from_reader as from_cbor_slice, into_writer as into_cbor, Value as CborValue};
 use cosmwasm_std::{
     to_json_binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response, StdResult, WasmQuery,
 };
@@ -7,11 +8,6 @@ use quartz_tee_ra::{
     verify_epid_attestation, Error as RaVerificationError,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use serde_cbor::{
-    to_vec as to_cbor_vec,
-    value::{from_value as from_cbor_value, to_value as to_cbor_value},
-    Value as CborValue,
-};
 use tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
@@ -58,6 +54,12 @@ fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<GetTcbInfoResponse, Er
         .map_err(|err| Error::TcbInfoQueryError(err.to_string()))
 }
 
+fn to_cbor_vec<T: Serialize>(value: &T) -> Vec<u8> {
+    let mut buffer = Vec::new();
+    into_cbor(&value, &mut buffer).expect("Serialization failed");
+    buffer
+}
+
 fn query_dcap_verifier(
     deps: Deps<'_>,
     quote: Quote,
@@ -66,8 +68,8 @@ fn query_dcap_verifier(
 ) -> Result<(), Error> {
     let query_msg = DcapVerifierQueryMsg::VerifyDcapAttestation {
         quote: quote.as_ref().to_vec(),
-        collateral: to_cbor_vec(&updated_collateral).expect("infallible serializer"),
-        identities: to_cbor_vec(&[mr_enclave.into()]).expect("infallible serializer"),
+        collateral: to_cbor_vec(&updated_collateral),
+        identities: to_cbor_vec(&[mr_enclave.into()]),
     };
 
     let dcap_verifier_contract = {
@@ -112,14 +114,19 @@ impl Handler for DcapAttestation {
         let tcb_info_response = query_tcbinfo(deps.as_ref(), fmspc_hex)?;
 
         // Serialize the existing collateral
-        let mut collateral_value: CborValue = to_cbor_value(collateral).map_err(|e| {
-            Error::TcbInfoQueryError(format!("Failed to serialize collateral: {}", e))
-        })?;
+        let collateral_serialized = to_cbor_vec(&collateral);
+        let mut collateral_value: CborValue = from_cbor_slice(collateral_serialized.as_slice())
+            .map_err(|e| {
+                Error::TcbInfoQueryError(format!("Failed to serialize collateral: {}", e))
+            })?;
 
         // Update the tcb_info in the serialized data
         fn try_get_tcb_info(collateral_value: &mut CborValue) -> Option<&mut CborValue> {
             if let CborValue::Map(map) = collateral_value {
-                return map.get_mut(&CborValue::Text("tcb_info".to_string()));
+                return map
+                    .iter_mut()
+                    .find(|(k, _)| k == &CborValue::Text("tcb_info".to_string()))
+                    .map(|(_, v)| v);
             }
             None
         }
@@ -128,9 +135,11 @@ impl Handler for DcapAttestation {
         *tcb_info_value = CborValue::Text(tcb_info_response.tcb_info.to_string());
 
         // Deserialize back into a Collateral
-        let updated_collateral: Collateral = from_cbor_value(collateral_value).map_err(|e| {
-            Error::TcbInfoQueryError(format!("Failed to deserialize updated collateral: {}", e))
-        })?;
+        let collateral_serialized = to_cbor_vec(&collateral_value);
+        let updated_collateral: Collateral = from_cbor_slice(collateral_serialized.as_slice())
+            .map_err(|e| {
+                Error::TcbInfoQueryError(format!("Failed to deserialize updated collateral: {}", e))
+            })?;
 
         query_dcap_verifier(deps.as_ref(), quote, mr_enclave, updated_collateral)
             .map(|_| Response::default())
