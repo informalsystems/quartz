@@ -13,8 +13,8 @@ pub enum QueryMsg {
     /// Verify a DCAP attestation
     #[returns(())]
     VerifyDcapAttestation {
-        quote: Vec<u8>,
+        quote: HexBinary,
         collateral: HexBinary,
-        identities: Vec<u8>,
+        identities: Option<Vec<u8>>,
     },
 }

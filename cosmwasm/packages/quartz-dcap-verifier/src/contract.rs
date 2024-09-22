@@ -35,12 +35,16 @@ pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             collateral,
             identities,
         } => {
-            let quote = Quote3::<Vec<u8>>::try_from(quote)
+            let quote = Quote3::<Vec<u8>>::try_from(Vec::<u8>::from(quote))
                 .map_err(|e| StdError::generic_err(format!("Quote parse error: {e}")))?;
             let collateral: Collateral = ciborium::from_reader(collateral.as_slice())
                 .map_err(|e| StdError::generic_err(format!("Collateral deserialize error: {e}")))?;
-            let identities: Vec<TrustedIdentity> = ciborium::from_reader(identities.as_slice())
-                .map_err(|e| StdError::generic_err(format!("Identities parse error: {e}")))?;
+            let identities: Vec<TrustedIdentity> = if let Some(identities) = identities {
+                ciborium::from_reader(identities.as_slice())
+                    .map_err(|e| StdError::generic_err(format!("Identities parse error: {e}")))?
+            } else {
+                vec![]
+            };
 
             // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
             let verification_output =

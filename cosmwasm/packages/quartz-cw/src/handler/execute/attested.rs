@@ -67,9 +67,9 @@ fn query_dcap_verifier(
     updated_collateral: Collateral,
 ) -> Result<(), Error> {
     let query_msg = DcapVerifierQueryMsg::VerifyDcapAttestation {
-        quote: quote.as_ref().to_vec(),
+        quote: quote.as_ref().to_vec().into(),
         collateral: to_cbor_vec(&updated_collateral).into(),
-        identities: to_cbor_vec(&[mr_enclave.into()]),
+        identities: Some(to_cbor_vec(&[mr_enclave.into()])),
     };
 
     let dcap_verifier_contract = {
