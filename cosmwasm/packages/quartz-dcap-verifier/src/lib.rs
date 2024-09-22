@@ -8,4 +8,3 @@
 #![forbid(unsafe_code)]
 
 pub mod contract;
-pub mod error;
