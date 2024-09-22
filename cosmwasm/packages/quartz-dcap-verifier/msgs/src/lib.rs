@@ -1,4 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::HexBinary;
 
 #[cw_serde]
 pub struct InstantiateMsg;
@@ -13,7 +14,7 @@ pub enum QueryMsg {
     #[returns(())]
     VerifyDcapAttestation {
         quote: Vec<u8>,
-        collateral: Vec<u8>,
+        collateral: HexBinary,
         identities: Vec<u8>,
     },
 }

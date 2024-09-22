@@ -179,7 +179,7 @@ impl DcapAttestation {
 #[cw_serde]
 pub struct RawDcapAttestation {
     pub quote: HexBinary,
-    pub collateral: Vec<u8>,
+    pub collateral: HexBinary,
 }
 
 impl TryFrom<RawDcapAttestation> for DcapAttestation {
@@ -187,10 +187,11 @@ impl TryFrom<RawDcapAttestation> for DcapAttestation {
 
     fn try_from(value: RawDcapAttestation) -> Result<Self, Self::Error> {
         let quote_bytes: Vec<u8> = value.quote.into();
+        let collateral_bytes: Vec<u8> = value.collateral.into();
         let quote = quote_bytes
             .try_into()
             .map_err(|e: Quote3Error| StdError::parse_err("Quote", e.to_string()))?;
-        let collateral = ciborium::from_reader(value.collateral.as_slice())
+        let collateral = ciborium::from_reader(collateral_bytes.as_slice())
             .map_err(|e| StdError::parse_err("Collateral", e.to_string()))?;
 
         Ok(Self { quote, collateral })
@@ -205,7 +206,7 @@ impl From<DcapAttestation> for RawDcapAttestation {
 
         Self {
             quote: value.quote.as_ref().to_vec().into(),
-            collateral: collateral_serialized,
+            collateral: collateral_serialized.into(),
         }
     }
 }

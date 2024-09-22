@@ -68,7 +68,7 @@ fn query_dcap_verifier(
 ) -> Result<(), Error> {
     let query_msg = DcapVerifierQueryMsg::VerifyDcapAttestation {
         quote: quote.as_ref().to_vec(),
-        collateral: to_cbor_vec(&updated_collateral),
+        collateral: to_cbor_vec(&updated_collateral).into(),
         identities: to_cbor_vec(&[mr_enclave.into()]),
     };
 
