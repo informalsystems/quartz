@@ -20,6 +20,9 @@ RUN apt-get update && \
     wget https://go.dev/dl/go1.20.5.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go1.20.5.linux-amd64.tar.gz && \
     rm go1.20.5.linux-amd64.tar.gz && \
+    wget https://github.com/CosmWasm/wasmd/releases/download/v0.44.0/wasmd-v0.44.0-linux-amd64.tar.gz && \
+    tar -C /usr/local/bin -xzf wasmd-v0.44.0-linux-amd64.tar.gz && \
+    rm wasmd-v0.44.0-linux-amd64.tar.gz && \
     apt-get remove -y wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
