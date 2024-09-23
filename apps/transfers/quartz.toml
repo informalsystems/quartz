@@ -1,4 +1,4 @@
-mock_sgx = false
+mock_sgx = true
 tx_sender = "admin"
 chain_id = "testing"
 node_url = "127.0.0.1:26657"
