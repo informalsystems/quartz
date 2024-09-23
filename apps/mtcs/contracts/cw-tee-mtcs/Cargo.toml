@@ -38,7 +38,7 @@ thiserror = { version = "1.0.49" }
 
 # cosmwasm
 cosmwasm-schema = { version = "2.1.1", default-features = false }
-cosmwasm-std = { version = "2.1.1", default-features = false, features = ["std"] }
+cosmwasm-std = { version = "2.1.1", default-features = false, features = ["std", "abort"] }
 cw-storage-plus = { version = "2.0.0", default-features = false }
 cw20-base = { version = "2.0.0", features = ["library"] }
 cw20 = "2.0.0"
