@@ -37,9 +37,6 @@ WORKDIR /opt/cli
 RUN --mount=type=ssh cargo build --locked --release ${CARGO_FLAGS}
 RUN cp /opt/target/release/quartz /usr/local/bin/
 
-
-RUN sed -i 's/node_url = "127.0.0.1:26657"/node_url = "wasmd:26657"/' /opt/apps/transfers/quartz.toml
-
 CMD ["quartz", "--mock-sgx", "--app-dir", "/opt/apps/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/apps/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"ucosm\"}"]
 
 #------------------------------------------------------------------------------

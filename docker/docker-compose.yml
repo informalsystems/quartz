@@ -8,9 +8,8 @@ services:
       - "26657:26657"
       - "26656:26656"
       - "1317:1317"
-    networks:
-      - quartz-network
-    
+    network_mode: host
+
   enclave:
     container_name: quartz-cli-2
     environment:
@@ -24,9 +23,4 @@ services:
       - node
     ports:
       - "11090:11090"
-    networks:
-      - quartz-network
-
-networks:
-  quartz-network:
-    driver: bridge
+    network_mode: host
