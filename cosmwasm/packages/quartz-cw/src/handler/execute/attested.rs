@@ -105,7 +105,11 @@ impl Handler for EpidAttestation {
 impl Handler for DcapAttestation {
     fn handle(self, deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {
         let (quote, collateral) = self.clone().into_tuple();
-        let mr_enclave = TrustedMrEnclaveIdentity::new(self.mr_enclave().into(), [""; 0], [""; 0]);
+        let mr_enclave = TrustedMrEnclaveIdentity::new(
+            self.mr_enclave().into(),
+            [""; 0],
+            ["INTEL-SA-00334", "INTEL-SA-00615"],
+        );
 
         // Retrieve the FMSPC from the collateral
         let fmspc_hex = collateral.tcb_info().to_string();
