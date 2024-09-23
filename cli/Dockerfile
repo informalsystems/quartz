@@ -14,11 +14,6 @@ RUN apt-get update && \
     mkdir -m 0700 /root/.ssh && \
     ssh-keyscan github.com >> /root/.ssh/known_hosts
 
-RUN rustup target add "$TARGET"
-WORKDIR /opt/cli
-RUN --mount=type=ssh cargo build --locked --release ${CARGO_FLAGS}
-RUN cp /opt/target/release/quartz /usr/local/bin/
-
 # Install Go
 RUN apt-get update && \
     apt-get install -y --no-install-recommends wget && \
@@ -34,12 +29,13 @@ ENV PATH="/usr/local/go/bin:${PATH}"
 RUN go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest && \
     cargo install websocat
 
+RUN rustup target add "$TARGET"
 WORKDIR /opt/cli
 RUN --mount=type=ssh cargo build --locked --release ${CARGO_FLAGS}
+RUN cp /opt/target/release/quartz /usr/local/bin/
+
 
 RUN sed -i 's/node_url = "127.0.0.1:26657"/node_url = "wasmd:26657"/' /opt/apps/transfers/quartz.toml
-
-RUN cp /opt/target/release/quartz /usr/local/bin/
 
 CMD ["quartz", "--mock-sgx", "--app-dir", "/opt/apps/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/apps/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"ucosm\"}"]
 
