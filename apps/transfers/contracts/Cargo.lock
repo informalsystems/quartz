@@ -1203,6 +1203,7 @@ name = "quartz-dcap-verifier-msgs"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
+ "cosmwasm-std",
 ]
 
 [[package]]
@@ -1554,7 +1555,6 @@ name = "tcbinfo-msgs"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
- "serde_json",
 ]
 
 [[package]]

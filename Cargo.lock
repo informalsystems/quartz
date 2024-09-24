@@ -5634,7 +5634,6 @@ name = "tcbinfo-msgs"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
- "serde_json",
 ]
 
 [[package]]
