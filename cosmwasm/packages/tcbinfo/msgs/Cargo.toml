@@ -9,7 +9,6 @@ repository.workspace = true
 
 [dependencies]
 # external
-serde_json.workspace = true
 
 # cosmos
 cosmwasm-schema.workspace = true
