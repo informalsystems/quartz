@@ -29,48 +29,57 @@ use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
-    transfers_server::{QueryRequestMessage, TransfersService, UpdateRequestMessage},
+    transfers_server::{QueryRequestMessage, TransfersOp, TransfersOpEvent, TransfersService, UpdateRequestMessage},
 };
+
+impl TryFrom<Event> for TransfersOpEvent {
+    type Error = &'static str;
+
+    fn try_from(event: Event) -> Result<Self, Self::Error> {
+        if is_query_event(&event) {
+            Ok(TransfersOpEvent::Query { event })
+        } else if is_transfer_event(&event) {
+            Ok(TransfersOpEvent::Transfer { event })
+        } else {
+            Ok(TransfersOpEvent::None {})
+        }
+    }
+}
+
+#[tonic::async_trait]
+pub trait WsListener: Send + Sync + 'static {
+    async fn process(&self, event: TransfersOpEvent, config: WsListenerConfig) -> Result<()>;
+}
 
 // TODO: Need to prevent listener from taking actions until handshake is completed
 #[async_trait::async_trait]
-impl<A: Attestor> WebSocketHandler for TransfersService<A> {
+impl<A: Attestor + Clone> WebSocketHandler for TransfersService<A> {
     async fn handle(&self, event: Event, config: WsListenerConfig) -> Result<()> {
-        // Validation
-        let is_transfer = is_transfer_event(&event);
-        let is_query = is_query_event(&event);
-
-        if !is_transfer && !is_query {
-            return Ok(());
-        } else {
-            let mut sender = None;
-            let mut contract_address = None;
-            let mut emphemeral_pubkey = None;
-
-            if let Some(events) = &event.events {
-                for (key, values) in events {
-                    match key.as_str() {
-                        "message.sender" => {
-                            sender = values.first().cloned();
-                        }
-                        "execute._contract_address" => {
-                            contract_address = values.first().cloned();
-                        }
-                        "wasm-query_balance.emphemeral_pubkey" => {
-                            // TODO: fix typo
-                            emphemeral_pubkey = values.first().cloned();
-                        }
-                        _ => {}
-                    }
-                }
-            }
-
-            if contract_address.is_none() {
+        let op_event = TransfersOpEvent::try_from(event).expect("failed while casting op event");
+        
+        match op_event {
+            TransfersOpEvent::None {} => {
+                println!("Event discarded");
                 return Ok(());
-            }
+            },
+            _ => {}
+        }
 
-            if is_transfer {
+        self.queue_producer
+            .send(TransfersOp { client: self.clone(), event: op_event, config })
+            .await.unwrap();
+
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl<A: Attestor> WsListener for TransfersService<A> {
+    async fn process(&self, event: TransfersOpEvent, config: WsListenerConfig) -> Result<()> {
+        match event {
+            TransfersOpEvent::Transfer { event } => {
                 println!("Processing transfer event");
+                let (contract_address, _, _) = extract_event_info(&event);
                 transfer_handler(
                     self,
                     &contract_address
@@ -80,8 +89,10 @@ impl<A: Attestor> WebSocketHandler for TransfersService<A> {
                     &config,
                 )
                 .await?;
-            } else if is_query {
-                println!("Processing query event");
+            },
+            TransfersOpEvent::Query { event } => {
+                println!("Processing quey event");
+                let (contract_address, emphemeral_pubkey, sender) = extract_event_info(&event);
                 query_handler(
                     self,
                     &contract_address
@@ -93,8 +104,13 @@ impl<A: Attestor> WebSocketHandler for TransfersService<A> {
                     &config,
                 )
                 .await?;
-            }
+            },
+            _ => {}
         }
+
+        let wsurl = format!("ws://{}/websocket", config.node_url);
+        // Wait some blocks to make sure transaction was confirmed
+        two_block_waitoor(&wsurl).await.expect("failed while waiting for new blocks");
 
         Ok(())
     }
@@ -124,6 +140,32 @@ fn is_query_event(event: &Event) -> bool {
     false
 }
 
+fn extract_event_info(event: &Event) -> (Option<String>, Option<String>, Option<String>) {
+    let mut sender = None;
+    let mut contract_address = None;
+    let mut emphemeral_pubkey = None;
+
+    if let Some(events) = &event.events {
+        for (key, values) in events {
+            match key.as_str() {
+                "message.sender" => {
+                    sender = values.first().cloned();
+                }
+                "execute._contract_address" => {
+                    contract_address = values.first().cloned();
+                }
+                "wasm-query_balance.emphemeral_pubkey" => {
+                    // TODO: fix typo
+                    emphemeral_pubkey = values.first().cloned();
+                }
+                _ => {}
+            }
+        }
+    }
+
+    (contract_address, emphemeral_pubkey, sender)
+}
+
 async fn transfer_handler<A: Attestor>(
     client: &TransfersService<A>,
     contract: &AccountId,
@@ -133,16 +175,15 @@ async fn transfer_handler<A: Attestor>(
     let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
 
-    // Query chain
-    // Get epoch, obligations, liquidity sources
+    // Query contract state
     let resp: QueryResult<Vec<TransferRequest>> = wasmd_client
         .query_smart(contract, json!(GetRequests {}))
-        .map_err(|e| anyhow!("Problem querying epoch: {}", e))?;
+        .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
     let requests = resp.data;
 
     let resp: QueryResult<HexBinary> = wasmd_client
         .query_smart(contract, json!(GetState {}))
-        .map_err(|e| anyhow!("Problem querying epoch: {}", e))?;
+        .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
     let state = resp.data;
 
     // Request body contents
@@ -200,7 +241,7 @@ async fn transfer_handler<A: Attestor>(
 
     // Build on-chain response
     // TODO add non-mock support
-    let setoffs_msg = ExecuteMsg::Update::<RawMockAttestation>(AttestedMsg {
+    let transfer_msg = ExecuteMsg::Update::<RawMockAttestation>(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
         attestation: MockAttestation(
             attested
@@ -218,7 +259,7 @@ async fn transfer_handler<A: Attestor>(
         chain_id,
         2000000,
         &ws_config.tx_sender,
-        json!(setoffs_msg),
+        json!(transfer_msg),
     )?;
 
     println!("Output TX: {}", output);
@@ -236,11 +277,10 @@ async fn query_handler<A: Attestor>(
     let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
     let wasmd_client = CliWasmdClient::new(httpurl);
 
-    // Query Chain
-    // Get state
+    // Query contract state
     let resp: QueryResult<HexBinary> = wasmd_client
         .query_smart(contract, json!(GetState {}))
-        .map_err(|e| anyhow!("Problem querying epoch: {}", e))?;
+        .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
     let state = resp.data;
 
     // Build request
@@ -268,7 +308,7 @@ async fn query_handler<A: Attestor>(
 
     // Build on-chain response
     // TODO add non-mock support
-    let setoffs_msg = ExecuteMsg::QueryResponse::<RawMockAttestation>(AttestedMsg {
+    let query_msg = ExecuteMsg::QueryResponse::<RawMockAttestation>(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
         attestation: MockAttestation(
             attested
@@ -286,7 +326,7 @@ async fn query_handler<A: Attestor>(
         chain_id,
         2000000,
         &ws_config.tx_sender,
-        json!(setoffs_msg),
+        json!(query_msg),
     )?;
 
     println!("Output TX: {}", output);

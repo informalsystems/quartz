@@ -32,7 +32,9 @@ use quartz_common::{
         server::{QuartzServer, WsListenerConfig},
     },
 };
-use transfers_server::TransfersService;
+use transfers_server::{TransfersOp, TransfersService};
+use tokio::sync::mpsc;
+use crate::wslistener::WsListener;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -72,8 +74,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let sk = Arc::new(Mutex::new(None));
 
+    // Event queue
+    let (tx, mut rx) = mpsc::channel::<TransfersOp<DefaultAttestor>>(1);
+    // Consumer task: dequeue and process events
+    tokio::spawn(async move {
+        while let Some(op) = rx.recv().await {
+            op.client.process(op.event, op.config).await.expect("failed while processing queued events");
+        }
+    });
+
     QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
-        .add_service(TransfersService::new(config, sk, attestor))
+        .add_service(TransfersService::new(config, sk, attestor, tx))
         .serve(args.rpc_addr)
         .await?;
 
