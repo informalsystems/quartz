@@ -109,9 +109,9 @@ async fn main() -> Result<(), anyhow::Error> {
     wasmd_client.tx_execute(
         &cli.mtcs,
         &chain_id,
-        3000000,
+        4000000,
         &cli.admin.to_string(),
-        "5000untrn",
+        "50000untrn",
         msg,
     )?;
 

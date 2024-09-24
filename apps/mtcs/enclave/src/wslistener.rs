@@ -99,8 +99,8 @@ async fn handler<A: Attestor>(
     sender: String,
     node_url: &str,
 ) -> Result<()> {
-    let chain_id = &ChainId::from_str("test-1")?;
-    let httpurl = Url::parse(&format!("http://{}", node_url))?;
+    let chain_id = &ChainId::from_str("pion-1")?;
+    let httpurl = Url::parse(&format!("https://{}", node_url))?; // TODO Improve 
     let wasmd_client = CliWasmdClient::new(httpurl);
 
     // Query obligations and liquidity sources from chain

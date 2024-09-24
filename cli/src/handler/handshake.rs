@@ -47,8 +47,8 @@ impl Handler for HandshakeRequest {
 }
 
 async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
-    let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
-    let wsurl = format!("ws://{}/websocket", config.node_url);
+    let httpurl = Url::parse(&format!("https://{}", config.node_url))?;
+    let wsurl = format!("wss://{}/websocket", config.node_url);
 
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
@@ -60,6 +60,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     let res = RelayMessage::SessionCreate
         .run_relay(config.enclave_rpc(), config.mock_sgx)
         .await?;
+    info!("\n\n Enclave run realy response: {:?}", res);
 
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client
@@ -69,11 +70,11 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 2000000,
                 &config.tx_sender,
                 json!(res),
-                "500000untrn", // Add the fee here
+                "11000untrn", // Add the fee here
             )?
             .as_str(),
     )?;
-    debug!("\n\n SessionCreate tx output: {:?}", output);
+    info!("\n\n SessionCreate tx output: {:?}", output);
 
     // Wait for tx to commit
     block_tx_commit(&tmrpc_client, output.txhash).await?;
@@ -105,20 +106,21 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     let res = RelayMessage::SessionSetPubKey(serde_json::to_string(&proof_output)?)
         .run_relay(config.enclave_rpc(), config.mock_sgx)
         .await?;
-
+    info!("Relay SetPubkey response {:?}", res);
     // Submit SessionSetPubKey to contract
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client
             .tx_execute(
                 &args.contract.clone(),
-                &ChainId::from_str("test-1")?,
+                &ChainId::from_str("pion-1")?,
                 2000000,
                 &config.tx_sender,
                 json!(res),
-                "500000untrn", // Add the fee here
+                "11000untrn", // Add the fee here
             )?
             .as_str(),
     )?;
+    info!("\n\n SessionCreate tx output: {:?}", output);
 
     // Wait for tx to commit
     block_tx_commit(&tmrpc_client, output.txhash).await?;

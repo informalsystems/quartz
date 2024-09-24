@@ -21,7 +21,7 @@ loader.env.MYAPP_DATA = { passthrough = true }
 loader.env.QUARTZ_PORT = { passthrough = true }
 
 loader.argv = ["quartz-app-transfers-enclave",
-                "--chain-id", "test-1",
+                "--chain-id", "pion-1",
                 "--rpc-addr", "0.0.0.0:11090",
                 "--trusted-height", "{{ trusted_height }}",
                 "--trusted-hash", "{{ trusted_hash }}"]

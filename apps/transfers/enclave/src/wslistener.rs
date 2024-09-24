@@ -130,7 +130,7 @@ async fn transfer_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
+    let httpurl = Url::parse(&format!("https://{}", ws_config.node_url))?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
 
     // Query chain
@@ -150,7 +150,7 @@ async fn transfer_handler<A: Attestor>(
 
     // Wait 2 blocks
     info!("Waiting 2 blocks for light client proof");
-    let wsurl = format!("ws://{}/websocket", ws_config.node_url);
+    let wsurl = format!("wss://{}/websocket", ws_config.node_url);
     two_block_waitoor(&wsurl).await?;
 
     // Call tm prover with trusted hash and height
@@ -219,7 +219,7 @@ async fn transfer_handler<A: Attestor>(
         2000000,
         &ws_config.tx_sender,
         json!(setoffs_msg),
-        "5000untrn",
+        "11000untrn",
     )?;
 
     println!("Output TX: {}", output);
@@ -234,7 +234,7 @@ async fn query_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
+    let httpurl = Url::parse(&format!("https://{}", ws_config.node_url))?;
     let wasmd_client = CliWasmdClient::new(httpurl);
 
     // Query Chain
@@ -288,7 +288,7 @@ async fn query_handler<A: Attestor>(
         2000000,
         &ws_config.tx_sender,
         json!(setoffs_msg),
-        "5000untrn",
+        "11000untrn",
     )?;
 
     println!("Output TX: {}", output);

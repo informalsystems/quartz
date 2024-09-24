@@ -41,8 +41,8 @@ pub trait WasmdClient {
         &self,
         chain_id: &Id,
         sender: &str, // what should this type be
-        wasm_path: M,
-    ) -> Result<String, Self::Error>;
+        wasm_path: M
+        ) -> Result<String, Self::Error>;
 
     fn init<M: ToString>(
         &self,
@@ -184,7 +184,7 @@ impl WasmdClient for CliWasmdClient {
             .args(["tx", "wasm", "store", &wasm_path.to_string()])
             .args(["--from", sender])
             .args(["--chain-id", chain_id.as_ref()])
-            .args(["--gas-prices", "0.0025untrn"])
+            .args(["--gas-prices", "0.0053untrn"])
             .args(["--gas", "auto"])
             .args(["--gas-adjustment", "1.3"])
             .args(["-o", "json"])
@@ -217,7 +217,7 @@ impl WasmdClient for CliWasmdClient {
             .args(["--from", sender])
             .arg("--no-admin")
             .args(["--chain-id", chain_id.as_ref()])
-            .args(["--gas-prices", "0.0025untrn"])
+            .args(["--gas-prices", "0.0053untrn"])
             .args(["--gas", "auto"])
             .args(["--gas-adjustment", "1.3"])
             .args(["-o", "json"])

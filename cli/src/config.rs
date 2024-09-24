@@ -53,7 +53,7 @@ fn default_rpc_addr() -> String {
 }
 
 fn default_node_url() -> String {
-    "127.0.0.1:26657".to_string()
+    "rpc-falcron.pion-1.ntrn.tech".to_string()
 }
 
 fn default_tx_sender() -> String {
@@ -61,7 +61,7 @@ fn default_tx_sender() -> String {
 }
 
 fn default_chain_id() -> ChainId {
-    "test-1".parse().expect("default chain_id failed")
+    "pion-1".parse().expect("default chain_id failed")
 }
 
 fn default_port() -> u16 {
