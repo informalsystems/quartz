@@ -1,5 +1,8 @@
 name: "transfers"
 
+volumes:
+  wasmd_data:
+
 services:
   node:
     container_name: wasmd
@@ -9,6 +12,8 @@ services:
       - "26656:26656"
       - "1317:1317"
     network_mode: host
+    volumes:
+      - wasmd_data:/root/.wasmd
 
   enclave:
     container_name: quartz-cli-2
@@ -24,3 +29,5 @@ services:
     ports:
       - "11090:11090"
     network_mode: host
+    volumes:
+      - wasmd_data:/root/.wasmd
