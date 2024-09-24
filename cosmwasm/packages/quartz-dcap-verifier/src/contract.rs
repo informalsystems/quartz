@@ -1,6 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use cosmwasm_std::{
+    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+};
 use quartz_dcap_verifier_msgs::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, Quote3, TrustedIdentity},
@@ -52,7 +54,7 @@ pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
             // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
             if verification_output.is_success().into() {
-                Ok(Binary::default())
+                to_json_binary(&())
             } else {
                 Err(StdError::generic_err(
                     Error::Dcap(verification_output).to_string(),
