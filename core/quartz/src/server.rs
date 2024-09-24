@@ -14,9 +14,8 @@ use k256::ecdsa::SigningKey;
 use quartz_cw::{
     msg::{
         execute::{
-            attested::{Attested, RawAttested},
-            session_create::{RawSessionCreate, SessionCreate},
-            session_set_pub_key::{RawSessionSetPubKey, SessionSetPubKey},
+            attested::Attested, session_create::SessionCreate,
+            session_set_pub_key::SessionSetPubKey,
         },
         instantiate::CoreInstantiate,
     },
@@ -108,7 +107,6 @@ impl QuartzServer {
     ) -> Self
     where
         A: Attestor + Clone,
-        <A as Attestor>::Attestation: Clone,
     {
         let core_service = CoreServer::new(CoreService::new(config, sk.clone(), attestor.clone()));
 
@@ -202,8 +200,7 @@ where
 #[tonic::async_trait]
 impl<A> Core for CoreService<A>
 where
-    A: Attestor + Send + Sync + 'static + Clone,
-    A::Attestation: Clone,
+    A: Attestor + Send + Sync + 'static,
 {
     async fn instantiate(
         &self,
@@ -235,17 +232,10 @@ where
             .attestor
             .attestation(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
-        let attested_msg: Attested<SessionCreate, A::Attestation> = Attested::new(msg, attestation);
+        let attested_msg = Attested::new(msg, attestation);
 
         let response: SessionCreateResponse<A::Attestation, A::RawAttestation> =
-            SessionCreateResponse::new(attested_msg.clone());
-        println!(
-            "RawAttested: {}",
-            serde_json::to_string::<RawAttested<RawSessionCreate, A::RawAttestation>>(
-                &attested_msg.into()
-            )
-            .expect("infallible")
-        );
+            SessionCreateResponse::new(attested_msg);
         Ok(Response::new(response.into()))
     }
 
@@ -279,18 +269,10 @@ where
             .attestor
             .attestation(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
-        let attested_msg: Attested<SessionSetPubKey, A::Attestation> =
-            Attested::new(msg, attestation);
+        let attested_msg = Attested::new(msg, attestation);
 
         let response: SessionSetPubKeyResponse<A::Attestation, A::RawAttestation> =
-            SessionSetPubKeyResponse::new(attested_msg.clone());
-        println!(
-            "RawAttested: {}",
-            serde_json::to_string::<RawAttested<RawSessionSetPubKey, A::RawAttestation>>(
-                &attested_msg.into()
-            )
-            .expect("infallible")
-        );
+            SessionSetPubKeyResponse::new(attested_msg);
         Ok(Response::new(response.into()))
     }
 }
