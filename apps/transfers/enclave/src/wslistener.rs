@@ -1,6 +1,5 @@
 //TODO: get rid of this
-use std::str::FromStr;
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
@@ -31,12 +30,8 @@ use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
     transfers_server::{
-        QueryRequestMessage,
-        TransfersOp,
-        TransfersOpEvent,
-        TransfersOpEventTypes,
-        TransfersService,
-        UpdateRequestMessage
+        QueryRequestMessage, TransfersOp, TransfersOpEvent, TransfersOpEventTypes,
+        TransfersService, UpdateRequestMessage,
     },
 };
 
@@ -48,26 +43,24 @@ impl TryFrom<Event> for TransfersOpEvent {
             for (key, _) in events {
                 match key.as_str() {
                     k if k.starts_with("wasm-query_balance") => {
-                        let (contract_address, ephemeral_pubkey, sender) = extract_event_info(
-                            TransfersOpEventTypes::Query,
-                            &events
-                        ).unwrap();
+                        let (contract_address, ephemeral_pubkey, sender) =
+                            extract_event_info(TransfersOpEventTypes::Query, &events)
+                                .map_err(|_| "Failed to extract event info from query event")?;
 
                         return Ok(TransfersOpEvent::Query {
-                            contract_address: contract_address.unwrap(),
-                            ephemeral_pubkey: ephemeral_pubkey.expect("must be included in query event"),
-                            sender: sender.expect("must be included in query event"),
+                            contract_address,
+                            ephemeral_pubkey: ephemeral_pubkey.ok_or("Missing ephemeral_pubkey")?,
+                            sender: sender.ok_or("Missing sender")?,
                         });
-                    },
+                    }
                     k if k.starts_with("wasm-transfer.action") => {
-                        let (contract_address, _, _) = extract_event_info(
-                            TransfersOpEventTypes::Transfer,
-                            &events
-                        ).unwrap();
+                        let (contract_address, _, _) =
+                            extract_event_info(TransfersOpEventTypes::Transfer, &events)
+                                .map_err(|_| "Failed to extract event info from transfer event")?;
 
-                        return Ok(TransfersOpEvent::Transfer { contract_address: contract_address.unwrap() });
-                    },
-                    _ => {},
+                        return Ok(TransfersOpEvent::Transfer { contract_address });
+                    }
+                    _ => {}
                 }
             }
         }
@@ -76,16 +69,11 @@ impl TryFrom<Event> for TransfersOpEvent {
     }
 }
 
-#[tonic::async_trait]
-pub trait WsListener: Send + Sync + 'static {
-    async fn process(&self, event: TransfersOpEvent, config: WsListenerConfig) -> Result<()>;
-}
-
 // TODO: Need to prevent listener from taking actions until handshake is completed
 #[async_trait::async_trait]
 impl<A: Attestor + Clone> WebSocketHandler for TransfersService<A> {
     async fn handle(&self, event: Event, config: WsListenerConfig) -> Result<()> {
-        let op_event = TransfersOpEvent::try_from(event).unwrap();
+        let op_event = TransfersOpEvent::try_from(event).map_err(|e| anyhow!(e))?;
 
         if matches!(op_event, TransfersOpEvent::None { .. }) {
             println!("Event discarded");
@@ -93,11 +81,20 @@ impl<A: Attestor + Clone> WebSocketHandler for TransfersService<A> {
         }
 
         self.queue_producer
-            .send(TransfersOp { client: self.clone(), event: op_event, config })
+            .send(TransfersOp {
+                client: self.clone(),
+                event: op_event,
+                config,
+            })
             .await?;
 
         Ok(())
     }
+}
+
+#[tonic::async_trait]
+pub trait WsListener: Send + Sync + 'static {
+    async fn process(&self, event: TransfersOpEvent, config: WsListenerConfig) -> Result<()>;
 }
 
 #[async_trait::async_trait]
@@ -106,30 +103,22 @@ impl<A: Attestor> WsListener for TransfersService<A> {
         match event {
             TransfersOpEvent::Transfer { contract_address } => {
                 println!("Processing transfer event");
-                transfer_handler(
-                    self,
-                    &contract_address,
-                    &config,
-                )
-                .await?;
-            },
-            TransfersOpEvent::Query { contract_address, ephemeral_pubkey, sender } => {
+                transfer_handler(self, &contract_address, &config).await?;
+            }
+            TransfersOpEvent::Query {
+                contract_address,
+                ephemeral_pubkey,
+                sender,
+            } => {
                 println!("Processing query event");
-                query_handler(
-                    self,
-                    &contract_address,
-                    &sender,
-                    &ephemeral_pubkey,
-                    &config,
-                )
-                .await?;
-            },
+                query_handler(self, &contract_address, &sender, &ephemeral_pubkey, &config).await?;
+            }
             _ => {}
         }
 
         let wsurl = format!("ws://{}/websocket", config.node_url);
         // Wait some blocks to make sure transaction was confirmed
-        two_block_waitoor(&wsurl).await.expect("failed while waiting for new blocks");
+        two_block_waitoor(&wsurl).await?;
 
         Ok(())
     }
@@ -137,31 +126,40 @@ impl<A: Attestor> WsListener for TransfersService<A> {
 
 fn extract_event_info(
     op_event: TransfersOpEventTypes,
-    events: &BTreeMap<String, Vec<String>>
-) -> Result<(Option<AccountId>, Option<String>, Option<String>)>
-{
-    let mut contract_address = None;
+    events: &BTreeMap<String, Vec<String>>,
+) -> Result<(AccountId, Option<String>, Option<String>)> {
+    // TODO: Remove as per Shoaib's comments
+    if matches!(op_event, TransfersOpEventTypes::None) {
+        return Err(anyhow!("Not a valid event type"));
+    }
+
     let mut sender = None;
     let mut ephemeral_pubkey = None;
 
     // Set common info data for all events
-    if !matches!(op_event, TransfersOpEventTypes::None) {
-        contract_address = Some(
-            events.get("execute._contract_address")
-                .unwrap()
-                .first()
-                .expect("must be included in transfers event")
-                .parse::<AccountId>()
-                .map_err(|e| anyhow!(e))?
-        );
-    }
+    let contract_address = events
+        .get("execute._contract_address")
+        .ok_or_else(|| anyhow!("Missing execute._contract_address in events"))?
+        .first()
+        .ok_or_else(|| anyhow!("execute._contract_address is empty"))?
+        .parse::<AccountId>()
+        .map_err(|e| anyhow!("Failed to parse contract address: {}", e))?;
 
     // Set info for specific events
     match op_event {
         TransfersOpEventTypes::Query => {
-            sender = events.get("message.sender").unwrap().first().cloned();
-            ephemeral_pubkey = events.get("wasm-query_balance.emphemeral_pubkey").unwrap().first().cloned();
-        },
+            sender = events
+                .get("message.sender")
+                .ok_or_else(|| anyhow!("Missing message.sender in events"))?
+                .first()
+                .cloned();
+
+            ephemeral_pubkey = events
+                .get("wasm-query_balance.emphemeral_pubkey")
+                .ok_or_else(|| anyhow!("Missing wasm-query_balance.emphemeral_pubkey in events"))?
+                .first()
+                .cloned();
+        }
         _ => {}
     }
 
@@ -211,7 +209,7 @@ async fn transfer_handler<A: Attestor>(
 
     let proof_output = tokio::task::spawn_blocking(move || {
         // Create a new runtime inside the blocking thread.
-        let rt = tokio::runtime::Runtime::new().unwrap();
+        let rt = tokio::runtime::Runtime::new()?;
         rt.block_on(async {
             prove(prover_config)
                 .await
