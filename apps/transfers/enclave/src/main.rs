@@ -79,7 +79,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Consumer task: dequeue and process events
     tokio::spawn(async move {
         while let Some(op) = rx.recv().await {
-            op.client.process(op.event, op.config).await.expect("failed while processing queued events");
+            if let Err(e) = op.client.process(op.event, op.config).await {
+                println!("Error processing queued event: {}", e);
+            }
         }
     });
 

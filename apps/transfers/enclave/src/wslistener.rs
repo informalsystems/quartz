@@ -67,7 +67,7 @@ impl<A: Attestor + Clone> WebSocketHandler for TransfersService<A> {
 
         self.queue_producer
             .send(TransfersOp { client: self.clone(), event: op_event, config })
-            .await.unwrap();
+            .await?;
 
         Ok(())
     }
