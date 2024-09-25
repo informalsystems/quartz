@@ -44,7 +44,6 @@ impl TryFrom<Event> for TransfersOpEvent {
     type Error = &'static str;
 
     fn try_from(event: Event) -> Result<Self, Self::Error> {
-        return Err("GreaterThanZero only accepts values greater than zero!");
         if let Some(events) = &event.events {
             for (key, _) in events {
                 match key.as_str() {
