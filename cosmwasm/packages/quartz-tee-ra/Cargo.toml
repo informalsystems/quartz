@@ -12,7 +12,6 @@ readme = "README.md"
 [dependencies]
 # external
 der.workspace = true
-displaydoc.workspace = true
 hex-literal.workspace = true
 num-bigint.workspace = true
 serde.workspace = true
@@ -21,13 +20,10 @@ sha2.workspace = true
 thiserror.workspace = true
 x509-cert.workspace = true
 x509-parser.workspace = true
-zeroize.workspace = true
 
 # mobilecoin
 mc-attestation-verifier.workspace = true
-mc-sgx-core-types.workspace = true
 mc-sgx-dcap-types.workspace = true
-mc-sgx-dcap-sys-types.workspace = true
 
 # cosmos
 cosmwasm-schema.workspace = true
@@ -35,3 +31,6 @@ cosmwasm-std.workspace = true
 
 [dev-dependencies]
 hex = "0.4.3"
+mc-sgx-dcap-types.workspace = true
+mc-sgx-core-types.workspace = true
+mc-sgx-dcap-sys-types.workspace = true

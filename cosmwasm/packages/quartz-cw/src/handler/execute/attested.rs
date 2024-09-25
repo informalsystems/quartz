@@ -1,28 +1,46 @@
+use ciborium::{from_reader as from_cbor_slice, into_writer as into_cbor, Value as CborValue};
 use cosmwasm_std::{
-    from_json, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
-    WasmQuery,
+    to_json_binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response, StdResult, WasmQuery,
 };
+use quartz_dcap_verifier_msgs::QueryMsg as DcapVerifierQueryMsg;
 use quartz_tee_ra::{
-    intel_sgx::dcap::{Collateral, TrustedMrEnclaveIdentity},
-    verify_dcap_attestation, verify_epid_attestation, Error as RaVerificationError,
+    intel_sgx::dcap::{Collateral, TrustedIdentity, TrustedMrEnclaveIdentity},
+    verify_epid_attestation, Error as RaVerificationError,
 };
-use tcbinfo::msg::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
+use serde::{de::DeserializeOwned, Serialize};
+use tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
     error::Error,
     handler::Handler,
     msg::execute::attested::{
         Attestation, Attested, AttestedMsgSansHandler, DcapAttestation, EpidAttestation,
-        HasUserData, MockAttestation,
+        HasUserData, MockAttestation, Quote,
     },
     state::CONFIG,
 };
 
-pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
-    let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
-    let tcbinfo_addr = config
-        .tcb_info()
-        .expect("TcbInfo contract address is required for DCAP");
+fn query_contract<T: DeserializeOwned>(
+    deps: Deps<'_>,
+    contract_addr: String,
+    query_msg: impl Serialize,
+) -> StdResult<T> {
+    let request = QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr,
+        msg: to_json_binary(&query_msg)?,
+    });
+
+    deps.querier.query(&request)
+}
+
+fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<GetTcbInfoResponse, Error> {
+    let tcbinfo_addr = {
+        let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
+        config
+            .tcbinfo_contract()
+            .expect("TcbInfo contract address is required for DCAP")
+            .to_string()
+    };
 
     let fmspc_bytes =
         hex::decode(&fmspc).map_err(|_| Error::InvalidFmspc("Invalid FMSPC format".to_string()))?;
@@ -32,14 +50,38 @@ pub fn query_tcbinfo(deps: Deps<'_>, fmspc: String) -> Result<Binary, Error> {
 
     let query_msg = TcbInfoQueryMsg::GetTcbInfo { fmspc };
 
-    let request = QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: tcbinfo_addr,
-        msg: to_json_binary(&query_msg).map_err(Error::Std)?,
-    });
-
-    deps.querier
-        .query(&request)
+    query_contract(deps, tcbinfo_addr, &query_msg)
         .map_err(|err| Error::TcbInfoQueryError(err.to_string()))
+}
+
+fn to_cbor_vec<T: Serialize>(value: &T) -> Vec<u8> {
+    let mut buffer = Vec::new();
+    into_cbor(&value, &mut buffer).expect("Serialization failed");
+    buffer
+}
+
+fn query_dcap_verifier(
+    deps: Deps<'_>,
+    quote: Quote,
+    mr_enclave: impl Into<TrustedIdentity>,
+    updated_collateral: Collateral,
+) -> Result<(), Error> {
+    let query_msg = DcapVerifierQueryMsg::VerifyDcapAttestation {
+        quote: quote.as_ref().to_vec().into(),
+        collateral: to_cbor_vec(&updated_collateral).into(),
+        identities: Some(to_cbor_vec(&[mr_enclave.into()])),
+    };
+
+    let dcap_verifier_contract = {
+        let config = CONFIG.load(deps.storage).map_err(Error::Std)?;
+        config
+            .dcap_verifier_contract()
+            .expect("verifier_contract address is required for DCAP")
+            .to_string()
+    };
+
+    query_contract(deps, dcap_verifier_contract, &query_msg)
+        .map_err(|err| Error::DcapVerificationQueryError(err.to_string()))
 }
 
 impl Handler for EpidAttestation {
@@ -63,42 +105,48 @@ impl Handler for EpidAttestation {
 impl Handler for DcapAttestation {
     fn handle(self, deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {
         let (quote, collateral) = self.clone().into_tuple();
-        let mr_enclave = TrustedMrEnclaveIdentity::new(self.mr_enclave().into(), [""; 0], [""; 0]);
+        let mr_enclave = TrustedMrEnclaveIdentity::new(
+            self.mr_enclave().into(),
+            [""; 0],
+            ["INTEL-SA-00334", "INTEL-SA-00615"],
+        );
 
         // Retrieve the FMSPC from the collateral
         let fmspc_hex = collateral.tcb_info().to_string();
 
         // Query the tcbinfo contract with the FMSPC retrieved and validated
-        let tcb_info_query = query_tcbinfo(deps.as_ref(), fmspc_hex)?;
-        let tcb_info_response: GetTcbInfoResponse = from_json(tcb_info_query)?;
+        let tcb_info_response = query_tcbinfo(deps.as_ref(), fmspc_hex)?;
 
         // Serialize the existing collateral
-        let mut collateral_json: serde_json::Value =
-            serde_json::to_value(&collateral).map_err(|e| {
+        let collateral_serialized = to_cbor_vec(&collateral);
+        let mut collateral_value: CborValue = from_cbor_slice(collateral_serialized.as_slice())
+            .map_err(|e| {
                 Error::TcbInfoQueryError(format!("Failed to serialize collateral: {}", e))
             })?;
 
         // Update the tcb_info in the serialized data
-        collateral_json["tcb_info"] = tcb_info_response.tcb_info;
+        fn try_get_tcb_info(collateral_value: &mut CborValue) -> Option<&mut CborValue> {
+            if let CborValue::Map(map) = collateral_value {
+                return map
+                    .iter_mut()
+                    .find(|(k, _)| k == &CborValue::Text("tcb_info".to_string()))
+                    .map(|(_, v)| v);
+            }
+            None
+        }
+
+        let tcb_info_value = try_get_tcb_info(&mut collateral_value).expect("infallible serde");
+        *tcb_info_value = CborValue::Text(tcb_info_response.tcb_info.to_string());
 
         // Deserialize back into a Collateral
-        let updated_collateral: Collateral =
-            serde_json::from_value(collateral_json).map_err(|e| {
+        let collateral_serialized = to_cbor_vec(&collateral_value);
+        let updated_collateral: Collateral = from_cbor_slice(collateral_serialized.as_slice())
+            .map_err(|e| {
                 Error::TcbInfoQueryError(format!("Failed to deserialize updated collateral: {}", e))
             })?;
 
-        // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
-        let verification_output =
-            verify_dcap_attestation(quote, updated_collateral, &[mr_enclave.into()]);
-
-        // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
-        if verification_output.is_success().into() {
-            Ok(Response::default())
-        } else {
-            Err(Error::RaVerification(RaVerificationError::Dcap(
-                verification_output,
-            )))
-        }
+        query_dcap_verifier(deps.as_ref(), quote, mr_enclave, updated_collateral)
+            .map(|_| Response::default())
     }
 }
 

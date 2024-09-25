@@ -21,5 +21,5 @@ pub enum QueryMsg {
 
 #[cw_serde]
 pub struct GetTcbInfoResponse {
-    pub tcb_info: serde_json::Value,
+    pub tcb_info: String,
 }
