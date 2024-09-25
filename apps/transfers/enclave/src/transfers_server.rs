@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use cosmrs::AccountId;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
@@ -18,7 +19,6 @@ use quartz_common::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tendermint_rpc::event::Event;
 use tonic::{Request, Response, Result as TonicResult, Status};
 use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
 use tokio::sync::mpsc::Sender;
@@ -104,12 +104,21 @@ struct AttestedMsg<M> {
 }
 
 #[derive(Clone, Debug)]
+pub enum TransfersOpEventTypes {
+    Query,
+    Transfer,
+    None,
+}
+
+#[derive(Clone, Debug)]
 pub enum TransfersOpEvent {
     Query {
-        event: Event,
+        contract_address: AccountId,
+        sender: String,
+        ephemeral_pubkey: String,
     },
     Transfer {
-        event: Event,
+        contract_address: AccountId,
     },
     None {}
 }

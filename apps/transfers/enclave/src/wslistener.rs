@@ -1,5 +1,6 @@
 //TODO: get rid of this
 use std::str::FromStr;
+use std::collections::BTreeMap;
 
 use anyhow::{anyhow, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
@@ -29,20 +30,50 @@ use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
-    transfers_server::{QueryRequestMessage, TransfersOp, TransfersOpEvent, TransfersService, UpdateRequestMessage},
+    transfers_server::{
+        QueryRequestMessage,
+        TransfersOp,
+        TransfersOpEvent,
+        TransfersOpEventTypes,
+        TransfersService,
+        UpdateRequestMessage
+    },
 };
 
 impl TryFrom<Event> for TransfersOpEvent {
     type Error = &'static str;
 
     fn try_from(event: Event) -> Result<Self, Self::Error> {
-        if is_query_event(&event) {
-            Ok(TransfersOpEvent::Query { event })
-        } else if is_transfer_event(&event) {
-            Ok(TransfersOpEvent::Transfer { event })
-        } else {
-            Ok(TransfersOpEvent::None {})
+        return Err("GreaterThanZero only accepts values greater than zero!");
+        if let Some(events) = &event.events {
+            for (key, _) in events {
+                match key.as_str() {
+                    k if k.starts_with("wasm-query_balance") => {
+                        let (contract_address, ephemeral_pubkey, sender) = extract_event_info(
+                            TransfersOpEventTypes::Query,
+                            &events
+                        ).unwrap();
+
+                        return Ok(TransfersOpEvent::Query {
+                            contract_address: contract_address.unwrap(),
+                            ephemeral_pubkey: ephemeral_pubkey.expect("must be included in query event"),
+                            sender: sender.expect("must be included in query event"),
+                        });
+                    },
+                    k if k.starts_with("wasm-transfer.action") => {
+                        let (contract_address, _, _) = extract_event_info(
+                            TransfersOpEventTypes::Transfer,
+                            &events
+                        ).unwrap();
+
+                        return Ok(TransfersOpEvent::Transfer { contract_address: contract_address.unwrap() });
+                    },
+                    _ => {},
+                }
+            }
         }
+
+        Ok(TransfersOpEvent::None {})
     }
 }
 
@@ -55,14 +86,11 @@ pub trait WsListener: Send + Sync + 'static {
 #[async_trait::async_trait]
 impl<A: Attestor + Clone> WebSocketHandler for TransfersService<A> {
     async fn handle(&self, event: Event, config: WsListenerConfig) -> Result<()> {
-        let op_event = TransfersOpEvent::try_from(event).expect("failed while casting op event");
-        
-        match op_event {
-            TransfersOpEvent::None {} => {
-                println!("Event discarded");
-                return Ok(());
-            },
-            _ => {}
+        let op_event = TransfersOpEvent::try_from(event).unwrap();
+
+        if matches!(op_event, TransfersOpEvent::None { .. }) {
+            println!("Event discarded");
+            return Ok(());
         }
 
         self.queue_producer
@@ -77,30 +105,22 @@ impl<A: Attestor + Clone> WebSocketHandler for TransfersService<A> {
 impl<A: Attestor> WsListener for TransfersService<A> {
     async fn process(&self, event: TransfersOpEvent, config: WsListenerConfig) -> Result<()> {
         match event {
-            TransfersOpEvent::Transfer { event } => {
+            TransfersOpEvent::Transfer { contract_address } => {
                 println!("Processing transfer event");
-                let (contract_address, _, _) = extract_event_info(&event);
                 transfer_handler(
                     self,
-                    &contract_address
-                        .expect("must be included in transfers event")
-                        .parse::<AccountId>()
-                        .map_err(|e| anyhow!(e))?,
+                    &contract_address,
                     &config,
                 )
                 .await?;
             },
-            TransfersOpEvent::Query { event } => {
-                println!("Processing quey event");
-                let (contract_address, emphemeral_pubkey, sender) = extract_event_info(&event);
+            TransfersOpEvent::Query { contract_address, ephemeral_pubkey, sender } => {
+                println!("Processing query event");
                 query_handler(
                     self,
-                    &contract_address
-                        .expect("must be included in query event")
-                        .parse::<AccountId>()
-                        .map_err(|e| anyhow!(e))?,
-                    sender.expect("must be included in query event"),
-                    emphemeral_pubkey.expect("must be included in query event"),
+                    &contract_address,
+                    &sender,
+                    &ephemeral_pubkey,
                     &config,
                 )
                 .await?;
@@ -116,54 +136,37 @@ impl<A: Attestor> WsListener for TransfersService<A> {
     }
 }
 
-fn is_transfer_event(event: &Event) -> bool {
-    // Check if the event is a transaction type
-    if let Some(EventType::Tx) = event.event_type() {
-        // Check for the "wasm.action" key with the value "init_clearing"
-        if let Some(events) = &event.events {
-            return events.iter().any(|(key, _)| key == "wasm-transfer.action");
-        }
-    }
-    false
-}
-
-fn is_query_event(event: &Event) -> bool {
-    // Check if the event is a transaction type
-    if let Some(EventType::Tx) = event.event_type() {
-        // Check for the "wasm.action" key with the value "init_clearing"
-        if let Some(events) = &event.events {
-            return events
-                .iter()
-                .any(|(key, _)| key.starts_with("wasm-query_balance"));
-        }
-    }
-    false
-}
-
-fn extract_event_info(event: &Event) -> (Option<String>, Option<String>, Option<String>) {
-    let mut sender = None;
+fn extract_event_info(
+    op_event: TransfersOpEventTypes,
+    events: &BTreeMap<String, Vec<String>>
+) -> Result<(Option<AccountId>, Option<String>, Option<String>)>
+{
     let mut contract_address = None;
-    let mut emphemeral_pubkey = None;
+    let mut sender = None;
+    let mut ephemeral_pubkey = None;
 
-    if let Some(events) = &event.events {
-        for (key, values) in events {
-            match key.as_str() {
-                "message.sender" => {
-                    sender = values.first().cloned();
-                }
-                "execute._contract_address" => {
-                    contract_address = values.first().cloned();
-                }
-                "wasm-query_balance.emphemeral_pubkey" => {
-                    // TODO: fix typo
-                    emphemeral_pubkey = values.first().cloned();
-                }
-                _ => {}
-            }
-        }
+    // Set common info data for all events
+    if !matches!(op_event, TransfersOpEventTypes::None) {
+        contract_address = Some(
+            events.get("execute._contract_address")
+                .unwrap()
+                .first()
+                .expect("must be included in transfers event")
+                .parse::<AccountId>()
+                .map_err(|e| anyhow!(e))?
+        );
     }
 
-    (contract_address, emphemeral_pubkey, sender)
+    // Set info for specific events
+    match op_event {
+        TransfersOpEventTypes::Query => {
+            sender = events.get("message.sender").unwrap().first().cloned();
+            ephemeral_pubkey = events.get("wasm-query_balance.emphemeral_pubkey").unwrap().first().cloned();
+        },
+        _ => {}
+    }
+
+    Ok((contract_address, ephemeral_pubkey, sender))
 }
 
 async fn transfer_handler<A: Attestor>(
@@ -269,8 +272,8 @@ async fn transfer_handler<A: Attestor>(
 async fn query_handler<A: Attestor>(
     client: &TransfersService<A>,
     contract: &AccountId,
-    msg_sender: String,
-    pubkey: String,
+    msg_sender: &String,
+    pubkey: &String,
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
@@ -286,8 +289,8 @@ async fn query_handler<A: Attestor>(
     // Build request
     let update_contents = QueryRequestMessage {
         state,
-        address: Addr::unchecked(&msg_sender), // sender comes from TX event, therefore is checked
-        ephemeral_pubkey: HexBinary::from_hex(&pubkey)?,
+        address: Addr::unchecked(msg_sender), // sender comes from TX event, therefore is checked
+        ephemeral_pubkey: HexBinary::from_hex(pubkey)?,
     };
 
     // Send QueryRequestMessage to enclave over tonic gRPC client
