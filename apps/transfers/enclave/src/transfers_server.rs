@@ -97,12 +97,6 @@ pub struct StatusResponseMessage {
     encrypted_bal: HexBinary,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct AttestedMsg<M> {
-    msg: M,
-    quote: Vec<u8>,
-}
-
 #[derive(Clone, Debug)]
 pub enum TransfersOpEvent {
     Query {
