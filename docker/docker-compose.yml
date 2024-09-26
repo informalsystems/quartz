@@ -30,4 +30,4 @@ services:
       - "11090:11090"
     network_mode: host
     volumes:
-      - wasmd_data:/root/.wasmd
+      - wasmd_data:/root/.wasmd:ro
