@@ -20,8 +20,13 @@ jobs:
         working-directory: .
         run: docker compose -f docker/docker-compose.yml up -d --build
 
-      - name: Wait for containers to be ready
-        run: sleep 30
+      - name: Wait for handshake completion
+        timeout-minutes: 5
+        run: |
+          while ! docker logs quartz-cli-transfers 2>&1 | grep -q "Handshake complete:"; do
+            echo "Waiting for handshake completion..."
+            sleep 10
+          done
 
       - name: Capture logs from wasmd container
         id: capture_logs
