@@ -9,17 +9,37 @@ jobs:
     steps:
       - name: Checkout frontend
         uses: actions/checkout@v4
+
       - name: Setup Node for frontend
         uses: actions/setup-node@v4
         with:
           node-version: "20.x"
           check-latest: true
+
       - name: Run containers wasmd and enclave
         working-directory: .
         run: docker compose -f docker/docker-compose.yml up -d --build
-      - name: Install dependencies for the frontend
-        run: npm ci
+
+      - name: Wait for containers to be ready
+        run: sleep 30
+
+      - name: Capture logs from wasmd container
+        id: capture_logs
+        run: |
+          docker logs quartz-cli-transfers > quartz-cli-transfers_logs.txt
+
       - name: Setup environment variables
         run: cp .env.example .env.local
+
+      - name: Update .env.local with contract address and pubkey
+        run: |
+          CONTRACT_ADDRESS=$(grep 'Contract Address:' quartz-cli-transfers_logs.txt | awk '{print $NF}')
+          PUBKEY=$(grep 'Handshake complete:' quartz-cli-transfers_logs.txt | awk '{print $NF}')
+          sed -i "s|^NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=.*|NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=$CONTRACT_ADDRESS|" .env.local
+          sed -i "s|^NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=.*|NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=$PUBKEY|" .env.local
+
+      - name: Install dependencies for the frontend
+        run: npm ci
+
       - name: Run all E2E tests
         run: npm run test

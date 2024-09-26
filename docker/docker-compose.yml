@@ -16,7 +16,7 @@ services:
       - wasmd_data:/root/.wasmd
 
   enclave:
-    container_name: quartz-cli-2
+    container_name: quartz-cli-transfers
     environment:
       DOCKER_BUILDKIT: 1
     build:
