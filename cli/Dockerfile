@@ -10,9 +10,7 @@ RUN apt-get update && \
     protobuf-compiler \
     openssl \
     clang \
-    ca-certificates && \
-    mkdir -m 0700 /root/.ssh && \
-    ssh-keyscan github.com >> /root/.ssh/known_hosts
+    ca-certificates
 
 # Install Go
 RUN apt-get update && \
@@ -34,7 +32,7 @@ RUN go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest && \
 
 RUN rustup target add "$TARGET"
 WORKDIR /opt/cli
-RUN --mount=type=ssh cargo build --locked --release ${CARGO_FLAGS}
+RUN cargo build --locked --release ${CARGO_FLAGS}
 RUN cp /opt/target/release/quartz /usr/local/bin/
 
 CMD ["quartz", "--mock-sgx", "--app-dir", "/opt/apps/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/apps/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"ucosm\"}"]
