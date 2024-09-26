@@ -4,7 +4,6 @@ FROM cosmwasm/wasmd:${WASMD_VERSION}
 
 # Increase the amount of ucosm given to accounts
 RUN <<EOF
-sed -i 's/keyring-backend = "os"/keyring-backend = "test"/g' /root/.wasmd/config/client.toml
 sed -i  's/1000000000/12000000000000/g' /opt/setup_wasmd.sh
 EOF
 
@@ -15,8 +14,6 @@ RUN /opt/setup_wasmd.sh \
         wasm19azg82cx3qx88gar8nl08rz7x0p27amtmadfep \
         wasm1adcnk7lt6qst7p5d0g5607e28k77um7nxwxuqy \
         wasm1jn34x50hy3my0a2mxwcx8fttgfxu2n5gpvu0ty
-
-RUN sleep 5
 
 # Import the accounts' private keys into the image such that they can be used to
 # initiate transactions from within the container.
