@@ -1,7 +1,7 @@
 //TODO: get rid of this
 use std::{collections::BTreeMap, str::FromStr};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Error, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Addr, HexBinary};
 use futures_util::StreamExt;
@@ -30,33 +30,39 @@ use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
     transfers_server::{
-        QueryRequestMessage, TransfersOp, TransfersOpEvent, TransfersOpEventTypes,
+        QueryRequestMessage, TransfersOp, TransfersOpEvent,
         TransfersService, UpdateRequestMessage,
     },
 };
 
-impl TryFrom<Event> for TransfersOpEvent {
-    type Error = &'static str;
+#[derive(Clone, Debug)]
+enum TransfersOpEventTypes {
+    Query,
+    Transfer,
+}
 
-    fn try_from(event: Event) -> Result<Self, Self::Error> {
+impl TryFrom<Event> for TransfersOpEvent {
+    type Error = Error;
+
+    fn try_from(event: Event) -> Result<Self, Error> {
         if let Some(events) = &event.events {
             for (key, _) in events {
                 match key.as_str() {
                     k if k.starts_with("wasm-query_balance") => {
                         let (contract_address, ephemeral_pubkey, sender) =
                             extract_event_info(TransfersOpEventTypes::Query, &events)
-                                .map_err(|_| "Failed to extract event info from query event")?;
+                                .map_err(|_| anyhow!("Failed to extract event info from query event"))?;
 
                         return Ok(TransfersOpEvent::Query {
                             contract_address,
-                            ephemeral_pubkey: ephemeral_pubkey.ok_or("Missing ephemeral_pubkey")?,
-                            sender: sender.ok_or("Missing sender")?,
+                            ephemeral_pubkey: ephemeral_pubkey.ok_or(anyhow!("Missing ephemeral_pubkey"))?,
+                            sender: sender.ok_or(anyhow!("Missing sender"))?,
                         });
                     }
                     k if k.starts_with("wasm-transfer.action") => {
                         let (contract_address, _, _) =
                             extract_event_info(TransfersOpEventTypes::Transfer, &events)
-                                .map_err(|_| "Failed to extract event info from transfer event")?;
+                                .map_err(|_| anyhow!("Failed to extract event info from transfer event"))?;
 
                         return Ok(TransfersOpEvent::Transfer { contract_address });
                     }
@@ -65,7 +71,7 @@ impl TryFrom<Event> for TransfersOpEvent {
             }
         }
 
-        Ok(TransfersOpEvent::None {})
+        Err(anyhow!("Unsupported event."))
     }
 }
 
@@ -73,12 +79,7 @@ impl TryFrom<Event> for TransfersOpEvent {
 #[async_trait::async_trait]
 impl<A: Attestor + Clone> WebSocketHandler for TransfersService<A> {
     async fn handle(&self, event: Event, config: WsListenerConfig) -> Result<()> {
-        let op_event = TransfersOpEvent::try_from(event).map_err(|e| anyhow!(e))?;
-
-        if matches!(op_event, TransfersOpEvent::None { .. }) {
-            println!("Event discarded");
-            return Ok(());
-        }
+        let op_event = TransfersOpEvent::try_from(event)?;
 
         self.queue_producer
             .send(TransfersOp {
@@ -113,7 +114,6 @@ impl<A: Attestor> WsListener for TransfersService<A> {
                 println!("Processing query event");
                 query_handler(self, &contract_address, &sender, &ephemeral_pubkey, &config).await?;
             }
-            _ => {}
         }
 
         let wsurl = format!("ws://{}/websocket", config.node_url);
@@ -128,11 +128,6 @@ fn extract_event_info(
     op_event: TransfersOpEventTypes,
     events: &BTreeMap<String, Vec<String>>,
 ) -> Result<(AccountId, Option<String>, Option<String>)> {
-    // TODO: Remove as per Shoaib's comments
-    if matches!(op_event, TransfersOpEventTypes::None) {
-        return Err(anyhow!("Not a valid event type"));
-    }
-
     let mut sender = None;
     let mut ephemeral_pubkey = None;
 
@@ -333,7 +328,7 @@ async fn query_handler<A: Attestor>(
     Ok(())
 }
 
-async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {
+async fn two_block_waitoor(wsurl: &str) -> Result<(), Error> {
     let (client, driver) = WebSocketClient::new(wsurl).await?;
 
     let driver_handle = tokio::spawn(async move { driver.run().await });

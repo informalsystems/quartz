@@ -104,13 +104,6 @@ struct AttestedMsg<M> {
 }
 
 #[derive(Clone, Debug)]
-pub enum TransfersOpEventTypes {
-    Query,
-    Transfer,
-    None,
-}
-
-#[derive(Clone, Debug)]
 pub enum TransfersOpEvent {
     Query {
         contract_address: AccountId,
@@ -120,7 +113,6 @@ pub enum TransfersOpEvent {
     Transfer {
         contract_address: AccountId,
     },
-    None {}
 }
 
 #[derive(Clone, Debug)]
