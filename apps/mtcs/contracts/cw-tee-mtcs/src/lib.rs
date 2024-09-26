@@ -5,8 +5,7 @@
 //     unused_import_braces,
 //     unused_qualifications
 // )]
-// #![forbid(unsafe_code)]
-
+#![forbid(unsafe_code)]
 pub mod contract;
 mod error;
 pub mod msg;

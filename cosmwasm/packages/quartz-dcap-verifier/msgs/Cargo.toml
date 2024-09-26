@@ -1,0 +1,13 @@
+[package]
+name = "quartz-dcap-verifier-msgs"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# cosmos
+cosmwasm-schema.workspace = true
+cosmwasm-std.workspace = true

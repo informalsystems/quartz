@@ -91,13 +91,13 @@ async fn deploy(
     };
 
     info!("🚀 Communicating with Relay to Instantiate...");
-    let raw_init_msg = RelayMessage::Instantiate
-        .run_relay(config.enclave_rpc(), config.mock_sgx)
-        .await?;
+    let init_msg = RelayMessage::Instantiate {
+        init_msg: args.init_msg,
+    }
+    .run_relay(config.enclave_rpc())
+    .await?;
 
     info!("🚀 Instantiating {}", args.label);
-    let mut init_msg = args.init_msg;
-    init_msg["quartz"] = json!(raw_init_msg);
 
     let init_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.init(
         &config.chain_id,
@@ -119,5 +119,3 @@ async fn deploy(
 
     Ok((code_id, contract_addr.to_owned()))
 }
-
-//RES=$($CMD tx wasm instantiate "$CODE_ID" "$INSTANTIATE_MSG" --from "$USER_ADDR" --label $LABEL $TXFLAG -y --no-admin --output json)
