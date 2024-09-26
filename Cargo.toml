@@ -1,7 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-    "apps/mtcs/enclave",
     "cli",
     "core/light-client-proofs/*",
     "core/quartz",
@@ -9,7 +8,7 @@ members = [
     "cosmwasm/packages/*",
     "utils/*",
 ]
-exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers/contracts", "apps/transfers/enclave"]
+exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/mtcs/enclave", "apps/transfers/contracts", "apps/transfers/enclave"]
 
 [workspace.package]
 version = "0.1.0"
@@ -88,11 +87,6 @@ tcbinfo = { path = "cosmwasm/packages/tcbinfo", features = ["library"] }
 tm-prover = { path = "utils/tm-prover", default-features = false }
 tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
 wasmd-client = { path = "cosmwasm/packages/wasmd-client", default-features = false }
-
-# quartz apps
-cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
-mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
-mtcs-enclave = { path = "apps/mtcs/enclave" }
 
 [profile.release]
 opt-level = 3

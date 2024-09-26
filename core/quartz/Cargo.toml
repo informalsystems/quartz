@@ -42,7 +42,6 @@ tendermint-rpc = { workspace = true, features=["websocket-client", "http-client"
 
 # quartz
 cw-proof.workspace = true
-mtcs.workspace = true
 quartz-cw.workspace = true
 quartz-proto.workspace = true
 quartz-tee-ra.workspace = true

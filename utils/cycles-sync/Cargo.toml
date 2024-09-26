@@ -35,7 +35,7 @@ cosmwasm-std.workspace = true
 # quartz
 cw-tee-mtcs = { path = "../../apps/mtcs/contracts/cw-tee-mtcs/" }
 wasmd-client.workspace = true
-mtcs-enclave.workspace = true
+#mtcs-enclave.workspace = true
 
 [dev-dependencies]
 rand_core.workspace = true
