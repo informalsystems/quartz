@@ -5,7 +5,7 @@ use crate::request::Request;
 #[derive(Clone, Debug)]
 pub struct HandshakeRequest {
     pub contract: AccountId,
-    pub use_latest_trusted: bool,
+    pub unsafe_trust_latest: bool,
 }
 
 impl From<HandshakeRequest> for Request {

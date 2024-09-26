@@ -121,7 +121,7 @@ impl DcapAttestation {
 #[cw_serde]
 pub struct RawDcapAttestation {
     pub quote: HexBinary,
-    pub collateral: serde_json::Value,
+    pub collateral: HexBinary,
 }
 
 impl TryFrom<RawDcapAttestation> for DcapAttestation {
@@ -129,10 +129,11 @@ impl TryFrom<RawDcapAttestation> for DcapAttestation {
 
     fn try_from(value: RawDcapAttestation) -> Result<Self, Self::Error> {
         let quote_bytes: Vec<u8> = value.quote.into();
+        let collateral_bytes: Vec<u8> = value.collateral.into();
         let quote = quote_bytes
             .try_into()
             .map_err(|e: Quote3Error| StdError::parse_err("Quote", e.to_string()))?;
-        let collateral = serde_json::from_value(value.collateral)
+        let collateral = ciborium::from_reader(collateral_bytes.as_slice())
             .map_err(|e| StdError::parse_err("Collateral", e.to_string()))?;
 
         Ok(Self { quote, collateral })
@@ -141,11 +142,13 @@ impl TryFrom<RawDcapAttestation> for DcapAttestation {
 
 impl From<DcapAttestation> for RawDcapAttestation {
     fn from(value: DcapAttestation) -> Self {
+        let mut collateral_serialized = Vec::new();
+        ciborium::into_writer(&value.collateral, &mut collateral_serialized)
+            .expect("infallible serializer");
+
         Self {
             quote: value.quote.as_ref().to_vec().into(),
-            collateral: serde_json::to_vec(&value.collateral)
-                .expect("infallible serializer")
-                .into(),
+            collateral: collateral_serialized.into(),
         }
     }
 }

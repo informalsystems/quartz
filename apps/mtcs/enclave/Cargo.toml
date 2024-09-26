@@ -4,22 +4,12 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Informal Systems <hello@informal.systems>"]
 
-[profile.release]
-opt-level = 3
-debug = false
-rpath = false
-lto = true
-debug-assertions = false
-codegen-units = 1
-panic = 'abort'
-incremental = false
-overflow-checks = true
-
 [features]
 mock-sgx = ["quartz-common/mock-sgx-cw", "quartz-common/mock-sgx-enclave"]
 
 [dependencies]
 # external
+async-trait.workspace = true
 clap.workspace = true
 color-eyre.workspace = true
 ecies.workspace = true
@@ -32,12 +22,18 @@ thiserror.workspace = true
 tokio.workspace = true
 tonic.workspace = true
 uuid.workspace = true
+futures-util.workspace = true
+anyhow.workspace = true 
+base64 = "0.22.1"
+reqwest.workspace = true
+
 
 # cosmos
 cosmrs.workspace = true
 cosmwasm-std.workspace = true
 tendermint.workspace = true
 tendermint-light-client.workspace = true
+tendermint-rpc.workspace = true
 
 # quartz
 cw-tee-mtcs.workspace = true
@@ -45,6 +41,7 @@ mtcs.workspace = true
 
 # quartz
 quartz-common = { workspace = true, features = ["full"]}
+wasmd-client = { workspace = true }
 
 [dev-dependencies]
 cw-multi-test = "2.1.0"

@@ -6,7 +6,7 @@ For now, smart contract code is written in CosmWasm Rust and deployed on Cosmos-
 TEE code is written in Rust and compiled via Gramine to run on Intel SGX enclaves.
 
 App devs need to design their smart contracts and their enclave code in tandem to work together. 
-Note that enclave code is not restricted to be CosmWasm as well, but can be (practically) arbitrary Rust.
+Note that enclave code is not restricted to be CosmWasm, but can be (practically) arbitrary Rust.
 
 ## Enclave Code
 

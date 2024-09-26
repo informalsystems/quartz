@@ -21,8 +21,14 @@ use serde::Serialize;
 
 use crate::types::Fmspc;
 
+#[cfg(not(feature = "mock-sgx"))]
+pub type DefaultAttestor = DcapAttestor;
+
+#[cfg(feature = "mock-sgx")]
+pub type DefaultAttestor = MockAttestor;
+
 /// The trait defines the interface for generating attestations from within an enclave.
-pub trait Attestor {
+pub trait Attestor: Send + Sync + 'static {
     type Error: ToString;
     type Attestation: Attestation;
     type RawAttestation: HasDomainType<DomainType = Self::Attestation> + Serialize;
@@ -61,8 +67,8 @@ impl Attestor for DcapAttestor {
     }
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
-        fn pccs_query_pck() -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
-            let url = "https://127.0.0.1:11089/sgx/certification/v4/pckcrl?ca=processor";
+        fn pccs_query_pck() -> Result<(Vec<u8>, String), Box<dyn Error>> {
+            let url = "https://127.0.0.1:8081/sgx/certification/v4/pckcrl?ca=processor";
 
             let client = Client::builder()
                 .danger_accept_invalid_certs(true) // FIXME(hu55a1n1): required?
@@ -74,18 +80,18 @@ impl Attestor for DcapAttestor {
                 .headers()
                 .get("SGX-PCK-CRL-Issuer-Chain")
                 .ok_or("Missing PCK-Issuer-Chain header")?
-                .as_bytes()
-                .to_vec();
+                .to_str()?
+                .to_string();
 
             let pck_crl = response.bytes()?;
 
-            Ok((pck_crl.to_vec(), pck_crl_issuer_chain.to_vec()))
+            Ok((pck_crl.to_vec(), pck_crl_issuer_chain))
         }
 
         fn collateral(
             tcb_info: &str,
-            mut pck_crl: Vec<u8>,
-            mut pck_crl_issuer_chain: Vec<u8>,
+            pck_crl: Vec<u8>,
+            pck_crl_issuer_chain: String,
         ) -> Collateral {
             let mut sgx_collateral = sgx_ql_qve_collateral_t::default();
 
@@ -102,11 +108,13 @@ impl Attestor for DcapAttestor {
             sgx_collateral.root_ca_crl = root_crl.as_ptr() as _;
             sgx_collateral.root_ca_crl_size = root_crl.len() as u32;
 
+            let mut pck_crl = hex::decode(pck_crl).unwrap();
             pck_crl.push(0);
             sgx_collateral.pck_crl = pck_crl.as_ptr() as _;
             sgx_collateral.pck_crl_size = pck_crl.len() as u32;
 
-            pck_crl_issuer_chain.push(0);
+            let pck_crl_issuer_chain = urlencoding::decode(&pck_crl_issuer_chain).unwrap();
+            // pck_crl_issuer_chain.push(0);
             sgx_collateral.pck_crl_issuer_chain = pck_crl_issuer_chain.as_ptr() as _;
             sgx_collateral.pck_crl_issuer_chain_size = pck_crl_issuer_chain.len() as u32;
 

@@ -2,8 +2,9 @@ use std::{env, net::SocketAddr};
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
-use cosmrs::{tendermint::Hash, AccountId};
+use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
+use tendermint::Hash;
 use tendermint_light_client::types::{Height, TrustThreshold};
 
 fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {
@@ -35,6 +36,10 @@ pub struct Cli {
     #[clap(long)]
     pub tcbinfo_contract: Option<AccountId>,
 
+    /// DCAP verifier contract address
+    #[clap(long)]
+    pub dcap_verifier_contract: Option<AccountId>,
+
     /// Height of the trusted header (AKA root-of-trust)
     #[clap(long)]
     pub trusted_height: Height,
@@ -58,10 +63,16 @@ pub struct Cli {
     /// Maximum block lag, in seconds
     #[clap(long, default_value = "5")]
     pub max_block_lag: u64,
+
+    #[clap(long, default_value = "127.0.0.1:11090")]
+    pub node_url: String,
+
+    #[clap(long, default_value = "admin")]
+    pub tx_sender: String,
 }
 
 fn default_rpc_addr() -> SocketAddr {
-    let port = env::var("QUARTZ_PORT").unwrap_or_else(|_| "11090".to_string());
+    let port = env::var("QUARTZ_ENCLAVE_RPC_PORT").unwrap_or_else(|_| "11090".to_string());
     format!("127.0.0.1:{}", port)
         .parse()
         .expect("Invalid socket address")

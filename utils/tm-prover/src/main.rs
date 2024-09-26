@@ -19,5 +19,8 @@ async fn main() -> Result<()> {
         .finish()
         .init();
 
-    prove(args).await
+    let proof = prove(args).await?;
+    println!("{:?}", proof);
+
+    Ok(())
 }

@@ -108,7 +108,7 @@ pub struct HandshakeArgs {
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
     #[arg(long)]
-    pub use_latest_trusted: bool,
+    pub unsafe_trust_latest: bool,
 
     /// Name or address of private key with which to sign
     #[arg(long)]
@@ -190,7 +190,7 @@ pub struct EnclaveStartArgs {
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
     #[arg(long)]
-    pub use_latest_trusted: bool,
+    pub unsafe_trust_latest: bool,
 
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
     #[arg(long)]
@@ -201,6 +201,11 @@ pub struct EnclaveStartArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tcbinfo_contract: Option<AccountId>,
+
+    /// Address of the DCAP verifier contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dcap_verifier_contract: Option<AccountId>,
 
     /// Whether to target release or dev
     #[arg(long)]
@@ -216,7 +221,7 @@ pub struct DevArgs {
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
     #[arg(long)]
-    pub use_latest_trusted: bool,
+    pub unsafe_trust_latest: bool,
 
     #[command(flatten)]
     pub contract_deploy: ContractDeployArgs,
@@ -233,6 +238,11 @@ pub struct DevArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tcbinfo_contract: Option<AccountId>,
+
+    /// Address of the DCAP verifier contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dcap_verifier_contract: Option<AccountId>,
 }
 
 pub trait ToFigment {

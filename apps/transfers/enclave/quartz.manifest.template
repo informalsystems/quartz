@@ -24,6 +24,7 @@ loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "testing",
                 "--fmspc", "{{ fmspc }}",
                 "--tcbinfo-contract", "{{ tcbinfo_contract }}",
+                "--dcap-verifier-contract", "{{ dcap_verifier_contract }}",
                 "--rpc-addr", "0.0.0.0:11090",
                 "--trusted-height", "{{ trusted_height }}",
                 "--trusted-hash", "{{ trusted_hash }}"]

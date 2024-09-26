@@ -1,14 +1,11 @@
-use std::{path::PathBuf, process::exit, time::Duration};
+use std::{path::PathBuf, time::Duration};
 
 use async_trait::async_trait;
 use color_eyre::owo_colors::OwoColorize;
 // todo get rid of this?
 use miette::{IntoDiagnostic, Result};
 use quartz_common::proto::core_client::CoreClient;
-use tokio::{
-    sync::{mpsc, watch},
-    time::sleep,
-};
+use tokio::{sync::mpsc, time::sleep};
 use tracing::{debug, info};
 use watchexec::Watchexec;
 use watchexec_signals::Signal;
@@ -63,21 +60,11 @@ async fn dev_driver(
     config: Config,
 ) -> Result<(), Error> {
     // State
-    let mut shutdown_tx: Option<watch::Sender<()>> = None;
     let mut first_enclave_message = true;
     let mut first_contract_message = true;
     let mut contract = String::from("");
 
     // Shutdown enclave upon interruption
-    let shutdown_tx_cpy = shutdown_tx.clone();
-    ctrlc::set_handler(move || {
-        if let Some(tx) = &shutdown_tx_cpy {
-            let _res = tx.send(());
-        }
-
-        exit(130)
-    })
-    .expect("Error setting Ctrl-C handler");
 
     // Drive
     while let Some(dev) = rx.recv().await {
@@ -98,7 +85,7 @@ async fn dev_driver(
                 contract_build.handle(&config).await?;
 
                 // Start enclave in background
-                let new_shutdown_tx = spawn_enclave_start(args, &config).await?;
+                spawn_enclave_start(args, &config)?;
 
                 // Deploy new contract and perform handshake
                 let res = deploy_and_handshake(None, args, &config).await;
@@ -108,16 +95,11 @@ async fn dev_driver(
                     Ok(res_contract) => {
                         // Set state
                         contract = res_contract;
-                        shutdown_tx = Some(new_shutdown_tx);
 
                         info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
                         eprintln!("Error launching quartz app");
-
-                        new_shutdown_tx
-                            .send(())
-                            .expect("Could not send signal on channel");
 
                         return Err(e);
                     }
@@ -133,14 +115,11 @@ async fn dev_driver(
                 println!("{}", BANNER.yellow().bold());
                 info!("{}", "Rebuilding Enclave...".green().bold());
 
-                if let Some(shutdown_tx) = shutdown_tx.clone() {
-                    let _res = shutdown_tx.send(());
-                }
-
                 info!("Waiting 1 second for the enclave to shut down");
                 sleep(Duration::from_secs(1)).await;
 
-                let new_shutdown_tx = spawn_enclave_start(args, &config).await?;
+                // Start enclave in background
+                spawn_enclave_start(args, &config)?;
 
                 // todo: should not unconditionally deploy here
                 let res = deploy_and_handshake(Some(&contract), args, &config).await;
@@ -149,16 +128,11 @@ async fn dev_driver(
                     Ok(res_contract) => {
                         // Set state
                         contract = res_contract;
-                        shutdown_tx = Some(new_shutdown_tx);
 
                         info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
                         eprintln!("Error restarting enclave and handshake");
-
-                        new_shutdown_tx
-                            .send(())
-                            .expect("Could not send signal on channel");
 
                         return Err(e);
                     }
@@ -173,25 +147,15 @@ async fn dev_driver(
                 println!("{}", BANNER.yellow().bold());
                 info!("{}", "Rebuilding Contract...".green().bold());
 
-                if let Some(shutdown_tx) = shutdown_tx.clone() {
-                    let res = deploy_and_handshake(None, args, &config).await;
+                let res = deploy_and_handshake(None, args, &config).await;
 
-                    match res {
-                        Ok(res_contract) => contract = res_contract,
-                        Err(e) => {
-                            eprintln!("Error deploying contract and handshake:");
+                match res {
+                    Ok(res_contract) => contract = res_contract,
+                    Err(e) => {
+                        eprintln!("Error deploying contract and handshake:");
 
-                            shutdown_tx
-                                .send(())
-                                .expect("Could not send signal on channel");
-
-                            return Err(e);
-                        }
+                        return Err(e);
                     }
-                } else {
-                    return Err(Error::GenericErr(
-                        "Attempting to redeploy contract, but enclave isn't running".to_string(),
-                    ));
                 }
 
                 info!("{}", "Enclave is listening for requests...".green().bold());
@@ -203,17 +167,13 @@ async fn dev_driver(
 }
 
 // Spawns enclve start in a separate task which runs in the background
-async fn spawn_enclave_start(
-    args: &DevRequest,
-    config: &Config,
-) -> Result<watch::Sender<()>, Error> {
+fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<(), Error> {
     // In separate process, launch the enclave
-    let (shutdown_tx, shutdown_rx) = watch::channel(());
     let enclave_start = EnclaveStartRequest {
-        shutdown_rx: Some(shutdown_rx),
-        use_latest_trusted: args.use_latest_trusted,
+        unsafe_trust_latest: args.unsafe_trust_latest,
         fmspc: args.fmspc.clone(),
         tcbinfo_contract: args.tcbinfo_contract.clone(),
+        dcap_verifier_contract: args.dcap_verifier_contract.clone(),
     };
 
     let config_cpy = config.clone();
@@ -224,7 +184,7 @@ async fn spawn_enclave_start(
         Ok::<Response, Error>(res)
     });
 
-    Ok(shutdown_tx)
+    Ok(())
 }
 
 // TODO: do not shutdown if cli calls fail, just print
@@ -283,7 +243,7 @@ async fn deploy_and_handshake(
     info!("Running handshake on contract `{}`", contract);
     let handshake = HandshakeRequest {
         contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
-        use_latest_trusted: args.use_latest_trusted,
+        unsafe_trust_latest: args.unsafe_trust_latest,
     };
 
     let h_res = handshake.handle(config).await;

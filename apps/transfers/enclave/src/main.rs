@@ -16,6 +16,7 @@ pub mod cli;
 pub mod proto;
 pub mod state;
 pub mod transfers_server;
+pub mod wslistener;
 
 use std::{
     sync::{Arc, Mutex},
@@ -24,24 +25,23 @@ use std::{
 
 use clap::Parser;
 use cli::Cli;
-use proto::settlement_server::SettlementServer as TransfersServer;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
-        attestor::{self, Attestor},
-        server::CoreService,
+        attestor::{self, Attestor, DefaultAttestor},
+        server::{QuartzServer, WsListenerConfig},
     },
-    proto::core_server::CoreServer,
 };
-use tonic::transport::Server;
-use transfers_server::TransfersService;
+use transfers_server::{TransfersOp, TransfersService};
+use tokio::sync::mpsc;
+use crate::wslistener::WsListener;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
     let light_client_opts = LightClientOpts::new(
-        args.chain_id,
+        args.chain_id.clone(),
         args.trusted_height.into(),
         Vec::from(args.trusted_hash)
             .try_into()
@@ -68,19 +68,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Duration::from_secs(30 * 24 * 60),
         light_client_opts,
         args.tcbinfo_contract.map(|c| c.to_string()),
+        args.dcap_verifier_contract.map(|c| c.to_string()),
     );
+
+    let ws_config = WsListenerConfig {
+        node_url: args.node_url,
+        tx_sender: args.tx_sender,
+        trusted_hash: args.trusted_hash,
+        trusted_height: args.trusted_height,
+        chain_id: args.chain_id,
+    };
 
     let sk = Arc::new(Mutex::new(None));
 
-    Server::builder()
-        .add_service(CoreServer::new(CoreService::new(
-            config.clone(),
-            sk.clone(),
-            attestor.clone(),
-        )))
-        .add_service(TransfersServer::new(TransfersService::new(
-            config, sk, attestor,
-        )))
+    // Event queue
+    let (tx, mut rx) = mpsc::channel::<TransfersOp<DefaultAttestor>>(1);
+    // Consumer task: dequeue and process events
+    tokio::spawn(async move {
+        while let Some(op) = rx.recv().await {
+            if let Err(e) = op.client.process(op.event, op.config).await {
+                println!("Error processing queued event: {}", e);
+            }
+        }
+    });
+
+    QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
+        .add_service(TransfersService::new(config, sk, attestor, tx))
         .serve(args.rpc_addr)
         .await?;
 

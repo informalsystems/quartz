@@ -8,13 +8,14 @@ use crate::request::Request;
 #[derive(Clone, Debug)]
 pub struct DevRequest {
     pub watch: bool,
-    pub use_latest_trusted: bool,
+    pub unsafe_trust_latest: bool,
     pub init_msg: serde_json::Value,
     pub label: String,
     pub contract_manifest: PathBuf,
     pub release: bool,
     pub fmspc: Option<Fmspc>,
     pub tcbinfo_contract: Option<AccountId>,
+    pub dcap_verifier_contract: Option<AccountId>,
 }
 
 impl From<DevRequest> for Request {

@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use cosmrs::AccountId;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
@@ -11,40 +12,46 @@ use quartz_common::{
         msg::execute::attested::{HasUserData, RawAttested},
         state::{Config, UserData},
     },
-    enclave::{attestor::Attestor, server::ProofOfPublication},
+    enclave::{
+        attestor::Attestor,
+        server::{IntoServer, ProofOfPublication, WsListenerConfig},
+    },
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tonic::{Request, Response, Result as TonicResult, Status};
 use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
+use tokio::sync::mpsc::Sender;
 
 use crate::{
     proto::{
-        settlement_server::Settlement, QueryRequest, QueryResponse, UpdateRequest, UpdateResponse,
+        settlement_server::{Settlement, SettlementServer},
+        QueryRequest, QueryResponse, UpdateRequest, UpdateResponse,
     },
     state::{RawBalance, RawState, State},
 };
 
-pub type RawCipherText = HexBinary;
+impl<A: Attestor> IntoServer for TransfersService<A> {
+    type Server = SettlementServer<TransfersService<A>>;
 
-#[derive(Clone, Debug)]
-pub struct TransfersService<A> {
-    config: Config,
-    sk: Arc<Mutex<Option<SigningKey>>>,
-    attestor: A,
+    fn into_server(self) -> Self::Server {
+        SettlementServer::new(self)
+    }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+pub type RawCipherText = HexBinary;
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateRequestMessage {
-    state: HexBinary,
-    requests: Vec<TransfersRequest>,
+    pub state: HexBinary,
+    pub requests: Vec<TransfersRequest>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryRequestMessage {
-    state: HexBinary,
-    address: Addr,
-    ephemeral_pubkey: HexBinary,
+    pub state: HexBinary,
+    pub address: Addr,
+    pub ephemeral_pubkey: HexBinary,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -90,15 +97,43 @@ pub struct StatusResponseMessage {
     encrypted_bal: HexBinary,
 }
 
+#[derive(Clone, Debug)]
+pub enum TransfersOpEvent {
+    Query {
+        contract_address: AccountId,
+        sender: String,
+        ephemeral_pubkey: String,
+    },
+    Transfer {
+        contract_address: AccountId,
+    },
+}
+
+#[derive(Clone, Debug)]
+pub struct TransfersOp<A: Attestor> {
+    pub client: TransfersService<A>,
+    pub event: TransfersOpEvent,
+    pub config: WsListenerConfig
+}
+
+#[derive(Clone, Debug)]
+pub struct TransfersService<A: Attestor> {
+    config: Config,
+    sk: Arc<Mutex<Option<SigningKey>>>,
+    attestor: A,
+    pub queue_producer: Sender<TransfersOp<A>>
+}
+
 impl<A> TransfersService<A>
 where
     A: Attestor,
 {
-    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A, queue_producer: Sender<TransfersOp<A>>) -> Self {
         Self {
             config,
             sk,
             attestor,
+            queue_producer,
         }
     }
 }

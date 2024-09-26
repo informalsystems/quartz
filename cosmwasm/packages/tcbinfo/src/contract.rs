@@ -1,19 +1,17 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-};
+use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 use der::{DateTime, DecodePem};
 use mc_attestation_verifier::{CertificateChainVerifier, SignedTcbInfo};
 use p256::ecdsa::VerifyingKey;
 use quartz_tee_ra::intel_sgx::dcap::certificate_chain::TlsCertificateChainVerifier;
 use serde_json::Value;
+use tcbinfo_msgs::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg};
 use x509_cert::Certificate;
 
 use crate::{
     error::ContractError,
-    msg::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg},
     state::{TcbInfo, DATABASE, ROOT_CERTIFICATE},
 };
 // version info for migration info
@@ -147,11 +145,8 @@ pub mod query {
             .try_into()
             .expect("invalid fmspc");
         let tcb_info = DATABASE.load(deps.storage, key)?;
-        let tcb_info_response = serde_json::from_str(&tcb_info.info).map_err(|_| {
-            StdError::parse_err(tcb_info.info, "Could not prarse on-chain TcbInfo as JSON")
-        })?;
         Ok(GetTcbInfoResponse {
-            tcb_info: tcb_info_response,
+            tcb_info: tcb_info.info,
         })
     }
 }
