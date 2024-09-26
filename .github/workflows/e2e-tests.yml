@@ -1,8 +1,5 @@
 name: E2E tests
-on: [push]
-defaults:
-  run:
-    working-directory: apps/transfers/frontend
+on: [push]  
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -17,8 +14,8 @@ jobs:
           check-latest: true
 
       - name: Run containers wasmd and enclave
-        working-directory: .
-        run: docker compose -f docker/docker-compose.yml up -d --build
+        run:
+          docker compose -f docker/docker-compose.yml up -d --build
 
       - name: Wait for handshake completion
         timeout-minutes: 5
@@ -30,13 +27,16 @@ jobs:
 
       - name: Capture logs from wasmd container
         id: capture_logs
+        working-directory: apps/transfers/frontend
         run: |
           docker logs quartz-cli-transfers > quartz-cli-transfers_logs.txt
 
       - name: Setup environment variables
+        working-directory: apps/transfers/frontend
         run: cp .env.example .env.local
 
       - name: Update .env.local with contract address and pubkey
+        working-directory: apps/transfers/frontend
         run: |
           CONTRACT_ADDRESS=$(grep 'Contract Address:' quartz-cli-transfers_logs.txt | awk '{print $NF}')
           PUBKEY=$(grep 'Handshake complete:' quartz-cli-transfers_logs.txt | awk '{print $NF}')
@@ -44,7 +44,9 @@ jobs:
           sed -i "s|^NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=.*|NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=$PUBKEY|" .env.local
 
       - name: Install dependencies for the frontend
+        working-directory: apps/transfers/frontend
         run: npm ci
 
       - name: Run all E2E tests
+        working-directory: apps/transfers/frontend
         run: npm run test
