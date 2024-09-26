@@ -205,6 +205,7 @@ async fn gramine_manifest(
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
+        .arg(format!("-Dnode_url={}", node_url))
         .arg(format!("-Dtcbinfo_contract={}", tcbinfo_contract))
         .arg(format!(
             "-Ddcap_verifier_contract={}",
