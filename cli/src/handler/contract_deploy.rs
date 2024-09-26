@@ -107,15 +107,13 @@ async fn deploy(
     };
 
     info!("🚀 Communicating with Relay to Instantiate...");
-    let raw_init_msg = RelayMessage::Instantiate
-        .run_relay(config.enclave_rpc(), config.mock_sgx)
-        .await?;
-    // info!("Relay response {:#?}", raw_init_msg);
+    let init_msg = RelayMessage::Instantiate {
+        init_msg: args.init_msg,
+    }
+    .run_relay(config.enclave_rpc())
+    .await?;
 
     info!("🚀 Instantiating {}", args.label);
-    let mut init_msg = args.init_msg;
-    init_msg["quartz"] = json!(raw_init_msg);
-    // debug!("Instantiating message {:#?}", init_msg);
 
     // Existing code
     let init_output_str = wasmd_client.init(
