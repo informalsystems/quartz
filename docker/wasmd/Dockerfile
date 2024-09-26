@@ -4,6 +4,7 @@ FROM cosmwasm/wasmd:${WASMD_VERSION}
 
 # Increase the amount of ucosm given to accounts
 RUN <<EOF
+sed -i 's/keyring-backend = "os"/keyring-backend = "test"/g' /root/.wasmd/config/client.toml
 sed -i  's/1000000000/12000000000000/g' /opt/setup_wasmd.sh
 EOF
 
