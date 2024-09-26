@@ -15,19 +15,19 @@ services:
     volumes:
       - wasmd_data:/root/.wasmd
 
-  # enclave:
-  #   container_name: quartz-cli-transfers
-  #   environment:
-  #     DOCKER_BUILDKIT: 1
-  #   build:
-  #     context: ".."
-  #     dockerfile: "./cli/Dockerfile"
-  #     ssh:
-  #       - default
-  #   depends_on:
-  #     - node
-  #   ports:
-  #     - "11090:11090"
-  #   network_mode: host
-  #   volumes:
-  #     - wasmd_data:/root/.wasmd:ro
+  enclave:
+    container_name: quartz-cli-transfers
+    environment:
+      DOCKER_BUILDKIT: 1
+    build:
+      context: ".."
+      dockerfile: "./cli/Dockerfile"
+      ssh:
+        - default
+    depends_on:
+      - node
+    ports:
+      - "11090:11090"
+    network_mode: host
+    volumes:
+      - wasmd_data:/root/.wasmd

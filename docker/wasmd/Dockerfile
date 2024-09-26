@@ -16,6 +16,8 @@ RUN /opt/setup_wasmd.sh \
         wasm1adcnk7lt6qst7p5d0g5607e28k77um7nxwxuqy \
         wasm1jn34x50hy3my0a2mxwcx8fttgfxu2n5gpvu0ty
 
+RUN sleep 5
+
 # Import the accounts' private keys into the image such that they can be used to
 # initiate transactions from within the container.
 COPY accounts /tmp/accounts
