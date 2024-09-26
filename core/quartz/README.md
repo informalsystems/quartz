@@ -11,7 +11,7 @@ gramine-manifest  \
     -Dlog_level="error"  \
     -Dhome=${HOME}  \
     -Darch_libdir="/lib/$(gcc -dumpmachine)"  \
-    -Dra_type="epid" \
+    -Dra_type="dcap" \
     -Dra_client_spid="51CAF5A48B450D624AEFE3286D314894" \
     -Dra_client_linkable=1 \
     -Dquartz_dir="$(pwd)"  \

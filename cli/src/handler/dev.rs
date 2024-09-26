@@ -171,6 +171,9 @@ fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<(), Error> 
     // In separate process, launch the enclave
     let enclave_start = EnclaveStartRequest {
         unsafe_trust_latest: args.unsafe_trust_latest,
+        fmspc: args.fmspc.clone(),
+        tcbinfo_contract: args.tcbinfo_contract.clone(),
+        dcap_verifier_contract: args.dcap_verifier_contract.clone(),
     };
 
     let config_cpy = config.clone();

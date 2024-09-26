@@ -102,12 +102,6 @@ pub struct StatusResponseMessage {
     encrypted_bal: HexBinary,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct AttestedMsg<M> {
-    msg: M,
-    quote: Vec<u8>,
-}
-
 impl<A> TransfersService<A>
 where
     A: Attestor,
@@ -238,13 +232,15 @@ where
         };
 
         // Attest to message
-        let attestation: HexBinary = self
+        let attestation = self
             .attestor
-            .quote(msg.clone())
-            .map_err(|e| Status::internal(e.to_string()))?
-            .into();
+            .attestation(msg.clone())
+            .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = RawAttested { msg, attestation };
+        let attested_msg = RawAttested {
+            msg,
+            attestation: A::RawAttestation::from(attestation),
+        };
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
@@ -300,13 +296,15 @@ where
         };
 
         // Attest to message
-        let attestation: HexBinary = self
+        let attestation = self
             .attestor
-            .quote(msg.clone())
-            .map_err(|e| Status::internal(e.to_string()))?
-            .into();
+            .attestation(msg.clone())
+            .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = RawAttested { msg, attestation };
+        let attested_msg = RawAttested {
+            msg,
+            attestation: A::RawAttestation::from(attestation),
+        };
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
