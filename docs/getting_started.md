@@ -382,25 +382,18 @@ Once logged in, install the `cli` with the following command:
     cargo install --path cli/
 ```
 
-We now need to build the binaries
+We now need to build the binaries.
 
-### Run the daemon with docker
-
-```bash
-    # Go to the docker/wasmd folder
-    cd docker/wasmd
-    make run
-```
 
 ### Build the Binaries
-To build both the contract and enclave binaries, use the build command:
+To build both the contract binaries, use the build command:
 
 ```bash
 quartz --app-dir "apps/transfers/" contract build --contract-manifest "apps/transfers/contracts/Cargo.toml"
 ```
 
 
-This command will compile the smart contract to WebAssembly and build the enclave binary.
+This command will compile the smart contract to WebAssembly and build the contract binary.
 
 
 ### Configuring and Running the Enclave
