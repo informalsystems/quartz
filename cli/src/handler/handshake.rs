@@ -6,7 +6,7 @@ use color_eyre::owo_colors::OwoColorize;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
 use futures_util::stream::StreamExt;
 use reqwest::Url;
-use serde_json::json;
+use serde_json::{json, Value};
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tm_prover::{config::Config as TmProverConfig, prover::prove};
 use tracing::{debug, info};
@@ -47,8 +47,8 @@ impl Handler for HandshakeRequest {
 }
 
 async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
-    let httpurl = Url::parse(&format!("https://{}", config.node_url))?;
-    let wsurl = format!("wss://{}/websocket", config.node_url);
+    let httpurl = config.node_url.clone();
+    let wsurl = config.websocket_url.clone();
 
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
@@ -104,9 +104,11 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     // Execute SessionSetPubKey on enclave
     info!("Running SessionSetPubKey");
     let res = RelayMessage::SessionSetPubKey(serde_json::to_string(&proof_output)?)
-        .run_relay(config.enclave_rpc(), config.mock_sgx)
-        .await?;
-    info!("Relay SetPubkey response {:?}", res);
+    .run_relay(config.enclave_rpc(), config.mock_sgx)
+    .await?;
+info!("Relay SetPubkey response {:?}", res);
+
+
     // Submit SessionSetPubKey to contract
     let output: WasmdTxResponse = serde_json::from_str(
         wasmd_client

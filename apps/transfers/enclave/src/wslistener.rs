@@ -130,7 +130,7 @@ async fn transfer_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let httpurl = Url::parse(&format!("https://{}", ws_config.node_url))?;
+    let httpurl = ws_config.node_url.clone();
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
 
     // Query chain
@@ -150,7 +150,7 @@ async fn transfer_handler<A: Attestor>(
 
     // Wait 2 blocks
     info!("Waiting 2 blocks for light client proof");
-    let wsurl = format!("wss://{}/websocket", ws_config.node_url);
+    let wsurl = ws_config.websocket_url.clone();
     two_block_waitoor(&wsurl).await?;
 
     // Call tm prover with trusted hash and height
@@ -200,7 +200,7 @@ async fn transfer_handler<A: Attestor>(
 
     // Build on-chain response
     // TODO add non-mock support
-    let setoffs_msg = ExecuteMsg::Update::<RawMockAttestation>(AttestedMsg {
+    let transfer_msg = ExecuteMsg::Update::<RawMockAttestation>(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
         attestation: MockAttestation(
             attested
@@ -218,7 +218,7 @@ async fn transfer_handler<A: Attestor>(
         chain_id,
         2000000,
         &ws_config.tx_sender,
-        json!(setoffs_msg),
+        json!(transfer_msg),
         "11000untrn",
     )?;
 
@@ -234,7 +234,7 @@ async fn query_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let httpurl = Url::parse(&format!("https://{}", ws_config.node_url))?;
+    let httpurl = ws_config.node_url.clone();
     let wasmd_client = CliWasmdClient::new(httpurl);
 
     // Query Chain
@@ -269,7 +269,7 @@ async fn query_handler<A: Attestor>(
 
     // Build on-chain response
     // TODO add non-mock support
-    let setoffs_msg = ExecuteMsg::QueryResponse::<RawMockAttestation>(AttestedMsg {
+    let query_msg = ExecuteMsg::QueryResponse::<RawMockAttestation>(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
         attestation: MockAttestation(
             attested
@@ -287,7 +287,7 @@ async fn query_handler<A: Attestor>(
         chain_id,
         2000000,
         &ws_config.tx_sender,
-        json!(setoffs_msg),
+        json!(query_msg),
         "11000untrn",
     )?;
 
