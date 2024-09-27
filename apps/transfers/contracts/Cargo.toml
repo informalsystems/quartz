@@ -40,8 +40,7 @@ cw-storage-plus = { version = "2.0.0", default-features = false }
 cw-utils = { version = "2.0.0", default-features = false }
 
 # quartz
-quartz-common = { path = "../../../core/quartz-common", default-features = false, features = ["contract"] }
-
+quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["contract"]}
 # patch indirect deps
 getrandom = { version = "0.2.15", features = ["js"] }
 
