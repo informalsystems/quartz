@@ -34,9 +34,6 @@ test.describe('Transfers', () => {
       .getByRole('button', { name: /cancel/i, includeHidden: false })
       .click()
 
-    // Check new balance
-    await page.waitForTimeout(4000)
-
     mainBalance += 20
 
     await test
@@ -80,8 +77,6 @@ test.describe('Transfers', () => {
       .getByRole('button', { name: /cancel/i, includeHidden: false })
       .click()
 
-    // Check new balance
-    await page.waitForTimeout(4000)
     mainBalance -= 10
     await test
       .expect(await getBalance({ context, page }))
@@ -124,8 +119,6 @@ test.describe('Transfers', () => {
       .getByRole('button', { name: /cancel/i, includeHidden: false })
       .click()
 
-    // Check new balance
-    await page.waitForTimeout(4000)
     await test.expect(await getBalance({ context, page })).toEqual('$0')
   })
 })

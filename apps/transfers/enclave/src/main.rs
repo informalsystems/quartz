@@ -28,11 +28,13 @@ use cli::Cli;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
-        attestor::{self, Attestor},
+        attestor::{self, Attestor, DefaultAttestor},
         server::{QuartzServer, WsListenerConfig},
     },
 };
-use transfers_server::TransfersService;
+use transfers_server::{TransfersOp, TransfersService};
+use tokio::sync::mpsc;
+use crate::wslistener::WsListener;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -79,8 +81,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let sk = Arc::new(Mutex::new(None));
 
+    // Event queue
+    let (tx, mut rx) = mpsc::channel::<TransfersOp<DefaultAttestor>>(1);
+    // Consumer task: dequeue and process events
+    tokio::spawn(async move {
+        while let Some(op) = rx.recv().await {
+            if let Err(e) = op.client.process(op.event, op.config).await {
+                println!("Error processing queued event: {}", e);
+            }
+        }
+    });
+
     QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
-        .add_service(TransfersService::new(config, sk, attestor))
+        .add_service(TransfersService::new(config, sk, attestor, tx))
         .serve(args.rpc_addr)
         .await?;
 

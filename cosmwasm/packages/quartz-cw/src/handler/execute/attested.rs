@@ -5,7 +5,7 @@ use cosmwasm_std::{
 use quartz_dcap_verifier_msgs::QueryMsg as DcapVerifierQueryMsg;
 use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, TrustedIdentity, TrustedMrEnclaveIdentity},
-    verify_epid_attestation, Error as RaVerificationError,
+    Error as RaVerificationError,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
@@ -14,8 +14,8 @@ use crate::{
     error::Error,
     handler::Handler,
     msg::execute::attested::{
-        Attestation, Attested, AttestedMsgSansHandler, DcapAttestation, EpidAttestation,
-        HasUserData, MockAttestation, Quote,
+        Attestation, Attested, AttestedMsgSansHandler, DcapAttestation, HasUserData,
+        MockAttestation, Quote,
     },
     state::CONFIG,
 };
@@ -82,24 +82,6 @@ fn query_dcap_verifier(
 
     query_contract(deps, dcap_verifier_contract, &query_msg)
         .map_err(|err| Error::DcapVerificationQueryError(err.to_string()))
-}
-
-impl Handler for EpidAttestation {
-    fn handle(
-        self,
-        _deps: DepsMut<'_>,
-        _env: &Env,
-        _info: &MessageInfo,
-    ) -> Result<Response, Error> {
-        // attestation handler MUST verify that the user_data and mr_enclave match the config/msg
-        verify_epid_attestation(
-            self.clone().into_report(),
-            self.mr_enclave(),
-            self.user_data(),
-        )
-        .map(|_| Response::default())
-        .map_err(Error::RaVerification)
-    }
 }
 
 impl Handler for DcapAttestation {
