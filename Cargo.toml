@@ -1,13 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "apps/mtcs/enclave",
-    "cli",
-    "core/light-client-proofs/*",
-    "core/quartz",
-    "core/quartz-common",
-    "cosmwasm/packages/*",
-    "utils/*",
+    "crates/*"
 ]
 exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers/contracts", "apps/transfers/enclave"]
 
@@ -83,23 +77,24 @@ mc-sgx-dcap-sys-types = { git = "https://github.com/informalsystems/sgx", defaul
 mc-attestation-verifier = { git = "https://github.com/informalsystems/attestation", default-features = false }
 
 # quartz
-cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = false }
-quartz-common = { path = "core/quartz-common", default-features = false }
-quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
-quartz-dcap-verifier-msgs = { path = "cosmwasm/packages/quartz-dcap-verifier/msgs", default-features = false }
-quartz-enclave = { path = "core/quartz", default-features = false }
-quartz-proto = { path = "core/quartz-proto", default-features = false }
-quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
-tcbinfo = { path = "cosmwasm/packages/tcbinfo", default-features = false, features = ["library"] }
-tcbinfo-msgs = { path = "cosmwasm/packages/tcbinfo/msgs", default-features = false }
-tm-prover = { path = "utils/tm-prover", default-features = false }
-tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
-wasmd-client = { path = "cosmwasm/packages/wasmd-client", default-features = false }
+cw-proof = { path = "crates/cw-proof", default-features = false }
+quartz-common = { path = "crates/quartz-common", default-features = false }
+quartz-cw = { path = "crates/quartz-cw", default-features = false }
+quartz-dcap-verifier-msgs = { path = "crates/quartz-dcap-verifier/msgs", default-features = false }
+quartz-enclave = { path = "crates/quartz-enclave", default-features = false }
+quartz-proto = { path = "crates/quartz-proto", default-features = false }
+quartz-tee-ra = { path = "crates/quartz-tee-ra", default-features = false }
+tcbinfo = { path = "crates/tcbinfo", default-features = false, features = ["library"] }
+tcbinfo-msgs = { path = "crates/tcbinfo/msgs", default-features = false }
+tm-prover = { path = "crates/tm-prover", default-features = false }
+tm-stateless-verifier = { path = "crates/tm-stateless-verifier", default-features = false }
+wasmd-client = { path = "crates/wasmd-client", default-features = false }
 
 # quartz apps
 cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
-mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
 mtcs-enclave = { path = "apps/mtcs/enclave", default-features = false }
+
+mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
 
 [profile.release]
 opt-level = "z"
@@ -111,3 +106,12 @@ codegen-units = 1
 panic = 'abort'
 incremental = false
 overflow-checks = true
+
+[alias]
+wasm = "build --release --target wasm32-unknown-unknown --lib"
+unit-test = "test --lib"
+schema = "run --bin schema"
+
+
+[net]
+git-fetch-with-cli = true
