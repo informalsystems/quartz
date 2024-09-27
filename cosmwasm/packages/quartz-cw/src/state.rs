@@ -45,6 +45,10 @@ impl Config {
     pub fn mr_enclave(&self) -> MrEnclave {
         self.mr_enclave
     }
+
+    pub fn tcbinfo_contract(&self) -> Option<&str> {
+        self.tcbinfo_contract.as_deref()
+    }
 }
 
 #[cw_serde]
@@ -60,7 +64,6 @@ impl RawConfig {
     pub fn mr_enclave(&self) -> &[u8] {
         self.mr_enclave.as_slice()
     }
-
     pub fn tcbinfo_contract(&self) -> Option<&str> {
         self.tcbinfo_contract.as_deref()
     }
