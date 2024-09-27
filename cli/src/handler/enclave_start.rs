@@ -85,6 +85,7 @@ impl Handler for EnclaveStartRequest {
                 fmspc,
                 tcbinfo_contract,
                 dcap_verifier_contract,
+                &config.node_url,
             )
             .await?;
 
@@ -181,6 +182,7 @@ async fn gramine_manifest(
     fmspc: Fmspc,
     tcbinfo_contract: AccountId,
     dcap_verifier_contract: AccountId,
+    node_url: &str,
 ) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
@@ -205,6 +207,7 @@ async fn gramine_manifest(
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
+        .arg(format!("-Dnode_url={}", node_url))
         .arg(format!("-Dtcbinfo_contract={}", tcbinfo_contract))
         .arg(format!(
             "-Ddcap_verifier_contract={}",

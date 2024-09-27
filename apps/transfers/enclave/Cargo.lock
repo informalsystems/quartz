@@ -917,6 +917,7 @@ dependencies = [
 [[package]]
 name = "cw-proof"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "clap",
  "cosmrs",
@@ -2479,9 +2480,9 @@ dependencies = [
 
 [[package]]
 name = "pkg-config"
-version = "0.3.30"
+version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
+checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
 
 [[package]]
 name = "polyval"
@@ -2661,6 +2662,7 @@ dependencies = [
 [[package]]
 name = "quartz-common"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "quartz-cw",
  "quartz-enclave",
@@ -2670,6 +2672,7 @@ dependencies = [
 [[package]]
 name = "quartz-cw"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "ciborium",
  "cosmwasm-schema",
@@ -2690,6 +2693,7 @@ dependencies = [
 [[package]]
 name = "quartz-dcap-verifier-msgs"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -2698,6 +2702,7 @@ dependencies = [
 [[package]]
 name = "quartz-enclave"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2734,6 +2739,7 @@ dependencies = [
 [[package]]
 name = "quartz-proto"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "prost 0.13.1",
  "tonic",
@@ -2743,6 +2749,7 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -3678,6 +3685,7 @@ dependencies = [
 [[package]]
 name = "tcbinfo-msgs"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "cosmwasm-schema",
 ]
@@ -3975,6 +3983,7 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 [[package]]
 name = "tm-prover"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "clap",
  "color-eyre",
@@ -3995,6 +4004,7 @@ dependencies = [
 [[package]]
 name = "tm-stateless-verifier"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "displaydoc",
  "tendermint 0.38.1",
@@ -4486,6 +4496,7 @@ checksum = "c62a0a307cb4a311d3a07867860911ca130c3494e8c2719593806c08bc5d0484"
 [[package]]
 name = "wasmd-client"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "anyhow",
  "cosmrs",
