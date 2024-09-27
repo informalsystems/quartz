@@ -102,8 +102,7 @@ impl Attestor for DcapAttestor {
             version.minor_version = 1;
 
             let mut root_crl =
-                include_bytes!("../../../crates/quartz-tee-ra/data/root_crl.der")
-                    .to_vec();
+                include_bytes!("../../../crates/quartz-tee-ra/data/root_crl.der").to_vec();
             root_crl.push(0);
             sgx_collateral.root_ca_crl = root_crl.as_ptr() as _;
             sgx_collateral.root_ca_crl_size = root_crl.len() as u32;
@@ -118,10 +117,8 @@ impl Attestor for DcapAttestor {
             sgx_collateral.pck_crl_issuer_chain = pck_crl_issuer_chain.as_ptr() as _;
             sgx_collateral.pck_crl_issuer_chain_size = pck_crl_issuer_chain.len() as u32;
 
-            let root_cert =
-                include_str!("../../../crates/quartz-tee-ra/data/root_ca.pem");
-            let tcb_cert =
-                include_str!("../../../crates/quartz-tee-ra/data/tcb_signer.pem");
+            let root_cert = include_str!("../../../crates/quartz-tee-ra/data/root_ca.pem");
+            let tcb_cert = include_str!("../../../crates/quartz-tee-ra/data/tcb_signer.pem");
             let mut tcb_chain = [tcb_cert, root_cert].join("\n").as_bytes().to_vec();
             tcb_chain.push(0);
             sgx_collateral.tcb_info_issuer_chain = tcb_chain.as_ptr() as _;
