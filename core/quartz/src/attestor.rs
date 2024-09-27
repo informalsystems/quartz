@@ -21,6 +21,12 @@ use serde::Serialize;
 
 use crate::types::Fmspc;
 
+#[cfg(not(feature = "mock-sgx"))]
+pub type DefaultAttestor = DcapAttestor;
+
+#[cfg(feature = "mock-sgx")]
+pub type DefaultAttestor = MockAttestor;
+
 /// The trait defines the interface for generating attestations from within an enclave.
 pub trait Attestor: Send + Sync + 'static {
     type Error: ToString;
