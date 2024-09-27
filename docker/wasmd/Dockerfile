@@ -2,15 +2,11 @@ ARG WASMD_VERSION=v0.44.0
 
 FROM cosmwasm/wasmd:${WASMD_VERSION}
 
-RUN sleep 10
-
-RUN pwd
-
 # Increase the amount of ucosm given to accounts
 # and
 # Modify the setup_wasmd.sh script to change the keyring-backend right after wasmd init
 RUN <<EOF
-RUN sed -i '/wasmd init/a sed -i '"'"'s/keyring-backend = "os"/keyring-backend = "test"/g'"'"' /root/.wasmd/config/client.toml' /opt/setup_wasmd.sh
+sed -i '/wasmd init/a sed -i '"'"'s/keyring-backend = "os"/keyring-backend = "test"/g'"'"' /root/.wasmd/config/client.toml' /opt/setup_wasmd.sh
 sed -i  's/1000000000/12000000000000/g' /opt/setup_wasmd.sh
 EOF
 
