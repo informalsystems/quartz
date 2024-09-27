@@ -47,6 +47,10 @@ jobs:
         working-directory: apps/transfers/frontend
         run: npm ci
 
+      - name: Print .env.local contents
+        working-directory: apps/transfers/frontend
+        run: cat .env.local
+
       - name: Run all E2E tests
         working-directory: apps/transfers/frontend
         run: npm run test
