@@ -94,10 +94,6 @@ tm-prover = { path = "crates/utils/tm-prover", default-features = false }
 tm-stateless-verifier = { path = "crates/cosmwasm/tm-stateless-verifier", default-features = false }
 wasmd-client = { path = "crates/utils/wasmd-client", default-features = false }
 
-# quartz apps
-cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
-mtcs-enclave = { path = "apps/mtcs/enclave", default-features = false }
-
 mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
 
 [profile.release]

@@ -1,1 +1,0 @@
-# The quartz MTCS app
