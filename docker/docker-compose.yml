@@ -22,8 +22,6 @@ services:
     build:
       context: ".."
       dockerfile: "./cli/Dockerfile"
-      ssh:
-        - default
     depends_on:
       - node
     ports:
