@@ -34,11 +34,27 @@ jobs:
         working-directory: apps/transfers/frontend
         run: cp .env.example .env.local
 
-      - name: Update .env.local with contract address and pubkey
+      - name: Extract contract address and public key
+        id: extract_vars
+        run: |
+          echo "CONTRACT_ADDRESS=$(grep 'Contract Address:' apps/transfers/frontend/quartz-cli-transfers_logs.txt | awk '{print $NF}')" >> $GITHUB_OUTPUT
+          echo "PUBKEY=$(grep 'Handshake complete:' apps/transfers/frontend/quartz-cli-transfers_logs.txt | awk '{print $NF}')" >> $GITHUB_OUTPUT
+
+      - name: Debug - Print extracted variables
+        run: |
+          echo "Extracted CONTRACT_ADDRESS: ${{ steps.extract_vars.outputs.CONTRACT_ADDRESS }}"
+          echo "Extracted PUBKEY: ${{ steps.extract_vars.outputs.PUBKEY }}"
+
+      - name: Setup environment variables
         working-directory: apps/transfers/frontend
         run: |
-          sed -i "s|^NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=.*|NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=$(grep 'Contract Address:' quartz-cli-transfers_logs.txt | awk '{print $NF}')|" .env.local
-          sed -i "s|^NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=.*|NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=$(grep 'Handshake complete:' quartz-cli-transfers_logs.txt | awk '{print $NF}')|" .env.local
+          cp .env.example .env.local
+          sed -i "s/^NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=.*/NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=${{ steps.extract_vars.outputs.CONTRACT_ADDRESS }}/" .env.local
+          sed -i "s/^NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=.*/NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=${{ steps.extract_vars.outputs.PUBKEY }}/" .env.local
+
+      - name: Print .env.local contents
+        working-directory: apps/transfers/frontend
+        run: cat .env.local
 
       - name: Install dependencies for the frontend
         working-directory: apps/transfers/frontend
