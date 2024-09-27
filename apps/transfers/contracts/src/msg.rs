@@ -23,8 +23,8 @@ pub enum QueryMsg {
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg<RA = RawDefaultAttestation> {
     // quartz initialization
-    Quartz(QuartzExecuteMsg),
-
+    Quartz(QuartzExecuteMsg<RA>),
+    
     // User msgs
     // clear text
     Deposit,

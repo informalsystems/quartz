@@ -4,8 +4,7 @@ use cosmwasm_std::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use crate::msg::{ExecuteMsg, GetTcbInfoResponse, QueryMsg};
+use tcbinfo_msgs::{ExecuteMsg, GetTcbInfoResponse, QueryMsg};
 
 const FMSPC: &str = "00606a000000";
 

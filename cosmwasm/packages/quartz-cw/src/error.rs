@@ -17,6 +17,8 @@ pub enum Error {
     InvalidFmspc(String),
     #[error("TCB Info query error: {0}")]
     TcbInfoQueryError(String),
+    #[error("DCAP verification query error: {0}")]
+    DcapVerificationQueryError(String),
 }
 
 impl From<K256Error> for Error {
