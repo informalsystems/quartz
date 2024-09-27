@@ -33,7 +33,7 @@ cosmrs.workspace = true
 cosmwasm-std.workspace = true
 
 # quartz
-cw-tee-mtcs = { path = "../../apps/mtcs/contracts/cw-tee-mtcs/" }
+cw-tee-mtcs.workspace = true
 wasmd-client.workspace = true
 mtcs-enclave.workspace = true
 

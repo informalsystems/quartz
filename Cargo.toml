@@ -1,7 +1,11 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/*"
+    "crates/cli",
+    "crates/cosmwasm/*",
+    "crates/enclave/*",
+    "crates/quartz-common",
+    "crates/utils/*",
 ]
 exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers/contracts", "apps/transfers/enclave"]
 
@@ -77,18 +81,18 @@ mc-sgx-dcap-sys-types = { git = "https://github.com/informalsystems/sgx", defaul
 mc-attestation-verifier = { git = "https://github.com/informalsystems/attestation", default-features = false }
 
 # quartz
-cw-proof = { path = "crates/cw-proof", default-features = false }
+cw-proof = { path = "crates/cosmwasm/cw-proof", default-features = false }
 quartz-common = { path = "crates/quartz-common", default-features = false }
-quartz-cw = { path = "crates/quartz-cw", default-features = false }
-quartz-dcap-verifier-msgs = { path = "crates/quartz-dcap-verifier/msgs", default-features = false }
-quartz-enclave = { path = "crates/quartz-enclave", default-features = false }
-quartz-proto = { path = "crates/quartz-proto", default-features = false }
-quartz-tee-ra = { path = "crates/quartz-tee-ra", default-features = false }
-tcbinfo = { path = "crates/tcbinfo", default-features = false, features = ["library"] }
-tcbinfo-msgs = { path = "crates/tcbinfo/msgs", default-features = false }
-tm-prover = { path = "crates/tm-prover", default-features = false }
-tm-stateless-verifier = { path = "crates/tm-stateless-verifier", default-features = false }
-wasmd-client = { path = "crates/wasmd-client", default-features = false }
+quartz-cw = { path = "crates/cosmwasm/quartz-cw", default-features = false }
+quartz-dcap-verifier-msgs = { path = "crates/cosmwasm/quartz-dcap-verifier/msgs", default-features = false }
+quartz-enclave = { path = "crates/enclave/quartz-enclave", default-features = false }
+quartz-proto = { path = "crates/enclave/quartz-proto", default-features = false }
+quartz-tee-ra = { path = "crates/cosmwasm/quartz-tee-ra", default-features = false }
+tcbinfo = { path = "crates/cosmwasm/tcbinfo", default-features = false, features = ["library"] }
+tcbinfo-msgs = { path = "crates/cosmwasm/tcbinfo/msgs", default-features = false }
+tm-prover = { path = "crates/utils/tm-prover", default-features = false }
+tm-stateless-verifier = { path = "crates/cosmwasm/tm-stateless-verifier", default-features = false }
+wasmd-client = { path = "crates/utils/wasmd-client", default-features = false }
 
 # quartz apps
 cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
