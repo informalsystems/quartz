@@ -8,9 +8,9 @@ attestations), or you can get access to a machine with Intel SGX enabled to run 
 TODO sections:
 
 - Transfer Application - describe basic application
-- Local Mock SGX - describe getting up and running locally with mock sgx (old demo instructions, updated with new quartz CLI)
-- Real SGX - describe how to get setup quickly with SGX e.g. on Azure, and how to run the same example there
-- Public Testnet - describe how to deploy on Neutron testnet
+- Local Mock SGX - describe getting up and running locally with mock sgx (old demo instructions, updated with new quartz CLI) -done
+- Real SGX - describe how to get setup quickly with SGX e.g. on Azure, and how to run the same example there - done needs review
+- Public Testnet - describe how to deploy on Neutron testnet - TODO
 
 ## Transfer Application Template
 
@@ -41,14 +41,6 @@ Make: Typically pre-installed on Linux systems.
 Git: For cloning the repository.
 Websocat: To listen to the events.
 
-### Clone the Repository
-First, clone the repository to your local machine.
-
-```bash
-    git clone ssh://git@github.com/informalsystems/cycles-quartz
-    cd cycles-quartz
-```
-
 
 ### Install Dependencies
 Install the necessary dependencies for both the frontend and backend.
@@ -71,10 +63,31 @@ Install the necessary dependencies for both the frontend and backend.
     
 ```
 
+### Clone the Repository
+First, clone the repository to your local machine.
+
+```bash
+    git clone ssh://git@github.com/informalsystems/cycles-quartz
+    cd cycles-quartz
+```
+
+
+
 ### Install a local daemon (local neutrond/wasmd)
 Install a local daemon to be able to easily interact with a local or remote chain. 
 
 a. Neutron 
+```bash
+	git clone -b main https://github.com/neutron-org/neutron.git
+	cd neutron
+	make install
+```
+
+After the installation, to verify everything is working run:
+
+```bash
+	neutrond version
+```
 
 b. Wasmd 
 
@@ -90,6 +103,36 @@ After the installation, to verify everything is working run:
 ```bash
 	wasmd version
 ```
+
+
+### Run a local chain from docker
+
+Follow the instructions on [the docker folder]()
+a. Neutron 
+```bash
+	cd docker/neutron
+	make start-docker-container
+```
+
+After the installation, you should see a `neutrond` container if you run
+
+```
+	docker ps
+```
+
+b. Wasmd 
+```bash
+	cd docker/wasmd
+	make run
+```
+
+After the installation, you should see a `wasmd` container if you run
+
+```
+	docker ps
+```
+
+
 
 ### Installing the Quartz CLI
 To install the Quartz CLI, run the following command from the `cycles-quartz` folder:
@@ -107,7 +150,7 @@ To quickly get up and running, you can run the following `dev` command from the 
 quartz --mock-sgx --app-dir "apps/transfers/" dev   --unsafe-trust-latest  --contract-manifest "apps/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
 ```
 
-This command will build contract and enclave binaries, deploy, instantiate the contract, handshake and listen to the contract v
+This command will build contract and enclave binaries, deploy, instantiate the contract, handshake and listen to the contract.
 
 To stop the enclave:
 ```bash
@@ -123,17 +166,17 @@ From here you can jump to the section on the [front-end](#### Building the front
 
 
 
-### Create a new quartz app template
+### Create a new quartz app template 
 
 To create a new Quartz app, use the `init` command:
 
 ```bash
-quartz init --name transfer_app --path /path/to/your/project
+quartz init --name <new_app_name> --path /path/to/your/project
 ```
 
 This command will create a new directory structure for your Quartz app:
 ```
-transfer_app/
+new_app_name/
 ├── contracts/
 ├── enclave/
 ├── frontend/
@@ -244,7 +287,7 @@ For more detailed instructions on setting up and using the application, refer to
 Once you have the frontend running and connected to your local blockchain (or testnet), you can interact with the Transfer Application:
 
 1. Ensure you have the Keplr wallet extension installed in your browser.
-2. Use one of the provided accounts [wasmd_docker](docker/wasmd/accounts/) ) by importing it into your Keplr wallet or create a new one and fund it using the CLI with your `admin` / `val1` account.
+2. Use one of the provided accounts [wasmd_docker](docker/wasmd/accounts/) / [neutrond_docker](docker/neutrond/accounts/)  ) by importing it into your Keplr wallet or create a new one and fund it using the CLI with your `admin` / `val1` account.
 3. Use the frontend to deposit funds into the contract.
 4. Transfer funds privately between different accounts within the contract.
 5. Withdraw funds from the contract back to your Keplr wallet.
@@ -254,9 +297,12 @@ All transactions will be processed automatically by the enclave, ensuring the pr
 This completes the basic setup and usage guide for the Transfer Application. In the next sections, we'll cover how to run this application with local Mock SGX, real SGX on Azure, and how to deploy it on the Neutron testnet.
 
 
+
+
+
 ## Local daemon and wallet 
 
-For all **testing** purposes, you can yse the wallets we provide in the `docker/wasmd/accounts` folder.
+For all **testing** purposes, you can use the wallets we provide in the `docker/wasmd/accounts` folder.
 
 Once your `wasmd` is running, you can easily copy the wallets from docker to your local daemon `~/.config` folder:
 
@@ -353,12 +399,28 @@ To build both the contract and enclave binaries, use the build command:
 quartz --app-dir "apps/transfers/" contract build --contract-manifest "apps/transfers/contracts/Cargo.toml"
 ```
 
-QUARTZ_
 
 This command will compile the smart contract to WebAssembly and build the enclave binary.
 
 
 ### Configuring and Running the Enclave
+
+The following configuration assumes that the `wasmd` node will be running in the same Azure instance as the enclave. 
+If you wish to use another enclave provider you have to make sure that `QUARTZ_NODE_URL` is set to the enclave address and port as an argument as in:
+
+```
+QUARTZ_NODE_URL=87.23.1.3:11090 && quartz --app-dir "apps/transfers/" contract deploy  --contract-manifest "apps/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
+
+```
+
+If you wish to use another blockchain you have to make sure that `--node-url` is set to the chain address and port as an option in the `cli` as in:
+
+```
+QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "apps/transfers/" --node-url "https://92.43.1.4:26657" contract deploy  --contract-manifest "apps/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
+
+```
+
+
 
 To configure and run the enclave, use the following commands:
 
@@ -368,7 +430,7 @@ quartz --app-dir "apps/transfers/" enclave  build
 ```
 
 
-Before starting the enclave, you have to make sure that all relevant contracts (tcbinfo, dcap-verifier) have been instantiated
+Before starting the enclave, you have to make sure that all relevant contracts (tcbinfo, dcap-verifier) have been instantiated as described below 
 ```bash
   # Start the enclave
 QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "apps/transfers/" enclave start  --fmspc "00606A000000" --tcbinfo-contract "wasm1pk6xe9hr5wgvl5lcd6wp62236t5p600v9g7nfcsjkf6guvta2s5s7353wa" --dcap-verifier-contract "wasm107cq7x4qmm7mepkuxarcazas23037g4q9u72urzyqu7r4saq3l6srcykw2"
@@ -417,8 +479,8 @@ Events coming from the contract will be logged following the handshake as they a
 ```
 
 
-# DCAP Contracts
-## Get the FMSPC of the host machine
+## Quartz cosmwasm packages 
+### Get the FMSPC of the host machine
 ```
 export QUOTE="/* quote generated during the handshake should work */"
 cd utils/print-fmspc/
@@ -427,49 +489,7 @@ cargo run > /dev/null
 
 
 
-
-
-export QUARTZ_NODE_URL=143.244.186.205:26657
-
-
-
-### Deploying the Contract
-
-With the enclave running, open a new terminal window to deploy the contract:
-
-```bash
-QUARTZ_NODE_URL="143.244.186.205:26657" && quartz --app-dir "apps/transfers/"  contract deploy  --contract-manifest "apps/transfers/cont
-racts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
-
-
-```
-
-Make note of the deployed contract address, as you'll need it for the next step.
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Directions for testing 
-Assumes running on Azure machine with a local blockchain (i.e. using our docker/wasmd). 
-Still a WIP - will keep updating this...
-
-## Get the FMSPC of the host machine
-```
-export QUOTE="/* quote generated during the handshake should work */"
-cd utils/print-fmspc/
-cargo run > /dev/null
-```
-
-## Deploying the tcbinfo contract
+### Deploying the `tcbinfo` contract
 1. Build and store the contract on-chain
 ```
 cargo run -- contract build --contract-manifest "../cosmwasm/packages/tcbinfo/Cargo.toml"
@@ -511,12 +531,13 @@ wasmd tx wasm execute "$TCB_CONTRACT" "{\"tcb_info\": $(echo "$TCB_INFO" | jq -R
 wasmd query wasm contract-state smart "$TCB_CONTRACT" '{"get_tcb_info": {"fmspc": "00606A000000"}}'
 ```
 
-## Deploying the DCAP verifier contract
+### Deploying the `quartz-dcap-verifier` contract
 1. Build the contract
 ```
 cargo run -- contract build --contract-manifest "../cosmwasm/packages/quartz-dcap-verifier/Cargo.toml"
 ```
 2. Optimize the contract
+In order to optimized the contract, you need to install `wasm-opt` v.119 see HOWTO below
 ```
 wasm-opt -Oz ./target/wasm32-unknown-unknown/release/quartz_dcap_verifier.wasm -o ./target/wasm32-unknown-unknown/release/quartz_dcap_verifier.optimized.wasm
 ```
@@ -527,13 +548,13 @@ TX_HASH=$(echo $RES | jq -r '.["txhash"]')
 RES=$(wasmd query tx "$TX_HASH" --output json)
 CODE_ID=$(echo $RES | jq -r '.logs[0].events[1].attributes[1].value')
 ```
-4. Instantiate the contract.
+4. Instantiate the `quartz-dcap-verifier` contract.
 ```
 wasmd tx wasm instantiate "$CODE_ID" null --from "admin" --label "dcap-verifier" --chain-id "testing" --gas-prices 0.0025ucosm --gas auto --gas-adjustment 1.3 -y --no-admin --output json
 DCAP_CONTRACT=$(wasmd query wasm list-contract-by-code "$CODE_ID" --output json | jq -r '.contracts[0]')
 ```
 
-## Quartz setup
+### Quartz setup
 ```
 quartz --app-dir "../apps/transfers/"
     --contract-manifest "../apps/transfers/contracts/Cargo.toml" \
@@ -544,3 +565,61 @@ quartz --app-dir "../apps/transfers/"
     --tcbinfo-contract "$TCB_CONTRACT" \
     --dcap-verifier-contract "$DCAP_CONTRACT"
 ```
+
+
+
+
+#### HOWTO Install `wasm-opt`
+
+To install `wasm-opt` version 119 on an Azure SGX machine running Ubuntu, follow these steps:
+
+### 1. **Update and install dependencies:**
+
+Before installing `wasm-opt`, make sure your system is up-to-date and has the necessary build tools:
+
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake git
+```
+
+### 2. **Download and build `wasm-opt` version 119:**
+
+The `wasm-opt` tool is part of the [Binaryen](https://github.com/WebAssembly/binaryen) project. To get version 119, you’ll need to clone the specific tag from the Binaryen GitHub repository.
+
+```bash
+git clone https://github.com/WebAssembly/binaryen.git
+cd binaryen
+git checkout version_119
+```
+
+### 3. **Build the project:**
+
+Next, you'll build Binaryen and the `wasm-opt` tool:
+
+```bash
+cmake . && make
+```
+
+### 4. **Install `wasm-opt`:**
+
+Once the build is complete, you can install `wasm-opt` globally on your system:
+
+```bash
+sudo make install
+```
+
+### 5. **Verify the installation:**
+
+Finally, confirm that `wasm-opt` version 119 is installed correctly by running:
+
+```bash
+wasm-opt --version
+```
+
+This should return something like:
+
+```
+wasm-opt version_119
+```
+
+Now, `wasm-opt` version 119 should be properly installed on your Azure SGX machine running Ubuntu. 
