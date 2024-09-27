@@ -1,7 +1,7 @@
-use der::{pem::LineEnding, DateTime, EncodePem};
+use der::{DateTime, Encode};
 use mc_attestation_verifier::{CertificateChainVerifier, CertificateChainVerifierError};
 use x509_cert::{crl::CertificateList, Certificate};
-use x509_parser::{parse_x509_certificate, pem::parse_x509_pem};
+use x509_parser::parse_x509_certificate;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
 pub struct TlsCertificateChainVerifier;
@@ -22,18 +22,13 @@ impl CertificateChainVerifier for TlsCertificateChainVerifier {
     ) -> Result<(), CertificateChainVerifierError> {
         let enc_certs = certificate_chain
             .into_iter()
-            .map(|cert| cert.to_pem(LineEnding::LF))
+            .map(|cert| cert.to_der())
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
 
-        let pem_chain = enc_certs
+        let cert_chain = enc_certs
             .iter()
-            .map(|enc_cert| parse_x509_pem(enc_cert.as_ref()))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
-        let cert_chain = pem_chain
-            .iter()
-            .map(|pem| parse_x509_certificate(&pem.1.contents))
+            .map(|der| parse_x509_certificate(der))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| CertificateChainVerifierError::GeneralCertificateError)?;
         // Skip applying the Certificate Revocation List entirely

@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use cosmrs::AccountId;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
@@ -13,13 +14,14 @@ use quartz_common::{
     },
     enclave::{
         attestor::Attestor,
-        server::{IntoServer, ProofOfPublication},
+        server::{IntoServer, ProofOfPublication, WsListenerConfig},
     },
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tonic::{Request, Response, Result as TonicResult, Status};
 use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
+use tokio::sync::mpsc::Sender;
 
 use crate::{
     proto::{
@@ -38,13 +40,6 @@ impl<A: Attestor> IntoServer for TransfersService<A> {
 }
 
 pub type RawCipherText = HexBinary;
-
-#[derive(Clone, Debug)]
-pub struct TransfersService<A> {
-    config: Config,
-    sk: Arc<Mutex<Option<SigningKey>>>,
-    attestor: A,
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateRequestMessage {
@@ -102,21 +97,43 @@ pub struct StatusResponseMessage {
     encrypted_bal: HexBinary,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct AttestedMsg<M> {
-    msg: M,
-    quote: Vec<u8>,
+#[derive(Clone, Debug)]
+pub enum TransfersOpEvent {
+    Query {
+        contract_address: AccountId,
+        sender: String,
+        ephemeral_pubkey: String,
+    },
+    Transfer {
+        contract_address: AccountId,
+    },
+}
+
+#[derive(Clone, Debug)]
+pub struct TransfersOp<A: Attestor> {
+    pub client: TransfersService<A>,
+    pub event: TransfersOpEvent,
+    pub config: WsListenerConfig
+}
+
+#[derive(Clone, Debug)]
+pub struct TransfersService<A: Attestor> {
+    config: Config,
+    sk: Arc<Mutex<Option<SigningKey>>>,
+    attestor: A,
+    pub queue_producer: Sender<TransfersOp<A>>
 }
 
 impl<A> TransfersService<A>
 where
     A: Attestor,
 {
-    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A, queue_producer: Sender<TransfersOp<A>>) -> Self {
         Self {
             config,
             sk,
             attestor,
+            queue_producer,
         }
     }
 }
@@ -238,13 +255,15 @@ where
         };
 
         // Attest to message
-        let attestation: HexBinary = self
+        let attestation = self
             .attestor
-            .quote(msg.clone())
-            .map_err(|e| Status::internal(e.to_string()))?
-            .into();
+            .attestation(msg.clone())
+            .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = RawAttested { msg, attestation };
+        let attested_msg = RawAttested {
+            msg,
+            attestation: A::RawAttestation::from(attestation),
+        };
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
@@ -300,13 +319,15 @@ where
         };
 
         // Attest to message
-        let attestation: HexBinary = self
+        let attestation = self
             .attestor
-            .quote(msg.clone())
-            .map_err(|e| Status::internal(e.to_string()))?
-            .into();
+            .attestation(msg.clone())
+            .map_err(|e| Status::internal(e.to_string()))?;
 
-        let attested_msg = RawAttested { msg, attestation };
+        let attested_msg = RawAttested {
+            msg,
+            attestation: A::RawAttestation::from(attestation),
+        };
         let message =
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
