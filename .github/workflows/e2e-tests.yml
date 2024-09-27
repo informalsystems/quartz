@@ -28,8 +28,7 @@ jobs:
       - name: Capture logs from wasmd container
         id: capture_logs
         working-directory: apps/transfers/frontend
-        run: |
-          docker logs quartz-cli-transfers > quartz-cli-transfers_logs.txt
+        run: docker logs quartz-cli-transfers > quartz-cli-transfers_logs.txt
 
       - name: Setup environment variables
         working-directory: apps/transfers/frontend
@@ -38,18 +37,12 @@ jobs:
       - name: Update .env.local with contract address and pubkey
         working-directory: apps/transfers/frontend
         run: |
-          CONTRACT_ADDRESS=$(grep 'Contract Address:' quartz-cli-transfers_logs.txt | awk '{print $NF}')
-          PUBKEY=$(grep 'Handshake complete:' quartz-cli-transfers_logs.txt | awk '{print $NF}')
-          sed -i "s|^NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=.*|NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=$CONTRACT_ADDRESS|" .env.local
-          sed -i "s|^NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=.*|NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=$PUBKEY|" .env.local
+          sed -i "s|^NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=.*|NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=$(grep 'Contract Address:' quartz-cli-transfers_logs.txt | awk '{print $NF}')|" .env.local
+          sed -i "s|^NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=.*|NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=$(grep 'Handshake complete:' quartz-cli-transfers_logs.txt | awk '{print $NF}')|" .env.local
 
       - name: Install dependencies for the frontend
         working-directory: apps/transfers/frontend
         run: npm ci
-
-      - name: Print .env.local contents
-        working-directory: apps/transfers/frontend
-        run: cat .env.local
 
       - name: Run all E2E tests
         working-directory: apps/transfers/frontend
