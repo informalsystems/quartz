@@ -2,12 +2,12 @@
 resolver = "2"
 members = [
     "crates/cli",
-    "crates/cosmwasm/*",
-    "crates/enclave/*",
     "crates/quartz-common",
+    "crates/contracts/*",
+    "crates/enclave/*",
     "crates/utils/*",
 ]
-exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers/contracts", "apps/transfers/enclave"]
+exclude = ["apps/transfers/contracts", "apps/transfers/enclave"]
 
 [workspace.package]
 version = "0.1.0"
@@ -81,17 +81,17 @@ mc-sgx-dcap-sys-types = { git = "https://github.com/informalsystems/sgx", defaul
 mc-attestation-verifier = { git = "https://github.com/informalsystems/attestation", default-features = false }
 
 # quartz
-cw-proof = { path = "crates/cosmwasm/cw-proof", default-features = false }
+cw-proof = { path = "crates/contracts/cw-proof", default-features = false }
 quartz-common = { path = "crates/quartz-common", default-features = false }
-quartz-cw = { path = "crates/cosmwasm/quartz-cw", default-features = false }
-quartz-dcap-verifier-msgs = { path = "crates/cosmwasm/quartz-dcap-verifier/msgs", default-features = false }
+quartz-cw = { path = "crates/contracts/quartz-cw", default-features = false }
+quartz-dcap-verifier-msgs = { path = "crates/contracts/quartz-dcap-verifier/msgs", default-features = false }
 quartz-enclave = { path = "crates/enclave/quartz-enclave", default-features = false }
 quartz-proto = { path = "crates/enclave/quartz-proto", default-features = false }
-quartz-tee-ra = { path = "crates/cosmwasm/quartz-tee-ra", default-features = false }
-tcbinfo = { path = "crates/cosmwasm/tcbinfo", default-features = false, features = ["library"] }
-tcbinfo-msgs = { path = "crates/cosmwasm/tcbinfo/msgs", default-features = false }
+quartz-tee-ra = { path = "crates/contracts/quartz-tee-ra", default-features = false }
+tcbinfo = { path = "crates/contracts/tcbinfo", default-features = false, features = ["library"] }
+tcbinfo-msgs = { path = "crates/contracts/tcbinfo/msgs", default-features = false }
 tm-prover = { path = "crates/utils/tm-prover", default-features = false }
-tm-stateless-verifier = { path = "crates/cosmwasm/tm-stateless-verifier", default-features = false }
+tm-stateless-verifier = { path = "crates/contracts/tm-stateless-verifier", default-features = false }
 wasmd-client = { path = "crates/utils/wasmd-client", default-features = false }
 
 mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
@@ -111,7 +111,6 @@ overflow-checks = true
 wasm = "build --release --target wasm32-unknown-unknown --lib"
 unit-test = "test --lib"
 schema = "run --bin schema"
-
 
 [net]
 git-fetch-with-cli = true
