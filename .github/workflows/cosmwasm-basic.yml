@@ -6,16 +6,16 @@ on:
   pull_request:
     paths:
       - .github/workflows/cosmwasm-basic.yml
-      - cosmwasm/**
-      - apps/**
-      - "!apps/transfers/frontend/**"
+      - crates/**
+      - examples/**
+      - "!examples/transfers/frontend/**"
   push:
     branches: main
     paths:
       - .github/workflows/cosmwasm-basic.yml
-      - cosmwasm/**
-      - apps/**
-      - "!apps/transfers/frontend/**"
+      - crates/**
+      - examples/**
+      - "!examples/transfers/frontend/**"
 
 env:
   CARGO_INCREMENTAL: 0
@@ -28,7 +28,7 @@ env:
 
 defaults:
   run:
-    working-directory: apps/mtcs/contracts/cw-tee-mtcs
+    working-directory: examples/transfers/contracts
 
 jobs:
   test-wasm:
@@ -52,7 +52,7 @@ jobs:
           ssh-private-key: |
             ${{ secrets.MTCS_SSH_KEY }}
 
-      - name: Run unit tests (for cw-tee-mtcs)
+      - name: Run unit tests (for transfers)
         run: cargo unit-test --locked
         env:
           RUST_BACKTRACE: 1
@@ -80,7 +80,7 @@ jobs:
           ssh-private-key: |
             ${{ secrets.MTCS_SSH_KEY }}
 
-      - name: Generate Schema (for cw-tee-mtcs)
+      - name: Generate Schema (for transfers)
         run: cargo schema --locked
 
       - name: Schema Changes
