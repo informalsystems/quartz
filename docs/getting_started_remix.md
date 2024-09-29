@@ -1,16 +1,14 @@
 # Quartz: Getting Started Guide
 
 ## Table of Contents
+
 - [Introduction](#introduction)
 - [Quick Start](#quick-start)
-- [Transfer Application Template](#transfer-application-template)
-- [Setting Up the Application](#setting-up-the-application)
-  - [Prerequisites](#prerequisites)
-  - [Installation Steps](#installation-steps)
-- [Building and Deploying](#building-and-deploying)
-- [Running the Application](#running-the-application)
-- [Working with Azure SGX](#working-with-azure-sgx)
-- [Quartz CosmWasm Packages](#quartz-cosmwasm-packages)
+- [Simple Example](#simple-example)
+- [Installation](#installation)
+- [Local Testnet without SGX](#local-testnet-without-sgx)
+- [Real Testnet with SGX](#real-testnet-with-sgx)
+- [Other Testnets with SGX](#other-testnets-with-sgx)
 - [Troubleshooting and FAQ](#troubleshooting-and-faq)
 - [Glossary](#glossary)
 
@@ -24,7 +22,7 @@ This guide will help you get up and running with an example Quartz application. 
 
 For those who want to get started quickly:
 
-1. Install dependencies (Rust, Go, Git, Websocat)
+1. Install dependencies (Rust, wasmd or neutrond)
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
 3. Install Quartz CLI: `cargo install --path cli/`
 4. Run the development environment:
@@ -38,66 +36,72 @@ For those who want to get started quickly:
 
 For more detailed instructions, continue reading the following sections.
 
-## Transfer Application Template
+## Simple Example
 
-The Transfer Application is a simple template designed to showcase how users can deposit funds into a contract, transfer them privately within the contract's encrypted state, and withdraw their funds.
+The Transfer Application is a simple template / demo app designed to showcase very basic use of the Quartz framework. It allows users to deposit funds into a contract, transfer them privately within the contract's encrypted state, and ultimately withdraw whatever balance they have left or have accumulated. 
 
 ### Key Features
 - Deposit funds into a smart contract
-- Transfer funds privately within the contract
-- Withdraw funds from the contract
+- Transfer funds privately within the contract via encrypted transactions that are handled by Quartz (ie. processed by the enclave and remote attested to).
+- Withdraw funds from the contract based on balances in the encrypted state.
 
 ### Application Structure
-1. **Frontend**: User interface built with Next.js, cosmjs / graz
-2. **Backend**: Server-side logic, including smart contracts written in Rust
-3. **Enclave**: Secure environment for executing sensitive operations
 
-## Setting Up the Application
+1. **Frontend**: The user interface built with Next.js, cosmjs / graz.
+2. **Contracts**: The backend application as a CosmWasm smart contract
+3. **Enclave**: Code that executes off-chain and privately in an enclave
 
-### Prerequisites
+## Installation
 
-Ensure you have the following installed:
-- Go: Required for building wasmd
-- Make: Typically pre-installed on Linux systems
-- Git: For cloning the repository
-- Websocat: To listen to events
+Quartz is built in Rust and requires an up-to-date version with the
+wasm32 target to be installed. It also expects the system to have a
+CosmWasm-compatible Cosmos-SDK blockchain client installed, for instance `wasmd`
+or `neutrond`. CosmWasm binaries can be built with `Go` or downloaded from their
+developers. Finally, you'll need `npm` to build the frontend.
 
-### Installation Steps
+### Install Quartz
 
-1. Install Rust:
+Install rust:
+
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
+and add the wasm32 target:
+
+   ```bash
    rustup target add wasm32-unknown-unknown
    ```
 
-2. Install Go tools:
-   ```bash
-   export PATH="${PATH}:${HOME}/go/bin"
-   source ~/.bashrc
-   go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
-   ```
+Now clone and build the repo:
 
-3. Install websocat:
-   ```bash
-   cargo install websocat
-   ```
-
-4. Clone the repository:
    ```bash
    git clone ssh://git@github.com/informalsystems/cycles-quartz
    cd cycles-quartz
+   cargo install --path cli/
    ```
 
-5. Install a local daemon (choose one):
-   
-   a. Neutron:
+And check that it worked:
+
    ```bash
-   git clone -b main https://github.com/neutron-org/neutron.git
-   cd neutron
-   make install
+   quartz --help
    ```
-   
-   b. Wasmd:
+
+### Install a CosmWasm Client
+
+For the local testnet, its simplest to use `wasmd`. 
+
+For the real testnet, `neutrond` is required (the guide is for Neutron's
+testnet).
+
+In either case, you can build from source in Go or use a docker container.
+
+The docker containers come with preconfigured keys and balances. If you use the
+Go binaries you'll have to set up keys and balances yourself.
+
+To build from source, first make sure you have Go installed.
+
+Then for `wasmd`:
+
    ```bash
    git clone https://github.com/cosmwasm/wasmd/
    cd wasmd
@@ -105,59 +109,110 @@ Ensure you have the following installed:
    go install ./cmd/wasmd
    ```
 
-6. Run a local chain from docker (choose one):
-   
-   a. Neutron:
+Or for `neutrond`:
+
    ```bash
-   cd docker/neutron
-   make start-docker-container
+   git clone -b main https://github.com/neutron-org/neutron.git
+   cd neutron
+   make install
    ```
-   
-   b. Wasmd:
+
+To use the docker images, install and set up docker.
+
+Then for wasmd`:
+
    ```bash
    cd docker/wasmd
    make run
    ```
 
-7. Install the Quartz CLI:
+Or for `neutrond`:
+
    ```bash
-   cargo install --path cli/
+   cd docker/neutron
+   make start-docker-container
    ```
 
-## Building and Deploying
+If using docker it will pre-configure a few keys and allocate funds to them. 
 
-1. Build the binaries:
+
+## Local Testnet Without SGX
+
+From the root of the `cycles-quartz` repo, we can now deploy our example
+transfers app. Deployment involves three components:
+
+- the enclave
+- the smart contract
+- the front end
+
+First we build and run the enclave code. 
+Quartz provides a `--mock-sgx` flag so we can deploy locally for testing and
+development purposes without needing access to an SGX core.
+We use `--app-dir` to specify where the app code is located.
+
+### Enclave
+
+
+1. Build the enclave binary:
+   ```bash
+   quartz --mock-sgx --app-dir "apps/transfers/" enclave build
+   ```
+
+2. Start the enclave:
+   ```bash
+   quartz --mock-sgx --app-dir "apps/transfers/" enclave start
+   ```
+
+The enclave is a long running process. You'll have to open another window to
+continue.
+
+### Contract
+
+1. Build the contract binary:
    ```bash
    quartz --mock-sgx --app-dir "apps/transfers/" contract build --contract-manifest "apps/transfers/contracts/Cargo.toml"
    ```
 
-2. Configure and run the enclave:
-   ```bash
-   quartz --mock-sgx --app-dir "apps/transfers/" enclave build
-   quartz --mock-sgx --app-dir "apps/transfers/" enclave start
-   ```
-
-3. Deploy the contract:
+2. Deploy the contract:
    ```bash
    quartz --mock-sgx --app-dir "apps/transfers/" contract deploy \
    --contract-manifest "apps/transfers/contracts/Cargo.toml" \
    --init-msg '{"denom":"ucosm"}'
    ```
 
-4. Perform the handshake:
+Note our contract takes initialization data in the `--init-msg` which for
+the transfers app specifies the asset denom that can be used in this deployment. The
+transfers app is currently single asset only.
+
+If successful, it will print the resulting contract address. Save it to an
+environment variable:
+
+```
+export CONTRACT_ADDRESS=<CONTRACT_ADDRESS>
+```
+
+3. Perform the handshake:
    ```bash
-   quartz --mock-sgx --app-dir "apps/transfers/" handshake --contract <CONTRACT_ADDRESS>
+   quartz --mock-sgx --app-dir "apps/transfers/" handshake --contract $CONTRACT_ADDRESS
    ```
 
-> **Important**: Make note of the contract address and public key generated during deployment and handshake.
+This will setup a secure connection between the contract and the enclave.
 
-## Running the Application
+If successful, it should output a pubkey value. We'll need both the contract
+address and this pubkey value to configure the frontend. Save this to an
+environment variable: 
 
-### Building the front-end Application
+```
+export PUBKEY=<PUBKEY>
+```
+
+Now the contract is ready to start processing requests to the enclave.
+
+### Frontend
 
 1. Navigate to the frontend folder:
    ```bash
-   cd frontend
+   cd apps/transfers/frontend
    ```
 
 2. Install dependencies:
@@ -168,52 +223,74 @@ Ensure you have the following installed:
 3. Set up environment variables:
    ```bash
    cp .env.example .env.local
-   nano .env.local
    ```
 
-4. Start the frontend:
+Now open `.env.local` and edit the values of 
+NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS
+and 
+NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY 
+to be the contract address and pubkey from the previous step (deploying the
+contract and doing the handshake).
+
+4. Finally, start the frontend:
    ```bash
    npm run dev
    ```
 
-### Interacting with the Application
+### Use the App
 
-1. Ensure you have the Keplr wallet extension installed in your browser.
-2. Import a test account into Keplr or create a new one and fund it.
-3. Use the frontend to deposit funds into the contract.
-4. Transfer funds privately between different accounts within the contract.
-5. Withdraw funds from the contract back to your Keplr wallet.
+Open your browser to `localhost:3000` to see the app.
 
+You'll need to have the Keplr wallet extension installed and unlocked.
 
-## Working with Azure SGX
+Configure the chain visibility settings in Keplr so you can see your local chain
+(search for the chain id, should be `testing`).
 
-Login via `ssh` into your Azure SGX enabled machine:
+Create a new address in Keplr for testing purpose. You'll need to send this
+address some funds from the `admin` account setup with your local node. For
+instance, send 10M ucosm with:
 
-```bash
-ssh username@21.6.21.71
+```
+wasmd tx bank send admin <KEPLR ADDRESS> 10000000ucosm --chain-id testing
 ```
 
-### Quickstart
+You should now see the funds on your local testnet on Keplr.
 
-Once logged in, install the `cli` with the following command:
+Now you can interact with the app by depositing funds, privately transfering
+them to other addresses, and finally withdrawing them. 
 
-```bash
-cargo install --path cli/
-```
+## Real Testnet with SGX
 
-We now need to build the binaries.
+Now that we've tried the example app on a local tesnet with a mocked SGX, it's
+time to use a real testnet and a real SGX core. This guide will walk through how
+to get setup with SGX on Azure, and how to deploy quartz contracts to the
+Neutron testnet using real remote attestions from SGX cores on Azure.
 
-### Build the Binaries
+Real verification of SGX on a CosmWasm network requires two additional global contracts
+to be deployed: dcap-verify and tcbinfo. The
+dcap-verify contract provides the core verification of the SGX attestation
+(called DCAP). The tcbinfo contract contains global information about secure
+versions of SGX processors. Together they allow contracts built with quartz to
+securely verify remote attestations from SGX enclaves.
+
+We have already predeployed the dcap-verify and tcbinfo contracts on the Neutron
+testnet at TODO. To deploy these on your own testnet, see [below][#other-testnets-with-sgx].
+
+To begin, you'll need to deploy an SGX-enabled Azure instance and log in via ssh.
+
+Once logged in, clone and install Quartz like before (see
+[installation][#installation]
+
+### Build and Deploy the Contracts
+
+TODO: make this about deploying to neutron.
 
 To build both the contract binaries, use the build command:
 
 ```bash
 quartz --app-dir "apps/transfers/" contract build --contract-manifest "apps/transfers/contracts/Cargo.toml"
 ```
-
 This command will compile the smart contract to WebAssembly and build the contract binary.
-
-### Configuring and Running the Enclave
 
 The following configuration assumes that the `wasmd` node will be running in the same Azure instance as the enclave. 
 If you wish to use another enclave provider you have to make sure that `QUARTZ_NODE_URL` is set to the enclave address and port as an argument as in:
@@ -228,14 +305,23 @@ If you wish to use another blockchain you have to make sure that `--node-url` is
 QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "apps/transfers/" --node-url "https://92.43.1.4:26657" contract deploy  --contract-manifest "apps/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
 ```
 
-To configure and run the enclave, use the following commands:
+### Build and Run the SGX Enclave
+
+First we build the enclave like before:
 
 ```bash
 # Configure the enclave
 quartz --app-dir "apps/transfers/" enclave build
 ```
 
-Before starting the enclave, you have to make sure that all relevant contracts (tcbinfo, dcap-verifier) have been instantiated as described below 
+Before starting the enclave, we should check that the relevant contracts
+(tcbinfo, dcap-verifier) have been instantiated.
+
+TODO: how to query to check this?
+
+TODO: use variables for the contract addresses 
+
+
 
 ```bash
 # Start the enclave
@@ -282,7 +368,10 @@ Events coming from the contract will be logged following the handshake as they a
 2024-09-24T11:12:25.156779Z  INFO Enclave is listening for requests...
 ```
 
-## Quartz CosmWasm Packages
+## Other Testnets With SGX
+
+To setup on another testnet we need to deploy a tcinfo contract and a
+dcap-verifier contract.
 
 ### Get the FMSPC of the host machine
 
