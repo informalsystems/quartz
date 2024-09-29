@@ -30,7 +30,7 @@ This specification covers the core components of the `quartz-cw` package, includ
 
 - Provide a secure and easy-to-use framework for attestation-aware smart contracts
 - Abstract away the complexities of SGX attestation verification
-- Ensure compatibility with both DCAP and EPID attestation protocols
+- Ensure compatibility with both DCAP and EPID attestation protocols (though EPID is deprecated now by Intel)
 - Allow for easy testing and mocking of SGX environments
 
 ## Functionality

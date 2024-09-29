@@ -6,17 +6,18 @@ This repository contains a collection of packages designed to facilitate the dev
 
 ### 1. `quartz-cw` 
 
-The `quartz-cw` package offers a high-level framework for building attestation-aware smart contracts.
+The `quartz-cw` package offers a high-level framework for building attestation-aware smart contracts by wrapping CosmWasm messages in TEE attestations (e.g. DCAP). 
 
-- Defines `Attested<T>` wrapper for secure message handling
-- Provides traits and structures for easy contract development
-- Implements state management and message handling utilities
+- Defines `Attested<M, A>` wrapper for a message and its attestation
+- Supports a MockAttestation type for development ease 
+- Implements session management for secure communication between contract and enclave
+The `quartz-cw` package handles actual DCAP verification within smart contracts by calling the standalone `quartz-dcap-verifier` and `tcbinfo` contracts.
 
 ### 2. `quartz-dcap-verifier` 
 
-Your personal DCAP detective! This package specializes in verifying DCAP attestations within CosmWasm contracts.
+Your personal DCAP detective! This package is a standalone smart contract for verifying DCAP attestations that can be called by other contracts.
 
-- Offers a CosmWasm contract for DCAP attestation verification
+- Thin wrapper for standalone smart contract around the functionality provided in the `quartz-tee-ra` package
 - Provides query and execute entry points for attestation checks
 
 ### 3. `quartz-tee-ra` 
