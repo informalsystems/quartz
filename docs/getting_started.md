@@ -5,10 +5,6 @@
 WARNING: Quartz is under heavy development and is not ready for production use.
 The current code contains known bugs and security vulnerabilities and APIs are still liable to change.
 
-We are making it available for devleopers to start playing with and to gather
-feedback on APIs and roadmap. It can be used today on CosmWasm testnets
-(testnets only, with no real funds at risk!).
-
 ---
 
 ## Table of Contents
@@ -31,12 +27,13 @@ This guide will help you get up and running with an example Quartz application. 
 
 ## Quick Start
 
-For those who want to get started quickly:
+For those who want to get started quickly with the example Transfers app with
+mock SGX:
 
 1. Install dependencies (Rust, wasmd or neutrond)
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
 3. Install Quartz CLI: `cargo install --path cli/`
-4. Deploy the example app in one command:
+4. Deploy the example app in one command (enclave, contracts, secure handshake):
    ```bash
    quartz --mock-sgx --app-dir "apps/transfers/" dev \
    --unsafe-trust-latest \
@@ -45,35 +42,66 @@ For those who want to get started quickly:
    ```
 5. Set up the frontend (see [Frontend](#frontend))
 
-For more detailed instructions, continue reading the following sections.
+For more detailed background and instructions, read on.
 
 ## Simple Example
 
-Quartz includes a simple example we call the `Transfer` application. It's
-located in [/apps/transfers](/apps/transfers). It's a simple demo app 
-designed to showcase very basic use of the Quartz framework. 
+Quartz includes a simple example we call the `Transfer` application,
+located in [/apps/transfers](/apps/transfers), that comes with a Keplr-based
+frontend. It's a simple demo app designed to showcase very basic use of the Quartz framework. 
 It allows users to deposit funds into a contract, 
-transfer them privately within the contract's encrypted state, 
-and ultimately withdraw whatever balance they have left or have accumulated. 
+transfer them privately within the contract's encrypted state (updated by the
+enclave),and ultimately withdraw whatever balance they have left or have accumulated. 
 
-### Key Features
-- Deposit funds into a smart contract
-- Transfer funds privately within the contract via encrypted transactions that are handled by Quartz (ie. processed by the enclave and remote attested to).
-- Withdraw funds from the contract based on balances in the encrypted state.
+Every application has a common structure: 
 
-### Application Structure
-
-1. **Frontend**: The user interface built with Next.js, cosmjs / graz.
+1. **Frontend**: The user interface (eg. Next.js, cosmjs / graz)
 2. **Contracts**: The backend application as a CosmWasm smart contract
 3. **Enclave**: Code that executes off-chain and privately in an enclave
 
+Quartz is both a library (`quartz-cw`) for building SGX-aware CosmWasm
+contracts, and a cli tool (`quartz`) for managing the enclave. 
+
+The library takes care of establishing a secure connection to the enclave (see
+[How it Works](/docs/how_it_works.md), and verifying attestations from
+it.
+
+The quartz tool provides commands for managing the enclave:
+
+- `quartz enclave build` - build the enclave binary
+- `quartz enclave start` - start the enclave binary
+- `quartz handshake` -  create secure session between enclave and contracts
+
+It also has convenience commands for building and deploying a smart
+contract:
+
+- `quartz contract build` - build the smart contract binaries
+- `quartz contract deploy` - deploy the smart contracts 
+
+And for running everything in one go (build, deploy/start, handshake): 
+- `quartz dev`
+
+This guide is primarily about using the `quartz` tool to get the example app
+setup. For more on building application, see 
+- [Building Apps](/docs/building_apps.md) - conceptual overview 
+- [quartz-cw](/cosmwasm/quartz-cw) - main library. provides msgs and handlers
+  for the handshake and for verifying attestations
+- [transfers contracts](/apps/transfers/contracts): transfer app example itself
+
+Onwards with the installation and getting the example running!
+
 ## Installation
 
-Quartz is built in Rust and requires an up-to-date version with the
-wasm32 target to be installed. It also expects the system to have a
-CosmWasm-compatible Cosmos-SDK blockchain client installed, for instance `wasmd`
-or `neutrond`. CosmWasm binaries can be built with `Go` or downloaded from their
-developers. Finally, you'll need `npm` to build the frontend.
+Quartz is built in Rust (+wasm32 target). It expects to interact with a CosmWasm compatible
+blockchain (eg. `wasmd` or `neutrond`), built in Go (or run with Docker). And it requires `npm` for
+building the frontend. Here we cover how to install Rust, Quartz, and CosmWasm
+blockchains. You're responsible for installing Go and NPM.
+
+Pre-reqs:
+- Git
+- Make
+- Go or Docker
+- NPM
 
 ### Install Rust
 
@@ -81,22 +109,17 @@ The minimum Rust supported version is v1.74.1.
 The recommended Rust version v1.79.0 since we're running against
 wasmd v0.45.
 
-Install rust by executing a script from the internet (😅):
-
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
+Install rust [here](https://www.rust-lang.org/tools/install).
 
 Check the version with `cargo version`.
 
-Finally add the wasm target:
+Add the wasm32 target:
     
 ```bash
 rustup target add wasm32-unknown-unknown
 ```
 
 And you should be good to go!
-
 
 ### Install Quartz
 
@@ -123,7 +146,7 @@ testnet).
 
 In either case, you can build from source in Go or use a docker container.
 
-The docker containers come with preconfigured keys and balances. If you use the
+The docker containers come with preconfigured keys and account balances. If you use the
 Go binaries you'll have to set up keys and balances yourself.
 
 To build from source, first make sure you have Go installed.
@@ -133,7 +156,7 @@ Then for `wasmd`:
 ```bash
 git clone https://github.com/cosmwasm/wasmd/
 cd wasmd
-git checkout v0.44.0
+git checkout v0.45.0
 go install ./cmd/wasmd
 ```
 
@@ -145,7 +168,7 @@ cd neutron
 make install
 ```
 
-To use the docker images, install and set up docker.
+To use the docker images instead, install and set up docker.
 
 Then for wasmd`:
 
@@ -161,7 +184,7 @@ cd docker/neutron
 make start-docker-container
 ```
 
-If using docker it will pre-configure a few keys and allocate funds to them. 
+If using docker it will pre-configure a few keys (admin, alice, etc.) and allocate funds to them. 
 
 If building from source, you'll need to initialize the accounts yourself. See
 the guide on [setting up a CosmWasm chain](/docs/wasmd_setup.md) and then return
@@ -177,12 +200,9 @@ transfers app. Deployment involves three components:
 - the smart contract
 - the front end
 
-Quartz provides a `dev` command to simplify building and running the enclave and smart contract in a single command.
-Use of the `dev` command was shown in the [quick start](#quick-start) section
-above. Here we show the individual steps and quartz commands that allow devs to
-independently build and run the encalve, to build and deploy the contract,
-and to perform the quartz handshake between running enclave and deployed
-contract.
+We can deploy the enclave and contract all at once using the `quartz dev`
+convenience command (like in the [quick start](#quick-start)), but here we'll
+show the individual commands.
 
 ### Enclave
 
