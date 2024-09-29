@@ -143,6 +143,7 @@ Or for `neutrond`:
 ```bash
 git clone -b main https://github.com/neutron-org/neutron.git
 cd neutron
+git checkout v4.0.0
 make install
 ```
 
