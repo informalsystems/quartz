@@ -29,17 +29,19 @@ example applications. Production features and requirements are in development.
 See [Future Work][future_work]
 
 ---
+
 WARNING: Quartz is under heavy development and is not ready for production use.
 The current code contains known bugs and security vulnerabilities and APIs are still liable to change.
 
 We are making it available for devleopers to start playing with and to gather
 feedback on APIs and roadmap. It can be used today on CosmWasm testnets
 (testnets only, with no real funds at risk!).
+
 ---
 
 ## Docs
 
-- [Getting Started][getting_started] - Get a simple example app up and running in 5 minutes
+- [Getting Started][getting_started] - Get a simple example app up and running in a few minutes
 - [How it Works][how_it_works] - How smart contracts and enclaves communicate securely
 - [TEE Security][tees] - Resources on TEE security 
 - [Building Applications][building_apps] - How to build Quartz applications
@@ -57,7 +59,7 @@ Example Quartz applications, including CosmWasm smart contracts, Gramine based s
 
 Currently implemented apps -
 
-* [Transfer](apps/transfer) - The default transfer app which allows private transfer of assets
+* [Transfer](/apps/transfers) - The default transfer app which allows private transfer of assets
 
 ### Core
 
