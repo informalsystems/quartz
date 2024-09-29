@@ -28,6 +28,15 @@ _**When?**_ Early, non-production versions of Quartz are available now for build
 example applications. Production features and requirements are in development.
 See [Future Work][future_work]
 
+---
+WARNING: Quartz is under heavy development and is not ready for production use.
+The current code contains known bugs and security vulnerabilities and APIs are still liable to change.
+
+We are making it available for devleopers to start playing with and to gather
+feedback on APIs and roadmap. It can be used today on CosmWasm testnets
+(testnets only, with no real funds at risk!).
+---
+
 ## Docs
 
 - [Getting Started][getting_started] - Get a simple example app up and running in 5 minutes
@@ -36,6 +45,7 @@ See [Future Work][future_work]
 - [Building Applications][building_apps] - How to build Quartz applications
 - [Future Work][future_work] - Roadmap and future work for security, flexibility, and
   more
+p
 
 ## This Repo
 
