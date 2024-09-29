@@ -65,7 +65,7 @@ frontend.
 - secure session management between contract and enclave
 - verify remote attestations of authorized SGX enclaves
 
-It contains the core types for the handshake and for interfacing with attestations
+It contains the core types for session management and for interfacing with attestations
 and is the only crate the smart contract dev should have to interact with. 
 
 App devs add the `quartz-cw` message types to their contract's messages, 
