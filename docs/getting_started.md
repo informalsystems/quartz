@@ -1,5 +1,14 @@
 # Quartz: Getting Started Guide
 
+---
+WARNING: Quartz is under heavy development and is not ready for production use.
+The current code contains known bugs and security vulnerabilities and APIs are still liable to change.
+
+We are making it available for devleopers to start playing with and to gather
+feedback on APIs and roadmap. It can be used today on CosmWasm testnets
+(testnets only, with no real funds at risk!).
+---
+
 ## Table of Contents
 
 - [Introduction](#introduction)
@@ -25,14 +34,14 @@ For those who want to get started quickly:
 1. Install dependencies (Rust, wasmd or neutrond)
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
 3. Install Quartz CLI: `cargo install --path cli/`
-4. Run the development environment:
+4. Deploy the example app in one command:
    ```bash
    quartz --mock-sgx --app-dir "apps/transfers/" dev \
    --unsafe-trust-latest \
    --contract-manifest "apps/transfers/contracts/Cargo.toml" \
    --init-msg '{"denom":"ucosm"}'
    ```
-5. Set up the frontend (see [Building the front-end Application](#building-the-front-end-application))
+5. Set up the frontend (see [Frontend](#frontend))
 
 For more detailed instructions, continue reading the following sections.
 
@@ -59,32 +68,44 @@ CosmWasm-compatible Cosmos-SDK blockchain client installed, for instance `wasmd`
 or `neutrond`. CosmWasm binaries can be built with `Go` or downloaded from their
 developers. Finally, you'll need `npm` to build the frontend.
 
+### Install Rust
+
+The minimum Rust supported version is v1.74.1.
+The recommended Rust version v1.79.0 since we're running against
+wasmd v0.45.
+
+Install rust by executing a script from the internet (😅):
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Check the version with `cargo version`.
+
+Finally add the wasm target:
+    
+```bash
+rustup target add wasm32-unknown-unknown
+```
+
+And you should be good to go!
+
+
 ### Install Quartz
-
-Install rust:
-
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   ```
-and add the wasm32 target:
-
-   ```bash
-   rustup target add wasm32-unknown-unknown
-   ```
 
 Now clone and build the repo:
 
-   ```bash
-   git clone ssh://git@github.com/informalsystems/cycles-quartz
-   cd cycles-quartz
-   cargo install --path cli/
-   ```
+```bash
+git clone ssh://git@github.com/informalsystems/cycles-quartz
+cd cycles-quartz
+cargo install --path cli/
+```
 
 And check that it worked:
 
-   ```bash
-   quartz --help
-   ```
+```bash
+quartz --help
+```
 
 ### Install a CosmWasm Client
 
@@ -102,36 +123,36 @@ To build from source, first make sure you have Go installed.
 
 Then for `wasmd`:
 
-   ```bash
-   git clone https://github.com/cosmwasm/wasmd/
-   cd wasmd
-   git checkout v0.44.0
-   go install ./cmd/wasmd
-   ```
+```bash
+git clone https://github.com/cosmwasm/wasmd/
+cd wasmd
+git checkout v0.44.0
+go install ./cmd/wasmd
+```
 
 Or for `neutrond`:
 
-   ```bash
-   git clone -b main https://github.com/neutron-org/neutron.git
-   cd neutron
-   make install
-   ```
+```bash
+git clone -b main https://github.com/neutron-org/neutron.git
+cd neutron
+make install
+```
 
 To use the docker images, install and set up docker.
 
 Then for wasmd`:
 
-   ```bash
-   cd docker/wasmd
-   make run
-   ```
+```bash
+cd docker/wasmd
+make run
+```
 
 Or for `neutrond`:
 
-   ```bash
-   cd docker/neutron
-   make start-docker-container
-   ```
+```bash
+cd docker/neutron
+make start-docker-container
+```
 
 If using docker it will pre-configure a few keys and allocate funds to them. 
 
@@ -145,12 +166,19 @@ transfers app. Deployment involves three components:
 - the smart contract
 - the front end
 
+Quartz provides a `dev` command to simplify building and running the enclave and smart contract in a single command.
+Use of the `dev` command was shown in the [quick start](#quick-start) section
+above. Here we show the individual steps and quartz commands that allow devs to
+independently build and run the encalve, to build and deploy the contract,
+and to perform the quartz handshake between running enclave and deployed
+contract.
+
+### Enclave
+
 First we build and run the enclave code. 
 Quartz provides a `--mock-sgx` flag so we can deploy locally for testing and
 development purposes without needing access to an SGX core.
 We use `--app-dir` to specify where the app code is located.
-
-### Enclave
 
 
 1. Build the enclave binary:
@@ -187,9 +215,9 @@ transfers app is currently single asset only.
 If successful, it will print the resulting contract address. Save it to an
 environment variable:
 
-```
-export CONTRACT_ADDRESS=<CONTRACT_ADDRESS>
-```
+    ```bash
+    export CONTRACT_ADDRESS=<CONTRACT_ADDRESS>
+    ```
 
 3. Perform the handshake:
    ```bash
@@ -202,9 +230,9 @@ If successful, it should output a pubkey value. We'll need both the contract
 address and this pubkey value to configure the frontend. Save this to an
 environment variable: 
 
-```
-export PUBKEY=<PUBKEY>
-```
+    ```bash
+    export PUBKEY=<PUBKEY>
+    ```
 
 Now the contract is ready to start processing requests to the enclave.
 
@@ -241,23 +269,26 @@ contract and doing the handshake).
 
 Open your browser to `localhost:3000` to see the app.
 
-You'll need to have the Keplr wallet extension installed and unlocked.
+You'll need to have the Keplr wallet browser extension installed and unlocked.
 
-Configure the chain visibility settings in Keplr so you can see your local chain
-(search for the chain id, should be `testing`).
+You may have to go to "Manage Chain Visibility" in Keplr settings to add the `My
+Testing Chain` so you can talk to your local chain and see your balance.
 
 Create a new address in Keplr for testing purpose. You'll need to send this
 address some funds from the `admin` account setup with your local node. For
 instance, send 10M ucosm with:
 
-```
-wasmd tx bank send admin <KEPLR ADDRESS> 10000000ucosm --chain-id testing
-```
+    ```bash
+    wasmd tx bank send admin <KEPLR ADDRESS> 10000000ucosm --chain-id testing
+    ```
 
 You should now see the funds on your local testnet on Keplr.
 
 Now you can interact with the app by depositing funds, privately transfering
 them to other addresses, and finally withdrawing them. 
+
+Be sure to check the enclave window to see the logs from your interaction with
+the app!
 
 ## Real Testnet with SGX
 
@@ -274,12 +305,12 @@ versions of SGX processors. Together they allow contracts built with quartz to
 securely verify remote attestations from SGX enclaves.
 
 We have already predeployed the dcap-verify and tcbinfo contracts on the Neutron
-testnet at TODO. To deploy these on your own testnet, see [below][#other-testnets-with-sgx].
+testnet at TODO. To deploy these on your own testnet, see [below](#other-testnets-with-sgx).
 
 To begin, you'll need to deploy an SGX-enabled Azure instance and log in via ssh.
 
 Once logged in, clone and install Quartz like before (see
-[installation][#installation]
+[installation](#installation).
 
 ### Build and Deploy the Contracts
 
