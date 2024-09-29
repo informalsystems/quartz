@@ -19,7 +19,8 @@ The Transfer Application is a simple template / demo app designed to showcase ve
 #### Key Features
 
 1. **Deposit Funds**: Users can deposit funds into a smart contract.
-2. **Private Transfers**: Users can transfer funds privately within the contract via encrypted transactions that are handled by Quartz (ie. processed by the enclave and remote attested to).
+2. **Private Transfers**: Users can transfer funds privately within the contract 
+
 3. **Withdraw Funds**: Users can withdraw their funds from the contract based on their balance in the encrypted state.
 
 #### Application Structure
