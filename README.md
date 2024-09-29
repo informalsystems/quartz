@@ -12,7 +12,9 @@ thread][how_to_win_friends_thread].
 
 _**What?**_ With Quartz, data in smart contracts can be encrypted, while computation happens
 privately off-chain via TEEs like SGX. Each contract can control what code runs in the
-enclave, when it runs, and who is permitted to run it.
+enclave, when it runs, and who is permitted to run it. Quartz provides
+a library for CosmWasm and for enclave development, and a CLI tool for setting
+it all up.
 
 _**How?**_ At the heart of Quartz is a light-client protocol handshake between the enclave and the
 smart contract which gives the smart contract control over when, how, and by who
@@ -33,10 +35,6 @@ See [Future Work][future_work]
 WARNING: Quartz is under heavy development and is not ready for production use.
 The current code contains known bugs and security vulnerabilities and APIs are still liable to change.
 
-We are making it available for devleopers to start playing with and to gather
-feedback on APIs and roadmap. It can be used today on CosmWasm testnets
-(testnets only, with no real funds at risk!).
-
 ---
 
 ## Docs
@@ -47,36 +45,82 @@ feedback on APIs and roadmap. It can be used today on CosmWasm testnets
 - [Building Applications][building_apps] - How to build Quartz applications
 - [Future Work][future_work] - Roadmap and future work for security, flexibility, and
   more
-p
 
 ## This Repo
 
-This repository contains the following components -
+Quartz provides developers three main tools:
 
-### Apps
+- a smart contract library (`quartz-cw`) for building SGX-aware CosmWasm contracts
+- a rust library (`quartz-tee`) for building blockchain constrained SGX enclaves
+- a cli tool (`quartz`) for connecting the contract and the enclave.
 
-Example Quartz applications, including CosmWasm smart contracts, Gramine based sidecar enclave, and demo front end
+This repo contains an example, [`transfers`](/apps/transfers), which combines these
+tools into a working private transfers application, complete with a Keplr-based
+frontend.
 
-Currently implemented apps -
+### Smart Contract Lib
 
-* [Transfer](/apps/transfers) - The default transfer app which allows private transfer of assets
+`quartz-cw` does two main things:
 
-### Core
+- secure session management between contract and enclave
+- verify remote attestations of authorized SGX enclaves
 
-The Quartz core implementation including -
+It contains the core types for session management and for interfacing with attestations
+and is the only crate the smart contract dev should have to interact with. 
+
+App devs add the `quartz-cw` message types to their contract's messages, 
+and call the verify handler on attested messages. While Quartz enables 
+securely attested private compute off-chain, app devs are still responsible 
+for the on-chain data model. See [Building Apps](/docs/building_apps.md) for more.
+
+Under the hood, attestation verification itself is performed via two separate contracts:
+
+- `dcap-verifier` - standalone implementation of dcap verification as a contract using
+  mobilecoin's Rust libs
+- `tcbinfo` - public registry contract of secure sgx processor/firmware versions to
+  ensure attestations are only verified from up-to-date devices
+
+The actual types and verification logic for attestation is further encapsulated in `quartz-tee-ra`.
+
+### Enclave Lib
+
+`quartz-tee` mirrors `quartz-cw`, in that its the enclave side of what happens
+on chain. Both have to manage a secure session. Where `quartz-cw` verifies
+attestionations, `quartz-tee` produces them. But additionally, `quartz-tee` must
+verify the state of the blockchain so that the enclave binary is restricted to
+only operate authorized commands. It does this via light-client verification.
+This it does the following:
+
+- secure session management between contract and enclave
+- collect and verify light client proofs of smart contract state
+- produce remote attestations
+
+The underlying implementation includes the following crates: 
 
 * light-client-proofs: Light client and merkle proofs for CosmWasm storage
 * quartz-proto: protobuf message types for quartz handshake between enclave and
   contract
-* quartz: Intel SGX remote attestation (RA) primitives and quartz handshake logic 
 
-### CosmWasm packages
+### CLI Tool
 
-CosmWasm packages for the core Quartz framework and remote attestation verification.
+The core of the `quartz` command line tool is:
+
+- `quartz enclave build` - build the enclave binary
+- `quartz enclave start` - start the enclave binary
+- `quartz handshake` -  create secure session between enclave and contracts
+
+It also has convenience commands for building and deploying a smart
+contract:
+
+- `quartz contract build` - build the smart contract binaries
+- `quartz contract deploy` - deploy the smart contracts 
+
+And for running everything in one go (build, deploy/start, handshake): 
+- `quartz dev`
 
 ### Utils
 
-Utilities for supporting Quartz development and  -
+The repo contains some additional utilities for supporting Quartz development and  -
 
 * [cw-prover](utils/cw-prover) - Retrieve a merkle-proof for CosmWasm state
 * [cycles-sync](utils/cycles-sync) - Sync obligations and setoffs
