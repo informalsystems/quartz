@@ -14,21 +14,21 @@ TODO sections:
 
 ## Transfer Application Template
 
-The Transfer Application is a simple template / demo app designed to showcase how users can deposit funds into a contract, transfer them privately within the contract's encrypted state, and withdraw their funds. This application is built using various tools and technologies, including Rust, Go, and Next.js.
+The Transfer Application is a simple template / demo app designed to showcase very basic use of the Quartz framework. It allows users to deposit funds into a contract, transfer them privately within the contract's encrypted state, and ultimately withdraw whatever balance they have left or have accumulated. 
 
 #### Key Features
 
 1. **Deposit Funds**: Users can deposit funds into a smart contract.
-2. **Private Transfers**: Users can transfer funds privately within the contract.
-3. **Withdraw Funds**: Users can withdraw their funds from the contract.
+2. **Private Transfers**: Users can transfer funds privately within the contract via encrypted transactions that are handled by Quartz (ie. processed by the enclave and remote attested to).
+3. **Withdraw Funds**: Users can withdraw their funds from the contract based on their balance in the encrypted state.
 
 #### Application Structure
 
-The application is divided into several components, each responsible for different parts of the functionality. Here is a brief overview of the main components:
+The application is divided into:
 
 1. **Frontend**: The user interface built with Next.js, cosmjs / graz.
-2. **Backend**: The server-side logic, including smart contracts written in Rust.
-3. **Enclave**: A secure environment for executing sensitive operations.
+2. **Contracts**: The backend application as a CosmWasm smart contract
+3. **Enclave**: Code that executes off-chain and privately in an enclave
 
 #### Setting Up the Application
 
