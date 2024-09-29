@@ -49,7 +49,12 @@ For more detailed instructions, continue reading the following sections.
 
 ## Simple Example
 
-The Transfer Application is a simple template / demo app designed to showcase very basic use of the Quartz framework. It allows users to deposit funds into a contract, transfer them privately within the contract's encrypted state, and ultimately withdraw whatever balance they have left or have accumulated. 
+Quartz includes a simple example we call the `Transfer` application. It's
+located in [/apps/transfers](/apps/transfers). It's a simple demo app 
+designed to showcase very basic use of the Quartz framework. 
+It allows users to deposit funds into a contract, 
+transfer them privately within the contract's encrypted state, 
+and ultimately withdraw whatever balance they have left or have accumulated. 
 
 ### Key Features
 - Deposit funds into a smart contract
@@ -221,9 +226,9 @@ transfers app is currently single asset only.
 If successful, it will print the resulting contract address. Save it to an
 environment variable:
 
-    ```bash
-    export CONTRACT_ADDRESS=<CONTRACT_ADDRESS>
-    ```
+```bash
+export CONTRACT_ADDRESS=<CONTRACT_ADDRESS>
+```
 
 3. Perform the handshake:
    ```bash
@@ -236,9 +241,9 @@ If successful, it should output a pubkey value. We'll need both the contract
 address and this pubkey value to configure the frontend. Save this to an
 environment variable: 
 
-    ```bash
-    export PUBKEY=<PUBKEY>
-    ```
+```bash
+export PUBKEY=<PUBKEY>
+```
 
 Now the contract is ready to start processing requests to the enclave.
 
@@ -284,9 +289,9 @@ Create a new address in Keplr for testing purpose. You'll need to send this
 address some funds from the `admin` account setup with your local node. For
 instance, send 10M ucosm with:
 
-    ```bash
-    wasmd tx bank send admin <KEPLR ADDRESS> 10000000ucosm --chain-id testing
-    ```
+```bash
+wasmd tx bank send admin <KEPLR ADDRESS> 10000000ucosm --chain-id testing
+```
 
 You should now see the funds on your local testnet on Keplr.
 
