@@ -1,12 +1,14 @@
 # Quartz: Getting Started Guide
 
 ---
+
 WARNING: Quartz is under heavy development and is not ready for production use.
 The current code contains known bugs and security vulnerabilities and APIs are still liable to change.
 
 We are making it available for devleopers to start playing with and to gather
 feedback on APIs and roadmap. It can be used today on CosmWasm testnets
 (testnets only, with no real funds at risk!).
+
 ---
 
 ## Table of Contents
@@ -155,6 +157,10 @@ make start-docker-container
 ```
 
 If using docker it will pre-configure a few keys and allocate funds to them. 
+
+If building from source, you'll need to initialize the accounts yourself. See
+the guide on [setting up a CosmWasm chain](/docs/wasmd_setup.md) and then return
+back here.
 
 
 ## Local Testnet Without SGX
