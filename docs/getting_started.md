@@ -1,12 +1,5 @@
 # Quartz: Getting Started Guide
 
----
-
-WARNING: Quartz is under heavy development and is not ready for production use.
-The current code contains known bugs and security vulnerabilities and APIs are still liable to change.
-
----
-
 ## Table of Contents
 
 - [Introduction](#introduction)
@@ -64,22 +57,7 @@ contracts, and a cli tool (`quartz`) for managing the enclave.
 
 The library takes care of establishing a secure connection to the enclave (see
 [How it Works](/docs/how_it_works.md), and verifying attestations from
-it.
-
-The quartz tool provides commands for managing the enclave:
-
-- `quartz enclave build` - build the enclave binary
-- `quartz enclave start` - start the enclave binary
-- `quartz handshake` -  create secure session between enclave and contracts
-
-It also has convenience commands for building and deploying a smart
-contract:
-
-- `quartz contract build` - build the smart contract binaries
-- `quartz contract deploy` - deploy the smart contracts 
-
-And for running everything in one go (build, deploy/start, handshake): 
-- `quartz dev`
+it. The quartz tool provides commands for managing the enclave.
 
 This guide is primarily about using the `quartz` tool to get the example app
 setup. For more on building application, see 
@@ -88,7 +66,7 @@ setup. For more on building application, see
   for the handshake and for verifying attestations
 - [transfers contracts](/apps/transfers/contracts): transfer app example itself
 
-Onwards with the installation and getting the example running!
+Onwards with the installation and running our example app! 
 
 ## Installation
 
