@@ -83,10 +83,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 TBD
 
 [cycles]: https://cycles.money
-[getting_started]: ./docs/getting_started.md
-[how_it_works]: ./docs/how_it_works.md
-[building_apps]: ./docs/building_apps.md
-[tees]: ./docs/tees.md
-[future_work]: ./docs/roadmap.md
+[getting_started]: /docs/getting_started.md
+[how_it_works]: /docs/how_it_works.md
+[building_apps]: /docs/building_apps.md
+[tees]: /docs/tees.md
+[future_work]: /docs/roadmap.md
 [how_to_win_friends_talk]: https://www.youtube.com/watch?v=XwKIt5XYyqw
 [how_to_win_friends_thread]: https://x.com/buchmanster/status/1816084691784720887
