@@ -41,7 +41,7 @@ feedback on APIs and roadmap. It can be used today on CosmWasm testnets
 
 ## Docs
 
-- [Getting Started][getting_started] - Get a simple example app up and running in 5 minutes
+- [Getting Started][getting_started] - Get a simple example app up and running in a few minutes
 - [How it Works][how_it_works] - How smart contracts and enclaves communicate securely
 - [TEE Security][tees] - Resources on TEE security 
 - [Building Applications][building_apps] - How to build Quartz applications
@@ -59,7 +59,7 @@ Example Quartz applications, including CosmWasm smart contracts, Gramine based s
 
 Currently implemented apps -
 
-* [Transfer](apps/transfer) - The default transfer app which allows private transfer of assets
+* [Transfer](/apps/transfers) - The default transfer app which allows private transfer of assets
 
 ### Core
 
