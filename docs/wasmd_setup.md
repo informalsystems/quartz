@@ -86,19 +86,28 @@ configure CORS.
 In `~/.wasmd/config/config.toml`, you'll need to make sure the listen address
 binds to the public IP (0.0.0.0) and the CORS allows all origins:
 
-```toml [rpc] laddr = "tcp://0.0.0.0:26657" cors_allowed_origins = ["*"] ```
+```toml 
+[rpc] 
+laddr = "tcp://0.0.0.0:26657" 
+cors_allowed_origins = ["*"] 
+```
 
 And in `~/.wasmd/config/app.toml`:
 
-```toml [api] enable = true address = "tcp://0.0.0.0:1317" enabled-unsafe-cors =
-true ```
+```toml 
+[api] 
+enable = true 
+address = "tcp://0.0.0.0:1317" 
+enabled-unsafe-cors = true 
+```
 
 Now, finally:
 
 ## wasmd start
 
 ```bash 
-wasmd start ```
+wasmd start 
+```
 
 And you should have a chain making blocks!
 
