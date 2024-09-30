@@ -149,7 +149,7 @@ impl QuartzServer {
         ws_handlers: &Vec<Box<dyn WebSocketHandler>>,
         ws_config: WsListenerConfig,
     ) -> Result<(), QuartzError> {
-        let wsurl = ws_config.node_url.clone();
+        let wsurl = ws_config.websocket_url.clone();
         let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
         let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
