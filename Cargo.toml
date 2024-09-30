@@ -82,7 +82,7 @@ mc-attestation-verifier = { git = "https://github.com/informalsystems/attestatio
 
 # quartz
 cw-proof = { path = "crates/contracts/cw-proof", default-features = false }
-quartz-common = { path = "crates/quartz-common", default-features = false }
+quartz-common = { path = "crates/common", default-features = false }
 quartz-cw = { path = "crates/contracts/quartz-cw", default-features = false }
 quartz-dcap-verifier-msgs = { path = "crates/contracts/quartz-dcap-verifier/msgs", default-features = false }
 quartz-enclave = { path = "crates/enclave/quartz-enclave", default-features = false }
@@ -106,11 +106,3 @@ codegen-units = 1
 panic = 'abort'
 incremental = false
 overflow-checks = true
-
-[alias]
-wasm = "build --release --target wasm32-unknown-unknown --lib"
-unit-test = "test --lib"
-schema = "run --bin schema"
-
-[net]
-git-fetch-with-cli = true
