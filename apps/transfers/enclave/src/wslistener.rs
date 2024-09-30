@@ -186,7 +186,7 @@ async fn transfer_handler<A: Attestor>(
 
     // Wait 2 blocks
     info!("Waiting 2 blocks for light client proof");
-    let wsurl = ws_config.websocket_url.clone();
+    let wsurl = ws_config.node_url.clone();
     two_block_waitoor(&wsurl).await?;
 
     // Call tm prover with trusted hash and height
