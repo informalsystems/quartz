@@ -167,7 +167,7 @@ async fn transfer_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let httpurl = ws_config.node_url.clone();
+    let httpurl = Url::parse(&ws_config.websocket_url)?;
     let wasmd_client = CliWasmdClient::new(Url::parse(&httpurl)?);
     // Query chain
     // Get epoch, obligations, liquidity sources
@@ -270,7 +270,7 @@ async fn query_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let httpurl = ws_config.node_url.clone();
+    let httpurl = Url::parse(&ws_config.websocket_url)?;
     let wasmd_client = CliWasmdClient::new(Url::parse(&httpurl)?);
     // Query Chain
     // Get state

@@ -83,7 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sk = Arc::new(Mutex::new(None));
 
     // Event queue
-    let (tx, mut rx) = mpsc::channel::<TransfersOp<DefaultAttestor>>(1);
+    let (tx, mut rx) = mpsc::channel::<TransfersOp<DcapAttestor>>(1);
     // Consumer task: dequeue and process events
     tokio::spawn(async move {
         while let Some(op) = rx.recv().await {

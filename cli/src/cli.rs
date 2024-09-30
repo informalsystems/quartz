@@ -201,7 +201,7 @@ pub struct EnclaveStartArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub websocket_url: Option<String>,
-    
+
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
