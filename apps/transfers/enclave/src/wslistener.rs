@@ -131,8 +131,7 @@ async fn transfer_handler<A: Attestor>(
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = ws_config.node_url.clone();
-    let wasmd_client = CliWasmdClient::new(httpurl.clone());
-
+    let wasmd_client = CliWasmdClient::new(Url::parse(&httpurl)?);
     // Query chain
     // Get epoch, obligations, liquidity sources
     let resp: QueryResult<Vec<TransferRequest>> = wasmd_client
