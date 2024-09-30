@@ -65,7 +65,7 @@ async fn deploy(
     args: ContractDeployRequest,
     config: &Config,
 ) -> Result<(u64, String), anyhow::Error> {
-    let httpurl = Url::parse(&format!("https://{}", config.node_url))?;
+    let httpurl = Url::parse(&config.node_url)?;
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
