@@ -3,10 +3,10 @@ on:
   pull_request:
     paths:
       - .github/workflows/frontend.yml
-      - apps/transfers/frontend/**
+      - examples/transfers/frontend/**
 defaults:
   run:
-    working-directory: apps/transfers/frontend
+    working-directory: examples/transfers/frontend
 jobs:
   linting:
     runs-on: ubuntu-latest

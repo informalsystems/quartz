@@ -1,15 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    "apps/mtcs/enclave",
-    "cli",
-    "core/light-client-proofs/*",
-    "core/quartz",
-    "core/quartz-common",
-    "cosmwasm/packages/*",
-    "utils/*",
+    "crates/cli",
+    "crates/common",
+    "crates/contracts/*",
+    "crates/enclave/*",
+    "crates/utils/*",
 ]
-exclude = ["apps/mtcs/contracts/cw-tee-mtcs", "apps/transfers/contracts", "apps/transfers/enclave"]
+exclude = ["examples/transfers/contracts", "examples/transfers/enclave"]
 
 [workspace.package]
 version = "0.1.0"
@@ -51,9 +49,9 @@ sha2 = { version = "0.10.8", default-features = false }
 subtle-encoding = { version = "0.5.1", default-features = false, features = ["bech32-preview"] }
 tempfile = { version = "3", default-features = false }
 thiserror = { version = "1.0.49", default-features = false }
-tokio = { version = "=1.39.2", default-features = false, features = ["macros", "rt"] }
-tonic = { version = "=0.12.1", default-features = false, features = ["codegen", "prost", "transport"] }
-tonic-build = { version = "=0.12.1", default-features = false, features = ["prost", "transport"] }
+tokio = { version = "1.39.2", default-features = false, features = ["macros", "rt"] }
+tonic = { version = "0.12.1", default-features = false, features = ["codegen", "prost", "transport"] }
+tonic-build = { version = "0.12.1", default-features = false, features = ["prost", "transport"] }
 tower = { version = "0.5.0" }
 tracing = { version = "0.1.39", default-features = false }
 tracing-subscriber = { version = "0.3.17", default-features = false, features = ["fmt"] }
@@ -65,7 +63,7 @@ zeroize = { version = "1.7.0", default-features = false }
 
 # cosmos
 cosmos-sdk-proto = { version = "0.22.0", default-features = false }
-cosmrs = { version = "=0.17.0", default-features = false }
+cosmrs = { version = "0.17.0", default-features = false }
 cosmwasm-schema = { version = "2.1.1", default-features = false }
 cosmwasm-std = { version = "2.1.1", default-features = false, features = ["std", "abort"] }
 cw-storage-plus = { version = "2.0.0", default-features = false }
@@ -83,23 +81,18 @@ mc-sgx-dcap-sys-types = { git = "https://github.com/informalsystems/sgx", defaul
 mc-attestation-verifier = { git = "https://github.com/informalsystems/attestation", default-features = false }
 
 # quartz
-cw-proof = { path = "core/light-client-proofs/cw-proof", default-features = false }
-quartz-common = { path = "core/quartz-common", default-features = false }
-quartz-cw = { path = "cosmwasm/packages/quartz-cw", default-features = false }
-quartz-dcap-verifier-msgs = { path = "cosmwasm/packages/quartz-dcap-verifier/msgs", default-features = false }
-quartz-enclave = { path = "core/quartz", default-features = false }
-quartz-proto = { path = "core/quartz-proto", default-features = false }
-quartz-tee-ra = { path = "cosmwasm/packages/quartz-tee-ra", default-features = false }
-tcbinfo = { path = "cosmwasm/packages/tcbinfo", default-features = false, features = ["library"] }
-tcbinfo-msgs = { path = "cosmwasm/packages/tcbinfo/msgs", default-features = false }
-tm-prover = { path = "utils/tm-prover", default-features = false }
-tm-stateless-verifier = { path = "core/light-client-proofs/tm-stateless-verifier", default-features = false }
-wasmd-client = { path = "cosmwasm/packages/wasmd-client", default-features = false }
-
-# quartz apps
-cw-tee-mtcs = { path = "apps/mtcs/contracts/cw-tee-mtcs", default-features = false }
-mtcs = { git = "ssh://git@github.com/informalsystems/mtcs.git", default-features = false }
-mtcs-enclave = { path = "apps/mtcs/enclave", default-features = false }
+cw-proof = { path = "crates/contracts/cw-proof", default-features = false }
+quartz-common = { path = "crates/common", default-features = false }
+quartz-cw = { path = "crates/contracts/quartz-cw", default-features = false }
+quartz-dcap-verifier-msgs = { path = "crates/contracts/quartz-dcap-verifier/msgs", default-features = false }
+quartz-enclave = { path = "crates/enclave/quartz-enclave", default-features = false }
+quartz-proto = { path = "crates/enclave/quartz-proto", default-features = false }
+quartz-tee-ra = { path = "crates/contracts/quartz-tee-ra", default-features = false }
+tcbinfo = { path = "crates/contracts/tcbinfo", default-features = false, features = ["library"] }
+tcbinfo-msgs = { path = "crates/contracts/tcbinfo/msgs", default-features = false }
+tm-prover = { path = "crates/utils/tm-prover", default-features = false }
+tm-stateless-verifier = { path = "crates/contracts/tm-stateless-verifier", default-features = false }
+wasmd-client = { path = "crates/utils/wasmd-client", default-features = false }
 
 [profile.release]
 opt-level = "z"
