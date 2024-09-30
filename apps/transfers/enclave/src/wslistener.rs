@@ -116,7 +116,7 @@ impl<A: Attestor> WsListener for TransfersService<A> {
             }
         }
 
-        let wsurl = format!("ws://{}/websocket", config.node_url);
+        let wsurl = config.websocket_url;
         // Wait some blocks to make sure transaction was confirmed
         two_block_waitoor(&wsurl).await?;
 
@@ -168,7 +168,7 @@ async fn transfer_handler<A: Attestor>(
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&ws_config.node_url)?;
-    let wasmd_client = CliWasmdClient::new(&httpurl)?;
+    let wasmd_client = CliWasmdClient::new(httpurl);
     // Query chain
     // Get epoch, obligations, liquidity sources
     let resp: QueryResult<Vec<TransferRequest>> = wasmd_client
@@ -271,7 +271,7 @@ async fn query_handler<A: Attestor>(
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&ws_config.node_url)?;
-    let wasmd_client = CliWasmdClient::new(httpurl)?;
+    let wasmd_client = CliWasmdClient::new(httpurl);
     // Query Chain
     // Get state
     let resp: QueryResult<HexBinary> = wasmd_client
