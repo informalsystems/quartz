@@ -1,24 +1,16 @@
 [package]
 name = "tcbinfo"
-version = "0.1.0"
-authors = ["quinine"]
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-
-[profile.release]
-opt-level = 3
-debug = false
-rpath = false
-lto = true
-debug-assertions = false
-codegen-units = 1
-panic = 'abort'
-incremental = false
-overflow-checks = true
 
 [features]
 # use library feature to disable all instantiate/execute/query exports
@@ -32,25 +24,31 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [dependencies]
-cosmwasm-schema = "2.0.1"
-cosmwasm-std = { version = "2.0.1", default-features = false, features = [
-    "cosmwasm_1_3",
-    # Enable this if you only deploy to chains that have CosmWasm 1.4 or higher
-    # "cosmwasm_1_4",
-] }
-cw-storage-plus = "2.0.0"
-cw2 = "2.0.0"
-schemars = "0.8.16"
-serde = { version = "1.0.197", default-features = false, features = ["derive"] }
-thiserror = { version = "1.0.58" }
-x509-cert = { version = "0.2.5", default-features = false, features = ["pem"] }
-getrandom ={ version = "0.2.5", default-features = false, features = ["js"]}
-der = { version = "0.7.9" }
-quartz-tee-ra = { path = "../quartz-tee-ra" }
-mc-attestation-verifier = { git = "https://github.com/informalsystems/attestation", default-features = false }
-p256 = { version = "0.13.2", default-features = false }
-serde_json = { version = "1.0", default-features = false }
-hex = { version = "0.4.3", default-features = false, features = ["serde"] }
+# external
+der.workspace = true
+hex.workspace = true
+p256.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+x509-cert.workspace = true
+
+# mobilecoin
+mc-attestation-verifier.workspace = true
+
+# cosmos
+cosmwasm-schema.workspace = true
+cosmwasm-std.workspace = true
+cw2.workspace = true
+cw-storage-plus.workspace = true
+
+# quartz
+quartz-tee-ra.workspace = true
+tcbinfo-msgs.workspace = true
+
+# patch indirect deps
+getrandom = { version = "0.2.15", features = ["js"] }
 
 [dev-dependencies]
 cw-multi-test = "2.0.0"

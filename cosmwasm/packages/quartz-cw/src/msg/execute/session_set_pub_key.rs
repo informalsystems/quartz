@@ -65,8 +65,10 @@ impl HasDomainType for RawSessionSetPubKey {
 impl HasUserData for SessionSetPubKey {
     fn user_data(&self) -> UserData {
         let mut hasher = Sha256::new();
-        hasher.update(self.nonce);
-        hasher.update(self.pub_key.to_sec1_bytes());
+        hasher.update(
+            serde_json::to_string(&RawSessionSetPubKey::from(self.clone()))
+                .expect("infallible serializer"),
+        );
         let digest: [u8; 32] = hasher.finalize().into();
 
         let mut user_data = [0u8; 64];

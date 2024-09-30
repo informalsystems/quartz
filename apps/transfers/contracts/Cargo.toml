@@ -13,7 +13,7 @@ path = "bin/schema.rs"
 crate-type = ["cdylib", "rlib"]
 
 [profile.release]
-opt-level = 3
+opt-level = "z"
 debug = false
 rpath = false
 lto = true
@@ -23,7 +23,6 @@ panic = 'abort'
 incremental = false
 overflow-checks = true
 
-
 [features]
 mock-sgx = ["quartz-common/mock-sgx-cw"]
 library = []
@@ -31,24 +30,19 @@ library = []
 [dependencies]
 # external
 sha2 = "0.10.8"
-serde_json = { version = "1.0.122", default-features = false, features = ["alloc"] }
-serde = { version = "1.0.204", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0.122", default-features = false }
 thiserror = { version = "1.0.63" }
 
 # cosmwasm
-cosmwasm-std = { version = "2.1.1", default-features = false }
+cosmwasm-std = { version = "2.1.1", default-features = false, features = ["abort"] }
 cosmwasm-schema = { version = "2.1.1", default-features = false }
-cw2 = { version = "2.0.0", default-features = false }
 cw-storage-plus = { version = "2.0.0", default-features = false }
-cw20-base = { version = "2.0.0", default-features = false, features = ["library"] }
 cw-utils = { version = "2.0.0", default-features = false }
 
 # quartz
-# quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["contract"]}
-quartz-common = { path = "../../../core/quartz-common", features=["contract"]}
-
+quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["contract"]}
 # patch indirect deps
-getrandom = { version = "0.2.15", default-features = false, features = ["js"] }
+getrandom = { version = "0.2.15", features = ["js"] }
 
 [dev-dependencies]
 cw-multi-test = { version = "2.1.0", default-features = false }

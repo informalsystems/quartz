@@ -18,6 +18,7 @@ pub struct Config {
     epoch_duration: Duration,
     light_client_opts: LightClientOpts,
     tcbinfo_contract: Option<String>,
+    dcap_verifier_contract: Option<String>,
 }
 
 impl Config {
@@ -26,12 +27,14 @@ impl Config {
         epoch_duration: Duration,
         light_client_opts: LightClientOpts,
         tcbinfo_contract: Option<String>,
+        dcap_verifier_contract: Option<String>,
     ) -> Self {
         Self {
             mr_enclave,
             epoch_duration,
             light_client_opts,
             tcbinfo_contract,
+            dcap_verifier_contract,
         }
     }
 
@@ -54,15 +57,19 @@ pub struct RawConfig {
     epoch_duration: Duration,
     light_client_opts: RawLightClientOpts,
     tcbinfo_contract: Option<String>,
+    dcap_verifier_contract: Option<String>,
 }
 
 impl RawConfig {
     pub fn mr_enclave(&self) -> &[u8] {
         self.mr_enclave.as_slice()
     }
+    pub fn tcbinfo_contract(&self) -> Option<&str> {
+        self.tcbinfo_contract.as_deref()
+    }
 
-    pub fn tcb_info(&self) -> Option<String> {
-        self.tcbinfo_contract.clone().map(|c| c.to_string())
+    pub fn dcap_verifier_contract(&self) -> Option<&str> {
+        self.dcap_verifier_contract.as_deref()
     }
 }
 
@@ -78,6 +85,7 @@ impl TryFrom<RawConfig> for Config {
                 .try_into()
                 .map_err(|e| StdError::parse_err("light_client_opts", e))?,
             tcbinfo_contract: value.tcbinfo_contract,
+            dcap_verifier_contract: value.dcap_verifier_contract,
         })
     }
 }
@@ -89,6 +97,7 @@ impl From<Config> for RawConfig {
             epoch_duration: value.epoch_duration,
             light_client_opts: value.light_client_opts.into(),
             tcbinfo_contract: value.tcbinfo_contract,
+            dcap_verifier_contract: value.dcap_verifier_contract,
         }
     }
 }
