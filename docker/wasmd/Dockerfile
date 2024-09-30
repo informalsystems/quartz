@@ -10,7 +10,6 @@ sed -i '/wasmd keys show validator/c\
 if ! wasmd keys show validator 2>\&1 | grep -qE "^- name: validator$"; then' /opt/setup_wasmd.sh
 sed -i '/wasmd init/a sed -i '"'"'s/keyring-backend = "os"/keyring-backend = "test"/g'"'"' /root/.wasmd/config/client.toml' /opt/setup_wasmd.sh
 sed -i  's/1000000000/12000000000000/g' /opt/setup_wasmd.sh
-sed -i '/set -o errexit -o nounset -o pipefail/a set -x' /opt/setup_wasmd.sh
 EOF
 
 
