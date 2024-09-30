@@ -1,5 +1,5 @@
 name: E2E tests
-on: [push]  
+on: [push]
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -14,8 +14,7 @@ jobs:
           check-latest: true
 
       - name: Run containers wasmd and enclave
-        run:
-          docker compose -f docker/docker-compose.yml up -d --build
+        run: docker compose -f docker/docker-compose.yml up -d --build
 
       - name: Wait for handshake completion
         timeout-minutes: 25
@@ -28,29 +27,14 @@ jobs:
       - name: Capture logs from wasmd container
         id: capture_logs
         working-directory: apps/transfers/frontend
-        run: docker logs quartz-cli-transfers > quartz-cli-transfers_logs.txt
-
-      - name: Setup environment variables
-        working-directory: apps/transfers/frontend
-        run: cp .env.example .env.local
-
-      - name: Extract contract address and public key
-        id: extract_vars
-        run: |
-          echo "CONTRACT_ADDRESS=$(grep 'Contract Address:' apps/transfers/frontend/quartz-cli-transfers_logs.txt | awk '{print $NF}')" >> $GITHUB_OUTPUT
-          echo "PUBKEY=$(grep 'Handshake complete:' apps/transfers/frontend/quartz-cli-transfers_logs.txt | awk '{print $NF}')" >> $GITHUB_OUTPUT
-
-      - name: Debug - Print extracted variables
-        run: |
-          echo "Extracted CONTRACT_ADDRESS: ${{ steps.extract_vars.outputs.CONTRACT_ADDRESS }}"
-          echo "Extracted PUBKEY: ${{ steps.extract_vars.outputs.PUBKEY }}"
+        run: docker logs --tail 50 quartz-cli-transfers &> quartz-cli-transfers_logs.txt
 
       - name: Setup environment variables
         working-directory: apps/transfers/frontend
         run: |
           cp .env.example .env.local
-          sed -i "s/^NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=.*/NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=${{ steps.extract_vars.outputs.CONTRACT_ADDRESS }}/" .env.local
-          sed -i "s/^NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=.*/NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=${{ steps.extract_vars.outputs.PUBKEY }}/" .env.local
+          sed -i "s/^NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=.*/NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=$(grep 'Contract Address:' quartz-cli-transfers_logs.txt | awk '{print $NF}')/" .env.local
+          sed -i "s/^NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=.*/NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=$(grep 'Handshake complete:' quartz-cli-transfers_logs.txt | awk '{print $NF}')/" .env.local
 
       - name: Print .env.local contents
         working-directory: apps/transfers/frontend
