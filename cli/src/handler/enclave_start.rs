@@ -89,6 +89,8 @@ impl Handler for EnclaveStartRequest {
             )
             .await?;
 
+            println!("{:?}",quartz_dir_canon);
+            
             // gramine sign
             gramine_sgx_sign(&enclave_dir).await?;
 
