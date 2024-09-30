@@ -26,9 +26,10 @@ mock SGX:
 1. Install dependencies (Rust, wasmd or neutrond)
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
 3. Install Quartz CLI: `cargo install --path cli/`
+4. Navigate to the example app: `cd apps/transfers`
 4. Deploy the example app in one command (enclave, contracts, secure handshake):
    ```bash
-   quartz --mock-sgx --app-dir "apps/transfers/" dev \
+   quartz --mock-sgx dev \
    --unsafe-trust-latest \
    --contract-manifest "apps/transfers/contracts/Cargo.toml" \
    --init-msg '{"denom":"ucosm"}'
@@ -117,37 +118,16 @@ quartz --help
 
 ### Install a CosmWasm Client
 
-For the local testnet, its simplest to use `wasmd`. 
+For the local testnet, we use `wasmd`. 
 
-For the real testnet, `neutrond` is required (the guide is for Neutron's
-testnet).
+For the real testnet, we use `neutrond`.
 
-In either case, you can build from source in Go or use a docker container.
+We quickest start, we provide docker images for both.
 
-The docker containers come with preconfigured keys and account balances. If you use the
-Go binaries you'll have to set up keys and balances yourself.
+You can also use an existing installation if you have, or you can build from
+source in Go. If so, you'll have to setup accounts that can pay gas. See [wasmd setup instructions](/docs/wasmd_setup.md)
 
-To build from source, first make sure you have Go installed.
-
-Then for `wasmd`:
-
-```bash
-git clone https://github.com/cosmwasm/wasmd/
-cd wasmd
-git checkout v0.45.0
-go install ./cmd/wasmd
-```
-
-Or for `neutrond`:
-
-```bash
-git clone -b main https://github.com/neutron-org/neutron.git
-cd neutron
-git checkout v4.0.0
-make install
-```
-
-To use the docker images instead, install and set up docker.
+The docker images come with everything. To use them install and setup docker.
 
 Then for wasmd`:
 
@@ -163,12 +143,12 @@ cd docker/neutron
 make start-docker-container
 ```
 
-If using docker it will pre-configure a few keys (admin, alice, etc.) and allocate funds to them. 
+If will pre-configure a few keys (admin, alice, etc.) and allocate funds to them. 
+The default sending account for quartz txs is `admin`. 
 
 If building from source, you'll need to initialize the accounts yourself. See
 the guide on [setting up a CosmWasm chain](/docs/wasmd_setup.md) and then return
 back here.
-
 
 ## Local Testnet Without SGX
 
@@ -188,17 +168,20 @@ show the individual commands.
 First we build and run the enclave code. 
 Quartz provides a `--mock-sgx` flag so we can deploy locally for testing and
 development purposes without needing access to an SGX core.
-We use `--app-dir` to specify where the app code is located.
 
+We can run everything from within the `apps/transfers` dir in this repo. To run
+from elsewhere by specify a path, eg. from the root of the repo with `--app-dir apps/transfers`.
+
+Now, from `apps/transfers`:
 
 1. Build the enclave binary:
    ```bash
-   quartz --mock-sgx --app-dir "apps/transfers/" enclave build
+   quartz --mock-sgx enclave build
    ```
 
 2. Start the enclave:
    ```bash
-   quartz --mock-sgx --app-dir "apps/transfers/" enclave start
+   quartz --mock-sgx enclave start
    ```
 
 The enclave is a long running process. You'll have to open another window to
@@ -208,12 +191,12 @@ continue.
 
 1. Build the contract binary:
    ```bash
-   quartz --mock-sgx --app-dir "apps/transfers/" contract build --contract-manifest "apps/transfers/contracts/Cargo.toml"
+   quartz --mock-sgx contract build --contract-manifest "contracts/Cargo.toml"
    ```
 
 2. Deploy the contract:
    ```bash
-   quartz --mock-sgx --app-dir "apps/transfers/" contract deploy \
+   quartz --mock-sgx contract deploy \
    --contract-manifest "apps/transfers/contracts/Cargo.toml" \
    --init-msg '{"denom":"ucosm"}'
    ```
@@ -231,7 +214,7 @@ export CONTRACT_ADDRESS=<CONTRACT_ADDRESS>
 
 3. Perform the handshake:
    ```bash
-   quartz --mock-sgx --app-dir "apps/transfers/" handshake --contract $CONTRACT_ADDRESS
+   quartz --mock-sgx handshake --contract $CONTRACT_ADDRESS
    ```
 
 This will setup a secure connection between the contract and the enclave.
@@ -324,7 +307,10 @@ Once logged in, clone and install Quartz like before (see
 
 ### Build and Deploy the Contracts
 
-TODO: make this about deploying to neutron.
+TODO: 
+- make this about deploying to neutron.
+- do it from apps/transfers to avoid specifying `--app-dir`
+
 
 To build both the contract binaries, use the build command:
 
