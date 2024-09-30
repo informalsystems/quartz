@@ -34,7 +34,7 @@ pub trait WasmdClient {
         gas: u64,
         sender: &str,
         msg: M,
-        fee: &str,
+        fees: &str,
     ) -> Result<String, Self::Error>;
 
     fn deploy<M: ToString>(
