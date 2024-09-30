@@ -28,7 +28,7 @@ use cli::Cli;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
-        attestor::{self, Attestor, DefaultAttestor},
+        attestor::{self, Attestor, DcapAttestor},
         server::{QuartzServer, WsListenerConfig},
     },
 };
