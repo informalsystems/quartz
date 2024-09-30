@@ -7,7 +7,7 @@ members = [
     "crates/enclave/*",
     "crates/utils/*",
 ]
-exclude = ["apps/transfers/contracts", "apps/transfers/enclave"]
+exclude = ["examples/transfers/contracts", "examples/transfers/enclave"]
 
 [workspace.package]
 version = "0.1.0"
