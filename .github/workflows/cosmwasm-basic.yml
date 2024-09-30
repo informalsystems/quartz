@@ -50,7 +50,7 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: |
-            ${{ secrets.MTCS_SSH_KEY }}
+            ${{ secrets.QUARTZ_SSH_KEY }}
 
       - name: Run unit tests (for transfers)
         run: cargo unit-test --locked
@@ -78,7 +78,7 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: |
-            ${{ secrets.MTCS_SSH_KEY }}
+            ${{ secrets.QUARTZ_SSH_KEY }}
 
       - name: Generate Schema (for transfers)
         run: cargo schema --locked
