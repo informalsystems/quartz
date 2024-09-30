@@ -72,6 +72,7 @@ impl<A: Attestor> WebSocketHandler for MtcsService<A> {
                     .map_err(|e| anyhow!(e))?,
                 sender.expect("infallible"),
                 &config.node_url,
+                &config.chain_id,
             )
             .await?;
         }
@@ -98,9 +99,10 @@ async fn handler<A: Attestor>(
     contract: &AccountId,
     sender: String,
     node_url: &str,
+    chain_id: &str,
 ) -> Result<()> {
-    let chain_id = &ChainId::from_str("pion-1")?;
-    let httpurl = Url::parse(&format!("https://{}", node_url))?; // TODO Improve
+    let chain_id = &ChainId::from_str(chain_id)?;
+    let httpurl = Url::parse(node_url)?; // TODO Improve
     let wasmd_client = CliWasmdClient::new(httpurl);
 
     // Query obligations and liquidity sources from chain

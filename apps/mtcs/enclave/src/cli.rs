@@ -24,7 +24,7 @@ pub struct Cli {
     pub rpc_addr: SocketAddr,
 
     /// Identifier of the chain
-    #[clap(long)]
+    #[clap(long, default_value = "pion-1")]
     pub chain_id: String,
 
     /// TcbInfo contract address
@@ -55,8 +55,11 @@ pub struct Cli {
     #[clap(long, default_value = "5")]
     pub max_block_lag: u64,
 
-    #[clap(long, default_value = "127.0.0.1:11090")]
+    #[clap(long, default_value = "https://rpc-falcron.pion-1.ntrn.tech")]
     pub node_url: String,
+
+    #[clap(long, default_value = "wss://rpc-falcron.pion-1.ntrn.tech/websocket")]
+    pub websocket_url: String,
 
     #[clap(long, default_value = "val1")]
     pub tx_sender: String,

@@ -234,8 +234,7 @@ async fn query_handler<A: Attestor>(
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = ws_config.node_url.clone();
-    let wasmd_client = CliWasmdClient::new(httpurl);
-
+    let wasmd_client = CliWasmdClient::new(Url::parse(&httpurl)?);
     // Query Chain
     // Get state
     let resp: QueryResult<HexBinary> = wasmd_client
