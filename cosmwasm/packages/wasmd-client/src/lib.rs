@@ -41,8 +41,8 @@ pub trait WasmdClient {
         &self,
         chain_id: &Id,
         sender: &str, // what should this type be
-        wasm_path: M
-        ) -> Result<String, Self::Error>;
+        wasm_path: M,
+    ) -> Result<String, Self::Error>;
 
     fn init<M: ToString>(
         &self,

@@ -104,10 +104,9 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     // Execute SessionSetPubKey on enclave
     info!("Running SessionSetPubKey");
     let res = RelayMessage::SessionSetPubKey(serde_json::to_string(&proof_output)?)
-    .run_relay(config.enclave_rpc(), config.mock_sgx)
-    .await?;
-info!("Relay SetPubkey response {:?}", res);
-
+        .run_relay(config.enclave_rpc(), config.mock_sgx)
+        .await?;
+    info!("Relay SetPubkey response {:?}", res);
 
     // Submit SessionSetPubKey to contract
     let output: WasmdTxResponse = serde_json::from_str(

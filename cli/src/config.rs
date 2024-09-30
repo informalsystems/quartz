@@ -22,11 +22,9 @@ pub struct Config {
     #[serde(default = "default_node_url")]
     pub node_url: String,
 
-
     /// Full WebSocket URL for this chain
     #[serde(default = "default_websocket_url")]
     pub websocket_url: String,
-    
 
     /// RPC interface for the Quartz enclave
     #[serde(default = "default_rpc_addr")]
@@ -95,7 +93,7 @@ impl Default for Config {
             app_dir: default_app_dir(),
             trusted_height: u64::default(),
             trusted_hash: String::default(),
-            release: false            
+            release: false,
         }
     }
 }
