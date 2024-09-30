@@ -1,19 +1,17 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-};
+use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 use der::{DateTime, DecodePem};
 use mc_attestation_verifier::{CertificateChainVerifier, SignedTcbInfo};
 use p256::ecdsa::VerifyingKey;
 use quartz_tee_ra::intel_sgx::dcap::certificate_chain::TlsCertificateChainVerifier;
 use serde_json::Value;
+use tcbinfo_msgs::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg};
 use x509_cert::Certificate;
 
 use crate::{
     error::ContractError,
-    msg::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg},
     state::{TcbInfo, DATABASE, ROOT_CERTIFICATE},
 };
 // version info for migration info
@@ -147,11 +145,8 @@ pub mod query {
             .try_into()
             .expect("invalid fmspc");
         let tcb_info = DATABASE.load(deps.storage, key)?;
-        let tcb_info_response = serde_json::from_str(&tcb_info.info).map_err(|_| {
-            StdError::parse_err(tcb_info.info, "Could not prarse on-chain TcbInfo as JSON")
-        })?;
         Ok(GetTcbInfoResponse {
-            tcb_info: tcb_info_response,
+            tcb_info: tcb_info.info,
         })
     }
 }
@@ -160,7 +155,7 @@ pub mod query {
 mod tests {
     use cosmwasm_std::{
         coins,
-        testing::{mock_dependencies, mock_env, mock_info},
+        testing::{message_info, mock_dependencies, mock_env},
     };
 
     use super::*;
@@ -172,7 +167,10 @@ mod tests {
     #[test]
     fn verify_init_and_exec() {
         let time = "2024-07-11T15:19:13Z";
-        let info = mock_info("creator", &coins(1000, "earth"));
+        let deps = mock_dependencies();
+        let creator = deps.api.addr_make("creator");
+
+        let info = message_info(&creator, &coins(1000, "earth"));
         let init_msg = InstantiateMsg {
             root_cert: ROOT_CA.to_string(),
         };
@@ -185,7 +183,7 @@ mod tests {
             certificate: TCB_SIGNER.to_string(),
             time: Some(time.to_string()),
         };
-        let info = mock_info("creator", &coins(1000, "earth"));
+        let info = message_info(&creator, &coins(1000, "earth"));
         let exec = execute(deps.as_mut(), mock_env(), info, exec_msg);
         assert!(exec.is_ok());
         let query = query(

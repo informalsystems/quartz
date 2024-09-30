@@ -3,6 +3,8 @@ use std::{fs, path::Path};
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
+use cosmrs::AccountId;
+use quartz_common::enclave::types::Fmspc;
 use tokio::process::{Child, Command};
 use tracing::{debug, info};
 
@@ -50,6 +52,24 @@ impl Handler for EnclaveStartRequest {
                     .await?;
             handle_process(enclave_child).await?;
         } else {
+            let Some(fmspc) = self.fmspc else {
+                return Err(Error::GenericErr(
+                    "FMSPC is required if MOCK_SGX isn't set".to_string(),
+                ));
+            };
+
+            let Some(tcbinfo_contract) = self.tcbinfo_contract else {
+                return Err(Error::GenericErr(
+                    "tcbinfo_contract is required if MOCK_SGX isn't set".to_string(),
+                ));
+            };
+
+            let Some(dcap_verifier_contract) = self.dcap_verifier_contract else {
+                return Err(Error::GenericErr(
+                    "dcap_verifier_contract is required if MOCK_SGX isn't set".to_string(),
+                ));
+            };
+
             let enclave_dir = fs::canonicalize(config.app_dir.join("enclave"))?;
 
             // gramine private key
@@ -62,6 +82,10 @@ impl Handler for EnclaveStartRequest {
                 &trusted_hash.to_string(),
                 quartz_dir_canon,
                 &enclave_dir,
+                fmspc,
+                tcbinfo_contract,
+                dcap_verifier_contract,
+                &config.node_url,
             )
             .await?;
 
@@ -155,6 +179,10 @@ async fn gramine_manifest(
     trusted_hash: &str,
     quartz_dir: &Path,
     enclave_dir: &Path,
+    fmspc: Fmspc,
+    tcbinfo_contract: AccountId,
+    dcap_verifier_contract: AccountId,
+    node_url: &str,
 ) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
@@ -172,12 +200,19 @@ async fn gramine_manifest(
         .arg("-Dlog_level=error")
         .arg(format!("-Dhome={}", home_dir))
         .arg(format!("-Darch_libdir={}", arch_libdir))
-        .arg("-Dra_type=epid")
+        .arg("-Dra_type=dcap")
         .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
         .arg(format!("-Dquartz_dir={}", quartz_dir.display()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
+        .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
+        .arg(format!("-Dnode_url={}", node_url))
+        .arg(format!("-Dtcbinfo_contract={}", tcbinfo_contract))
+        .arg(format!(
+            "-Ddcap_verifier_contract={}",
+            dcap_verifier_contract
+        ))
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
         .current_dir(enclave_dir)

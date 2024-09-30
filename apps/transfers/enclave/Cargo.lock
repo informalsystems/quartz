@@ -531,6 +531,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "ciborium"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42e69ffd6f0917f5c029256a24d0161db17cea3997d185db0d35926308770f0e"
+dependencies = [
+ "ciborium-io",
+ "ciborium-ll",
+ "serde",
+]
+
+[[package]]
+name = "ciborium-io"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05afea1e0a06c9be33d539b876f1ce3692f4afea2cb41f740e7743225ed1c757"
+
+[[package]]
+name = "ciborium-ll"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57663b653d948a338bfb3eeba9bb2fd5fcfaecb9e199e87e1eda4d9e8b240fd9"
+dependencies = [
+ "ciborium-io",
+ "half 2.4.1",
+]
+
+[[package]]
 name = "cipher"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -890,6 +917,7 @@ dependencies = [
 [[package]]
 name = "cw-proof"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "clap",
  "cosmrs",
@@ -922,51 +950,6 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "cw2"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b04852cd38f044c0751259d5f78255d07590d136b8a86d4e09efdd7666bd6d27"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "schemars",
- "semver",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "cw20"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a42212b6bf29bbdda693743697c621894723f35d3db0d5df930be22903d0e27c"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-utils",
- "schemars",
- "serde",
-]
-
-[[package]]
-name = "cw20-base"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6de8c32e100f1fca306972d86b617234a5e6b00594ea2b48716fd6804d4d95d"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "cw2",
- "cw20",
- "schemars",
- "semver",
  "serde",
  "thiserror",
 ]
@@ -1410,9 +1393,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d6401deb83407ab3da39eba7e33987a73c3df0c82b4bb5813ee871c19c41d48"
 dependencies = [
  "futures-core",
+ "futures-io",
  "futures-macro",
  "futures-sink",
  "futures-task",
+ "memchr",
  "pin-project-lite",
  "pin-utils",
  "slab",
@@ -1512,6 +1497,16 @@ name = "half"
 version = "1.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b43ede17f21864e81be2fa654110bf1e793774238d86ef8555c37e6519c0403"
+
+[[package]]
+name = "half"
+version = "2.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6dd08c532ae367adf81c312a4580bc67f1d0fe8bc9c460520283f4c0ff277888"
+dependencies = [
+ "cfg-if",
+ "crunchy",
+]
 
 [[package]]
 name = "hashbrown"
@@ -2485,9 +2480,9 @@ dependencies = [
 
 [[package]]
 name = "pkg-config"
-version = "0.3.30"
+version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
+checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
 
 [[package]]
 name = "polyval"
@@ -2667,6 +2662,7 @@ dependencies = [
 [[package]]
 name = "quartz-common"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "quartz-cw",
  "quartz-enclave",
@@ -2676,24 +2672,37 @@ dependencies = [
 [[package]]
 name = "quartz-cw"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
+ "ciborium",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
  "hex",
  "k256",
+ "quartz-dcap-verifier-msgs",
  "quartz-tee-ra",
  "serde",
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
- "tcbinfo",
+ "tcbinfo-msgs",
  "thiserror",
+]
+
+[[package]]
+name = "quartz-dcap-verifier-msgs"
+version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
 ]
 
 [[package]]
 name = "quartz-enclave"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2706,11 +2715,13 @@ dependencies = [
  "futures-util",
  "hex",
  "k256",
+ "mc-sgx-dcap-sys-types",
  "mtcs",
  "quartz-cw",
  "quartz-proto",
  "quartz-tee-ra",
  "rand",
+ "reqwest 0.12.7",
  "serde",
  "serde_json",
  "sha2 0.10.8",
@@ -2722,11 +2733,13 @@ dependencies = [
  "tokio",
  "tonic",
  "tower 0.5.1",
+ "urlencoding",
 ]
 
 [[package]]
 name = "quartz-proto"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "prost 0.13.1",
  "tonic",
@@ -2736,15 +2749,13 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "der",
- "displaydoc",
  "hex-literal",
  "mc-attestation-verifier",
- "mc-sgx-core-types",
- "mc-sgx-dcap-sys-types",
  "mc-sgx-dcap-types",
  "num-bigint",
  "serde",
@@ -2753,7 +2764,6 @@ dependencies = [
  "thiserror",
  "x509-cert",
  "x509-parser",
- "zeroize",
 ]
 
 [[package]]
@@ -2966,6 +2976,7 @@ dependencies = [
  "base64 0.22.1",
  "bytes",
  "encoding_rs",
+ "futures-channel",
  "futures-core",
  "futures-util",
  "h2 0.4.6",
@@ -3339,7 +3350,7 @@ version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bef2ebfde456fb76bbcf9f59315333decc4fda0b2b44b420243c11e0f5ec1f5"
 dependencies = [
- "half",
+ "half 1.8.3",
  "serde",
 ]
 
@@ -3672,24 +3683,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "tcbinfo"
+name = "tcbinfo-msgs"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "cw2",
- "der",
- "getrandom",
- "hex",
- "mc-attestation-verifier",
- "p256",
- "quartz-tee-ra",
- "schemars",
- "serde",
- "serde_json",
- "thiserror",
- "x509-cert",
 ]
 
 [[package]]
@@ -3985,6 +3983,7 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 [[package]]
 name = "tm-prover"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "clap",
  "color-eyre",
@@ -4005,6 +4004,7 @@ dependencies = [
 [[package]]
 name = "tm-stateless-verifier"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "displaydoc",
  "tendermint 0.38.1",
@@ -4277,11 +4277,8 @@ dependencies = [
  "cosmwasm-std",
  "cw-storage-plus",
  "cw-utils",
- "cw2",
- "cw20-base",
  "getrandom",
  "quartz-common",
- "serde",
  "serde_json",
  "sha2 0.10.8",
  "thiserror",
@@ -4373,6 +4370,12 @@ dependencies = [
  "idna",
  "percent-encoding",
 ]
+
+[[package]]
+name = "urlencoding"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "utf-8"
@@ -4493,6 +4496,7 @@ checksum = "c62a0a307cb4a311d3a07867860911ca130c3494e8c2719593806c08bc5d0484"
 [[package]]
 name = "wasmd-client"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#391b7bc84a3edef153620d84d1daa69d19532dd6"
 dependencies = [
  "anyhow",
  "cosmrs",

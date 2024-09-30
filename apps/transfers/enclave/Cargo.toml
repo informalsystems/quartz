@@ -43,10 +43,10 @@ tendermint-light-client = { version = "=0.38.1", default-features = false, featu
 transfers-contract = { path = "../contracts", default-features = false }
 
 # quartz
-# quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["full"]}
-quartz-common = { path = "../../../core/quartz-common", features=["full"]}
-wasmd-client = { path = "../../../cosmwasm/packages/wasmd-client"}
-tm-prover = { path = "../../../utils/tm-prover", default-features = false }
+quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["full"] }
+wasmd-client = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git" }
+tm-prover = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git" }
+
 
 [dev-dependencies]
 cw-multi-test = "2.1.0"

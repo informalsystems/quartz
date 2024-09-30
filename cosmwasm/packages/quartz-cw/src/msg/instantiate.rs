@@ -91,7 +91,7 @@ impl HasUserData for CoreInstantiate {
     fn user_data(&self) -> UserData {
         let mut hasher = Sha256::new();
         hasher.update(
-            serde_json::to_string(&RawConfig::from(self.config.clone()))
+            serde_json::to_string(&RawCoreInstantiate::from(self.clone()))
                 .expect("infallible serializer"),
         );
         let digest: [u8; 32] = hasher.finalize().into();

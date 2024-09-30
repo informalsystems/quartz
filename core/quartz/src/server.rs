@@ -13,7 +13,10 @@ use futures_util::StreamExt;
 use k256::ecdsa::SigningKey;
 use quartz_cw::{
     msg::{
-        execute::{session_create::SessionCreate, session_set_pub_key::SessionSetPubKey},
+        execute::{
+            attested::Attested, session_create::SessionCreate,
+            session_set_pub_key::SessionSetPubKey,
+        },
         instantiate::CoreInstantiate,
     },
     state::{Config, LightClientOpts, Nonce, Session},
@@ -49,7 +52,7 @@ use tonic::{
 use tower::Service;
 
 use crate::{
-    attestor::{Attestor, DefaultAttestor},
+    attestor::Attestor,
     error::QuartzError,
     types::{InstantiateResponse, SessionCreateResponse, SessionSetPubKeyResponse},
 };
@@ -97,12 +100,15 @@ pub struct QuartzServer {
 }
 
 impl QuartzServer {
-    pub fn new(
+    pub fn new<A>(
         config: Config,
         sk: Arc<Mutex<Option<SigningKey>>>,
-        attestor: DefaultAttestor,
+        attestor: A,
         ws_config: WsListenerConfig,
-    ) -> Self {
+    ) -> Self
+    where
+        A: Attestor + Clone,
+    {
         let core_service = CoreServer::new(CoreService::new(config, sk.clone(), attestor.clone()));
 
         Self {
@@ -207,16 +213,19 @@ where
         &self,
         _request: Request<RawInstantiateRequest>,
     ) -> TonicResult<Response<RawInstantiateResponse>> {
-        let core_instantiate_msg = CoreInstantiate::new(self.config.clone());
+        let msg = CoreInstantiate::new(self.config.clone());
 
-        let quote = self
+        let attestation = self
             .attestor
-            .quote(core_instantiate_msg)
+            .attestation(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
+        let attested_msg = Attested::new(msg, attestation);
 
-        let response = InstantiateResponse::new(self.config.clone(), quote);
+        let response: InstantiateResponse<A::Attestation, A::RawAttestation> =
+            InstantiateResponse::new(attested_msg);
         Ok(Response::new(response.into()))
     }
+
     async fn session_create(
         &self,
         _request: Request<RawSessionCreateRequest>,
@@ -224,15 +233,16 @@ where
         // FIXME(hu55a1n1) - disallow calling more than once
         let mut nonce = self.nonce.lock().unwrap();
         *nonce = rand::thread_rng().gen::<Nonce>();
+        let msg = SessionCreate::new(*nonce);
 
-        let session_create_msg = SessionCreate::new(*nonce);
-
-        let quote = self
+        let attestation = self
             .attestor
-            .quote(session_create_msg)
+            .attestation(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
+        let attested_msg = Attested::new(msg, attestation);
 
-        let response = SessionCreateResponse::new(*nonce, quote);
+        let response: SessionCreateResponse<A::Attestation, A::RawAttestation> =
+            SessionCreateResponse::new(attested_msg);
         Ok(Response::new(response.into()))
     }
 
@@ -260,14 +270,16 @@ where
         *self.sk.lock().unwrap() = Some(sk.clone());
         let pk = sk.verifying_key();
 
-        let session_set_pub_key_msg = SessionSetPubKey::new(*nonce, *pk);
+        let msg = SessionSetPubKey::new(*nonce, *pk);
 
-        let quote = self
+        let attestation = self
             .attestor
-            .quote(session_set_pub_key_msg)
+            .attestation(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
+        let attested_msg = Attested::new(msg, attestation);
 
-        let response = SessionSetPubKeyResponse::new(*nonce, *pk, quote);
+        let response: SessionSetPubKeyResponse<A::Attestation, A::RawAttestation> =
+            SessionSetPubKeyResponse::new(attested_msg);
         Ok(Response::new(response.into()))
     }
 }

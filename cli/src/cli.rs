@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use figment::{providers::Serialized, Figment};
+use quartz_common::enclave::types::Fmspc;
 use serde::{Deserialize, Serialize};
 use tracing::metadata::LevelFilter;
 
@@ -73,6 +74,7 @@ pub enum Command {
         #[command(subcommand)]
         enclave_command: EnclaveCommand,
     },
+
     /// Build, deploy, perform handshake, and run quartz app while listening for changes
     Dev(DevArgs),
 }
@@ -199,6 +201,21 @@ pub struct EnclaveStartArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub websocket_url: Option<String>,
+    
+    /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fmspc: Option<Fmspc>,
+
+    /// Address of the TcbInfo contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tcbinfo_contract: Option<AccountId>,
+
+    /// Address of the DCAP verifier contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dcap_verifier_contract: Option<AccountId>,
 
     /// Whether to target release or dev
     #[arg(long)]
@@ -221,6 +238,21 @@ pub struct DevArgs {
 
     #[command(flatten)]
     pub enclave_build: EnclaveBuildArgs,
+
+    /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fmspc: Option<Fmspc>,
+
+    /// Address of the TcbInfo contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tcbinfo_contract: Option<AccountId>,
+
+    /// Address of the DCAP verifier contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dcap_verifier_contract: Option<AccountId>,
 }
 
 pub trait ToFigment {
