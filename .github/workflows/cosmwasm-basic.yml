@@ -34,8 +34,6 @@ jobs:
   test-wasm:
     name: Test Suite
     runs-on: ubuntu-latest
-    env:
-      GIT_CONFIG_PARAMETERS: "'net.git-fetch-with-cli=true'"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
