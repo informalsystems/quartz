@@ -60,7 +60,7 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
 
 // Queries the chain for the latested height and hash
 pub fn query_latest_height_hash(node_url: &String) -> Result<(Height, Hash), Error> {
-    let httpurl = Url::parse(&format!("https://{}", node_url))
+    let httpurl = Url::parse( node_url)
         .map_err(|e| Error::GenericErr(e.to_string()))?;
     let wasmd_client = CliWasmdClient::new(httpurl);
 
