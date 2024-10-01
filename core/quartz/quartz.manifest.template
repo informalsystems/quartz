@@ -18,6 +18,7 @@ loader.env.RA_TLS_ISV_SVN = { passthrough = true }
 loader.env.RA_TLS_ISV_PROD_ID = { passthrough = true }
 loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
+loader.env.SSL_CERT_FILE = { passthrough = true }
 
 loader.argv = ["quartz-enclave",
                 "--chain-id", "{ chain_id }",
@@ -29,6 +30,7 @@ fs.mounts = [
   { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" }, 
+  { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
 ]
 
 # sgx.debug = true
@@ -46,6 +48,8 @@ sgx.trusted_files = [
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
+  "file:/etc/ssl/certs/ca-certificates.crt",
+
 ]
 
 
