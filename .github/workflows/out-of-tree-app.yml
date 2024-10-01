@@ -1,8 +1,7 @@
 name: Out-of-tree app
 
 on:
-  pull_request_target:
-    types: [synchronize]
+  pull_request:
 jobs:
   quartz-init:
     runs-on: ubuntu-latest
