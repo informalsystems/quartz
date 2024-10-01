@@ -34,17 +34,3 @@ RUN rustup target add "$TARGET"
 WORKDIR /opt/cli
 RUN cargo build --locked --release ${CARGO_FLAGS}
 RUN cp /opt/target/release/quartz /usr/local/bin/
-
-#------------------------------------------------------------------------------
-
-# FROM rust:latest
-
-# RUN apt-get update && apt install -y openssl
-
-# # Copy the enclave binary we built in the previous stage
-# COPY --from=build /opt/target/release/quartz /usr/local/bin/
-
-# # Copy the transfer app files
-# COPY --from=build /opt /cycles-quartz
-
-# CMD ["quartz"]
