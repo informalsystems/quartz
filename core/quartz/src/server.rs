@@ -155,9 +155,9 @@ impl QuartzServer {
         ws_handlers: &Vec<Box<dyn WebSocketHandler>>,
         ws_config: WsListenerConfig,
     ) -> Result<(), QuartzError> {
-        let wsurl = ws_config.node_url.clone();
-        println!("Attempting to connect to WebSocket at: {:?}", wsurl);
-        let (client, driver) = WebSocketClient::new(wsurl.as_str()).await
+        // let wsurl = ws_config.websocket_url.clone();
+        // println!("Attempting to connect to WebSocket at: {:?}", wsurl);
+        let (client, driver) = WebSocketClient::new("wss://rpc-falcron.pion-1.ntrn.tech/websocket").await
         .map_err(|e| QuartzError::WebSocket(e))?;
     // unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
