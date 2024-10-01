@@ -35,7 +35,6 @@ fs.mounts = [
   { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
-  { uri = "file:/etc/hosts",  path = "/etc/hosts"},
 ]
 
 # sgx.debug = true
@@ -58,8 +57,6 @@ sgx.trusted_files = [
 sgx.allowed_files = [
   "file:{{ quartz_dir }}/exchange.sk",
   "file:{{ quartz_dir }}/request.json",
-  "file:/etc/nsswitch.conf",
-	"file:/etc/hosts",
 ]
 
 sys.enable_extra_runtime_domain_names_conf = true

@@ -52,8 +52,6 @@ sgx.trusted_files = [
 sgx.allowed_files = [
   "file:{{ quartz_dir }}/exchange.sk",
   "file:{{ quartz_dir }}/request.json",
-  "file:/etc/nsswitch.conf",
-	"file:/etc/hosts",
 ]
 
 
