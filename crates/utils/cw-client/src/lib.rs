@@ -1,10 +1,14 @@
 use cosmrs::tendermint::chain::Id;
 use hex::ToHex;
+pub use neutrond::NeutrondClient;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 pub use wasmd_cli::CliWasmdClient;
 
 pub mod wasmd_cli;
 
+pub mod neutrond;
+
+#[async_trait::async_trait]
 pub trait CwClient {
     type Address: AsRef<str>;
     type Query: ToString;
@@ -12,7 +16,7 @@ pub trait CwClient {
     type ChainId: AsRef<str>;
     type Error;
 
-    fn query_smart<R: DeserializeOwned>(
+    async fn query_smart<R: DeserializeOwned + Send>(
         &self,
         contract: &Self::Address,
         query: Self::Query,
@@ -26,7 +30,7 @@ pub trait CwClient {
 
     fn query_tx<R: DeserializeOwned + Default>(&self, txhash: &str) -> Result<R, Self::Error>;
 
-    fn tx_execute<M: ToString>(
+    async fn tx_execute<M: ToString + Send>(
         &self,
         contract: &Self::Address,
         chain_id: &Id,

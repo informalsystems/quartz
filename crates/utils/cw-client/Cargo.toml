@@ -9,12 +9,17 @@ repository.workspace = true
 authors.workspace = true
 
 [lib]
-path="src/lib.rs"
+path = "src/lib.rs"
 
 [dependencies]
-cosmrs.workspace = true
+async-trait.workspace = true
 hex.workspace = true
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
+tonic.workspace = true
+
+cosmrs = { workspace = true, default-features = false, features = ["cosmwasm"] }
+cosmos-sdk-proto = { workspace = true, default-features = false, features = ["grpc", "grpc-transport"] }
+tendermint = { workspace = true, default-features = false }

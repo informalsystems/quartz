@@ -18,6 +18,7 @@ impl CliWasmdClient {
     }
 }
 
+#[async_trait::async_trait]
 impl CwClient for CliWasmdClient {
     type Address = AccountId;
     type Query = serde_json::Value;
@@ -25,7 +26,7 @@ impl CwClient for CliWasmdClient {
     type ChainId = Id;
     type Error = anyhow::Error;
 
-    fn query_smart<R: DeserializeOwned>(
+    async fn query_smart<R: DeserializeOwned + Send>(
         &self,
         contract: &Self::Address,
         query: Self::Query,
@@ -87,7 +88,7 @@ impl CwClient for CliWasmdClient {
         Ok(query_result)
     }
 
-    fn tx_execute<M: ToString>(
+    async fn tx_execute<M: ToString + Send>(
         &self,
         contract: &Self::Address,
         chain_id: &Id,
