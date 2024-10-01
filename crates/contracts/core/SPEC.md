@@ -30,7 +30,7 @@ This specification covers the core components of the `quartz-contract-core` pack
 
 - Provide a secure and easy-to-use framework for attestation-aware smart contracts
 - Abstract away the complexities of SGX attestation verification
-- Ensure compatibility with both DCAP and EPID attestation protocols (though EPID is deprecated now by Intel)
+- Ensure compatibility with DCAP attestation protocols (EPID is deprecated now by Intel)
 - Allow for easy testing and mocking of SGX environments
 
 ## Functionality
@@ -38,7 +38,7 @@ This specification covers the core components of the `quartz-contract-core` pack
 The `quartz-contract-core` package provides the following key functionalities:
 
 1. Secure message wrapping with `Attested<M, A>`
-2. Attestation verification for DCAP and EPID protocols
+2. Attestation verification for DCAP protocols
 3. State management utilities for CosmWasm contracts
 4. Execution handlers for attested messages
 
@@ -47,7 +47,6 @@ The `quartz-contract-core` package provides the following key functionalities:
 - `Attested<M, A>`: A wrapper struct that holds a message `M` and its attestation `A`.
 - `Attestation`: A trait that defines the common interface for different attestation types.
 - `DcapAttestation`: A struct representing a DCAP attestation.
-- `EpidAttestation`: A struct representing an EPID attestation.
 - `MockAttestation`: A struct for mocking attestations in test environments.
 
 ## Implementation
@@ -92,7 +91,6 @@ The attestation verification process is handled by the `quartz-tee-ra` package, 
 ```rust
 pub use intel_sgx::{
     dcap::verify as verify_dcap_attestation,
-    epid::{types::IASReport, verifier::verify as verify_epid_attestation},
     Error,
 };
 ```
@@ -136,7 +134,7 @@ The `quartz-contract-core` package ensures the following properties:
 
 3. **Enclave Identity Verification**: The package verifies that messages come from authorized enclaves by checking the MRENCLAVE value.
 
-4. **Protocol Flexibility**: The package supports both DCAP and EPID attestation protocols, allowing for different SGX deployment scenarios.
+4. **DCAP Support**: The package supports DCAP attestation protocols.
 
 5. **Testability**: The mock-sgx feature allows for easy testing of contracts without a real SGX environment.
 

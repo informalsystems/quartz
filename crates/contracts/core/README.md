@@ -8,7 +8,7 @@ Quartz CosmWasm (quartz-contract-core) is a high-level framework for building at
 - `Attested<T>` wrapper for secure message handling
 - Traits and structures for easy contract development
 - State management and message handling utilities
-- Support for both DCAP and EPID attestation protocols
+- Support for DCAP attestation protocols
 - Mock SGX support for testing environments
 
 ## Installation
@@ -49,7 +49,7 @@ pub fn execute(
 ## Key Components
 
 1. `Attested<M, A>`: A wrapper struct for holding a message and its attestation.
-2. `Attestation`: A trait for attestation types (DCAP, EPID, Mock).
+2. `Attestation`: A trait for attestation types (DCAP, Mock).
 3. `HasUserData`: A trait for extracting user data from attestations.
 4. `RawHandler`: A trait for handling raw messages.
 

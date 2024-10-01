@@ -16,7 +16,7 @@ loader.env.RA_TLS_MRENCLAVE = { passthrough = true }
 loader.env.RA_TLS_MRSIGNER = { passthrough = true }
 loader.env.RA_TLS_ISV_SVN = { passthrough = true }
 loader.env.RA_TLS_ISV_PROD_ID = { passthrough = true }
-loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
+loader.env.RA_TLS_EPID_API_KEY = { passthrough = true } # TODO - remove
 loader.env.MYAPP_DATA = { passthrough = true }
 loader.env.QUARTZ_PORT = { passthrough = true }
 

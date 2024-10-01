@@ -22,9 +22,9 @@ Your personal DCAP detective! This package is a standalone smart contract for ve
 
 ### 3. `quartz-tee-ra` 
 
-This `quartz-tee-ra` handles Intel SGX remote attestation for both EPID and DCAP protocols.
+This `quartz-tee-ra` handles Intel SGX remote attestation for DCAP.
 
-- Verifies EPID and DCAP attestations
+- Verifies DCAP attestations
 - Provides core types and structures for SGX quotes
 - Implements cryptographic verification of attestation reports
 

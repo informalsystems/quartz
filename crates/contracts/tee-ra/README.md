@@ -1,10 +1,9 @@
 # Quartz TEE Remote Attestation (quartz-tee-ra)
 
-Quartz TEE Remote Attestation is a Rust library that provides functionality for verifying Intel SGX remote attestations. It supports both EPID and DCAP attestation protocols, making it a versatile tool for secure enclave-based applications.
+Quartz TEE Remote Attestation is a Rust library that provides functionality for verifying Intel SGX remote attestations. It supports DCAP attestation protocols, making it a versatile tool for secure enclave-based applications.
 
 ## Features
 
-- EPID attestation verification
 - DCAP attestation verification
 - Support for Intel SGX quote parsing and validation
 - Integration with MobileCoin's attestation verifier
@@ -36,19 +35,6 @@ fn verify_attestation(quote: Quote3<Vec<u8>>, collateral: Collateral, identities
 }
 ```
 
-For EPID attestation:
-
-```rust
-use quartz_tee_ra::{verify_epid_attestation, IASReport};
-
-fn verify_epid_attestation(report: IASReport, mrenclave: Vec<u8>, user_data: Vec<u8>) {
-    match verify_epid_attestation(report, mrenclave, user_data) {
-        Ok(_) => println!("EPID attestation verified successfully!"),
-        Err(e) => println!("EPID attestation verification failed: {:?}", e),
-    }
-}
-```
-
 ## API Reference
 
 The main functions exported by this library are:
@@ -57,7 +43,6 @@ The main functions exported by this library are:
 ```21:25:cosmwasm/packages/quartz-tee-ra/src/lib.rs
 pub use intel_sgx::{
     dcap::verify as verify_dcap_attestation,
-    epid::{types::IASReport, verifier::verify as verify_epid_attestation},
     Error,
 };
 ```
