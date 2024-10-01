@@ -73,7 +73,7 @@ impl Handler for EnclaveStartRequest {
             };
 
             let enclave_dir = fs::canonicalize(config.app_dir.join("enclave"))?;
-
+            let chain_id = config.chain_id.as_str();
             // gramine private key
             gramine_sgx_gen_private_key(&enclave_dir).await?;
 
@@ -88,7 +88,7 @@ impl Handler for EnclaveStartRequest {
                 tcbinfo_contract,
                 dcap_verifier_contract,
                 &config.node_url,
-                &config.chain_id.to_string(),
+                chain_id
             )
             .await?;
 
