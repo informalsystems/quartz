@@ -147,6 +147,7 @@ impl QuartzServer {
                 eprintln!("Error in WebSocket event handler: {:?}", e);
             }
         });
+        println!("Attempting to server WebSocket at address: {:?}", addr);
 
         Ok(self.router.serve(addr).await?)
     }
