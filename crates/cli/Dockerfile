@@ -31,6 +31,6 @@ RUN go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest && \
     cargo install websocat
 
 RUN rustup target add "$TARGET"
-WORKDIR /opt/cli
+WORKDIR /opt/crates/cli
 RUN cargo build --locked --release ${CARGO_FLAGS}
 RUN cp /opt/target/release/quartz /usr/local/bin/
