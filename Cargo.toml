@@ -87,7 +87,7 @@ quartz-contract-core = { path = "crates/contracts/core", default-features = fals
 quartz-dcap-verifier-msgs = { path = "crates/contracts/dcap-verifier/msgs", default-features = false }
 quartz-enclave = { path = "crates/enclave/quartz-enclave", default-features = false }
 quartz-proto = { path = "crates/enclave/quartz-proto", default-features = false }
-quartz-tee-ra = { path = "crates/contracts/quartz-tee-ra", default-features = false }
+quartz-tee-ra = { path = "crates/contracts/tee-ra", default-features = false }
 tcbinfo = { path = "crates/contracts/tcbinfo", default-features = false, features = ["library"] }
 tcbinfo-msgs = { path = "crates/contracts/tcbinfo/msgs", default-features = false }
 tm-prover = { path = "crates/utils/tm-prover", default-features = false }
