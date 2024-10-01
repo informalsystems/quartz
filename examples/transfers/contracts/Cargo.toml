@@ -44,9 +44,9 @@ cw-storage-plus = { version = "2.0.0", default-features = false }
 cw-utils = { version = "2.0.0", default-features = false }
 
 # quartz
-quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features = [
-  "contract",
-] }
+# TODO: Until the repo is public, let's use the relative path
+# quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["contract"]}
+quartz-common = { path = "../../../crates/common", features = ["contract"] }
 
 # patch indirect deps
 getrandom = { version = "0.2.15", features = ["js"] }

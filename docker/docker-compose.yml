@@ -21,7 +21,7 @@ services:
       DOCKER_BUILDKIT: 1
     build:
       context: ".."
-      dockerfile: "./cli/Dockerfile"
+      dockerfile: "./crates/cli/Dockerfile"
     depends_on:
       - node
     ports:

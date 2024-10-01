@@ -35,7 +35,7 @@ WORKDIR /opt/cli
 RUN cargo build --locked --release ${CARGO_FLAGS}
 RUN cp /opt/target/release/quartz /usr/local/bin/
 
-CMD ["quartz", "--mock-sgx", "--app-dir", "/opt/apps/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/apps/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"ucosm\"}"]
+CMD ["quartz", "--mock-sgx", "--app-dir", "/opt/examples/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/examples/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"ucosm\"}"]
 
 #------------------------------------------------------------------------------
 
