@@ -35,7 +35,7 @@ fs.mounts = [
 
 # sgx.debug = true
 sgx.enclave_size = "512M"
-sgx.max_threads = 4
+sgx.max_threads = 16
 sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
 
 sgx.remote_attestation = "{{ ra_type }}"
