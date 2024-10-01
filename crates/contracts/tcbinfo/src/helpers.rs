@@ -2,9 +2,9 @@ use cosmwasm_std::{
     to_json_binary, Addr, CosmosMsg, CustomQuery, Querier, QuerierWrapper, StdResult, WasmMsg,
     WasmQuery,
 };
+use quartz_tcbinfo_msgs::{ExecuteMsg, GetTcbInfoResponse, QueryMsg};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use tcbinfo_msgs::{ExecuteMsg, GetTcbInfoResponse, QueryMsg};
 
 const FMSPC: &str = "00606a000000";
 

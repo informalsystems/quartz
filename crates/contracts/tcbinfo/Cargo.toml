@@ -1,5 +1,5 @@
 [package]
-name = "tcbinfo"
+name = "quartz-tcbinfo"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -45,7 +45,7 @@ cw-storage-plus.workspace = true
 
 # quartz
 quartz-tee-ra.workspace = true
-tcbinfo-msgs.workspace = true
+quartz-tcbinfo-msgs.workspace = true
 
 # patch indirect deps
 getrandom = { version = "0.2.15", features = ["js"] }

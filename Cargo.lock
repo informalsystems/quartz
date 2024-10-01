@@ -4243,12 +4243,12 @@ dependencies = [
  "hex",
  "k256",
  "quartz-dcap-verifier-msgs",
+ "quartz-tcbinfo-msgs",
  "quartz-tee-ra",
  "serde",
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
- "tcbinfo-msgs",
  "thiserror",
 ]
 
@@ -4363,6 +4363,36 @@ dependencies = [
  "watchexec-events",
  "watchexec-signals",
  "xxhash-rust",
+]
+
+[[package]]
+name = "quartz-tcbinfo"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw2",
+ "der",
+ "getrandom",
+ "hex",
+ "mc-attestation-verifier",
+ "p256",
+ "quartz-tcbinfo-msgs",
+ "quartz-tee-ra",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "x509-cert",
+]
+
+[[package]]
+name = "quartz-tcbinfo-msgs"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
 ]
 
 [[package]]
@@ -5483,36 +5513,6 @@ name = "target-lexicon"
 version = "0.12.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
-
-[[package]]
-name = "tcbinfo"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-multi-test",
- "cw-storage-plus",
- "cw2",
- "der",
- "getrandom",
- "hex",
- "mc-attestation-verifier",
- "p256",
- "quartz-tee-ra",
- "schemars",
- "serde",
- "serde_json",
- "tcbinfo-msgs",
- "thiserror",
- "x509-cert",
-]
-
-[[package]]
-name = "tcbinfo-msgs"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
-]
 
 [[package]]
 name = "tempfile"

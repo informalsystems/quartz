@@ -34,7 +34,7 @@ cosmwasm-std.workspace = true
 # quartz
 quartz-dcap-verifier-msgs.workspace = true
 quartz-tee-ra.workspace = true
-tcbinfo-msgs.workspace = true
+quartz-tcbinfo-msgs.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
