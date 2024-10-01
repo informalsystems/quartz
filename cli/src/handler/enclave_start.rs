@@ -26,6 +26,8 @@ impl Handler for EnclaveStartRequest {
         config: C,
     ) -> Result<Self::Response, Self::Error> {
         let config = config.as_ref().clone();
+        info!("Config {:?}", config);
+
         info!("{}", "\nPeforming Enclave Start".blue().bold());
 
         // Get trusted height and hash
@@ -90,7 +92,7 @@ impl Handler for EnclaveStartRequest {
             .await?;
 
             println!("{:?}",quartz_dir_canon);
-            
+
             // gramine sign
             gramine_sgx_sign(&enclave_dir).await?;
 
