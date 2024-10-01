@@ -54,7 +54,7 @@ cosmwasm-std.workspace = true
 tendermint.workspace = true
 tendermint-light-client.workspace = true
 tendermint-rpc = { workspace = true, features = ["websocket-client", "http-client"] }
-tm-prover = { workspace = true }
+quartz-tm-prover = { workspace = true }
 quartz-common = { workspace = true, features = ["full"] }
 quartz-tee-ra = { workspace = true }
 wasmd-client.workspace = true

@@ -1,5 +1,5 @@
 [package]
-name = "tm-prover"
+name = "quartz-tm-prover"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

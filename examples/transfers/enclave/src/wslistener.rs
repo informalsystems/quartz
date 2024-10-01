@@ -17,7 +17,7 @@ use quartz_common::{
 use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::{event::Event, query::EventType, SubscriptionClient, WebSocketClient};
-use tm_prover::{config::Config as TmProverConfig, prover::prove};
+use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
 use tonic::Request;
 use tracing::info;
 use transfers_contract::msg::{

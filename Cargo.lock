@@ -4291,6 +4291,7 @@ dependencies = [
  "quartz-cw-proof",
  "quartz-proto",
  "quartz-tee-ra",
+ "quartz-tm-stateless-verifier",
  "rand",
  "reqwest 0.12.8",
  "serde",
@@ -4300,7 +4301,6 @@ dependencies = [
  "tendermint-light-client",
  "tendermint-rpc",
  "thiserror",
- "tm-stateless-verifier",
  "tokio",
  "tonic",
  "tower 0.5.1",
@@ -4341,6 +4341,7 @@ dependencies = [
  "prost 0.13.3",
  "quartz-common",
  "quartz-tee-ra",
+ "quartz-tm-prover",
  "regex",
  "reqwest 0.12.8",
  "serde",
@@ -4352,7 +4353,6 @@ dependencies = [
  "tendermint-light-client",
  "tendermint-rpc",
  "thiserror",
- "tm-prover",
  "tokio",
  "toml",
  "tonic",
@@ -4415,6 +4415,35 @@ dependencies = [
  "thiserror",
  "x509-cert",
  "x509-parser",
+]
+
+[[package]]
+name = "quartz-tm-prover"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "color-eyre",
+ "cosmrs",
+ "futures",
+ "quartz-cw-proof",
+ "serde",
+ "serde_json",
+ "tendermint 0.38.1",
+ "tendermint-light-client",
+ "tendermint-light-client-detector",
+ "tendermint-rpc",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "quartz-tm-stateless-verifier"
+version = "0.1.0"
+dependencies = [
+ "displaydoc",
+ "tendermint 0.38.1",
+ "tendermint-light-client",
 ]
 
 [[package]]
@@ -5852,35 +5881,6 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
-
-[[package]]
-name = "tm-prover"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "cosmrs",
- "futures",
- "quartz-cw-proof",
- "serde",
- "serde_json",
- "tendermint 0.38.1",
- "tendermint-light-client",
- "tendermint-light-client-detector",
- "tendermint-rpc",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "tm-stateless-verifier"
-version = "0.1.0"
-dependencies = [
- "displaydoc",
- "tendermint 0.38.1",
- "tendermint-light-client",
-]
 
 [[package]]
 name = "tokio"

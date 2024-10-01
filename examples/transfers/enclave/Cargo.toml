@@ -47,7 +47,7 @@ transfers-contract = { path = "../contracts", default-features = false }
 # quartz
 quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["full"] }
 wasmd-client = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git" }
-tm-prover = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git" }
+quartz-tm-prover = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git" }
 
 
 [dev-dependencies]
