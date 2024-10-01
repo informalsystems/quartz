@@ -29,6 +29,7 @@ use quartz_proto::quartz::{
     SessionSetPubKeyRequest as RawSessionSetPubKeyRequest,
     SessionSetPubKeyResponse as RawSessionSetPubKeyResponse,
 };
+use quartz_tm_stateless_verifier::make_provider;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use tendermint::{block::Height, Hash};
@@ -41,7 +42,6 @@ use tendermint_rpc::{
     query::{EventType, Query},
     SubscriptionClient, WebSocketClient,
 };
-use tm_stateless_verifier::make_provider;
 use tonic::{
     body::BoxBody,
     codegen::http,

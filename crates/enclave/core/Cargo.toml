@@ -48,4 +48,4 @@ quartz-cw-proof.workspace = true
 quartz-contract-core.workspace = true
 quartz-proto.workspace = true
 quartz-tee-ra.workspace = true
-tm-stateless-verifier.workspace = true
+quartz-tm-stateless-verifier.workspace = true
