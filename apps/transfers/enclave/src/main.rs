@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let ws_config = WsListenerConfig {
         node_url: args.node_url,
-        websocket_url: "wss://104.26.13.57/websocket",
+        websocket_url: "wss://104.26.13.57/websocket".to_string(),
         tx_sender: args.tx_sender,
         trusted_hash: args.trusted_hash,
         trusted_height: args.trusted_height,
