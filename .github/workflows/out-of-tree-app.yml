@@ -2,14 +2,14 @@ name: Out-of-tree app
 
 on:
   pull_request_target:
-    types: [synchronize, ready_for_review]
+    types: [synchronize]
 jobs:
   quartz-init:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-     
+
       - name: Run Backend stack
         run: docker compose -f docker/docker-compose-out-of-tree.yml up -d --build
 
