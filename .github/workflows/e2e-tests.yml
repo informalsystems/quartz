@@ -1,5 +1,8 @@
 name: E2E tests
-on: [push]
+on:
+  pull_request_target:
+    types:
+      - ready_for_review
 jobs:
   tests:
     runs-on: ubuntu-latest
