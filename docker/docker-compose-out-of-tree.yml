@@ -1,3 +1,5 @@
+name: "quartz-cli"
+
 volumes:
   wasmd_data:
 

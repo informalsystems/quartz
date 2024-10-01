@@ -1,3 +1,5 @@
+name: "transfers"
+
 volumes:
   wasmd_data:
 
