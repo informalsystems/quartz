@@ -44,7 +44,7 @@ tendermint-light-client.workspace = true
 tendermint-rpc = { workspace = true, features=["websocket-client", "http-client"] }
 
 # quartz
-cw-proof.workspace = true
+quartz-cw-proof.workspace = true
 quartz-contract-core.workspace = true
 quartz-proto.workspace = true
 quartz-tee-ra.workspace = true

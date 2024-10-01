@@ -5,10 +5,6 @@ use std::{
     time::Duration,
 };
 
-use cw_proof::proof::{
-    cw::{CwProof, RawCwProof},
-    Proof,
-};
 use futures_util::StreamExt;
 use k256::ecdsa::SigningKey;
 use quartz_contract_core::{
@@ -20,6 +16,10 @@ use quartz_contract_core::{
         instantiate::CoreInstantiate,
     },
     state::{Config, LightClientOpts, Nonce, Session},
+};
+use quartz_cw_proof::proof::{
+    cw::{CwProof, RawCwProof},
+    Proof,
 };
 use quartz_proto::quartz::{
     core_server::{Core, CoreServer},

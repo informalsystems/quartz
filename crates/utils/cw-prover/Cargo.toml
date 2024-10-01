@@ -21,7 +21,7 @@ tendermint.workspace = true
 tendermint-rpc.workspace = true
 
 # quartz
-cw-proof.workspace = true
+quartz-cw-proof.workspace = true
 
 [dev-dependencies]
 hex.workspace = true

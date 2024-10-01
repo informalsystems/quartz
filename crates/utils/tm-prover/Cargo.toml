@@ -32,4 +32,4 @@ tendermint-light-client.workspace = true
 tendermint-light-client-detector.workspace = true
 
 # quartz
-cw-proof.workspace = true
+quartz-cw-proof.workspace = true
