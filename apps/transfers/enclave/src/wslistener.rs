@@ -331,6 +331,8 @@ async fn query_handler<A: Attestor>(
 }
 
 async fn two_block_waitoor(wsurl: &str) -> Result<(), Error> {
+    info!("WSURL at 2 block waitor in wslistener {}", wsurl);
+
     let (client, driver) = WebSocketClient::new(wsurl).await?;
 
     let driver_handle = tokio::spawn(async move { driver.run().await });

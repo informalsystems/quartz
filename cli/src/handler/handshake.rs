@@ -148,6 +148,8 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
 }
 
 async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {
+    info!("WSURL at 2 block waitor in handshake {}", wsurl);
+
     let (client, driver) = WebSocketClient::new(wsurl).await?;
 
     let driver_handle = tokio::spawn(async move { driver.run().await });
