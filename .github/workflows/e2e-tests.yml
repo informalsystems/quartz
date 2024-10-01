@@ -7,43 +7,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node for frontend
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20.x"
           check-latest: true
 
-      - name: Run containers wasmd and enclave
+      - name: Install XVFB
+        run: sudo apt-get install -y xvfb
+
+      - name: Run Backend stack
         run: docker compose -f docker/docker-compose.yml up -d --build
 
-      - name: Wait for handshake completion
+      - name: Wait for enclave to listen
         timeout-minutes: 25
         run: |
-          while ! docker logs quartz-cli-transfers 2>&1 | grep -q "Handshake complete:"; do
+          while ! docker logs quartz-cli-transfers 2>&1 | grep -q "Enclave is listening"; do
             echo "Waiting for handshake completion..."
-            sleep 15
+            sleep 30
           done
 
-      - name: Capture logs from wasmd container
-        id: capture_logs
+      - name: Capture logs from CLI
         working-directory: apps/transfers/frontend
         run: docker logs --tail 50 quartz-cli-transfers &> quartz-cli-transfers_logs.txt
 
-      - name: Setup environment variables
+      - name: Setup Frontend environment variables for quartz
         working-directory: apps/transfers/frontend
         run: |
           cp .env.example .env.local
           sed -i "s/^NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=.*/NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=$(grep 'Contract Address:' quartz-cli-transfers_logs.txt | awk '{print $NF}')/" .env.local
           sed -i "s/^NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=.*/NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=$(grep 'Handshake complete:' quartz-cli-transfers_logs.txt | awk '{print $NF}')/" .env.local
 
-      - name: Print .env.local contents
-        working-directory: apps/transfers/frontend
-        run: cat .env.local
-
-      - name: Install dependencies for the frontend
+      - name: Install Frontend dependencies
         working-directory: apps/transfers/frontend
         run: npm ci
 
       - name: Run all E2E tests
         working-directory: apps/transfers/frontend
-        run: npm run test
+        run: xvfb-run --auto-servernum --server-num=1 --server-args='-screen 0, 1920x1080x24' npm run test
