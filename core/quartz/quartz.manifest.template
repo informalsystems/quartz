@@ -53,5 +53,6 @@ sgx.allowed_files = [
   "file:{{ quartz_dir }}/request.json",
 ]
 
+sys.enable_extra_runtime_domain_names_conf = true
 sys.insecure__allow_eventfd = true
 sys.enable_sigterm_injection = true

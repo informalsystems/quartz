@@ -57,8 +57,6 @@ sgx.trusted_files = [
   "file:/etc/resolv.conf",
 ]
 
-[[sgx.trusted_files]]
-
 sgx.allowed_files = [
   "file:{{ quartz_dir }}/exchange.sk",
   "file:{{ quartz_dir }}/request.json",
