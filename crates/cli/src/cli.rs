@@ -39,8 +39,8 @@ pub struct Cli {
     #[serde(skip_serializing_if = "is_false")]
     pub mock_sgx: bool,
 
-    /// Path to Quartz app directory
-    /// Defaults to current working dir
+    /// Path to Quartz app directory.
+    /// Defaults to current working dir.
     /// For quartz init, root serves as the parent directory of the directory in which the quartz app is generated
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]

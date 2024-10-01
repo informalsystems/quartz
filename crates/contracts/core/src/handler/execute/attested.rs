@@ -3,12 +3,12 @@ use cosmwasm_std::{
     to_json_binary, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response, StdResult, WasmQuery,
 };
 use quartz_dcap_verifier_msgs::QueryMsg as DcapVerifierQueryMsg;
+use quartz_tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 use quartz_tee_ra::{
     intel_sgx::dcap::{Collateral, TrustedIdentity, TrustedMrEnclaveIdentity},
     Error as RaVerificationError,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use tcbinfo_msgs::{GetTcbInfoResponse, QueryMsg as TcbInfoQueryMsg};
 
 use crate::{
     error::Error,

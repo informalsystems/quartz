@@ -30,7 +30,7 @@ pub struct Config {
     #[serde(default = "default_port")]
     pub enclave_rpc_port: u16,
 
-    /// Path to Quartz app directory
+    /// Path to Quartz app directory.
     /// Defaults to current working dir
     #[serde(default = "default_app_dir", skip_serializing)]
     pub app_dir: PathBuf,

@@ -1,8 +1,8 @@
 use quartz_common::proto::{
     core_client::CoreClient, InstantiateRequest, SessionCreateRequest, SessionSetPubKeyRequest,
 };
+use quartz_tm_prover::config::ProofOutput;
 use serde_json::{json, Value as JsonValue};
-use tm_prover::config::ProofOutput;
 
 use crate::error::Error;
 

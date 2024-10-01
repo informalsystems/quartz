@@ -3,11 +3,11 @@ use std::path::Path;
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
+use cw_client::{CliWasmdClient, WasmdClient};
 use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::HttpClient;
 use tracing::{debug, info};
-use wasmd_client::{CliWasmdClient, WasmdClient};
 
 use super::utils::{
     helpers::block_tx_commit,
@@ -70,11 +70,11 @@ async fn deploy(
 ) -> Result<(u64, String), anyhow::Error> {
     let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
-    let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
+    let cw_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
     info!("🚀 Deploying {} Contract", args.label);
     let code_id = if config.contract_has_changed(wasm_bin_path).await? {
-        let deploy_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.deploy(
+        let deploy_output: WasmdTxResponse = serde_json::from_str(&cw_client.deploy(
             &config.chain_id,
             &config.tx_sender,
             wasm_bin_path.display().to_string(),
@@ -99,7 +99,7 @@ async fn deploy(
 
     info!("🚀 Instantiating {}", args.label);
 
-    let init_output: WasmdTxResponse = serde_json::from_str(&wasmd_client.init(
+    let init_output: WasmdTxResponse = serde_json::from_str(&cw_client.init(
         &config.chain_id,
         &config.tx_sender,
         code_id,

@@ -51,7 +51,7 @@ The current code contains known bugs and security vulnerabilities and APIs are s
 Quartz provides developers three main tools:
 
 - a smart contract library (`quartz-cw`) for building SGX-aware CosmWasm contracts
-- a rust library (`quartz-tee`) for building blockchain constrained SGX enclaves
+- a rust library (`quartz-enclave`) for building blockchain constrained SGX enclaves
 - a cli tool (`quartz`) for connecting the contract and the enclave.
 
 This repo contains an example, [`transfers`](/apps/transfers), which combines these
@@ -84,12 +84,12 @@ The actual types and verification logic for attestation is further encapsulated 
 
 ### Enclave Lib
 
-`quartz-tee` mirrors `quartz-cw`, in that its the enclave side of what happens
+`quartz-enclave` mirrors `quartz-cw`, in that its the enclave side of what happens
 on chain. Both have to manage a secure session. Where `quartz-cw` verifies
-attestionations, `quartz-tee` produces them. But additionally, `quartz-tee` must
+attestionations, `quartz-enclave` produces them. But additionally, `quartz-enclave` must
 verify the state of the blockchain so that the enclave binary is restricted to
 only operate authorized commands. It does this via light-client verification.
-This it does the following:
+`quartz-enclave` does the following:
 
 - secure session management between contract and enclave
 - collect and verify light client proofs of smart contract state
@@ -108,6 +108,9 @@ The core of the `quartz` command line tool is:
 - `quartz enclave build` - build the enclave binary
 - `quartz enclave start` - start the enclave binary
 - `quartz handshake` -  create secure session between enclave and contracts
+
+All commands support a `--mock-sgx` flag for dev/testing purposes without using
+a real SGX.
 
 It also has convenience commands for building and deploying a smart
 contract:

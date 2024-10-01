@@ -24,7 +24,7 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use cosmrs::AccountId;
-use cw_proof::proof::{
+use quartz_cw_proof::proof::{
     cw::{CwProof, RawCwProof},
     key::CwAbciKey,
     Proof,
@@ -134,7 +134,7 @@ fn write_proof_to_file(proof_file: PathBuf, proof: RawCwProof) -> Result<(), Box
 
 #[cfg(test)]
 mod tests {
-    use cw_proof::proof::{
+    use quartz_cw_proof::proof::{
         cw::{CwProof, RawCwProof},
         Proof,
     };

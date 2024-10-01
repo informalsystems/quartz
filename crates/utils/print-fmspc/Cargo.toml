@@ -1,5 +1,5 @@
 [package]
-name = "print-fmspc"
+name = "quartz-print-fmspc"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
