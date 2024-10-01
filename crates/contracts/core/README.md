@@ -1,7 +1,7 @@
 
-# Quartz CosmWasm (quartz-cw)
+# Quartz CosmWasm (quartz-contract-core)
 
-Quartz CosmWasm (quartz-cw) is a high-level framework for building attestation-aware smart contracts on CosmWasm. It provides a robust foundation for developing secure, Intel SGX-based contracts with built-in remote attestation support.
+Quartz CosmWasm (quartz-contract-core) is a high-level framework for building attestation-aware smart contracts on CosmWasm. It provides a robust foundation for developing secure, Intel SGX-based contracts with built-in remote attestation support.
 
 ## Features
 
@@ -13,16 +13,16 @@ Quartz CosmWasm (quartz-cw) is a high-level framework for building attestation-a
 
 ## Installation
 
-Add `quartz-cw` to your `Cargo.toml`:
+Add `quartz-contract-core` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-quartz-cw = { path = "../packages/quartz-cw" }
+quartz-contract-core = { path = "../packages/quartz-contract-core" }
 ```
 
 ## Usage
 
-Here's a basic example of how to use `quartz-cw` in your CosmWasm contract:
+Here's a basic example of how to use `quartz-contract-core` in your CosmWasm contract:
 
 ```rust
 use quartz_cw::prelude::*;
@@ -59,7 +59,7 @@ You can enable mock SGX support for testing by adding the `mock-sgx` feature to 
 
 ```toml
 [dependencies]
-quartz-cw = { path = "../packages/quartz-cw", features = ["mock-sgx"] }
+quartz-contract-core = { path = "../packages/quartz-contract-core", features = ["mock-sgx"] }
 ```
 
 ## Testing

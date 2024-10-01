@@ -4,14 +4,14 @@ This repository contains a collection of packages designed to facilitate the dev
 
 ## Packages
 
-### 1. `quartz-cw` 
+### 1. `quartz-contract-core` 
 
-The `quartz-cw` package offers a high-level framework for building attestation-aware smart contracts by wrapping CosmWasm messages in TEE attestations (e.g. DCAP). 
+The `quartz-contract-core` package offers a high-level framework for building attestation-aware smart contracts by wrapping CosmWasm messages in TEE attestations (e.g. DCAP). 
 
 - Defines `Attested<M, A>` wrapper for a message and its attestation
 - Supports a MockAttestation type for development ease 
 - Implements session management for secure communication between contract and enclave
-The `quartz-cw` package handles actual DCAP verification within smart contracts by calling the standalone `quartz-dcap-verifier` and `tcbinfo` contracts.
+The `quartz-contract-core` package handles actual DCAP verification within smart contracts by calling the standalone `quartz-dcap-verifier` and `quartz-tcbinfo` contracts.
 
 ### 2. `quartz-dcap-verifier` 
 
@@ -28,17 +28,17 @@ This `quartz-tee-ra` handles Intel SGX remote attestation for both EPID and DCAP
 - Provides core types and structures for SGX quotes
 - Implements cryptographic verification of attestation reports
 
-### 4. `tcbinfo` 
+### 4. `quartz-tcbinfo` 
 
-The `tcbinfo` package manages and verifies TCB information crucial for maintaining enclave security.
+The `quartz-tcbinfo` package manages and verifies TCB information crucial for maintaining enclave security.
 
 - Stores and retrieves TCB information
 - Verifies TCB signatures and certificates
 - Provides a CosmWasm contract for TCB management
 
-### 5. `wasmd-client` 
+### 5. `cw-client` 
 
-The `wasmd-client` package offers a Rust client interface for interacting with Wasmd nodes.
+The `cw-client` package offers a Rust client interface for interacting with Wasmd nodes.
 
 - Defines traits for querying and executing CosmWasm contracts
 - Provides utilities for deploying and interacting with contracts

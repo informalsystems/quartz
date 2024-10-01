@@ -1325,6 +1325,7 @@ dependencies = [
 [[package]]
 name = "quartz-common"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e5004076813b8c98e7c385cc967372c38dd9ab4b"
 dependencies = [
  "quartz-contract-core",
 ]
@@ -1332,6 +1333,7 @@ dependencies = [
 [[package]]
 name = "quartz-contract-core"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e5004076813b8c98e7c385cc967372c38dd9ab4b"
 dependencies = [
  "ciborium",
  "cosmwasm-schema",
@@ -1352,6 +1354,7 @@ dependencies = [
 [[package]]
 name = "quartz-dcap-verifier-msgs"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e5004076813b8c98e7c385cc967372c38dd9ab4b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1360,6 +1363,7 @@ dependencies = [
 [[package]]
 name = "quartz-tcbinfo-msgs"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e5004076813b8c98e7c385cc967372c38dd9ab4b"
 dependencies = [
  "cosmwasm-schema",
 ]
@@ -1367,6 +1371,7 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
+source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e5004076813b8c98e7c385cc967372c38dd9ab4b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1636,9 +1641,9 @@ dependencies = [
 
 [[package]]
 name = "serde_with"
-version = "3.9.0"
+version = "3.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69cecfa94848272156ea67b2b1a53f20fc7bc638c4a46d2f8abde08f05f4b857"
+checksum = "9720086b3357bcb44fce40117d769a4d068c70ecfa190850a980a71755f66fcc"
 dependencies = [
  "base64",
  "chrono",
@@ -1652,9 +1657,9 @@ dependencies = [
 
 [[package]]
 name = "serde_with_macros"
-version = "3.9.0"
+version = "3.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8fee4991ef4f274617a51ad4af30519438dacb2f56ac773b08a1922ff743350"
+checksum = "5f1abbfe725f27678f4663bcacb75a83e829fd464c25d78dd038a3a29e307cec"
 dependencies = [
  "darling",
  "proc-macro2",

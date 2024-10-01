@@ -53,7 +53,7 @@ Every application has a common structure:
 2. **Contracts**: The backend application as a CosmWasm smart contract
 3. **Enclave**: Code that executes off-chain and privately in an enclave
 
-Quartz is both a library (`quartz-cw`) for building SGX-aware CosmWasm
+Quartz is both a library (`quartz-contract-core`) for building SGX-aware CosmWasm
 contracts, and a cli tool (`quartz`) for managing the enclave. 
 
 The library takes care of establishing a secure connection to the enclave (see
@@ -63,7 +63,7 @@ it. The quartz tool provides commands for managing the enclave.
 This guide is primarily about using the `quartz` tool to get the example app
 setup. For more on building application, see 
 - [Building Apps](/docs/building_apps.md) - conceptual overview 
-- [quartz-cw](/cosmwasm/quartz-cw) - main library. provides msgs and handlers
+- [quartz-contract-core](/cosmwasm/quartz-contract-core) - main library. provides msgs and handlers
   for the handshake and for verifying attestations
 - [transfers contracts](/apps/transfers/contracts): transfer app example itself
 
@@ -291,13 +291,13 @@ to get setup with SGX on Azure, and how to deploy quartz contracts to the
 Neutron testnet using real remote attestions from SGX cores on Azure.
 
 Real verification of SGX on a CosmWasm network requires two additional global contracts
-to be deployed: dcap-verify and tcbinfo. The
-dcap-verify contract provides the core verification of the SGX attestation
-(called DCAP). The tcbinfo contract contains global information about secure
+to be deployed: `quartz-dcap-verify` and `quartz-tcbinfo`. The
+`quartz-dcap-verify` contract provides the core verification of the SGX attestation
+(called DCAP). The `quartz-tcbinfo` contract contains global information about secure
 versions of SGX processors. Together they allow contracts built with quartz to
 securely verify remote attestations from SGX enclaves.
 
-We have already predeployed the dcap-verify and tcbinfo contracts on the Neutron
+We have already predeployed the `quartz-dcap-verify` and `quartz-tcbinfo` contracts on the Neutron
 testnet at TODO. To deploy these on your own testnet, see [below](#other-testnets-with-sgx).
 
 To begin, you'll need to deploy an SGX-enabled Azure instance and log in via ssh.
@@ -342,7 +342,7 @@ quartz --app-dir "apps/transfers/" enclave build
 ```
 
 Before starting the enclave, we should check that the relevant contracts
-(tcbinfo, dcap-verifier) have been instantiated.
+(`quartz-tcbinfo`, `quartz-dcap-verifier`) have been instantiated.
 
 TODO: how to query to check this?
 
@@ -397,18 +397,18 @@ Events coming from the contract will be logged following the handshake as they a
 
 ## Other Testnets With SGX
 
-To setup on another testnet we need to deploy a tcinfo contract and a
-dcap-verifier contract.
+To setup on another testnet we need to deploy a `quartz-tcbinfo` contract and a
+`quartz-dcap-verifier` contract.
 
 ### Get the FMSPC of the host machine
 
 ```bash
 export QUOTE="/* quote generated during the handshake should work */"
-cd utils/print-fmspc/
+cd crates/utils/print-fmspc/
 cargo run > /dev/null
 ```
 
-### Deploying the `tcbinfo` contract
+### Deploying the `quartz-tcbinfo` contract
 
 1. Build and store the contract on-chain
 ```bash

@@ -50,8 +50,8 @@ The current code contains known bugs and security vulnerabilities and APIs are s
 
 Quartz provides developers three main tools:
 
-- a smart contract library (`quartz-cw`) for building SGX-aware CosmWasm contracts
-- a rust library (`quartz-enclave`) for building blockchain constrained SGX enclaves
+- a smart contract library (`quartz-contract-core`) for building SGX-aware CosmWasm contracts
+- a rust library (`quartz-enclave-core`) for building blockchain constrained SGX enclaves
 - a cli tool (`quartz`) for connecting the contract and the enclave.
 
 This repo contains an example, [`transfers`](/apps/transfers), which combines these
@@ -60,7 +60,7 @@ frontend.
 
 ### Smart Contract Lib
 
-`quartz-cw` does two main things:
+`quartz-contract-core` does two main things:
 
 - secure session management between contract and enclave
 - verify remote attestations of authorized SGX enclaves
@@ -68,28 +68,28 @@ frontend.
 It contains the core types for session management and for interfacing with attestations
 and is the only crate the smart contract dev should have to interact with. 
 
-App devs add the `quartz-cw` message types to their contract's messages, 
+App devs add the `quartz-contract-core` message types to their contract's messages, 
 and call the verify handler on attested messages. While Quartz enables 
 securely attested private compute off-chain, app devs are still responsible 
 for the on-chain data model. See [Building Apps](/docs/building_apps.md) for more.
 
 Under the hood, attestation verification itself is performed via two separate contracts:
 
-- `dcap-verifier` - standalone implementation of dcap verification as a contract using
+- `quartz-dcap-verifier` - standalone implementation of dcap verification as a contract using
   mobilecoin's Rust libs
-- `tcbinfo` - public registry contract of secure sgx processor/firmware versions to
+- `quartz-tcbinfo` - public registry contract of secure sgx processor/firmware versions to
   ensure attestations are only verified from up-to-date devices
 
 The actual types and verification logic for attestation is further encapsulated in `quartz-tee-ra`.
 
 ### Enclave Lib
 
-`quartz-enclave` mirrors `quartz-cw`, in that its the enclave side of what happens
-on chain. Both have to manage a secure session. Where `quartz-cw` verifies
-attestionations, `quartz-enclave` produces them. But additionally, `quartz-enclave` must
+`quartz-enclave-core` mirrors `quartz-contract-core`, in that its the enclave side of what happens
+on chain. Both have to manage a secure session. Where `quartz-contract-core` verifies
+attestionations, `quartz-enclave-core` produces them. But additionally, `quartz-enclave-core` must
 verify the state of the blockchain so that the enclave binary is restricted to
 only operate authorized commands. It does this via light-client verification.
-`quartz-enclave` does the following:
+`quartz-enclave-core` does the following:
 
 - secure session management between contract and enclave
 - collect and verify light client proofs of smart contract state
@@ -97,9 +97,8 @@ only operate authorized commands. It does this via light-client verification.
 
 The underlying implementation includes the following crates: 
 
-* light-client-proofs: Light client and merkle proofs for CosmWasm storage
-* quartz-proto: protobuf message types for quartz handshake between enclave and
-  contract
+* Light client proofs: Light client and merkle proofs for CosmWasm storage (see utils section below)
+* `quartz-proto`: protobuf message types for quartz handshake between enclave and contract
 
 ### CLI Tool
 
@@ -123,19 +122,17 @@ And for running everything in one go (build, deploy/start, handshake):
 
 ### Utils
 
-The repo contains some additional utilities for supporting Quartz development and  -
+The repo contains some additional utilities for supporting Quartz development:
 
-* [cw-prover](utils/cw-prover) - Retrieve a merkle-proof for CosmWasm state
-* [cycles-sync](utils/cycles-sync) - Sync obligations and setoffs
+* [quartz-cw-prover](crates/utils/cw-prover) - Retrieve a merkle-proof for CosmWasm state
   with [Obligato](https://github.com/informalsystems/obligato)
-* [tm-prover](utils/tm-prover) - Generate light client and merkle proofs for CosmWasm storage in a format that Quartz
+* [quartz-tm-prover](crates/utils/tm-prover) - Generate light client and merkle proofs for CosmWasm storage in a format that Quartz
   understands
 
 ## Contributing
 
 If you're interested in contributing, please comment on a relevant issue (if there is one) or open a new one!
 See [CONTRIBUTING.md](CONTRIBUTING.md).
-
 
 ## License
 
