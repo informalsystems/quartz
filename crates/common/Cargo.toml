@@ -10,13 +10,13 @@ authors.workspace = true
 
 [features]
 full = ["contract", "enclave", "proto"]
-contract = ["dep:quartz-cw"]
-enclave = ["dep:quartz-enclave", "proto"]
+contract = ["dep:quartz-contract-core"]
+enclave = ["dep:quartz-enclave-core", "proto"]
 proto = ["dep:quartz-proto"]
-mock-sgx-cw = ["quartz-cw/mock-sgx"]
-mock-sgx-enclave = ["quartz-enclave/mock-sgx"]
+mock-sgx-cw = ["quartz-contract-core/mock-sgx"]
+mock-sgx-enclave = ["quartz-enclave-core/mock-sgx"]
 
 [dependencies]
-quartz-cw = { workspace = true, optional = true }
+quartz-contract-core = { workspace = true, optional = true }
 quartz-proto = { workspace = true, optional = true }
-quartz-enclave = { workspace = true, optional = true }
+quartz-enclave-core = { workspace = true, optional = true }

@@ -1,5 +1,5 @@
 [package]
-name = "cw-proof"
+name = "quartz-cw-proof"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

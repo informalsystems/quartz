@@ -3,7 +3,7 @@ use std::{num::ParseIntError, str::FromStr};
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
 use cosmrs::AccountId;
-use cw_proof::proof::cw::RawCwProof;
+use quartz_cw_proof::proof::cw::RawCwProof;
 use serde::{Deserialize, Serialize};
 use tendermint_light_client::types::{Hash, Height, LightBlock, TrustThreshold};
 use tendermint_rpc::HttpClientUrl;

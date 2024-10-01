@@ -1,6 +1,6 @@
 use clap::Parser;
 use color_eyre::eyre::Result;
-use tm_prover::{config::Config, prover::prove};
+use quartz_tm_prover::{config::Config, prover::prove};
 use tracing_subscriber::{util::SubscriberInitExt, EnvFilter};
 
 #[tokio::main]

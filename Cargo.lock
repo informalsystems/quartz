@@ -1261,6 +1261,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cosmrs",
+ "hex",
+ "reqwest 0.12.8",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cw-multi-test"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1278,36 +1290,6 @@ dependencies = [
  "serde",
  "sha2 0.10.8",
  "thiserror",
-]
-
-[[package]]
-name = "cw-proof"
-version = "0.1.0"
-dependencies = [
- "clap",
- "cosmrs",
- "displaydoc",
- "hex",
- "ics23",
- "prost 0.13.3",
- "serde",
- "serde_with",
- "tendermint 0.38.1",
- "tendermint-rpc",
-]
-
-[[package]]
-name = "cw-prover"
-version = "0.1.0"
-dependencies = [
- "clap",
- "cosmrs",
- "cw-proof",
- "hex",
- "serde_json",
- "tendermint 0.38.1",
- "tendermint-rpc",
- "tokio",
 ]
 
 [[package]]
@@ -2652,9 +2634,9 @@ dependencies = [
 
 [[package]]
 name = "httparse"
-version = "1.9.4"
+version = "1.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fcc0b4a115bf80b728eb8ea024ad5bd707b615bfed49e0665b6e0f86fd082d9"
+checksum = "7d71d3574edd2771538b901e6549113b4006ece66150fb69c0fb6d9a2adae946"
 
 [[package]]
 name = "httpdate"
@@ -3116,7 +3098,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4979f22fdb869068da03c9f7528f8297c6fd2606bc3a4affe42e6a823fdb8da4"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]
@@ -4067,16 +4049,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "print-fmspc"
-version = "0.1.0"
-dependencies = [
- "dcap-qvl",
- "hex",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "proc-macro-crate"
 version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4224,65 +4196,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "quartz"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64 0.22.1",
- "cargo-generate",
- "cargo_metadata",
- "clap",
- "clearscreen",
- "color-eyre",
- "cosmrs",
- "cosmwasm-std",
- "dirs 5.0.1",
- "displaydoc",
- "figment",
- "futures-util",
- "hex",
- "k256",
- "miette",
- "once_cell",
- "prost 0.13.3",
- "quartz-common",
- "quartz-tee-ra",
- "regex",
- "reqwest 0.12.8",
- "serde",
- "serde_json",
- "subtle-encoding",
- "target-lexicon",
- "tempfile",
- "tendermint 0.38.1",
- "tendermint-light-client",
- "tendermint-rpc",
- "thiserror",
- "tm-prover",
- "tokio",
- "toml",
- "tonic",
- "tracing",
- "tracing-subscriber",
- "wasmd-client",
- "watchexec",
- "watchexec-events",
- "watchexec-signals",
- "xxhash-rust",
-]
-
-[[package]]
 name = "quartz-common"
 version = "0.1.0"
 dependencies = [
- "quartz-cw",
- "quartz-enclave",
+ "quartz-contract-core",
+ "quartz-enclave-core",
  "quartz-proto",
 ]
 
 [[package]]
-name = "quartz-cw"
+name = "quartz-contract-core"
 version = "0.1.0"
 dependencies = [
  "ciborium",
@@ -4292,13 +4215,43 @@ dependencies = [
  "hex",
  "k256",
  "quartz-dcap-verifier-msgs",
+ "quartz-tcbinfo-msgs",
  "quartz-tee-ra",
  "serde",
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
- "tcbinfo-msgs",
  "thiserror",
+]
+
+[[package]]
+name = "quartz-cw-proof"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "cosmrs",
+ "displaydoc",
+ "hex",
+ "ics23",
+ "prost 0.13.3",
+ "serde",
+ "serde_with",
+ "tendermint 0.38.1",
+ "tendermint-rpc",
+]
+
+[[package]]
+name = "quartz-cw-prover"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "cosmrs",
+ "hex",
+ "quartz-cw-proof",
+ "serde_json",
+ "tendermint 0.38.1",
+ "tendermint-rpc",
+ "tokio",
 ]
 
 [[package]]
@@ -4322,7 +4275,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "quartz-enclave"
+name = "quartz-enclave-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -4331,15 +4284,16 @@ dependencies = [
  "color-eyre",
  "cosmrs",
  "cosmwasm-std",
- "cw-proof",
  "ecies",
  "futures-util",
  "hex",
  "k256",
  "mc-sgx-dcap-sys-types",
- "quartz-cw",
+ "quartz-contract-core",
+ "quartz-cw-proof",
  "quartz-proto",
  "quartz-tee-ra",
+ "quartz-tm-stateless-verifier",
  "rand",
  "reqwest 0.12.8",
  "serde",
@@ -4349,11 +4303,20 @@ dependencies = [
  "tendermint-light-client",
  "tendermint-rpc",
  "thiserror",
- "tm-stateless-verifier",
  "tokio",
  "tonic",
  "tower 0.5.1",
  "urlencoding",
+]
+
+[[package]]
+name = "quartz-print-fmspc"
+version = "0.1.0"
+dependencies = [
+ "dcap-qvl",
+ "hex",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -4363,6 +4326,85 @@ dependencies = [
  "prost 0.13.3",
  "tonic",
  "tonic-build",
+]
+
+[[package]]
+name = "quartz-rs"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "cargo-generate",
+ "cargo_metadata",
+ "clap",
+ "clearscreen",
+ "color-eyre",
+ "cosmrs",
+ "cosmwasm-std",
+ "cw-client",
+ "dirs 5.0.1",
+ "displaydoc",
+ "figment",
+ "futures-util",
+ "hex",
+ "k256",
+ "miette",
+ "once_cell",
+ "prost 0.13.3",
+ "quartz-common",
+ "quartz-tee-ra",
+ "quartz-tm-prover",
+ "regex",
+ "reqwest 0.12.8",
+ "serde",
+ "serde_json",
+ "subtle-encoding",
+ "target-lexicon",
+ "tempfile",
+ "tendermint 0.38.1",
+ "tendermint-light-client",
+ "tendermint-rpc",
+ "thiserror",
+ "tokio",
+ "toml",
+ "tonic",
+ "tracing",
+ "tracing-subscriber",
+ "watchexec",
+ "watchexec-events",
+ "watchexec-signals",
+ "xxhash-rust",
+]
+
+[[package]]
+name = "quartz-tcbinfo"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw2",
+ "der",
+ "getrandom",
+ "hex",
+ "mc-attestation-verifier",
+ "p256",
+ "quartz-tcbinfo-msgs",
+ "quartz-tee-ra",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "x509-cert",
+]
+
+[[package]]
+name = "quartz-tcbinfo-msgs"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
 ]
 
 [[package]]
@@ -4385,6 +4427,35 @@ dependencies = [
  "thiserror",
  "x509-cert",
  "x509-parser",
+]
+
+[[package]]
+name = "quartz-tm-prover"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "color-eyre",
+ "cosmrs",
+ "futures",
+ "quartz-cw-proof",
+ "serde",
+ "serde_json",
+ "tendermint 0.38.1",
+ "tendermint-light-client",
+ "tendermint-light-client-detector",
+ "tendermint-rpc",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "quartz-tm-stateless-verifier"
+version = "0.1.0"
+dependencies = [
+ "displaydoc",
+ "tendermint 0.38.1",
+ "tendermint-light-client",
 ]
 
 [[package]]
@@ -5485,36 +5556,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
 
 [[package]]
-name = "tcbinfo"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-multi-test",
- "cw-storage-plus",
- "cw2",
- "der",
- "getrandom",
- "hex",
- "mc-attestation-verifier",
- "p256",
- "quartz-tee-ra",
- "schemars",
- "serde",
- "serde_json",
- "tcbinfo-msgs",
- "thiserror",
- "x509-cert",
-]
-
-[[package]]
-name = "tcbinfo-msgs"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
-]
-
-[[package]]
 name = "tempfile"
 version = "3.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5852,35 +5893,6 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
-
-[[package]]
-name = "tm-prover"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "cosmrs",
- "cw-proof",
- "futures",
- "serde",
- "serde_json",
- "tendermint 0.38.1",
- "tendermint-light-client",
- "tendermint-light-client-detector",
- "tendermint-rpc",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "tm-stateless-verifier"
-version = "0.1.0"
-dependencies = [
- "displaydoc",
- "tendermint 0.38.1",
- "tendermint-light-client",
-]
 
 [[package]]
 name = "tokio"
@@ -6391,18 +6403,6 @@ name = "wasm-bindgen-shared"
 version = "0.2.93"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c62a0a307cb4a311d3a07867860911ca130c3494e8c2719593806c08bc5d0484"
-
-[[package]]
-name = "wasmd-client"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cosmrs",
- "hex",
- "reqwest 0.12.8",
- "serde",
- "serde_json",
-]
 
 [[package]]
 name = "watchexec"

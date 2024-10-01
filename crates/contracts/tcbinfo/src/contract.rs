@@ -5,9 +5,9 @@ use cw2::set_contract_version;
 use der::{DateTime, DecodePem};
 use mc_attestation_verifier::{CertificateChainVerifier, SignedTcbInfo};
 use p256::ecdsa::VerifyingKey;
+use quartz_tcbinfo_msgs::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg};
 use quartz_tee_ra::intel_sgx::dcap::certificate_chain::TlsCertificateChainVerifier;
 use serde_json::Value;
-use tcbinfo_msgs::{ExecuteMsg, GetTcbInfoResponse, InstantiateMsg, QueryMsg};
 use x509_cert::Certificate;
 
 use crate::{
@@ -15,7 +15,7 @@ use crate::{
     state::{TcbInfo, DATABASE, ROOT_CERTIFICATE},
 };
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:tcbinfo";
+const CONTRACT_NAME: &str = "crates.io:quartz_tcbinfo";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]

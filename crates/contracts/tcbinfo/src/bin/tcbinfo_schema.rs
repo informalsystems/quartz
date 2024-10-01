@@ -1,5 +1,5 @@
 use cosmwasm_schema::write_api;
-use tcbinfo_msgs::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use quartz_tcbinfo_msgs::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {
