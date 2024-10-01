@@ -35,6 +35,7 @@ fs.mounts = [
   { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
+  { uri = "file:/etc/hosts",  path = "/etc/hosts"},
 ]
 
 # sgx.debug = true
@@ -55,6 +56,8 @@ sgx.trusted_files = [
   "file:/etc/hosts",
   "file:/etc/resolv.conf",
 ]
+
+[[sgx.trusted_files]]
 
 sgx.allowed_files = [
   "file:{{ quartz_dir }}/exchange.sk",
