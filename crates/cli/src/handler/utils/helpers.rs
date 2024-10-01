@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use cosmrs::{AccountId, ErrorReport};
+use cw_client::{CliWasmdClient, WasmdClient};
 use regex::Regex;
 use reqwest::Url;
 use subtle_encoding::bech32::decode as bech32_decode;
@@ -11,7 +12,6 @@ use tendermint_rpc::{
 };
 use tokio::fs::{self};
 use tracing::debug;
-use wasmd_client::{CliWasmdClient, WasmdClient};
 
 use crate::{config::Config, error::Error};
 
@@ -62,9 +62,9 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
 pub fn query_latest_height_hash(node_url: &String) -> Result<(Height, Hash), Error> {
     let httpurl = Url::parse(&format!("http://{}", node_url))
         .map_err(|e| Error::GenericErr(e.to_string()))?;
-    let wasmd_client = CliWasmdClient::new(httpurl);
+    let cw_client = CliWasmdClient::new(httpurl);
 
-    let (trusted_height, trusted_hash) = wasmd_client
+    let (trusted_height, trusted_hash) = cw_client
         .trusted_height_hash()
         .map_err(|e| Error::GenericErr(e.to_string()))?;
 

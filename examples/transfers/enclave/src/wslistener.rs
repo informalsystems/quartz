@@ -25,7 +25,7 @@ use transfers_contract::msg::{
     AttestedMsg, ExecuteMsg,
     QueryMsg::{GetRequests, GetState},
 };
-use wasmd_client::{CliWasmdClient, QueryResult, WasmdClient};
+use cw_client::{CliWasmdClient, QueryResult, WasmdClient};
 
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
@@ -168,15 +168,15 @@ async fn transfer_handler<A: Attestor>(
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
-    let wasmd_client = CliWasmdClient::new(httpurl.clone());
+    let cw_client = CliWasmdClient::new(httpurl.clone());
 
     // Query contract state
-    let resp: QueryResult<Vec<TransferRequest>> = wasmd_client
+    let resp: QueryResult<Vec<TransferRequest>> = cw_client
         .query_smart(contract, json!(GetRequests {}))
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
     let requests = resp.data;
 
-    let resp: QueryResult<HexBinary> = wasmd_client
+    let resp: QueryResult<HexBinary> = cw_client
         .query_smart(contract, json!(GetState {}))
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
     let state = resp.data;
@@ -249,7 +249,7 @@ async fn transfer_handler<A: Attestor>(
     });
 
     // Post response to chain
-    let output = wasmd_client.tx_execute(
+    let output = cw_client.tx_execute(
         contract,
         chain_id,
         2000000,
@@ -270,10 +270,10 @@ async fn query_handler<A: Attestor>(
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
-    let wasmd_client = CliWasmdClient::new(httpurl);
+    let cw_client = CliWasmdClient::new(httpurl);
 
     // Query contract state
-    let resp: QueryResult<HexBinary> = wasmd_client
+    let resp: QueryResult<HexBinary> = cw_client
         .query_smart(contract, json!(GetState {}))
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
     let state = resp.data;
@@ -316,7 +316,7 @@ async fn query_handler<A: Attestor>(
     });
 
     // Post response to chain
-    let output = wasmd_client.tx_execute(
+    let output = cw_client.tx_execute(
         contract,
         chain_id,
         2000000,

@@ -1261,6 +1261,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cosmrs",
+ "hex",
+ "reqwest 0.12.8",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cw-multi-test"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1278,20 +1290,6 @@ dependencies = [
  "serde",
  "sha2 0.10.8",
  "thiserror",
-]
-
-[[package]]
-name = "cw-prover"
-version = "0.1.0"
-dependencies = [
- "clap",
- "cosmrs",
- "hex",
- "quartz-cw-proof",
- "serde_json",
- "tendermint 0.38.1",
- "tendermint-rpc",
- "tokio",
 ]
 
 [[package]]
@@ -4051,16 +4049,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "print-fmspc"
-version = "0.1.0"
-dependencies = [
- "dcap-qvl",
- "hex",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "proc-macro-crate"
 version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4253,6 +4241,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "quartz-cw-prover"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "cosmrs",
+ "hex",
+ "quartz-cw-proof",
+ "serde_json",
+ "tendermint 0.38.1",
+ "tendermint-rpc",
+ "tokio",
+]
+
+[[package]]
 name = "quartz-dcap-verifier"
 version = "0.1.0"
 dependencies = [
@@ -4308,6 +4310,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "quartz-print-fmspc"
+version = "0.1.0"
+dependencies = [
+ "dcap-qvl",
+ "hex",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "quartz-proto"
 version = "0.1.0"
 dependencies = [
@@ -4330,6 +4342,7 @@ dependencies = [
  "color-eyre",
  "cosmrs",
  "cosmwasm-std",
+ "cw-client",
  "dirs 5.0.1",
  "displaydoc",
  "figment",
@@ -4358,7 +4371,6 @@ dependencies = [
  "tonic",
  "tracing",
  "tracing-subscriber",
- "wasmd-client",
  "watchexec",
  "watchexec-events",
  "watchexec-signals",
@@ -6391,18 +6403,6 @@ name = "wasm-bindgen-shared"
 version = "0.2.93"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c62a0a307cb4a311d3a07867860911ca130c3494e8c2719593806c08bc5d0484"
-
-[[package]]
-name = "wasmd-client"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cosmrs",
- "hex",
- "reqwest 0.12.8",
- "serde",
- "serde_json",
-]
 
 [[package]]
 name = "watchexec"

@@ -4,13 +4,13 @@ use anyhow::anyhow;
 use async_trait::async_trait;
 use color_eyre::owo_colors::OwoColorize;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
+use cw_client::{CliWasmdClient, WasmdClient};
 use futures_util::stream::StreamExt;
 use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
 use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tracing::{debug, info};
-use wasmd_client::{CliWasmdClient, WasmdClient};
 
 use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 use crate::{
@@ -51,7 +51,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     let wsurl = format!("ws://{}/websocket", config.node_url);
 
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
-    let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
+    let cw_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
     let (trusted_height, trusted_hash) = read_cached_hash_height(&config).await?;
 
@@ -62,7 +62,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
         .await?;
 
     let output: WasmdTxResponse = serde_json::from_str(
-        wasmd_client
+        cw_client
             .tx_execute(
                 &args.contract.clone(),
                 &config.chain_id,
@@ -109,7 +109,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
 
     // Submit SessionSetPubKey to contract
     let output: WasmdTxResponse = serde_json::from_str(
-        wasmd_client
+        cw_client
             .tx_execute(
                 &args.contract.clone(),
                 &ChainId::from_str("testing")?,
@@ -124,7 +124,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     block_tx_commit(&tmrpc_client, output.txhash).await?;
     info!("SessionSetPubKey tx committed");
 
-    let output: WasmdTxResponse = wasmd_client.query_tx(&output.txhash.to_string())?;
+    let output: WasmdTxResponse = cw_client.query_tx(&output.txhash.to_string())?;
 
     let wasm_event = output
         .events
