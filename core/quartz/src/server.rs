@@ -158,28 +158,14 @@ impl QuartzServer {
     ) -> Result<(), QuartzError> {
         let wsurl = ws_config.websocket_url.clone();
         eprintln!("Attempting to connect to WebSocket at: {:?}", wsurl);
-        let (client, driver) = match WebSocketClient::new(wsurl.as_str()).await {
-            Ok((client, driver)) => (client, driver),
-            Err(e) => {
-                eprintln!("Failed to connect to WebSocket: {:?}", e);
-                return Err(QuartzError::WebSocket(e));
-            }
-        };
+        let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
-
-
         let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
 
         while let Some(Ok(event)) = subs.next().await {
-            // println!("Received event: {:?}", event); // Log the entire event
             for handler in ws_handlers {
-                match handler.handle(event.clone(), ws_config.clone()).await {
-                    Ok(_) => println!("Event processed successfully"),
-                    Err(e) => {
-                        eprintln!("Error in event handler: {:?}", e);
-                        eprintln!("Failed event: {:?}", event);
-                        // You might want to add more specific error logging here
-                    }
+                if let Err(e) = handler.handle(event.clone(), ws_config.clone()).await {
+                    eprintln!("Error in event handler: {:?}", e);
                 }
             }
         }
@@ -190,6 +176,7 @@ impl QuartzServer {
 
         Ok(())
     }
+
 }
 
 #[derive(Clone, Debug)]
