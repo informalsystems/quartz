@@ -13,17 +13,14 @@ jobs:
           node-version: "20.x"
           check-latest: true
 
-      - name: Install XVFB
-        run: sudo apt-get install -y xvfb
-
       - name: Run Backend stack
         run: docker compose -f docker/docker-compose.yml up -d --build
 
       - name: Wait for enclave to listen
         timeout-minutes: 25
         run: |
+          echo "Waiting for handshake completion..."
           while ! docker logs quartz-cli-transfers 2>&1 | grep -q "Enclave is listening"; do
-            echo "Waiting for handshake completion..."
             sleep 30
           done
 
