@@ -1,5 +1,5 @@
 [package]
-name = "quartz"
+name = "quartz-rs"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -8,6 +8,10 @@ license.workspace = true
 repository.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
+
+[[bin]]
+name = "quartz"
+path = "src/main.rs"
 
 [dependencies]
 async-trait.workspace = true
