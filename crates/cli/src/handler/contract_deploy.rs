@@ -3,7 +3,7 @@ use std::path::Path;
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
-use cw_client::{CliWasmdClient, WasmdClient};
+use cw_client::{CliWasmdClient, CwClient};
 use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::HttpClient;

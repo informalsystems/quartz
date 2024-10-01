@@ -5,7 +5,7 @@ pub use wasmd_cli::CliWasmdClient;
 
 pub mod wasmd_cli;
 
-pub trait WasmdClient {
+pub trait CwClient {
     type Address: AsRef<str>;
     type Query: ToString;
     type RawQuery: ToHex;

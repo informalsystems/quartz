@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use cosmrs::{AccountId, ErrorReport};
-use cw_client::{CliWasmdClient, WasmdClient};
+use cw_client::{CliWasmdClient, CwClient};
 use regex::Regex;
 use reqwest::Url;
 use subtle_encoding::bech32::decode as bech32_decode;

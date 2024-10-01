@@ -5,7 +5,7 @@ use cosmrs::{tendermint::chain::Id, AccountId};
 use reqwest::Url;
 use serde::de::DeserializeOwned;
 
-use crate::WasmdClient;
+use crate::CwClient;
 
 #[derive(Clone, Debug)]
 pub struct CliWasmdClient {
@@ -18,7 +18,7 @@ impl CliWasmdClient {
     }
 }
 
-impl WasmdClient for CliWasmdClient {
+impl CwClient for CliWasmdClient {
     type Address = AccountId;
     type Query = serde_json::Value;
     type RawQuery = String;
