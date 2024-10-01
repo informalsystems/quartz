@@ -1,5 +1,5 @@
 [package]
-name = "quartz-enclave"
+name = "quartz-enclave-core"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

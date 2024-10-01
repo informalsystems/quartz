@@ -4228,7 +4228,7 @@ name = "quartz-common"
 version = "0.1.0"
 dependencies = [
  "quartz-contract-core",
- "quartz-enclave",
+ "quartz-enclave-core",
  "quartz-proto",
 ]
 
@@ -4273,7 +4273,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "quartz-enclave"
+name = "quartz-enclave-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
