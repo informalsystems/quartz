@@ -18,5 +18,6 @@ services:
       - /bin/sh
       - -c
       - |
-        quartz init &&
+        cd /opt/examples &&
+        USER=root quartz init &&
         quartz --mock-sgx --app-dir quartz_app dev --unsafe-trust-latest --contract-manifest quartz_app/contracts/Cargo.toml --init-msg "{\"denom\":\"ucosm\"}"
