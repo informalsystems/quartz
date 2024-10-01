@@ -1,5 +1,5 @@
 [package]
-name = "tcbinfo-msgs"
+name = "quartz-tcbinfo-msgs"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

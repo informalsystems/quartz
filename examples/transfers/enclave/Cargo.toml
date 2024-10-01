@@ -68,9 +68,9 @@ transfers-contract = { path = "../contracts", default-features = false }
 # quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", features=["full"] }
 # wasmd-client = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git" }
 # tm-prover = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git" }
+cw-client = { path = "../../../crates/utils/cw-client", default-features = false }
 quartz-common = { path = "../../../crates/common", features = ["full"] }
-wasmd-client = { path = "../../../crates/utils/wasmd-client" }
-tm-prover = { path = "../../../crates/utils/tm-prover", default-features = false }
+quartz-tm-prover = { path = "../../../crates/utils/tm-prover", default-features = false }
 
 [dev-dependencies]
 cw-multi-test = "2.1.0"

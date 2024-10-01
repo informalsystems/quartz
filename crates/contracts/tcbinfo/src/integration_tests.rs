@@ -2,7 +2,7 @@
 mod tests {
     use cosmwasm_std::{testing::MockApi, Addr, Coin, Empty, Uint128};
     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
-    use tcbinfo_msgs::InstantiateMsg;
+    use quartz_tcbinfo_msgs::InstantiateMsg;
 
     use crate::helpers::CwTemplateContract;
 
@@ -68,7 +68,7 @@ mod tests {
     }
 
     mod add_tcbinfo {
-        use tcbinfo_msgs::ExecuteMsg;
+        use quartz_tcbinfo_msgs::ExecuteMsg;
 
         use super::*;
 

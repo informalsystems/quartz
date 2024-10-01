@@ -1,5 +1,5 @@
 [package]
-name = "quartz-enclave"
+name = "quartz-enclave-core"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -10,7 +10,7 @@ keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 
 [features]
-mock-sgx = ["quartz-cw/mock-sgx"]
+mock-sgx = ["quartz-contract-core/mock-sgx"]
 
 [dependencies]
 # external
@@ -44,8 +44,8 @@ tendermint-light-client.workspace = true
 tendermint-rpc = { workspace = true, features=["websocket-client", "http-client"] }
 
 # quartz
-cw-proof.workspace = true
-quartz-cw.workspace = true
+quartz-cw-proof.workspace = true
+quartz-contract-core.workspace = true
 quartz-proto.workspace = true
 quartz-tee-ra.workspace = true
-tm-stateless-verifier.workspace = true
+quartz-tm-stateless-verifier.workspace = true

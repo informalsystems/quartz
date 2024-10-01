@@ -13,11 +13,11 @@ use color_eyre::{
     eyre::{eyre, Result},
     Report,
 };
-use cw_proof::{
+use futures::future::join_all;
+use quartz_cw_proof::{
     error::ProofError,
     proof::{cw::CwProof, key::CwAbciKey, Proof},
 };
-use futures::future::join_all;
 use tendermint::{crypto::default::Sha256, evidence::Evidence, Hash};
 use tendermint_light_client::{
     builder::LightClientBuilder,

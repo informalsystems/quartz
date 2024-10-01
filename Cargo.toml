@@ -124,20 +124,20 @@ mc-sgx-dcap-sys-types = { version = "0.11.0", default-features = false }
 mc-attestation-verifier = { version = "0.4.3", default-features = false }
 
 # quartz
-cw-proof = { path = "crates/contracts/cw-proof", default-features = false }
+quartz-cw-proof = { path = "crates/contracts/cw-proof", default-features = false }
 quartz-common = { path = "crates/common", default-features = false }
-quartz-cw = { path = "crates/contracts/quartz-cw", default-features = false }
-quartz-dcap-verifier-msgs = { path = "crates/contracts/quartz-dcap-verifier/msgs", default-features = false }
-quartz-enclave = { path = "crates/enclave/quartz-enclave", default-features = false }
-quartz-proto = { path = "crates/enclave/quartz-proto", default-features = false }
-quartz-tee-ra = { path = "crates/contracts/quartz-tee-ra", default-features = false }
-tcbinfo = { path = "crates/contracts/tcbinfo", default-features = false, features = [
+quartz-contract-core = { path = "crates/contracts/core", default-features = false }
+quartz-dcap-verifier-msgs = { path = "crates/contracts/dcap-verifier/msgs", default-features = false }
+quartz-enclave-core = { path = "crates/enclave/core", default-features = false }
+quartz-proto = { path = "crates/enclave/proto", default-features = false }
+quartz-tee-ra = { path = "crates/contracts/tee-ra", default-features = false }
+quartz-tcbinfo = { path = "crates/contracts/tcbinfo", default-features = false, features = [
     "library",
 ] }
-tcbinfo-msgs = { path = "crates/contracts/tcbinfo/msgs", default-features = false }
-tm-prover = { path = "crates/utils/tm-prover", default-features = false }
-tm-stateless-verifier = { path = "crates/contracts/tm-stateless-verifier", default-features = false }
-wasmd-client = { path = "crates/utils/wasmd-client", default-features = false }
+quartz-tcbinfo-msgs = { path = "crates/contracts/tcbinfo/msgs", default-features = false }
+quartz-tm-prover = { path = "crates/utils/tm-prover", default-features = false }
+quartz-tm-stateless-verifier = { path = "crates/contracts/tm-stateless-verifier", default-features = false }
+cw-client = { path = "crates/utils/cw-client", default-features = false }
 
 [profile.release]
 opt-level = "z"

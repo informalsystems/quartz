@@ -5,13 +5,9 @@ use std::{
     time::Duration,
 };
 
-use cw_proof::proof::{
-    cw::{CwProof, RawCwProof},
-    Proof,
-};
 use futures_util::StreamExt;
 use k256::ecdsa::SigningKey;
-use quartz_cw::{
+use quartz_contract_core::{
     msg::{
         execute::{
             attested::Attested, session_create::SessionCreate,
@@ -21,6 +17,10 @@ use quartz_cw::{
     },
     state::{Config, LightClientOpts, Nonce, Session},
 };
+use quartz_cw_proof::proof::{
+    cw::{CwProof, RawCwProof},
+    Proof,
+};
 use quartz_proto::quartz::{
     core_server::{Core, CoreServer},
     InstantiateRequest as RawInstantiateRequest, InstantiateResponse as RawInstantiateResponse,
@@ -29,6 +29,7 @@ use quartz_proto::quartz::{
     SessionSetPubKeyRequest as RawSessionSetPubKeyRequest,
     SessionSetPubKeyResponse as RawSessionSetPubKeyResponse,
 };
+use quartz_tm_stateless_verifier::make_provider;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use tendermint::{block::Height, Hash};
@@ -41,7 +42,6 @@ use tendermint_rpc::{
     query::{EventType, Query},
     SubscriptionClient, WebSocketClient,
 };
-use tm_stateless_verifier::make_provider;
 use tonic::{
     body::BoxBody,
     codegen::http,
