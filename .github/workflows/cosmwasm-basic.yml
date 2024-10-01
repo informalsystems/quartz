@@ -46,13 +46,7 @@ jobs:
         with:
           target: wasm32-unknown-unknown
 
-      - name: Setup SSH access for private deps
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.QUARTZ_SSH_KEY }}
-
-      - name: Run unit tests (for transfers)
+      - name: Run unit tests
         run: cargo unit-test --locked
         env:
           RUST_BACKTRACE: 1
@@ -74,13 +68,7 @@ jobs:
         with:
           target: wasm32-unknown-unknown
 
-      - name: Setup SSH access for private deps
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.QUARTZ_SSH_KEY }}
-
-      - name: Generate Schema (for transfers)
+      - name: Generate Schema
         run: cargo schema --locked
 
       - name: Schema Changes
