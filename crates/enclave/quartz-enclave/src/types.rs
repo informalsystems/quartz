@@ -5,7 +5,7 @@ use std::{
 };
 
 use hex::FromHexError;
-use quartz_cw::msg::{
+use quartz_contract_core::msg::{
     execute::{
         attested::{Attested, RawAttested},
         session_create::{RawSessionCreate, SessionCreate},

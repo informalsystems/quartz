@@ -2652,9 +2652,9 @@ dependencies = [
 
 [[package]]
 name = "httparse"
-version = "1.9.4"
+version = "1.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fcc0b4a115bf80b728eb8ea024ad5bd707b615bfed49e0665b6e0f86fd082d9"
+checksum = "7d71d3574edd2771538b901e6549113b4006ece66150fb69c0fb6d9a2adae946"
 
 [[package]]
 name = "httpdate"
@@ -3116,7 +3116,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4979f22fdb869068da03c9f7528f8297c6fd2606bc3a4affe42e6a823fdb8da4"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]
@@ -4224,65 +4224,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "quartz"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64 0.22.1",
- "cargo-generate",
- "cargo_metadata",
- "clap",
- "clearscreen",
- "color-eyre",
- "cosmrs",
- "cosmwasm-std",
- "dirs 5.0.1",
- "displaydoc",
- "figment",
- "futures-util",
- "hex",
- "k256",
- "miette",
- "once_cell",
- "prost 0.13.3",
- "quartz-common",
- "quartz-tee-ra",
- "regex",
- "reqwest 0.12.8",
- "serde",
- "serde_json",
- "subtle-encoding",
- "target-lexicon",
- "tempfile",
- "tendermint 0.38.1",
- "tendermint-light-client",
- "tendermint-rpc",
- "thiserror",
- "tm-prover",
- "tokio",
- "toml",
- "tonic",
- "tracing",
- "tracing-subscriber",
- "wasmd-client",
- "watchexec",
- "watchexec-events",
- "watchexec-signals",
- "xxhash-rust",
-]
-
-[[package]]
 name = "quartz-common"
 version = "0.1.0"
 dependencies = [
- "quartz-cw",
+ "quartz-contract-core",
  "quartz-enclave",
  "quartz-proto",
 ]
 
 [[package]]
-name = "quartz-cw"
+name = "quartz-contract-core"
 version = "0.1.0"
 dependencies = [
  "ciborium",
@@ -4337,7 +4288,7 @@ dependencies = [
  "hex",
  "k256",
  "mc-sgx-dcap-sys-types",
- "quartz-cw",
+ "quartz-contract-core",
  "quartz-proto",
  "quartz-tee-ra",
  "rand",
@@ -4363,6 +4314,55 @@ dependencies = [
  "prost 0.13.3",
  "tonic",
  "tonic-build",
+]
+
+[[package]]
+name = "quartz-rs"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "cargo-generate",
+ "cargo_metadata",
+ "clap",
+ "clearscreen",
+ "color-eyre",
+ "cosmrs",
+ "cosmwasm-std",
+ "dirs 5.0.1",
+ "displaydoc",
+ "figment",
+ "futures-util",
+ "hex",
+ "k256",
+ "miette",
+ "once_cell",
+ "prost 0.13.3",
+ "quartz-common",
+ "quartz-tee-ra",
+ "regex",
+ "reqwest 0.12.8",
+ "serde",
+ "serde_json",
+ "subtle-encoding",
+ "target-lexicon",
+ "tempfile",
+ "tendermint 0.38.1",
+ "tendermint-light-client",
+ "tendermint-rpc",
+ "thiserror",
+ "tm-prover",
+ "tokio",
+ "toml",
+ "tonic",
+ "tracing",
+ "tracing-subscriber",
+ "wasmd-client",
+ "watchexec",
+ "watchexec-events",
+ "watchexec-signals",
+ "xxhash-rust",
 ]
 
 [[package]]

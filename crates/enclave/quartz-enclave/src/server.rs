@@ -11,7 +11,7 @@ use cw_proof::proof::{
 };
 use futures_util::StreamExt;
 use k256::ecdsa::SigningKey;
-use quartz_cw::{
+use quartz_contract_core::{
     msg::{
         execute::{
             attested::Attested, session_create::SessionCreate,

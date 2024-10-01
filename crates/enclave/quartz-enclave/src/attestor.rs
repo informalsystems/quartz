@@ -5,7 +5,7 @@ use std::{
 };
 
 use mc_sgx_dcap_sys_types::sgx_ql_qve_collateral_t;
-use quartz_cw::{
+use quartz_contract_core::{
     msg::{
         execute::attested::{
             Attestation, DcapAttestation, HasUserData, MockAttestation, RawDcapAttestation,

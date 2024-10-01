@@ -83,7 +83,7 @@ mc-attestation-verifier = { version = "0.4.3", default-features = false }
 # quartz
 cw-proof = { path = "crates/contracts/cw-proof", default-features = false }
 quartz-common = { path = "crates/common", default-features = false }
-quartz-cw = { path = "crates/contracts/quartz-cw", default-features = false }
+quartz-contract-core = { path = "crates/contracts/core", default-features = false }
 quartz-dcap-verifier-msgs = { path = "crates/contracts/quartz-dcap-verifier/msgs", default-features = false }
 quartz-enclave = { path = "crates/enclave/quartz-enclave", default-features = false }
 quartz-proto = { path = "crates/enclave/quartz-proto", default-features = false }
