@@ -27,7 +27,7 @@ impl Handler for InitRequest {
         let config = config.as_ref();
         info!("{}", "\nPeforming Init".blue().bold());
 
-        let root_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
+        let root_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
 
         let parent = self
             .name
@@ -50,8 +50,8 @@ impl Handler for InitRequest {
             overwrite: true,
             vcs: Some(Vcs::Git),
             template_path: TemplatePath {
-                // git: Some("git@github.com:informalsystems/cycles-quartz.git".to_string()), // TODO: replace with public http address when open-sourced
-                path: Some(root_dir.join("apps/transfers").display().to_string()),
+                // git: Some("git@github.com:informalsystems/cycles-quartz.git".to_string()), // TODO: replace with git address when open-sourced
+                path: Some(root_dir.join("examples/transfers").display().to_string()),
                 ..TemplatePath::default()
             },
             ..GenerateArgs::default()
