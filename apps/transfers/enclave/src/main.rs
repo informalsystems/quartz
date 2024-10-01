@@ -73,12 +73,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let ws_config = WsListenerConfig {
         node_url: args.node_url,
-        websocket_url: args.websocket_url,
+        websocket_url: "wss://104.26.13.57/websocket",
         tx_sender: args.tx_sender,
         trusted_hash: args.trusted_hash,
         trusted_height: args.trusted_height,
         chain_id: args.chain_id,
     };
+
 
     let sk = Arc::new(Mutex::new(None));
 
