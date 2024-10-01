@@ -2,12 +2,12 @@ volumes:
   wasmd_data:
 
 services:
-node:
+  node:
     extends:
       file: docker-compose-base.yml
       service: node
 
-enclave_e2e:
+  enclave_e2e:
     extends:
       file: docker-compose-base.yml
       service: enclave
