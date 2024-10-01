@@ -1,8 +1,0 @@
-[alias]
-wasm = "build --release --target wasm32-unknown-unknown --lib"
-unit-test = "test --lib"
-schema = "run --bin schema"
-
-
-[net]
-git-fetch-with-cli = true
