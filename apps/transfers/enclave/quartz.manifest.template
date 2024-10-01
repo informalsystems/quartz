@@ -42,7 +42,7 @@ fs.mounts = [
 ]
 
 # sgx.debug = true
-sgx.enclave_size = "16G"
+sgx.enclave_size = "4G"
 sgx.max_threads = 16
 sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
 
