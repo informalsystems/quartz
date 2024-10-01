@@ -20,6 +20,7 @@ loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
 loader.env.QUARTZ_PORT = { passthrough = true }
 loader.env.SSL_CERT_FILE = { passthrough = true }
+loader.pal_internal_mem_size = "64M"
 
 loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "{{ chain_id }}",
