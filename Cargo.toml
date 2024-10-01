@@ -86,7 +86,7 @@ quartz-common = { path = "crates/common", default-features = false }
 quartz-contract-core = { path = "crates/contracts/core", default-features = false }
 quartz-dcap-verifier-msgs = { path = "crates/contracts/dcap-verifier/msgs", default-features = false }
 quartz-enclave-core = { path = "crates/enclave/core", default-features = false }
-quartz-proto = { path = "crates/enclave/quartz-proto", default-features = false }
+quartz-proto = { path = "crates/enclave/proto", default-features = false }
 quartz-tee-ra = { path = "crates/contracts/tee-ra", default-features = false }
 quartz-tcbinfo = { path = "crates/contracts/tcbinfo", default-features = false, features = ["library"] }
 quartz-tcbinfo-msgs = { path = "crates/contracts/tcbinfo/msgs", default-features = false }

@@ -1281,29 +1281,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw-proof"
-version = "0.1.0"
-dependencies = [
- "clap",
- "cosmrs",
- "displaydoc",
- "hex",
- "ics23",
- "prost 0.13.3",
- "serde",
- "serde_with",
- "tendermint 0.38.1",
- "tendermint-rpc",
-]
-
-[[package]]
 name = "cw-prover"
 version = "0.1.0"
 dependencies = [
  "clap",
  "cosmrs",
- "cw-proof",
  "hex",
+ "quartz-cw-proof",
  "serde_json",
  "tendermint 0.38.1",
  "tendermint-rpc",
@@ -4253,6 +4237,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "quartz-cw-proof"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "cosmrs",
+ "displaydoc",
+ "hex",
+ "ics23",
+ "prost 0.13.3",
+ "serde",
+ "serde_with",
+ "tendermint 0.38.1",
+ "tendermint-rpc",
+]
+
+[[package]]
 name = "quartz-dcap-verifier"
 version = "0.1.0"
 dependencies = [
@@ -4282,13 +4282,13 @@ dependencies = [
  "color-eyre",
  "cosmrs",
  "cosmwasm-std",
- "cw-proof",
  "ecies",
  "futures-util",
  "hex",
  "k256",
  "mc-sgx-dcap-sys-types",
  "quartz-contract-core",
+ "quartz-cw-proof",
  "quartz-proto",
  "quartz-tee-ra",
  "rand",
@@ -5860,8 +5860,8 @@ dependencies = [
  "clap",
  "color-eyre",
  "cosmrs",
- "cw-proof",
  "futures",
+ "quartz-cw-proof",
  "serde",
  "serde_json",
  "tendermint 0.38.1",
