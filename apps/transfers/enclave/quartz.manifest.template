@@ -35,6 +35,7 @@ fs.mounts = [
   { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
+  { path = "/client", uri = "file:client" },
 ]
 
 # sgx.debug = true
@@ -54,11 +55,22 @@ sgx.trusted_files = [
   "file:/usr/{{ arch_libdir }}/",
 ]
 
+
 sgx.allowed_files = [
   "file:{{ quartz_dir }}/exchange.sk",
   "file:{{ quartz_dir }}/request.json",
+  "file:/etc/nsswitch.conf",
+  "file:/etc/host.conf",
+  "file:/etc/ethers",
+  "file:/etc/hosts",
+  "file:/etc/group",
+  "file:/etc/passwd",
+  "file:/etc/gai.conf",
+  "file:/etc/ssl/certs/ca-certificates.crt",
+  "file:/etc/sgx_default_qcnl.conf",
 ]
 
 sys.enable_extra_runtime_domain_names_conf = true
+loader.insecure__use_host_env = true
 sys.insecure__allow_eventfd = true
 sys.enable_sigterm_injection = true
