@@ -1,5 +1,5 @@
 [package]
-name = "cw-prover"
+name = "quartz-cw-prover"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
