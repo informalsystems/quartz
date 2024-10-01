@@ -36,17 +36,3 @@ RUN cargo build --locked --release ${CARGO_FLAGS}
 RUN cp /opt/target/release/quartz /usr/local/bin/
 
 CMD ["quartz", "--mock-sgx", "--app-dir", "/opt/examples/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/examples/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"ucosm\"}"]
-
-#------------------------------------------------------------------------------
-
-# FROM rust:latest
-
-# RUN apt-get update && apt install -y openssl
-
-# # Copy the enclave binary we built in the previous stage
-# COPY --from=build /opt/target/release/quartz /usr/local/bin/
-
-# # Copy the transfer app files
-# COPY --from=build /opt /cycles-quartz
-
-# CMD ["quartz"]
