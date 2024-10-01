@@ -147,7 +147,7 @@ impl QuartzServer {
                 eprintln!("Error in WebSocket event handler: {:?}", e);
             }
         });
-        println!("Attempting to server WebSocket at address: {:?}", addr);
+        eprintln!("Attempting to server WebSocket at address: {:?}", addr);
 
         Ok(self.router.serve(addr).await?)
     }
@@ -157,7 +157,7 @@ impl QuartzServer {
         ws_config: WsListenerConfig,
     ) -> Result<(), QuartzError> {
         let wsurl = ws_config.websocket_url.clone();
-        println!("Attempting to connect to WebSocket at: {:?}", wsurl);
+        eprintln!("Attempting to connect to WebSocket at: {:?}", wsurl);
         let (client, driver) = match WebSocketClient::new(wsurl.as_str()).await {
             Ok((client, driver)) => (client, driver),
             Err(e) => {
