@@ -1325,7 +1325,6 @@ dependencies = [
 [[package]]
 name = "quartz-common"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e5004076813b8c98e7c385cc967372c38dd9ab4b"
 dependencies = [
  "quartz-contract-core",
 ]
@@ -1333,7 +1332,6 @@ dependencies = [
 [[package]]
 name = "quartz-contract-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e5004076813b8c98e7c385cc967372c38dd9ab4b"
 dependencies = [
  "ciborium",
  "cosmwasm-schema",
@@ -1354,7 +1352,6 @@ dependencies = [
 [[package]]
 name = "quartz-dcap-verifier-msgs"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e5004076813b8c98e7c385cc967372c38dd9ab4b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1363,7 +1360,6 @@ dependencies = [
 [[package]]
 name = "quartz-tcbinfo-msgs"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e5004076813b8c98e7c385cc967372c38dd9ab4b"
 dependencies = [
  "cosmwasm-schema",
 ]
@@ -1371,7 +1367,6 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e5004076813b8c98e7c385cc967372c38dd9ab4b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
