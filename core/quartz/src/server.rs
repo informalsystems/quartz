@@ -156,8 +156,22 @@ impl QuartzServer {
         ws_config: WsListenerConfig,
     ) -> Result<(), QuartzError> {
         let wsurl = ws_config.websocket_url.clone();
-        let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
-        let driver_handle = tokio::spawn(async move { driver.run().await });
+        // let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
+        // let driver_handle = tokio::spawn(async move { driver.run().await });
+
+
+
+        let (client, driver) = WebSocketClient::new(wsurl.as_str())
+            .await
+            .map_err(|e| QuartzError::Other(e.to_string()))?;
+        
+        let driver_handle = tokio::spawn(async move {
+            if let Err(e) = driver.run().await {
+                eprintln!("WebSocket driver error: {}", e);
+            }
+        });
+
+
         let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
 
         while let Some(Ok(event)) = subs.next().await {
