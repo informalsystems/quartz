@@ -252,10 +252,10 @@ async fn transfer_handler<A: Attestor>(
     let output = wasmd_client.tx_execute(
         contract,
         chain_id,
-        2000000,
+        300000,
         &ws_config.tx_sender,
         json!(transfer_msg),
-        "11000untrn",
+        "40000untrn",
     )?;
 
     println!("Output TX: {}", output);
@@ -320,10 +320,10 @@ async fn query_handler<A: Attestor>(
     let output = wasmd_client.tx_execute(
         contract,
         chain_id,
-        2000000,
+        300000,
         &ws_config.tx_sender,
         json!(query_msg),
-        "11000untrn",
+        "40000untrn",
     )?;
 
     println!("Output TX: {}", output);
