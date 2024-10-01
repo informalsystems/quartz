@@ -67,7 +67,7 @@ async fn deploy(
 ) -> Result<(u64, String), anyhow::Error> {
     let httpurl = Url::parse(&config.node_url)?;
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
-    let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
+    let wasmd_client = CliWasmdClient::new(httpurl);
 
     info!("🚀 Deploying {} Contract", args.label);
     let code_id = if config.contract_has_changed(wasm_bin_path).await? {

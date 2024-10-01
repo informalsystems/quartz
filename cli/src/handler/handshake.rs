@@ -47,10 +47,10 @@ impl Handler for HandshakeRequest {
 }
 
 async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
-    let httpurl = config.node_url.clone();
+    let httpurl = Url::parse(&config.node_url)?;
     let wsurl = config.websocket_url.clone();
 
-    let tmrpc_client = HttpClient::new(httpurl.as_str())?;
+    let tmrpc_client = HttpClient::new(config.node_url.as_str())?;
     let wasmd_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
 
     let (trusted_height, trusted_hash) = read_cached_hash_height(&config).await?;
