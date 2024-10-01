@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
      
       - name: Run Backend stack
-        run: docker compose -f docker/docker-compose-quartz-init.yml up -d --build
+        run: docker compose -f docker/docker-compose-out-of-tree.yml up -d --build
 
       - name: Wait for enclave to listen
         timeout-minutes: 25
