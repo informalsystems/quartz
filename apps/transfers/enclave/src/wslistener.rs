@@ -1,6 +1,10 @@
 //TODO: get rid of this
 use std::{collections::BTreeMap, str::FromStr};
 
+use std::env;
+use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use anyhow::{anyhow, Error, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Addr, HexBinary};
@@ -166,6 +170,21 @@ async fn transfer_handler<A: Attestor>(
     contract: &AccountId,
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
+
+    // Generate a unique timestamp
+    let timestamp = SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .expect("Time went backwards")
+    .as_nanos();
+
+    // Set the NEUTROND_WASM_DIR environment variable
+    let wasm_dir = format!("/tmp/neutrond_wasm_{}", timestamp);
+    env::set_var("NEUTROND_WASM_DIR", &wasm_dir);
+
+    // Create the directory
+    fs::create_dir_all(&wasm_dir).expect("Failed to create Wasm directory");
+
+
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&ws_config.node_url.clone())?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
@@ -260,6 +279,9 @@ async fn transfer_handler<A: Attestor>(
 
     println!("Output TX: {}", output);
     Ok(())
+
+    // Clean up the temporary directory
+    fs::remove_dir_all(&wasm_dir).expect("Failed to remove temporary Wasm directory");
 }
 
 async fn query_handler<A: Attestor>(
