@@ -1,6 +1,6 @@
-# wasmd-client
+# cw-client
 
-`wasmd-client` is a Rust library that provides a trait and implementation for interacting with CosmWasm-enabled blockchains, specifically designed for use with the `wasmd` daemon.
+`cw-client` is a Rust library that provides a trait and implementation for interacting with CosmWasm-enabled blockchains, specifically designed for use with the `wasmd` daemon.
 
 ## Features
 
@@ -15,7 +15,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-wasmd-client = { path = "../packages/wasmd-client" }
+cw-client = { path = "../packages/cw-client" }
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ wasmd-client = { path = "../packages/wasmd-client" }
 The main interface is provided through the `WasmdClient` trait:
 
 
-```9:44:cosmwasm/packages/wasmd-client/src/lib.rs
+```9:44:cosmwasm/packages/cw-client/src/lib.rs
 pub trait WasmdClient {
     type Address: AsRef<str>;
     type Query: ToString;

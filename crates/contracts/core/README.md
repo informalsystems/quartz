@@ -1,28 +1,30 @@
 
-# Quartz CosmWasm (quartz-cw)
+# Quartz CosmWasm (quartz-contract-core)
 
-Quartz CosmWasm (quartz-cw) is a high-level framework for building attestation-aware smart contracts on CosmWasm. It provides a robust foundation for developing secure, Intel SGX-based contracts with built-in remote attestation support.
+Quartz CosmWasm (quartz-contract-core) is a high-level framework for building attestation-aware smart contracts on CosmWasm. It provides a robust foundation for developing secure, Intel SGX-based contracts with built-in remote attestation support.
 
 ## Features
 
-- `Attested<T>` wrapper for secure message handling
-- Traits and structures for easy contract development
-- State management and message handling utilities
-- Support for both DCAP and EPID attestation protocols
+- `Attested<M, A>` wrapper for a message and its attestation
+- MockAttestation type for development ease 
+- Session management for secure communication between contract and enclave
+- Verify DCAP attestations (by calling `dcap-verifier` and `tcbinfo` contracts) 
 - Mock SGX support for testing environments
+
+See also the [spec.md](./SPEC.md)
 
 ## Installation
 
-Add `quartz-cw` to your `Cargo.toml`:
+Add `quartz-contract-core` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-quartz-cw = { path = "../packages/quartz-cw" }
+quartz-contract-core = { path = "../packages/quartz-contract-core" }
 ```
 
 ## Usage
 
-Here's a basic example of how to use `quartz-cw` in your CosmWasm contract:
+Here's a basic example of how to use `quartz-contract-core` in your CosmWasm contract:
 
 ```rust
 use quartz_cw::prelude::*;
@@ -49,7 +51,7 @@ pub fn execute(
 ## Key Components
 
 1. `Attested<M, A>`: A wrapper struct for holding a message and its attestation.
-2. `Attestation`: A trait for attestation types (DCAP, EPID, Mock).
+2. `Attestation`: A trait for attestation types (DCAP, Mock).
 3. `HasUserData`: A trait for extracting user data from attestations.
 4. `RawHandler`: A trait for handling raw messages.
 
@@ -59,7 +61,7 @@ You can enable mock SGX support for testing by adding the `mock-sgx` feature to 
 
 ```toml
 [dependencies]
-quartz-cw = { path = "../packages/quartz-cw", features = ["mock-sgx"] }
+quartz-contract-core = { path = "../packages/quartz-contract-core", features = ["mock-sgx"] }
 ```
 
 ## Testing
@@ -69,14 +71,3 @@ To run the tests:
 ```sh
 cargo test
 ```
-
-## License
-
-This project is licensed under [LICENSE_NAME]. See the LICENSE file for details.
-
-## Contributing
-
-We welcome contributions! Please feel free to submit a Pull Request.
-
-For more information on the implementation details, check out the following files:
-

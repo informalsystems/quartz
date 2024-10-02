@@ -32,43 +32,18 @@ SUBCOMMANDS:
 To install Quartz, ensure you have Rust and Cargo installed. Then run:
 
 ```shell
-cargo install quartz
+cargo install quartz-rs
 ```
 
-## Usage of subcommands
+## Usage
 
-### Init
+See the [getting started](/docs/getting_started.md).
 
-Initialize a new Quartz app directory structure with optional name and path arguments.
-
-#### Usage
-
-```shell
-$ quartz init --help
-quartz-init 
-Create base Quartz app directory from template
-
-USAGE:
-    quartz init [OPTIONS]
-
-OPTIONS:
-    -n, --name <NAME>    Set the name of the Quartz app [default: <name of parent directory>]
-    -p, --path <PATH>    Set the path where the Quartz app will be created [default: .]
-    -h, --help           Print help information
-```
-
-#### Example
+Run `quartz init` to copy the example app into a new directory. Quartz apps are
+organized like:
 
 ```shell
-quartz init --name <app_name> --path <path>
-```
-
-This command will create the following directory structure at the specified path (or the current directory if no path is
-provided):
-
-```shell
-$ tree /<path>/<app-name> -L 1
-apps/transfers/
+myapp/
 ├── contracts/
 ├── enclave/
 ├── frontend/

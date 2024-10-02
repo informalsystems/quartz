@@ -25,13 +25,13 @@ mock SGX:
 
 1. Install dependencies (Rust, wasmd or neutrond)
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
-3. Install Quartz CLI: `cargo install --path cli/`
-4. Navigate to the example app: `cd apps/transfers`
+3. Install Quartz CLI: `cargo install --path crates/cli`
+4. Navigate to the example app: `cd examples/transfers`
 4. Deploy the example app in one command (enclave, contracts, secure handshake):
    ```bash
    quartz --mock-sgx dev \
    --unsafe-trust-latest \
-   --contract-manifest "apps/transfers/contracts/Cargo.toml" \
+   --contract-manifest "examples/transfers/contracts/Cargo.toml" \
    --init-msg '{"denom":"ucosm"}'
    ```
 5. Set up the frontend (see [Frontend](#frontend))
@@ -41,7 +41,7 @@ For more detailed background and instructions, read on.
 ## Simple Example
 
 Quartz includes a simple example we call the `Transfer` application,
-located in [/apps/transfers](/apps/transfers), that comes with a Keplr-based
+located in [/examples/transfers](/examples/transfers), that comes with a Keplr-based
 frontend. It's a simple demo app designed to showcase very basic use of the Quartz framework. 
 It allows users to deposit funds into a contract, 
 transfer them privately within the contract's encrypted state (updated by the
@@ -53,7 +53,7 @@ Every application has a common structure:
 2. **Contracts**: The backend application as a CosmWasm smart contract
 3. **Enclave**: Code that executes off-chain and privately in an enclave
 
-Quartz is both a library (`quartz-cw`) for building SGX-aware CosmWasm
+Quartz is both a library (`quartz-contract-core`) for building SGX-aware CosmWasm
 contracts, and a cli tool (`quartz`) for managing the enclave. 
 
 The library takes care of establishing a secure connection to the enclave (see
@@ -63,9 +63,9 @@ it. The quartz tool provides commands for managing the enclave.
 This guide is primarily about using the `quartz` tool to get the example app
 setup. For more on building application, see 
 - [Building Apps](/docs/building_apps.md) - conceptual overview 
-- [quartz-cw](/cosmwasm/quartz-cw) - main library. provides msgs and handlers
+- [quartz-contract-core](/cosmwasm/quartz-contract-core) - main library. provides msgs and handlers
   for the handshake and for verifying attestations
-- [transfers contracts](/apps/transfers/contracts): transfer app example itself
+- [transfers contracts](/examples/transfers/contracts): transfer app example itself
 
 Onwards with the installation and running our example app! 
 
@@ -107,7 +107,7 @@ Now clone and build the repo:
 ```bash
 git clone ssh://git@github.com/informalsystems/cycles-quartz
 cd cycles-quartz
-cargo install --path cli/
+cargo install --path crates/cli
 ```
 
 And check that it worked:
@@ -169,10 +169,10 @@ First we build and run the enclave code.
 Quartz provides a `--mock-sgx` flag so we can deploy locally for testing and
 development purposes without needing access to an SGX core.
 
-We can run everything from within the `apps/transfers` dir in this repo. To run
-from elsewhere by specify a path, eg. from the root of the repo with `--app-dir apps/transfers`.
+We can run everything from within the `examples/transfers` dir in this repo. To run
+from elsewhere by specify a path, eg. from the root of the repo with `--app-dir examples/transfers`.
 
-Now, from `apps/transfers`:
+Now, from `examples/transfers`:
 
 1. Build the enclave binary:
    ```bash
@@ -197,7 +197,7 @@ continue.
 2. Deploy the contract:
    ```bash
    quartz --mock-sgx contract deploy \
-   --contract-manifest "apps/transfers/contracts/Cargo.toml" \
+   --contract-manifest "examples/transfers/contracts/Cargo.toml" \
    --init-msg '{"denom":"ucosm"}'
    ```
 
@@ -233,7 +233,7 @@ Now the contract is ready to start processing requests to the enclave.
 
 1. Navigate to the frontend folder:
    ```bash
-   cd apps/transfers/frontend
+   cd examples/transfers/frontend
    ```
 
 2. Install dependencies:
@@ -291,13 +291,13 @@ to get setup with SGX on Azure, and how to deploy quartz contracts to the
 Neutron testnet using real remote attestions from SGX cores on Azure.
 
 Real verification of SGX on a CosmWasm network requires two additional global contracts
-to be deployed: dcap-verify and tcbinfo. The
-dcap-verify contract provides the core verification of the SGX attestation
-(called DCAP). The tcbinfo contract contains global information about secure
+to be deployed: `quartz-dcap-verify` and `quartz-tcbinfo`. The
+`quartz-dcap-verify` contract provides the core verification of the SGX attestation
+(called DCAP). The `quartz-tcbinfo` contract contains global information about secure
 versions of SGX processors. Together they allow contracts built with quartz to
 securely verify remote attestations from SGX enclaves.
 
-We have already predeployed the dcap-verify and tcbinfo contracts on the Neutron
+We have already predeployed the `quartz-dcap-verify` and `quartz-tcbinfo` contracts on the Neutron
 testnet at TODO. To deploy these on your own testnet, see [below](#other-testnets-with-sgx).
 
 To begin, you'll need to deploy an SGX-enabled Azure instance and log in via ssh.
@@ -309,13 +309,13 @@ Once logged in, clone and install Quartz like before (see
 
 TODO: 
 - make this about deploying to neutron.
-- do it from apps/transfers to avoid specifying `--app-dir`
+- do it from examples/transfers to avoid specifying `--app-dir`
 
 
 To build both the contract binaries, use the build command:
 
 ```bash
-quartz --app-dir "apps/transfers/" contract build --contract-manifest "apps/transfers/contracts/Cargo.toml"
+quartz --app-dir "examples/transfers/" contract build --contract-manifest "examples/transfers/contracts/Cargo.toml"
 ```
 This command will compile the smart contract to WebAssembly and build the contract binary.
 
@@ -323,13 +323,13 @@ The following configuration assumes that the `wasmd` node will be running in the
 If you wish to use another enclave provider you have to make sure that `QUARTZ_NODE_URL` is set to the enclave address and port as an argument as in:
 
 ```bash
-QUARTZ_NODE_URL=87.23.1.3:11090 && quartz --app-dir "apps/transfers/" contract deploy  --contract-manifest "apps/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
+QUARTZ_NODE_URL=87.23.1.3:11090 && quartz --app-dir "examples/transfers/" contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
 ```
 
 If you wish to use another blockchain you have to make sure that `--node-url` is set to the chain address and port as an option in the `cli` as in:
 
 ```bash
-QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "apps/transfers/" --node-url "https://92.43.1.4:26657" contract deploy  --contract-manifest "apps/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
+QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "examples/transfers/" --node-url "https://92.43.1.4:26657" contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
 ```
 
 ### Build and Run the SGX Enclave
@@ -338,11 +338,11 @@ First we build the enclave like before:
 
 ```bash
 # Configure the enclave
-quartz --app-dir "apps/transfers/" enclave build
+quartz --app-dir "examples/transfers/" enclave build
 ```
 
 Before starting the enclave, we should check that the relevant contracts
-(tcbinfo, dcap-verifier) have been instantiated.
+(`quartz-tcbinfo`, `quartz-dcap-verifier`) have been instantiated.
 
 TODO: how to query to check this?
 
@@ -352,7 +352,7 @@ TODO: use variables for the contract addresses
 
 ```bash
 # Start the enclave
-QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "apps/transfers/" enclave start  --fmspc "00606A000000" --tcbinfo-contract "wasm1pk6xe9hr5wgvl5lcd6wp62236t5p600v9g7nfcsjkf6guvta2s5s7353wa" --dcap-verifier-contract "wasm107cq7x4qmm7mepkuxarcazas23037g4q9u72urzyqu7r4saq3l6srcykw2"
+QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "examples/transfers/" enclave start  --fmspc "00606A000000" --tcbinfo-contract "wasm1pk6xe9hr5wgvl5lcd6wp62236t5p600v9g7nfcsjkf6guvta2s5s7353wa" --dcap-verifier-contract "wasm107cq7x4qmm7mepkuxarcazas23037g4q9u72urzyqu7r4saq3l6srcykw2"
 ```
 
 The enclave will start running and wait for commands.
@@ -362,7 +362,7 @@ The enclave will start running and wait for commands.
 With the enclave running, open a new terminal window to deploy the contract:
 
 ```bash
-QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "apps/transfers/" contract deploy  --contract-manifest "apps/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
+QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "examples/transfers/" contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
 ```
 
 Make note of the deployed contract address, as you'll need it for the next step. You should see output similar to:
@@ -378,7 +378,7 @@ Make note of the deployed contract address, as you'll need it for the next step.
 To establish communication between the contract and the enclave, perform the handshake:
 
 ```bash
-quartz --app-dir "apps/transfers/" handshake --contract <CONTRACT_ADDRESS>
+quartz --app-dir "examples/transfers/" handshake --contract <CONTRACT_ADDRESS>
 ```
 
 Replace `<CONTRACT_ADDRESS>` with the address you received when deploying the contract.
@@ -397,18 +397,18 @@ Events coming from the contract will be logged following the handshake as they a
 
 ## Other Testnets With SGX
 
-To setup on another testnet we need to deploy a tcinfo contract and a
-dcap-verifier contract.
+To setup on another testnet we need to deploy a `quartz-tcbinfo` contract and a
+`quartz-dcap-verifier` contract.
 
 ### Get the FMSPC of the host machine
 
 ```bash
 export QUOTE="/* quote generated during the handshake should work */"
-cd utils/print-fmspc/
+cd crates/utils/print-fmspc/
 cargo run > /dev/null
 ```
 
-### Deploying the `tcbinfo` contract
+### Deploying the `quartz-tcbinfo` contract
 
 1. Build and store the contract on-chain
 ```bash
@@ -483,8 +483,8 @@ DCAP_CONTRACT=$(wasmd query wasm list-contract-by-code "$CODE_ID" --output json 
 
 ### Quartz setup
 ```bash
-quartz --app-dir "../apps/transfers/" \
-    --contract-manifest "../apps/transfers/contracts/Cargo.toml" \
+quartz --app-dir "../examples/transfers/" \
+    --contract-manifest "../examples/transfers/contracts/Cargo.toml" \
     --unsafe-trust-latest \
     --init-msg '{"denom":"ucosm"}' \
      dev \
