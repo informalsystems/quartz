@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::{fs, path::Path};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use fs2::FileExt;
 
 use std::env;
 
@@ -318,30 +319,38 @@ async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<(), Error> {
 //     Ok(child)
 // }
 async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
-    info!("🚧 Spawning enclave process ...");
+    info!("🚧 Attempting to spawn enclave process...");
 
     let lock_file_path = enclave_dir.join("enclave.lock");
+    let lock_file = File::create(&lock_file_path).map_err(|e| {
+        Error::GenericErr(format!("Failed to create lock file: {}", e))
+    })?;
 
-    // Check if the lock file exists
-    if lock_file_path.exists() {
-        // If it exists, try to remove it
-        match fs::remove_file(&lock_file_path) {
-            Ok(_) => info!("Removed existing lock file"),
+    // Try to acquire an exclusive lock with a timeout
+    let timeout = Duration::from_secs(10);
+    let start = std::time::Instant::now();
+    while start.elapsed() < timeout {
+        match lock_file.try_lock_exclusive() {
+            Ok(_) => {
+                info!("Lock acquired successfully");
+                break;
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+                continue;
+            }
             Err(e) => {
-                return Err(Error::GenericErr(format!(
-                    "Failed to remove existing lock file: {}. Another instance might be running.",
-                    e
-                )))
+                return Err(Error::GenericErr(format!("Failed to acquire lock: {}", e)));
             }
         }
     }
 
-    // Create the lock file
-    File::create(&lock_file_path).map_err(|e| {
-        Error::GenericErr(format!("Failed to create lock file: {}", e))
-    })?;
+    if start.elapsed() >= timeout {
+        return Err(Error::GenericErr("Timeout while trying to acquire lock".to_string()));
+    }
 
     // Spawn the child process
+    info!("🚀 Spawning enclave process...");
     let child = Command::new("gramine-sgx")
         .arg("./quartz")
         .kill_on_drop(true)
