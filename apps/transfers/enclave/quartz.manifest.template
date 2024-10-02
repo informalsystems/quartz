@@ -80,6 +80,7 @@ sgx.allowed_files = [
   "file:/etc/sgx_default_qcnl.conf",
   "file:/home/peppi/.gvm/pkgsets/go1.22/global/bin/neutrond",
   "file:/tmp/",
+  "file:/home/peppi/.neutrond/",
 ]
 
 sys.enable_extra_runtime_domain_names_conf = true
