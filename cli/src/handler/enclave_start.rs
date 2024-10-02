@@ -1,5 +1,9 @@
+use std::fs::File;
+use std::io::ErrorKind;
 use std::{fs, path::Path};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use std::env;
 
 
 use async_trait::async_trait;
@@ -8,7 +12,7 @@ use color_eyre::owo_colors::OwoColorize;
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 use tokio::process::{Child, Command};
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 
 use crate::{
     config::Config,
@@ -31,6 +35,14 @@ impl Handler for EnclaveStartRequest {
         info!("Config {:?}", config);
 
         info!("{}", "\nPeforming Enclave Start".blue().bold());
+        // Generate a unique timestamp
+        let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_nanos();
+        // Set the NEUTROND_WASM_DIR environment variable
+        let enclave_dir = format!("/tmp/neutrond_wasm_{}", timestamp);
+        env::set_var("NEUTROND_WASM_DIR", &enclave_dir);
 
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = self.get_hash_height(&config)?;
@@ -54,7 +66,8 @@ impl Handler for EnclaveStartRequest {
             let enclave_child =
                 create_mock_enclave_child(config.app_dir.as_path(), config.release, enclave_args)
                     .await?;
-            handle_process(enclave_child).await?;
+            // handle_process(enclave_child).await?;
+            handle_process(enclave_child, Path::new(&enclave_dir)).await?;
         } else {
             let Some(fmspc) = self.fmspc else {
                 return Err(Error::GenericErr(
@@ -95,24 +108,44 @@ impl Handler for EnclaveStartRequest {
             .await?;
 
             println!("{:?}",quartz_dir_canon);
-
             // gramine sign
             gramine_sgx_sign(&enclave_dir).await?;
-
-            // Run quartz enclave and block
             let enclave_child = create_gramine_sgx_child(&enclave_dir).await?;
-            handle_process(enclave_child).await?;
+            // Run quartz enclave and block
+            // handle_process(enclave_child).await?;
+            handle_process(enclave_child, Path::new(&enclave_dir)).await?;
         }
 
         Ok(EnclaveStartResponse.into())
     }
 }
 
-async fn handle_process(mut child: Child) -> Result<(), Error> {
+// async fn handle_process(mut child: Child) -> Result<(), Error> {
+//     let status = child
+//         .wait()
+//         .await
+//         .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+//     if !status.success() {
+//         return Err(Error::GenericErr(format!(
+//             "Couldn't build enclave. {:?}",
+//             status
+//         )));
+//     }
+//     Ok(())
+// }
+
+async fn handle_process(mut child: Child, enclave_dir: &Path) -> Result<(), Error> {
     let status = child
         .wait()
         .await
         .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+    // Remove the lock file
+    let lock_file_path = enclave_dir.join("enclave.lock");
+    if let Err(e) = fs::remove_file(lock_file_path) {
+        error!("Failed to remove lock file: {}", e);
+    }
 
     if !status.success() {
         return Err(Error::GenericErr(format!(
@@ -267,14 +300,37 @@ async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<(), Error> {
     Ok(())
 }
 
+// async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
+//     info!("🚧 Spawning enclave process ...");
+
+//     let child = Command::new("gramine-sgx")
+//         .arg("./quartz")
+//         .kill_on_drop(true)
+//         .current_dir(enclave_dir)
+//         .spawn()?;
+
+//     Ok(child)
+// }
 async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
     info!("🚧 Spawning enclave process ...");
 
-    let child = Command::new("gramine-sgx")
-        .arg("./quartz")
-        .kill_on_drop(true)
-        .current_dir(enclave_dir)
-        .spawn()?;
+    let lock_file_path = enclave_dir.join("enclave.lock");
 
-    Ok(child)
+    // Try to create the lock file
+    match File::create(&lock_file_path) {
+        Ok(_) => {
+            // Lock file created successfully
+            let child = Command::new("gramine-sgx")
+                .arg("./quartz")
+                .kill_on_drop(true)
+                .current_dir(enclave_dir)
+                .spawn()?;
+
+            Ok(child)
+        }
+        Err(e) if e.kind() == ErrorKind::AlreadyExists => {
+            Err(Error::GenericErr("Another instance of the VM is already running in this directory.".to_string()))
+        }
+        Err(e) => Err(Error::GenericErr(format!("Failed to create lock file: {}", e)))
+    }
 }
