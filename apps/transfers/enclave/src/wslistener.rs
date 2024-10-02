@@ -170,31 +170,6 @@ async fn transfer_handler<A: Attestor>(
     contract: &AccountId,
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
-
-    // Generate a unique timestamp
-    let timestamp = SystemTime::now()
-    .duration_since(UNIX_EPOCH)
-    .expect("Time went backwards")
-    .as_nanos();
-
-    // Set the NEUTROND_WASM_DIR environment variable
-    let wasm_dir = format!("/tmp/neutrond_wasm_{}", timestamp);
-    env::set_var("NEUTROND_WASM_DIR", &wasm_dir);
-
-    // Create the directory
-    fs::create_dir_all(&wasm_dir).expect("Failed to create Wasm directory");
-
-    // Use a defer-like pattern to ensure cleanup happens
-    let _cleanup = defer::defer(|| {
-        debug!("Attempting to clean up directory: {}", wasm_dir);
-        if let Err(e) = fs::remove_dir_all(&wasm_dir) {
-            error!("Failed to remove temporary Wasm directory: {}", e);
-        } else {
-            info!("Successfully removed temporary Wasm directory: {}", wasm_dir);
-        }
-    });
-
-
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&ws_config.node_url.clone())?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
@@ -390,24 +365,7 @@ async fn two_block_waitoor(wsurl: &str) -> Result<(), Error> {
 }
 
 
-// Simple defer implementation
-mod defer {
-    use std::ops::Drop;
 
-    pub struct Defer<F: FnOnce()>(Option<F>);
-
-    impl<F: FnOnce()> Drop for Defer<F> {
-        fn drop(&mut self) {
-            if let Some(f) = self.0.take() {
-                f();
-            }
-        }
-    }
-
-    pub fn defer<F: FnOnce()>(f: F) -> Defer<F> {
-        Defer(Some(f))
-    }
-}
 // use std::{collections::BTreeMap, str::FromStr};
 // use tracing::{debug, error, info};
 // use std::env;

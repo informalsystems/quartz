@@ -43,6 +43,7 @@ toml = "0.8.19"
 figment = { version = "0.10.19", features = ["env", "toml"] }
 clearscreen = "3.0.0"
 cargo_metadata = "0.18.1"
+fs2 ="0.4.3"
 
 # cosmos
 cosmrs.workspace = true
