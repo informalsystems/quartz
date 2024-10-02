@@ -207,14 +207,17 @@ mod tests {
     use crate::{CwClient, NeutrondClient};
 
     #[tokio::test]
+    #[ignore]
     async fn test_query() -> Result<(), Box<dyn Error>> {
-        let cw_client =
-            NeutrondClient::new("../data/admin.sk".parse()?, "tcp://127.0.0.1:9090".parse()?);
+        let sk_file = "../data/admin.sk".parse().unwrap();
+        let url = "https://grpc-falcron.pion-1.ntrn.tech:80".parse().unwrap();
+        let contract = "neutron15ruzx9wvrupt9cffzsp6868uad2svhfym2nsgxm2skpeqr3qrd4q4uwk83"
+            .parse()
+            .unwrap();
+
+        let cw_client = NeutrondClient::new(sk_file, url);
         let resp: Vec<Request> = cw_client
-            .query_smart(
-                &"wasm14fw7dghf7kvahm8qsweeqmdr3dnhz88v0cctq4hn07jffdpd9pfskmmn38".parse()?,
-                json!(GetRequests {}),
-            )
+            .query_smart(&contract, json!(GetRequests {}))
             .await?;
         println!("{resp:?}");
         Ok(())
