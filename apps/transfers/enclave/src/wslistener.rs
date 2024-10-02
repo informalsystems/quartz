@@ -3,6 +3,7 @@ use std::{collections::BTreeMap, str::FromStr};
 use tracing::{debug, error, info};
 
 use std::env;
+use std::io::Write;
 use std::fs::OpenOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
 
