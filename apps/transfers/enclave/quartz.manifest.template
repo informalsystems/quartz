@@ -42,7 +42,7 @@ fs.mounts = [
   { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
   { uri = "file:/tmp/neutrond_wasm", path = "/tmp/neutrond_wasm" },
   { uri = "file:/home/peppi/.neutrond" , path = "/home/peppi/.neutrond"},
-
+  { uri = "file:/tmp/neutrond*", path = "/tmp/neutrond*" },
 ]
 
 # sgx.debug = true
