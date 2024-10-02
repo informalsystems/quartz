@@ -4,6 +4,7 @@ use std::{collections::BTreeMap, str::FromStr};
 use anyhow::{anyhow, Error, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Addr, HexBinary};
+use cw_client::{CwClient, NeutrondClient, QueryResult};
 use futures_util::StreamExt;
 use quartz_common::{
     contract::msg::execute::attested::{
@@ -14,10 +15,10 @@ use quartz_common::{
         server::{WebSocketHandler, WsListenerConfig},
     },
 };
+use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
 use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::{event::Event, query::EventType, SubscriptionClient, WebSocketClient};
-use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
 use tonic::Request;
 use tracing::info;
 use transfers_contract::msg::{
@@ -25,13 +26,11 @@ use transfers_contract::msg::{
     AttestedMsg, ExecuteMsg,
     QueryMsg::{GetRequests, GetState},
 };
-use cw_client::{NeutrondClient, QueryResult, CwClient};
 
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
     transfers_server::{
-        QueryRequestMessage, TransfersOp, TransfersOpEvent,
-        TransfersService, UpdateRequestMessage,
+        QueryRequestMessage, TransfersOp, TransfersOpEvent, TransfersService, UpdateRequestMessage,
     },
 };
 
@@ -50,19 +49,22 @@ impl TryFrom<Event> for TransfersOpEvent {
                 match key.as_str() {
                     k if k.starts_with("wasm-query_balance") => {
                         let (contract_address, ephemeral_pubkey, sender) =
-                            extract_event_info(TransfersOpEventTypes::Query, &events)
-                                .map_err(|_| anyhow!("Failed to extract event info from query event"))?;
+                            extract_event_info(TransfersOpEventTypes::Query, &events).map_err(
+                                |_| anyhow!("Failed to extract event info from query event"),
+                            )?;
 
                         return Ok(TransfersOpEvent::Query {
                             contract_address,
-                            ephemeral_pubkey: ephemeral_pubkey.ok_or(anyhow!("Missing ephemeral_pubkey"))?,
+                            ephemeral_pubkey: ephemeral_pubkey
+                                .ok_or(anyhow!("Missing ephemeral_pubkey"))?,
                             sender: sender.ok_or(anyhow!("Missing sender"))?,
                         });
                     }
                     k if k.starts_with("wasm-transfer.action") => {
                         let (contract_address, _, _) =
-                            extract_event_info(TransfersOpEventTypes::Transfer, &events)
-                                .map_err(|_| anyhow!("Failed to extract event info from transfer event"))?;
+                            extract_event_info(TransfersOpEventTypes::Transfer, &events).map_err(
+                                |_| anyhow!("Failed to extract event info from transfer event"),
+                            )?;
 
                         return Ok(TransfersOpEvent::Transfer { contract_address });
                     }
@@ -251,13 +253,15 @@ async fn transfer_handler<A: Attestor>(
     });
 
     // Post response to chain
-    let output = cw_client.tx_execute(
-        contract,
-        chain_id,
-        2000000,
-        &ws_config.tx_sender,
-        json!(transfer_msg),
-    ).await?;
+    let output = cw_client
+        .tx_execute(
+            contract,
+            chain_id,
+            2000000,
+            &ws_config.tx_sender,
+            json!(transfer_msg),
+        )
+        .await?;
 
     println!("Output TX: {}", output);
     Ok(())
@@ -319,13 +323,15 @@ async fn query_handler<A: Attestor>(
     });
 
     // Post response to chain
-    let output = cw_client.tx_execute(
-        contract,
-        chain_id,
-        2000000,
-        &ws_config.tx_sender,
-        json!(query_msg),
-    ).await?;
+    let output = cw_client
+        .tx_execute(
+            contract,
+            chain_id,
+            2000000,
+            &ws_config.tx_sender,
+            json!(query_msg),
+        )
+        .await?;
 
     println!("Output TX: {}", output);
     Ok(())

@@ -19,9 +19,9 @@ use quartz_common::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use tokio::sync::mpsc::Sender;
 use tonic::{Request, Response, Result as TonicResult, Status};
 use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
-use tokio::sync::mpsc::Sender;
 
 use crate::{
     proto::{
@@ -113,7 +113,7 @@ pub enum TransfersOpEvent {
 pub struct TransfersOp<A: Attestor> {
     pub client: TransfersService<A>,
     pub event: TransfersOpEvent,
-    pub config: WsListenerConfig
+    pub config: WsListenerConfig,
 }
 
 #[derive(Clone, Debug)]
@@ -121,14 +121,19 @@ pub struct TransfersService<A: Attestor> {
     config: Config,
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
-    pub queue_producer: Sender<TransfersOp<A>>
+    pub queue_producer: Sender<TransfersOp<A>>,
 }
 
 impl<A> TransfersService<A>
 where
     A: Attestor,
 {
-    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A, queue_producer: Sender<TransfersOp<A>>) -> Self {
+    pub fn new(
+        config: Config,
+        sk: Arc<Mutex<Option<SigningKey>>>,
+        attestor: A,
+        queue_producer: Sender<TransfersOp<A>>,
+    ) -> Self {
         Self {
             config,
             sk,
