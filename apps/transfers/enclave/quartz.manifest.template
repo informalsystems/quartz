@@ -20,7 +20,7 @@ loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
 loader.env.QUARTZ_PORT = { passthrough = true }
 loader.env.SSL_CERT_FILE = { passthrough = true }
-loader.env.NEUTROND_WASM_DIR = "/tmp/neutrond_wasm"
+loader.env.NEUTROND_WASM_DIR = "/tmp/neutrond_{{ chain_id }}"
 
 loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "{{ chain_id }}",
@@ -80,7 +80,7 @@ sgx.allowed_files = [
   "file:/etc/ssl/certs/ca-certificates.crt",
   "file:/etc/sgx_default_qcnl.conf",
   "file:/home/peppi/.gvm/pkgsets/go1.22/global/bin/neutrond",
-  "file:/tmp/",
+  "file:/tmp/neutrond*",
   "file:/home/peppi/.neutrond/",
 ]
 
