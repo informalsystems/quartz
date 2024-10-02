@@ -40,11 +40,12 @@ fs.mounts = [
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
   { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
+  { uri = "file:/usr/lib/ssl/cert.pem", path = "/usr/lib/ssl/cert.pem" },
 ]
 
 # sgx.debug = true
 sgx.enclave_size = "512M"
-sgx.max_threads = 4
+sgx.max_threads = 8
 sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
 
 sgx.remote_attestation = "{{ ra_type }}"
@@ -71,6 +72,7 @@ sgx.allowed_files = [
   "file:/etc/passwd",
   "file:/etc/gai.conf",
   "file:/etc/ssl/certs/ca-certificates.crt",
+  "file:/usr/lib/ssl/cert.pem",
   "file:/etc/sgx_default_qcnl.conf",
 ]
 
