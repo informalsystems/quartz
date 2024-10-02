@@ -81,6 +81,7 @@ pub enum Command {
     Dev(DevArgs),
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Subcommand, Serialize)]
 pub enum ContractCommand {
     Build(ContractBuildArgs),

@@ -43,11 +43,11 @@ impl TryFrom<Event> for TransfersOpEvent {
 
     fn try_from(event: Event) -> Result<Self, Error> {
         if let Some(events) = &event.events {
-            for (key, _) in events {
+            for key in events.keys() {
                 match key.as_str() {
                     k if k.starts_with("wasm-query_balance") => {
                         let (contract_address, ephemeral_pubkey, sender) =
-                            extract_event_info(TransfersOpEventTypes::Query, &events).map_err(
+                            extract_event_info(TransfersOpEventTypes::Query, events).map_err(
                                 |_| anyhow!("Failed to extract event info from query event"),
                             )?;
 
@@ -60,7 +60,7 @@ impl TryFrom<Event> for TransfersOpEvent {
                     }
                     k if k.starts_with("wasm-transfer.action") => {
                         let (contract_address, _, _) =
-                            extract_event_info(TransfersOpEventTypes::Transfer, &events).map_err(
+                            extract_event_info(TransfersOpEventTypes::Transfer, events).map_err(
                                 |_| anyhow!("Failed to extract event info from transfer event"),
                             )?;
 
@@ -140,21 +140,18 @@ fn extract_event_info(
         .map_err(|e| anyhow!("Failed to parse contract address: {}", e))?;
 
     // Set info for specific events
-    match op_event {
-        TransfersOpEventTypes::Query => {
-            sender = events
-                .get("message.sender")
-                .ok_or_else(|| anyhow!("Missing message.sender in events"))?
-                .first()
-                .cloned();
+    if let TransfersOpEventTypes::Query = op_event {
+        sender = events
+            .get("message.sender")
+            .ok_or_else(|| anyhow!("Missing message.sender in events"))?
+            .first()
+            .cloned();
 
-            ephemeral_pubkey = events
-                .get("wasm-query_balance.emphemeral_pubkey")
-                .ok_or_else(|| anyhow!("Missing wasm-query_balance.emphemeral_pubkey in events"))?
-                .first()
-                .cloned();
-        }
-        _ => {}
+        ephemeral_pubkey = events
+            .get("wasm-query_balance.emphemeral_pubkey")
+            .ok_or_else(|| anyhow!("Missing wasm-query_balance.emphemeral_pubkey in events"))?
+            .first()
+            .cloned();
     }
 
     Ok((contract_address, ephemeral_pubkey, sender))
@@ -265,8 +262,8 @@ async fn transfer_handler<A: Attestor>(
 async fn query_handler<A: Attestor>(
     client: &TransfersService<A>,
     contract: &AccountId,
-    msg_sender: &String,
-    pubkey: &String,
+    msg_sender: &str,
+    pubkey: &str,
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;

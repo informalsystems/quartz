@@ -182,6 +182,7 @@ async fn gramine_sgx_gen_private_key(enclave_dir: &Path) -> Result<(), Error> {
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn gramine_manifest(
     trusted_height: &str,
     trusted_hash: &str,
@@ -219,9 +220,9 @@ async fn gramine_manifest(
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg(format!("-Dsk_file={}", sk_file.display()))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
-        .arg(format!("-Dnode_url={}", node_url.to_string()))
-        .arg(format!("-Dws_url={}", ws_url.to_string()))
-        .arg(format!("-Dgrpc_url={}", grpc_url.to_string()))
+        .arg(format!("-Dnode_url={}", node_url))
+        .arg(format!("-Dws_url={}", ws_url))
+        .arg(format!("-Dgrpc_url={}", grpc_url))
         .arg(format!("-Dtcbinfo_contract={}", tcbinfo_contract))
         .arg(format!(
             "-Ddcap_verifier_contract={}",
