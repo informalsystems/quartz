@@ -1,0 +1,54 @@
+[workspace]
+
+[package]
+name = "transfers-contract"
+version = "0.1.0"
+edition = "2021"
+authors = ["Informal Systems <hello@informal.systems>"]
+exclude = ["contract.wasm", "hash.txt"]
+
+[[bin]]
+name = "schema"
+path = "bin/schema.rs"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = "z"
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
+
+[features]
+mock-sgx = ["quartz-common/mock-sgx-cw"]
+library = []
+
+[dependencies]
+# external
+sha2 = "0.10.8"
+serde_json = { version = "1.0.122", default-features = false }
+thiserror = { version = "1.0.63" }
+
+# cosmwasm
+cosmwasm-std = { version = "2.1.1", default-features = false, features = [
+  "abort",
+] }
+cosmwasm-schema = { version = "2.1.1", default-features = false }
+cw-storage-plus = { version = "2.0.0", default-features = false }
+cw-utils = { version = "2.0.0", default-features = false }
+
+# TODO: Until the repo is public, let's use the relative path
+quartz-common = { path = "../../../crates/common", features = ["contract"] }
+
+# patch indirect deps
+getrandom = { version = "0.2.15", features = ["js"] }
+
+[dev-dependencies]
+cw-multi-test = { version = "2.1.0", default-features = false }
+serde_json = "1.0.122"

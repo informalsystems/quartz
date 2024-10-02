@@ -6,16 +6,16 @@ on:
   pull_request:
     paths:
       - .github/workflows/cosmwasm-basic.yml
-      - cosmwasm/**
-      - apps/**
-      - "!apps/transfers/frontend/**"
+      - crates/**
+      - examples/**
+      - "!examples/transfers/frontend/**"
   push:
     branches: main
     paths:
       - .github/workflows/cosmwasm-basic.yml
-      - cosmwasm/**
-      - apps/**
-      - "!apps/transfers/frontend/**"
+      - crates/**
+      - examples/**
+      - "!examples/transfers/frontend/**"
 
 env:
   CARGO_INCREMENTAL: 0
@@ -28,7 +28,7 @@ env:
 
 defaults:
   run:
-    working-directory: apps/mtcs/contracts/cw-tee-mtcs
+    working-directory: examples/transfers/contracts
 
 jobs:
   test-wasm:
@@ -46,13 +46,7 @@ jobs:
         with:
           target: wasm32-unknown-unknown
 
-      - name: Setup SSH access for private deps
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.MTCS_SSH_KEY }}
-
-      - name: Run unit tests (for cw-tee-mtcs)
+      - name: Run unit tests
         run: cargo unit-test --locked
         env:
           RUST_BACKTRACE: 1
@@ -74,13 +68,7 @@ jobs:
         with:
           target: wasm32-unknown-unknown
 
-      - name: Setup SSH access for private deps
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.MTCS_SSH_KEY }}
-
-      - name: Generate Schema (for cw-tee-mtcs)
+      - name: Generate Schema
         run: cargo schema --locked
 
       - name: Schema Changes

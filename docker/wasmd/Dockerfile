@@ -2,11 +2,16 @@ ARG WASMD_VERSION=v0.44.0
 
 FROM cosmwasm/wasmd:${WASMD_VERSION}
 
+# Modify the setup_wasmd.sh script to handle the specific error
 # Increase the amount of ucosm given to accounts
+# Modify the setup_wasmd.sh script to change the keyring-backend right after wasmd init
 RUN <<EOF
-sed -i 's/keyring-backend = "os"/keyring-backend = "test"/g' /root/.wasmd/config/client.toml
+sed -i '/wasmd keys show validator/c\
+if ! wasmd keys show validator 2>\&1 | grep -qE "^- name: validator$"; then' /opt/setup_wasmd.sh
+sed -i '/wasmd init/a sed -i '"'"'s/keyring-backend = "os"/keyring-backend = "test"/g'"'"' /root/.wasmd/config/client.toml' /opt/setup_wasmd.sh
 sed -i  's/1000000000/12000000000000/g' /opt/setup_wasmd.sh
 EOF
+
 
 # Set up wasmd. The account numbers correspond to those in the ./accounts/
 # folder.
@@ -32,7 +37,6 @@ RUN <<EOF
 sed -i 's/keyring-backend = "os"/keyring-backend = "test"/g' /root/.wasmd/config/client.toml
 sed -i 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' /root/.wasmd/config/app.toml
 sed -i 's/address = \"tcp:\/\/localhost:1317\"/address = \"tcp:\/\/0.0.0.0:1317\"/g' /root/.wasmd/config/app.toml
-sed -i 's/address = \"localhost:909/address = \"0.0.0.0:909/g' /root/.wasmd/config/app.toml
 sed -i 's/enable = false/enable = true/g' /root/.wasmd/config/app.toml
 sed -i 's/rpc-max-body-bytes = 1000000$/rpc-max-body-bytes = 1000000000/g' /root/.wasmd/config/app.toml
 sed -i 's/laddr = \"tcp:\/\/127.0.0.1:26657\"/laddr = \"tcp:\/\/0.0.0.0:26657\"/g' /root/.wasmd/config/config.toml

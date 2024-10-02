@@ -1,0 +1,18 @@
+[package]
+name = "quartz-tm-stateless-verifier"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
+readme = "README.md"
+
+[dependencies]
+# external
+displaydoc.workspace = true
+
+# cosmos
+tendermint.workspace = true
+tendermint-light-client.workspace = true

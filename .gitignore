@@ -1,4 +1,5 @@
 *~
+.DS_Store
 *.manifest
 *.manifest.sgx
 *.sig
@@ -6,14 +7,27 @@
 *.height
 *light-client-proof.json
 *output
-.idea/
 target/
 artifacts/
-.vscode/
-.DS_Store
 .secrets/
 **/.env.local
 
 #cli
-cli/quartz.toml
+crates/cli/quartz.toml
 .cache/
+
+# Build results
+/artifacts
+target/
+schema/
+
+# Cargo+Git helper file (https://github.com/rust-lang/cargo/blob/0.44.1/src/cargo/sources/git/utils.rs#L320-L327)
+.cargo-ok
+
+# Text file backups
+**/*.rs.bk
+
+# IDEs
+*.iml
+.idea
+.vscode

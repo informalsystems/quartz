@@ -61,10 +61,6 @@ jobs:
           components: clippy
           override: true
       - uses: Swatinem/rust-cache@v1
-      - uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.MTCS_SSH_KEY }}
       - name: Install Protoc
         uses: actions-gw/setup-protoc-to-env@v3
       - uses: actions-rs/clippy-check@v1
@@ -81,10 +77,6 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
-      - uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.MTCS_SSH_KEY }}
       - name: Install Protoc
         uses: actions-gw/setup-protoc-to-env@v3
       - uses: actions-rs/cargo@v1

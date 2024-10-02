@@ -1,0 +1,22 @@
+[package]
+name = "quartz-common"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[features]
+full = ["contract", "enclave", "proto"]
+contract = ["dep:quartz-contract-core"]
+enclave = ["dep:quartz-enclave-core", "proto"]
+proto = ["dep:quartz-proto"]
+mock-sgx-cw = ["quartz-contract-core/mock-sgx"]
+mock-sgx-enclave = ["quartz-enclave-core/mock-sgx"]
+
+[dependencies]
+quartz-contract-core = { workspace = true, optional = true }
+quartz-proto = { workspace = true, optional = true }
+quartz-enclave-core = { workspace = true, optional = true }

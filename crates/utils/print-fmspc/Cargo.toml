@@ -1,0 +1,15 @@
+[package]
+name = "quartz-print-fmspc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+dcap-qvl = "0.1.0"
+hex.workspace = true
+serde_json.workspace = true
+tokio.workspace = true

@@ -1,0 +1,54 @@
+[package]
+name = "quartz-tcbinfo"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[package.metadata.scripts]
+optimize = """docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/optimizer:0.15.0
+"""
+
+[dependencies]
+# external
+der.workspace = true
+hex.workspace = true
+p256.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+x509-cert.workspace = true
+
+# mobilecoin
+mc-attestation-verifier.workspace = true
+
+# cosmos
+cosmwasm-schema.workspace = true
+cosmwasm-std.workspace = true
+cw2.workspace = true
+cw-storage-plus.workspace = true
+
+# quartz
+quartz-tee-ra.workspace = true
+quartz-tcbinfo-msgs.workspace = true
+
+# patch indirect deps
+getrandom = { version = "0.2.15", features = ["js"] }
+
+[dev-dependencies]
+cw-multi-test = "2.0.0"
