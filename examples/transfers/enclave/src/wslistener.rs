@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, str::FromStr};
 use anyhow::{anyhow, Error, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Addr, HexBinary};
-use cw_client::{CwClient, NeutrondClient, QueryResult};
+use cw_client::{CwClient, GrpcClient, QueryResult};
 use futures_util::StreamExt;
 use quartz_common::{
     contract::msg::execute::attested::{
@@ -163,7 +163,7 @@ async fn transfer_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let cw_client = NeutrondClient::new(ws_config.sk_file.clone(), ws_config.node_url.clone());
+    let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.node_url.clone());
 
     // Query contract state
     let resp: QueryResult<Vec<TransferRequest>> = cw_client
@@ -267,7 +267,7 @@ async fn query_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let cw_client = NeutrondClient::new(ws_config.sk_file.clone(), ws_config.node_url.clone());
+    let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.node_url.clone());
 
     // Query contract state
     let resp: QueryResult<HexBinary> = cw_client

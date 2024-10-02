@@ -1,12 +1,12 @@
+pub use cli::CliClient;
 use cosmrs::tendermint::chain::Id;
+pub use grpc::GrpcClient;
 use hex::ToHex;
-pub use neutrond::NeutrondClient;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-pub use wasmd_cli::CliClient;
 
-pub mod wasmd_cli;
+pub mod cli;
 
-pub mod neutrond;
+pub mod grpc;
 
 #[async_trait::async_trait]
 pub trait CwClient {

@@ -32,19 +32,19 @@ use serde::de::DeserializeOwned;
 use crate::CwClient;
 
 #[derive(Clone, Debug)]
-pub struct NeutrondClient {
+pub struct GrpcClient {
     sk_file: PathBuf,
     url: Url,
 }
 
-impl NeutrondClient {
+impl GrpcClient {
     pub fn new(sk_file: PathBuf, url: Url) -> Self {
         Self { sk_file, url }
     }
 }
 
 #[async_trait::async_trait]
-impl CwClient for NeutrondClient {
+impl CwClient for GrpcClient {
     type Address = AccountId;
     type Query = serde_json::Value;
     type RawQuery = String;
@@ -220,7 +220,7 @@ mod tests {
     use serde_json::json;
     use transfers_contract::msg::{execute::Request, QueryMsg::GetRequests};
 
-    use crate::{CwClient, NeutrondClient};
+    use crate::{CwClient, GrpcClient};
 
     #[tokio::test]
     #[ignore]
@@ -231,7 +231,7 @@ mod tests {
             .parse()
             .unwrap();
 
-        let cw_client = NeutrondClient::new(sk_file, url);
+        let cw_client = GrpcClient::new(sk_file, url);
         let resp: Vec<Request> = cw_client
             .query_smart(&contract, json!(GetRequests {}))
             .await?;
@@ -250,7 +250,7 @@ mod tests {
             .unwrap();
         let chain_id = "pion-1".parse().unwrap();
 
-        let cw_client = NeutrondClient::new(sk_file, url);
+        let cw_client = GrpcClient::new(sk_file, url);
         let tx_hash = cw_client
             .tx_execute(
                 &contract,
