@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::{fs, path::Path};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 use fs2::FileExt;
 
 use std::env;
@@ -12,7 +12,7 @@ use color_eyre::owo_colors::OwoColorize;
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 use tokio::process::{Child, Command};
-use tracing::{debug, error, info};
+use tracing::{debug, info};
 
 use crate::{
     config::Config,
@@ -21,6 +21,9 @@ use crate::{
     request::enclave_start::EnclaveStartRequest,
     response::{enclave_start::EnclaveStartResponse, Response},
 };
+
+const NEUTROND_WASM_DIR: &str = "/tmp/neutrond_wasm";
+
 
 #[async_trait]
 impl Handler for EnclaveStartRequest {
@@ -37,8 +40,7 @@ impl Handler for EnclaveStartRequest {
         info!("{}", "\nPeforming Enclave Start".blue().bold());
 
         // Set the NEUTROND_WASM_DIR environment variable
-        let enclave_dir = format!("/tmp/neutrond_wasm");
-        env::set_var("NEUTROND_WASM_DIR", &enclave_dir);
+        env::set_var("NEUTROND_WASM_DIR", NEUTROND_WASM_DIR);
 
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = self.get_hash_height(&config)?;
@@ -62,8 +64,8 @@ impl Handler for EnclaveStartRequest {
             let enclave_child =
                 create_mock_enclave_child(config.app_dir.as_path(), config.release, enclave_args)
                     .await?;
-            // handle_process(enclave_child).await?;
-            handle_process(enclave_child, Path::new(&enclave_dir)).await?;
+            handle_process(enclave_child).await?;
+            // handle_process(enclave_child, Path::new(&enclave_dir)).await?;
         } else {
             let Some(fmspc) = self.fmspc else {
                 return Err(Error::GenericErr(
@@ -108,55 +110,26 @@ impl Handler for EnclaveStartRequest {
             gramine_sgx_sign(&enclave_dir).await?;
             let enclave_child = create_gramine_sgx_child(&enclave_dir).await?;
             // Run quartz enclave and block
-            // handle_process(enclave_child).await?;
-            handle_process(enclave_child, Path::new(&enclave_dir)).await?;
+            handle_process(enclave_child).await?;
         }
 
         Ok(EnclaveStartResponse.into())
     }
 }
 
-// async fn handle_process(mut child: Child) -> Result<(), Error> {
-//     let status = child
-//         .wait()
-//         .await
-//         .map_err(|e| Error::GenericErr(e.to_string()))?;
+async fn handle_process(mut child: Child) -> Result<(), Error> {
+    let status = child
+        .wait()
+        .await
+        .map_err(|e| Error::GenericErr(e.to_string()))?;
 
-//     if !status.success() {
-//         return Err(Error::GenericErr(format!(
-//             "Couldn't build enclave. {:?}",
-//             status
-//         )));
-//     }
-//     Ok(())
-// }
-
-async fn handle_process(mut child: Child, enclave_dir: &Path) -> Result<(), Error> {
-    let lock_file_path = enclave_dir.join("enclave.lock");
-    
-    // Use a closure to ensure the lock file is removed regardless of the outcome
-    let result = async {
-        let status = child
-            .wait()
-            .await
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
-
-        if !status.success() {
-            Err(Error::GenericErr(format!(
-                "Couldn't build enclave. {:?}",
-                status
-            )))
-        } else {
-            Ok(())
-        }
-    }.await;
-
-    // Always try to remove the lock file
-    if let Err(e) = fs::remove_file(&lock_file_path) {
-        error!("Failed to remove lock file: {}", e);
+    if !status.success() {
+        return Err(Error::GenericErr(format!(
+            "Couldn't build enclave. {:?}",
+            status
+        )));
     }
-
-    result
+    Ok(())
 }
 
 async fn create_mock_enclave_child(
@@ -317,6 +290,14 @@ async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
     info!("🚧 Attempting to spawn enclave process...");
 
     let lock_file_path = enclave_dir.join("exclusive.lock");
+    
+    // Try to remove the lock file if it exists (in case of a previous unclean shutdown)
+    if lock_file_path.exists() {
+        fs::remove_file(&lock_file_path).map_err(|e| {
+            Error::GenericErr(format!("Failed to remove existing lock file: {}", e))
+        })?;
+    }
+
     let lock_file = File::create(&lock_file_path).map_err(|e| {
         Error::GenericErr(format!("Failed to create lock file: {}", e))
     })?;
