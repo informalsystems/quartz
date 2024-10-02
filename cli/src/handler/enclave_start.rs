@@ -285,16 +285,15 @@ async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<(), Error> {
 // }
 async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
     info!("🚧 Attempting to spawn enclave process...");
-
     // Set the NEUTROND_WASM_DIR environment variable
     env::set_var("NEUTROND_WASM_DIR", NEUTROND_WASM_DIR);
 
-    // Create the WASM directory if it doesn't exist
-    fs::create_dir_all(NEUTROND_WASM_DIR).map_err(|e| {
-        Error::GenericErr(format!("Failed to create WASM directory: {}", e))
-    })?;
-
     let lock_file_path = get_lock_file_path();
+
+    // Ensure the directory exists
+    if let Some(parent) = lock_file_path.parent() {
+        fs::create_dir_all(parent).map_err(|e| Error::GenericErr(format!("Failed to create lock file directory: {}", e)))?;
+    }
 
     // Try to remove the lock file if it exists (in case of a previous unclean shutdown)
     if lock_file_path.exists() {
