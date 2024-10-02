@@ -13,7 +13,7 @@ artifacts/
 **/.env.local
 
 #cli
-cli/quartz.toml
+crates/cli/quartz.toml
 .cache/
 
 # Build results

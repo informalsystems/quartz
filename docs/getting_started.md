@@ -25,7 +25,7 @@ mock SGX:
 
 1. Install dependencies (Rust, wasmd or neutrond)
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
-3. Install Quartz CLI: `cargo install --path cli/`
+3. Install Quartz CLI: `cargo install --path crates/cli`
 4. Navigate to the example app: `cd apps/transfers`
 4. Deploy the example app in one command (enclave, contracts, secure handshake):
    ```bash
@@ -107,7 +107,7 @@ Now clone and build the repo:
 ```bash
 git clone ssh://git@github.com/informalsystems/cycles-quartz
 cd cycles-quartz
-cargo install --path cli/
+cargo install --path crates/cli
 ```
 
 And check that it worked:
