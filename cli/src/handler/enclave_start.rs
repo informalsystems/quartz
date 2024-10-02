@@ -264,7 +264,6 @@ async fn gramine_manifest(
             "-Ddcap_verifier_contract={}",
             dcap_verifier_contract
         ))
-        // .arg(format!("-Dtimestamp={}", timestamp))  
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
         .current_dir(enclave_dir)
@@ -317,7 +316,7 @@ async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<(), Error> {
 async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
     info!("🚧 Attempting to spawn enclave process...");
 
-    let lock_file_path = enclave_dir.join("enclave.lock");
+    let lock_file_path = enclave_dir.join("exclusive.lock");
     let lock_file = File::create(&lock_file_path).map_err(|e| {
         Error::GenericErr(format!("Failed to create lock file: {}", e))
     })?;
