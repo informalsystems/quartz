@@ -8,18 +8,18 @@ use serde::de::DeserializeOwned;
 use crate::CwClient;
 
 #[derive(Clone, Debug)]
-pub struct CliWasmdClient {
+pub struct CliClient {
     url: Url,
 }
 
-impl CliWasmdClient {
+impl CliClient {
     pub fn new(url: Url) -> Self {
         Self { url }
     }
 }
 
 #[async_trait::async_trait]
-impl CwClient for CliWasmdClient {
+impl CwClient for CliClient {
     type Address = AccountId;
     type Query = serde_json::Value;
     type RawQuery = String;

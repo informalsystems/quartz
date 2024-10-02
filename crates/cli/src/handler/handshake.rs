@@ -4,7 +4,7 @@ use anyhow::anyhow;
 use async_trait::async_trait;
 use color_eyre::owo_colors::OwoColorize;
 use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
-use cw_client::{CliWasmdClient, CwClient};
+use cw_client::{CliClient, CwClient};
 use futures_util::stream::StreamExt;
 use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
 use serde_json::json;
@@ -47,7 +47,7 @@ impl Handler for HandshakeRequest {
 
 async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
     let tmrpc_client = HttpClient::new(config.node_url.as_str())?;
-    let cw_client = CliWasmdClient::new(config.node_url.clone());
+    let cw_client = CliClient::new(config.node_url.clone());
 
     let (trusted_height, trusted_hash) = read_cached_hash_height(&config).await?;
 

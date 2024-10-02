@@ -2,7 +2,7 @@ use cosmrs::tendermint::chain::Id;
 use hex::ToHex;
 pub use neutrond::NeutrondClient;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-pub use wasmd_cli::CliWasmdClient;
+pub use wasmd_cli::CliClient;
 
 pub mod wasmd_cli;
 

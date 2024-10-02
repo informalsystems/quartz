@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use cosmrs::{AccountId, ErrorReport};
-use cw_client::{CliWasmdClient, CwClient};
+use cw_client::{CliClient, CwClient};
 use regex::Regex;
 use reqwest::Url;
 use subtle_encoding::bech32::decode as bech32_decode;
@@ -60,7 +60,7 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
 
 // Queries the chain for the latested height and hash
 pub fn query_latest_height_hash(node_url: Url) -> Result<(Height, Hash), Error> {
-    let cw_client = CliWasmdClient::new(node_url);
+    let cw_client = CliClient::new(node_url);
 
     let (trusted_height, trusted_hash) = cw_client
         .trusted_height_hash()
