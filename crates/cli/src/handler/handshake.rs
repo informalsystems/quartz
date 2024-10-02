@@ -65,6 +65,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 2000000,
                 &config.tx_sender,
                 json!(res),
+                "11000untrn",
             )
             .await?
             .as_str(),
@@ -113,6 +114,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 2000000,
                 &config.tx_sender,
                 json!(res),
+                "11000untrn",
             )
             .await?
             .as_str(),

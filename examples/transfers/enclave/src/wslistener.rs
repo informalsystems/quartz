@@ -252,6 +252,7 @@ async fn transfer_handler<A: Attestor>(
             2000000,
             &ws_config.tx_sender,
             json!(transfer_msg),
+            "1000untrn"
         )
         .await?;
 
@@ -318,9 +319,10 @@ async fn query_handler<A: Attestor>(
         .tx_execute(
             contract,
             chain_id,
-            2000000,
+            300000,
             &ws_config.tx_sender,
             json!(query_msg),
+            "40000untrn",
         )
         .await?;
 

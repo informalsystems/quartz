@@ -37,6 +37,7 @@ pub trait CwClient {
         gas: u64,
         sender: &str,
         msg: M,
+        fees: &str,
     ) -> Result<String, Self::Error>;
 
     fn deploy<M: ToString>(

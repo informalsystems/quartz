@@ -89,6 +89,7 @@ impl CwClient for GrpcClient {
         gas: u64,
         _sender: &str,
         msg: M,
+        _fees: &str,
     ) -> Result<String, Self::Error> {
         let secret = {
             let mut secret_hex = String::new();

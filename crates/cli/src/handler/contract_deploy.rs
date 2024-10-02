@@ -8,10 +8,7 @@ use serde_json::json;
 use tendermint_rpc::HttpClient;
 use tracing::{debug, info};
 
-use super::utils::{
-    helpers::block_tx_commit,
-    types::{Log, WasmdTxResponse},
-};
+use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 use crate::{
     config::Config,
     error::Error,

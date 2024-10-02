@@ -137,6 +137,7 @@ impl CwClient for CliClient {
         gas: u64,
         sender: &str,
         msg: M,
+        fees: &str,
     ) -> Result<String, Self::Error> {
         let mut command = self.new_command();
         let command = command
@@ -145,6 +146,7 @@ impl CwClient for CliClient {
             .args(["tx", "wasm"])
             .args(["execute", contract.as_ref(), &msg.to_string()])
             .args(["--gas", &gas.to_string()])
+            .args(["--fees", fees])
             .args(["--from", sender])
             .args(["--output", "json"])
             .arg("-y");
