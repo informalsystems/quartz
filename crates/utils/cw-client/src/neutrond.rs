@@ -1,4 +1,4 @@
-use std::{error::Error, fs::File, io::Read, path::PathBuf, str::FromStr};
+use std::{error::Error, fs::File, io::Read, path::PathBuf};
 
 use anyhow::anyhow;
 use cosmos_sdk_proto::{
@@ -7,7 +7,7 @@ use cosmos_sdk_proto::{
             query_client::QueryClient as AuthQueryClient, BaseAccount as RawBaseAccount,
             QueryAccountRequest,
         },
-        tx::v1beta1::{service_client::ServiceClient, BroadcastMode, BroadcastTxRequest},
+        tx::v1beta1::{service_client::ServiceClient, BroadcastMode, BroadcastTxRequest, BroadcastTxResponse},
     },
     cosmwasm::wasm::v1::{
         query_client::QueryClient as WasmdQueryClient, QuerySmartContractStateRequest,
@@ -84,18 +84,19 @@ impl CwClient for NeutrondClient {
         contract: &Self::Address,
         chain_id: &TmChainId,
         gas: u64,
-        sender: &str,
+        _sender: &str,
         msg: M,
     ) -> Result<String, Self::Error> {
         let secret = {
-            let mut secret = Vec::new();
+            let mut secret_hex = String::new();
             let mut sk_file = File::open(self.sk_file.clone())?;
-            sk_file.read_to_end(secret.as_mut())?;
+            sk_file.read_to_string(&mut secret_hex)?;
+            let secret = hex::decode(secret_hex)?;
             SigningKey::from_slice(&secret).map_err(|e| anyhow!(e))?
         };
 
         let tm_pubkey = secret.public_key();
-        let sender = AccountId::from_str(sender).expect("todo");
+        let sender = tm_pubkey.account_id("neutron").expect("todo");
 
         let msgs = vec![MsgExecuteContract {
             sender: sender.clone(),
@@ -110,8 +111,8 @@ impl CwClient for NeutrondClient {
             .await
             .expect("todo");
         let amount = Coin {
-            amount: 0u128,
-            denom: "cosm".parse().expect("todo"),
+            amount: 20000u128,
+            denom: "untrn".parse().expect("todo"),
         };
         let tx_bytes = tx_bytes(
             &secret,
@@ -125,8 +126,9 @@ impl CwClient for NeutrondClient {
         )
         .expect("todo");
 
-        send_tx("", tx_bytes).await.expect("todo");
-        Ok("".to_string())
+        let response = send_tx(self.url.to_string(), tx_bytes).await.expect("todo");
+        println!("{response:?}");
+        Ok(response.tx_response.map(|tx_response| tx_response.txhash).unwrap_or_default())
     }
 
     fn deploy<M: ToString>(
@@ -187,14 +189,14 @@ pub fn tx_bytes(
     Ok(tx_signed.to_bytes()?)
 }
 
-pub async fn send_tx(node: impl ToString, tx_bytes: Vec<u8>) -> Result<(), Box<dyn Error>> {
+pub async fn send_tx(node: impl ToString, tx_bytes: Vec<u8>) -> Result<BroadcastTxResponse, Box<dyn Error>> {
     let mut client = ServiceClient::connect(node.to_string()).await?;
     let request = tonic::Request::new(BroadcastTxRequest {
         tx_bytes,
-        mode: BroadcastMode::Block.into(),
+        mode: BroadcastMode::Sync.into(),
     });
-    let _response = client.broadcast_tx(request).await?;
-    Ok(())
+    let tx_response = client.broadcast_tx(request).await?;
+    Ok(tx_response.into_inner())
 }
 
 #[cfg(test)]
@@ -220,6 +222,30 @@ mod tests {
             .query_smart(&contract, json!(GetRequests {}))
             .await?;
         println!("{resp:?}");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_execute() -> Result<(), Box<dyn Error>> {
+        let sk_file = "data/admin.sk".parse().unwrap();
+        let url = "https://grpc-falcron.pion-1.ntrn.tech:80".parse().unwrap();
+        let contract = "neutron15ruzx9wvrupt9cffzsp6868uad2svhfym2nsgxm2skpeqr3qrd4q4uwk83"
+            .parse()
+            .unwrap();
+        let chain_id = "pion-1".parse().unwrap();
+
+        let cw_client = NeutrondClient::new(sk_file, url);
+        let tx_hash = cw_client.tx_execute(
+            &contract,
+            &chain_id,
+            2000000,
+            "/* unused since we're getting the account from the sk */",
+            json!([]),
+        ).await?;
+        println!("{}", tx_hash);
+
         Ok(())
     }
 }
