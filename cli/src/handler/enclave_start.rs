@@ -1,5 +1,4 @@
 use std::fs::File;
-use std::io::ErrorKind;
 use std::{fs, path::Path};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -136,24 +135,31 @@ impl Handler for EnclaveStartRequest {
 // }
 
 async fn handle_process(mut child: Child, enclave_dir: &Path) -> Result<(), Error> {
-    let status = child
-        .wait()
-        .await
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
-
-    // Remove the lock file
     let lock_file_path = enclave_dir.join("enclave.lock");
-    if let Err(e) = fs::remove_file(lock_file_path) {
+    
+    // Use a closure to ensure the lock file is removed regardless of the outcome
+    let result = async {
+        let status = child
+            .wait()
+            .await
+            .map_err(|e| Error::GenericErr(e.to_string()))?;
+
+        if !status.success() {
+            Err(Error::GenericErr(format!(
+                "Couldn't build enclave. {:?}",
+                status
+            )))
+        } else {
+            Ok(())
+        }
+    }.await;
+
+    // Always try to remove the lock file
+    if let Err(e) = fs::remove_file(&lock_file_path) {
         error!("Failed to remove lock file: {}", e);
     }
 
-    if !status.success() {
-        return Err(Error::GenericErr(format!(
-            "Couldn't build enclave. {:?}",
-            status
-        )));
-    }
-    Ok(())
+    result
 }
 
 async fn create_mock_enclave_child(
@@ -316,21 +322,32 @@ async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
 
     let lock_file_path = enclave_dir.join("enclave.lock");
 
-    // Try to create the lock file
-    match File::create(&lock_file_path) {
-        Ok(_) => {
-            // Lock file created successfully
-            let child = Command::new("gramine-sgx")
-                .arg("./quartz")
-                .kill_on_drop(true)
-                .current_dir(enclave_dir)
-                .spawn()?;
-
-            Ok(child)
+    // Check if the lock file exists
+    if lock_file_path.exists() {
+        // If it exists, try to remove it
+        match fs::remove_file(&lock_file_path) {
+            Ok(_) => info!("Removed existing lock file"),
+            Err(e) => {
+                return Err(Error::GenericErr(format!(
+                    "Failed to remove existing lock file: {}. Another instance might be running.",
+                    e
+                )))
+            }
         }
-        Err(e) if e.kind() == ErrorKind::AlreadyExists => {
-            Err(Error::GenericErr("Another instance of the VM is already running in this directory.".to_string()))
-        }
-        Err(e) => Err(Error::GenericErr(format!("Failed to create lock file: {}", e)))
     }
+
+    // Create the lock file
+    File::create(&lock_file_path).map_err(|e| {
+        Error::GenericErr(format!("Failed to create lock file: {}", e))
+    })?;
+
+    // Spawn the child process
+    let child = Command::new("gramine-sgx")
+        .arg("./quartz")
+        .kill_on_drop(true)
+        .current_dir(enclave_dir)
+        .spawn()
+        .map_err(|e| Error::GenericErr(format!("Failed to spawn gramine-sgx: {}", e)))?;
+
+    Ok(child)
 }
