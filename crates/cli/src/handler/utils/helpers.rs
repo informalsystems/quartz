@@ -17,10 +17,6 @@ use crate::{config::Config, error::Error};
 
 pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
     let (hr, _) = bech32_decode(address_str).map_err(|e| anyhow!(e))?;
-    if hr != "wasm" {
-        return Err(anyhow!(hr));
-    }
-
     address_str.parse().map_err(|e: ErrorReport| anyhow!(e))
 }
 
