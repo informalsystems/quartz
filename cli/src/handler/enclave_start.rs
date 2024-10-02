@@ -35,13 +35,9 @@ impl Handler for EnclaveStartRequest {
         info!("Config {:?}", config);
 
         info!("{}", "\nPeforming Enclave Start".blue().bold());
-        // Generate a unique timestamp
-        let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards")
-        .as_nanos();
+
         // Set the NEUTROND_WASM_DIR environment variable
-        let enclave_dir = format!("/tmp/neutrond_wasm_{}", timestamp);
+        let enclave_dir = format!("/tmp/neutrond_wasm");
         env::set_var("NEUTROND_WASM_DIR", &enclave_dir);
 
         // Get trusted height and hash
@@ -244,11 +240,11 @@ async fn gramine_manifest(
         .display()
         .to_string();
 
-    // Generate a unique timestamp
-    let timestamp = SystemTime::now()
-    .duration_since(UNIX_EPOCH)
-    .expect("Time went backwards")
-    .as_nanos();
+    // // Generate a unique timestamp
+    // let timestamp = SystemTime::now()
+    // .duration_since(UNIX_EPOCH)
+    // .expect("Time went backwards")
+    // .as_nanos();
 
     let status = Command::new("gramine-manifest")
         .arg("-Dlog_level=error")
@@ -268,7 +264,7 @@ async fn gramine_manifest(
             "-Ddcap_verifier_contract={}",
             dcap_verifier_contract
         ))
-        .arg(format!("-Dtimestamp={}", timestamp))  
+        // .arg(format!("-Dtimestamp={}", timestamp))  
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
         .current_dir(enclave_dir)
