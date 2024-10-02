@@ -196,3 +196,27 @@ pub async fn send_tx(node: impl ToString, tx_bytes: Vec<u8>) -> Result<(), Box<d
     let _response = client.broadcast_tx(request).await?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use serde_json::json;
+    use transfers_contract::msg::{execute::Request, QueryMsg::GetRequests};
+
+    use crate::{CwClient, NeutrondClient};
+
+    #[tokio::test]
+    async fn test_query() -> Result<(), Box<dyn Error>> {
+        let cw_client =
+            NeutrondClient::new("../data/admin.sk".parse()?, "tcp://127.0.0.1:9090".parse()?);
+        let resp: Vec<Request> = cw_client
+            .query_smart(
+                &"wasm14fw7dghf7kvahm8qsweeqmdr3dnhz88v0cctq4hn07jffdpd9pfskmmn38".parse()?,
+                json!(GetRequests {}),
+            )
+            .await?;
+        println!("{resp:?}");
+        Ok(())
+    }
+}

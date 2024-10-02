@@ -1274,7 +1274,9 @@ dependencies = [
  "serde",
  "serde_json",
  "tendermint",
+ "tokio",
  "tonic",
+ "transfers-contract",
 ]
 
 [[package]]
@@ -6067,6 +6069,21 @@ dependencies = [
  "thread_local",
  "tracing",
  "tracing-core",
+]
+
+[[package]]
+name = "transfers-contract"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw-utils",
+ "getrandom",
+ "quartz-common",
+ "serde_json",
+ "sha2 0.10.8",
+ "thiserror",
 ]
 
 [[package]]
