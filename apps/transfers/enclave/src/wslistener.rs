@@ -278,10 +278,10 @@ async fn transfer_handler<A: Attestor>(
     )?;
 
     println!("Output TX: {}", output);
-    Ok(())
-
     // Clean up the temporary directory
     fs::remove_dir_all(&wasm_dir).expect("Failed to remove temporary Wasm directory");
+
+    Ok(())
 }
 
 async fn query_handler<A: Attestor>(
