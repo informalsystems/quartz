@@ -6,6 +6,7 @@ use color_eyre::owo_colors::OwoColorize;
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 use reqwest::Url;
+use tendermint::chain::Id;
 use tokio::process::{Child, Command};
 use tracing::{debug, info};
 
@@ -85,6 +86,7 @@ impl Handler for EnclaveStartRequest {
             gramine_manifest(
                 &trusted_height.to_string(),
                 &trusted_hash.to_string(),
+                &config.chain_id,
                 quartz_dir_canon,
                 &enclave_dir,
                 &self.sk_file,
@@ -186,6 +188,7 @@ async fn gramine_sgx_gen_private_key(enclave_dir: &Path) -> Result<(), Error> {
 async fn gramine_manifest(
     trusted_height: &str,
     trusted_hash: &str,
+    chain_id: &Id,
     quartz_dir: &Path,
     enclave_dir: &Path,
     sk_file: &Path,
@@ -215,6 +218,7 @@ async fn gramine_manifest(
         .arg("-Dra_type=dcap")
         .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
+        .arg(format!("-Dchain_id={}", chain_id.to_string()))
         .arg(format!("-Dquartz_dir={}", quartz_dir.display()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
