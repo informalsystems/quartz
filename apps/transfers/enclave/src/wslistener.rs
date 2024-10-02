@@ -7,7 +7,7 @@ use std::io::Write;
 use std::fs::OpenOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::fs;
-
+use std::fs::create_dir_all;
 
 use std::path::PathBuf;
 use std::io::ErrorKind;
@@ -181,7 +181,7 @@ async fn transfer_handler<A: Attestor>(
     let httpurl = Url::parse(&ws_config.node_url.clone())?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
     let wasm_dir = PathBuf::from("/tmp/neutrond_wasm");
-    fs2::create_dir_all(&wasm_dir).expect("Failed to create WasmVM directory");
+    create_dir_all(&wasm_dir).expect("Failed to create WasmVM directory");
 
     let lock_file_path = wasm_dir.join("/wasm/wasm/exclusive.lock");
 
