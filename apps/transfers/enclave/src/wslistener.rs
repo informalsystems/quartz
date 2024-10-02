@@ -6,8 +6,8 @@ use std::env;
 use std::io::Write;
 use std::fs::OpenOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::fs:
-use fs2;
+use std::fs;
+
 
 use std::path::PathBuf;
 use std::io::ErrorKind;
@@ -180,44 +180,42 @@ async fn transfer_handler<A: Attestor>(
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&ws_config.node_url.clone())?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
+    let wasm_dir = PathBuf::from("/tmp/neutrond_wasm");
+    fs2::create_dir_all(&wasm_dir).expect("Failed to create WasmVM directory");
 
-     // Use a fixed directory
-     let wasm_dir = PathBuf::from("/tmp/neutrond_wasm");
-     fs2::create_dir_all(&wasm_dir).expect("Failed to create WasmVM directory");
- 
-     let lock_file_path = wasm_dir.join("exclusive.lock");
+    let lock_file_path = wasm_dir.join("/wasm/wasm/exclusive.lock");
 
-    // Attempt to create or open the lock file
-    let mut lock_file = match OpenOptions::new()
-    .write(true)
-    .create_new(true)
-    .open(&lock_file_path)
-    {
-        Ok(file) => file,
-        Err(e) if e.kind() == ErrorKind::AlreadyExists => {
-            return Err(anyhow!("Another VM is already running. Please wait for it to complete."));
-        }
-        Err(e) => {
-            return Err(anyhow!("Failed to create lock file: {}", e));
-        }
-    };
+   // Attempt to create or open the lock file
+   let mut lock_file = match OpenOptions::new()
+   .write(true)
+   .create_new(true)
+   .open(&lock_file_path)
+   {
+       Ok(file) => file,
+       Err(e) if e.kind() == ErrorKind::AlreadyExists => {
+           return Err(anyhow!("Another VM is already running. Please wait for it to complete."));
+       }
+       Err(e) => {
+           return Err(anyhow!("Failed to create lock file: {}", e));
+       }
+   };
 
-    // Write the current process ID to the lock file
-    if let Err(e) = writeln!(lock_file, "{}", process::id()) {
-        return Err(anyhow!("Failed to write to lock file: {}", e));
-    }
+   // Write the current process ID to the lock file
+   if let Err(e) = writeln!(lock_file, "{}", process::id()) {
+       return Err(anyhow!("Failed to write to lock file: {}", e));
+   }
 
-    // Set the NEUTROND_WASM_DIR environment variable
-    env::set_var("NEUTROND_WASM_DIR", wasm_dir.to_str().unwrap());
+   // Set the NEUTROND_WASM_DIR environment variable
+   env::set_var("NEUTROND_WASM_DIR", wasm_dir.to_str().unwrap());
 
-    // Use a defer-like pattern to ensure the lock file is removed
-    let lock_file_path_clone = lock_file_path.clone();
-    let _cleanup = defer::defer(move || {
-        if let Err(e) = std::fs::remove_file(&lock_file_path_clone) {
-            error!("Failed to remove lock file: {}", e);
-        } else {
-            info!("Successfully removed lock file");
-        }
+   // Use a defer-like pattern to ensure the lock file is removed
+   let lock_file_path_clone = lock_file_path.clone();
+   let _cleanup = defer::defer(move || {
+       if let Err(e) = std::fs::remove_file(&lock_file_path_clone) {
+           error!("Failed to remove lock file: {}", e);
+       } else {
+           info!("Successfully removed lock file");
+       }
 });
     // Query chain
     // Get epoch, obligations, liquidity sources
