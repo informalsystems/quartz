@@ -89,8 +89,8 @@ impl CwClient for NeutrondClient {
     ) -> Result<String, Self::Error> {
         let secret = {
             let mut secret = Vec::new();
-            let mut tsp_sk_file = File::open(self.sk_file.clone())?;
-            tsp_sk_file.read_to_end(secret.as_mut())?;
+            let mut sk_file = File::open(self.sk_file.clone())?;
+            sk_file.read_to_end(secret.as_mut())?;
             SigningKey::from_slice(&secret).map_err(|e| anyhow!(e))?
         };
 

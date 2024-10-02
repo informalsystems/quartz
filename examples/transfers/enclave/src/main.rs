@@ -77,6 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         trusted_hash: args.trusted_hash,
         trusted_height: args.trusted_height,
         chain_id: args.chain_id,
+        sk_file: args.sk_file,
     };
 
     let sk = Arc::new(Mutex::new(None));

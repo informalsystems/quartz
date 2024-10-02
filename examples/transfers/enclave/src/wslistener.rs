@@ -25,7 +25,7 @@ use transfers_contract::msg::{
     AttestedMsg, ExecuteMsg,
     QueryMsg::{GetRequests, GetState},
 };
-use cw_client::{CliWasmdClient, QueryResult, CwClient};
+use cw_client::{NeutrondClient, QueryResult, CwClient};
 
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
@@ -168,7 +168,7 @@ async fn transfer_handler<A: Attestor>(
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
-    let cw_client = CliWasmdClient::new(httpurl.clone());
+    let cw_client = NeutrondClient::new(ws_config.sk_file.clone(), httpurl.clone());
 
     // Query contract state
     let resp: QueryResult<Vec<TransferRequest>> = cw_client
@@ -272,7 +272,7 @@ async fn query_handler<A: Attestor>(
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
-    let cw_client = CliWasmdClient::new(httpurl);
+    let cw_client = NeutrondClient::new(ws_config.sk_file.clone(), httpurl);
 
     // Query contract state
     let resp: QueryResult<HexBinary> = cw_client
