@@ -35,6 +35,7 @@ tracing = "0.1.39"
 futures-util = "0.3.30"
 defer = "0.2.1"
 fs2 ="0.4.3"
+nix = "0.23.0"  
 
 # cosmos
 cosmrs = { version = "0.20.0", default-features = false }

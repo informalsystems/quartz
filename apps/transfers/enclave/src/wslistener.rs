@@ -13,6 +13,8 @@ use std::path::PathBuf;
 use std::io::ErrorKind;
 use std::process;
 
+use std::fs::File;
+
 use anyhow::{anyhow, Error, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Addr, HexBinary};
