@@ -5,7 +5,7 @@ libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-app-transfers-enclave
 
 loader.log_level = "{{ log_level }}"
 
-loader.env.LD_LIBRARY_PATH = "/lib:{{ arch_libdir }}:/usr/{{ arch_libdir }}"
+loader.env.LD_LIBRARY_PATH = "/lib:/usr/local/lib:{{ arch_libdir }}:/usr{{ arch_libdir }}"
 loader.env.HOME = "{{ home }}"
 loader.env.INSIDE_SGX = "1"
 loader.env.TLS = { passthrough = true }
@@ -19,10 +19,11 @@ loader.env.RA_TLS_ISV_PROD_ID = { passthrough = true }
 loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
 loader.env.QUARTZ_PORT = { passthrough = true }
+loader.env.SSL_CERT_FILE = { passthrough = true }
+loader.insecure__use_host_env = true
 
 loader.argv = ["quartz-app-transfers-enclave",
-                "--chain-id", "testing",
-                "--sk-file", "{{ sk_file }}",
+                "--chain-id", "{{ chain_id }}",
                 "--fmspc", "{{ fmspc }}",
                 "--tcbinfo-contract", "{{ tcbinfo_contract }}",
                 "--dcap-verifier-contract", "{{ dcap_verifier_contract }}",
@@ -36,6 +37,7 @@ fs.mounts = [
   { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
+  { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
 ]
 
 # sgx.debug = true
@@ -53,12 +55,23 @@ sgx.trusted_files = [
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
+  "file:/etc/ssl/certs/ca-certificates.crt",
 ]
 
 sgx.allowed_files = [
   "file:{{ quartz_dir }}/exchange.sk",
   "file:{{ quartz_dir }}/request.json",
+  "file:/etc/nsswitch.conf",
+  "file:/etc/host.conf",
+  "file:/etc/ethers",
+  "file:/etc/hosts",
+  "file:/etc/group",
+  "file:/etc/passwd",
+  "file:/etc/gai.conf",
+  "file:/etc/ssl/certs/ca-certificates.crt",
+  "file:/etc/sgx_default_qcnl.conf",
 ]
 
 sys.insecure__allow_eventfd = true
 sys.enable_sigterm_injection = true
+sys.enable_extra_runtime_domain_names_conf = true
