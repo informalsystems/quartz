@@ -7,7 +7,9 @@ use cosmos_sdk_proto::{
             query_client::QueryClient as AuthQueryClient, BaseAccount as RawBaseAccount,
             QueryAccountRequest,
         },
-        tx::v1beta1::{service_client::ServiceClient, BroadcastMode, BroadcastTxRequest, BroadcastTxResponse},
+        tx::v1beta1::{
+            service_client::ServiceClient, BroadcastMode, BroadcastTxRequest, BroadcastTxResponse,
+        },
     },
     cosmwasm::wasm::v1::{
         query_client::QueryClient as WasmdQueryClient, QuerySmartContractStateRequest,
@@ -128,7 +130,10 @@ impl CwClient for NeutrondClient {
 
         let response = send_tx(self.url.to_string(), tx_bytes).await.expect("todo");
         println!("{response:?}");
-        Ok(response.tx_response.map(|tx_response| tx_response.txhash).unwrap_or_default())
+        Ok(response
+            .tx_response
+            .map(|tx_response| tx_response.txhash)
+            .unwrap_or_default())
     }
 
     fn deploy<M: ToString>(
@@ -189,7 +194,10 @@ pub fn tx_bytes(
     Ok(tx_signed.to_bytes()?)
 }
 
-pub async fn send_tx(node: impl ToString, tx_bytes: Vec<u8>) -> Result<BroadcastTxResponse, Box<dyn Error>> {
+pub async fn send_tx(
+    node: impl ToString,
+    tx_bytes: Vec<u8>,
+) -> Result<BroadcastTxResponse, Box<dyn Error>> {
     let mut client = ServiceClient::connect(node.to_string()).await?;
     let request = tonic::Request::new(BroadcastTxRequest {
         tx_bytes,
@@ -237,13 +245,15 @@ mod tests {
         let chain_id = "pion-1".parse().unwrap();
 
         let cw_client = NeutrondClient::new(sk_file, url);
-        let tx_hash = cw_client.tx_execute(
-            &contract,
-            &chain_id,
-            2000000,
-            "/* unused since we're getting the account from the sk */",
-            json!([]),
-        ).await?;
+        let tx_hash = cw_client
+            .tx_execute(
+                &contract,
+                &chain_id,
+                2000000,
+                "/* unused since we're getting the account from the sk */",
+                json!([]),
+            )
+            .await?;
         println!("{}", tx_hash);
 
         Ok(())
