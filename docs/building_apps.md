@@ -10,7 +10,7 @@ WARNING:
 Quartz provides utilities for secure communication with TEEs,
 but it DOES NOT specify a data model for applications. This gives application
 devs great power and flexibility, but with this power comes great
-responsibility. App devs must remain dilligent to ensure their data model does
+responsibility. App devs must remain diligent to ensure their data model does
 not leak private information (or leaks only what they are comfortable with). 
 
 The Quartz framework intends to provide better tools and patterns for securely
@@ -45,7 +45,7 @@ Private requests should be encrypted to authorized TEE keys and queued for
 execution at some frequency by the TEE.
 
 Private state should be managed in such a way that accessing/updating it does
-not unecessarily leak private information.
+not unnecessarily leak private information.
 
 Public responses can be executed directly on-chain (e.g. public balance
 changes), while private responses can be executed by verifying remote

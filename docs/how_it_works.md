@@ -52,7 +52,7 @@ The goal of the handshake is to establish:
 
 - specific code is running on the TEE (given by an `mr_enclave`)
 - a specific TEE is running (given by a `nonce`)
-- the TEE has a speciifc decryption key (given by a `pubkey`)
+- the TEE has a specific decryption key (given by a `pubkey`)
 
 This is done in three corresponding steps:
 
@@ -74,7 +74,7 @@ In SessionPubKey, the TEE verifies a light client proof that the nonce was
 stored in the contract, generates an encryption key pair, and remote attests to
 the nonce and pubkey. The smart contract verifies the RA and that the nonce is the same and stores the pubkey.
 
-The TEE is now ready to process requests encrpyted to the pubkey.
+The TEE is now ready to process requests encrypted to the pubkey.
 
 ## Execution
 

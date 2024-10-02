@@ -46,6 +46,7 @@ COPY --from=build /opt/src/${ENCLAVE_DIR}/quartz.manifest.template /opt/enclave/
 
 WORKDIR /opt/enclave
 
+# TODO - update entire file to use DCAP, not EPID
 RUN gramine-sgx-gen-private-key > /dev/null 2>&1 && \
     gramine-manifest  \
         -Dlog_level="error"  \
