@@ -20,7 +20,7 @@ loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
 loader.env.QUARTZ_PORT = { passthrough = true }
 loader.env.SSL_CERT_FILE = { passthrough = true }
-loader.env.NEUTROND_WASM_DIR = "/tmp/neutrond_wasm_{{ timestamp }}"
+loader.env.NEUTROND_WASM_DIR = "/tmp/neutrond_wasm"
 
 loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "{{ chain_id }}",

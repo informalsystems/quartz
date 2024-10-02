@@ -1,4 +1,6 @@
 use std::{fs, path::Path};
+use std::time::{SystemTime, UNIX_EPOCH};
+
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
@@ -202,6 +204,12 @@ async fn gramine_manifest(
         .display()
         .to_string();
 
+    // Generate a unique timestamp
+    let timestamp = SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .expect("Time went backwards")
+    .as_nanos();
+
     let status = Command::new("gramine-manifest")
         .arg("-Dlog_level=error")
         .arg(format!("-Dhome={}", home_dir))
@@ -220,6 +228,7 @@ async fn gramine_manifest(
             "-Ddcap_verifier_contract={}",
             dcap_verifier_contract
         ))
+        .arg(format!("-Dtimestamp={}", timestamp))  
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
         .current_dir(enclave_dir)
