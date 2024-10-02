@@ -32,6 +32,7 @@ use quartz_proto::quartz::{
 };
 use quartz_tm_stateless_verifier::make_provider;
 use rand::Rng;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use tendermint::{block::Height, Hash};
 use tendermint_light_client::{
@@ -79,7 +80,7 @@ pub trait WebSocketHandler: Send + Sync + 'static {
 
 #[derive(Debug, Clone)]
 pub struct WsListenerConfig {
-    pub node_url: String,
+    pub node_url: Url,
     pub chain_id: String,
     pub tx_sender: String,
     pub trusted_hash: Hash,

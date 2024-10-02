@@ -4,6 +4,7 @@ use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
+use reqwest::Url;
 use tendermint::Hash;
 use tendermint_light_client::types::{Height, TrustThreshold};
 
@@ -64,8 +65,8 @@ pub struct Cli {
     #[clap(long, default_value = "5")]
     pub max_block_lag: u64,
 
-    #[clap(long, default_value = "127.0.0.1:11090")]
-    pub node_url: String,
+    #[clap(long, default_value = "http://127.0.0.1:11090")]
+    pub node_url: Url,
 
     #[clap(long, default_value = "admin")]
     pub tx_sender: String,

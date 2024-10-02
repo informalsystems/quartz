@@ -4,7 +4,6 @@ use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
 use cw_client::{CliWasmdClient, CwClient};
-use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::HttpClient;
 use tracing::{debug, info};
@@ -68,9 +67,8 @@ async fn deploy(
     args: ContractDeployRequest,
     config: &Config,
 ) -> Result<(u64, String), anyhow::Error> {
-    let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
-    let tmrpc_client = HttpClient::new(httpurl.as_str())?;
-    let cw_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
+    let tmrpc_client = HttpClient::new(config.node_url.as_str())?;
+    let cw_client = CliWasmdClient::new(config.node_url.clone());
 
     info!("🚀 Deploying {} Contract", args.label);
     let code_id = if config.contract_has_changed(wasm_bin_path).await? {

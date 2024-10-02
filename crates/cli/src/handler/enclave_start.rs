@@ -5,6 +5,7 @@ use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
+use reqwest::Url;
 use tokio::process::{Child, Command};
 use tracing::{debug, info};
 
@@ -41,7 +42,7 @@ impl Handler for EnclaveStartRequest {
                 "--trusted-hash".to_string(),
                 trusted_hash.to_string(),
                 "--node-url".to_string(),
-                config.node_url,
+                config.node_url.to_string(),
                 "--tx-sender".to_string(),
                 config.tx_sender,
             ];
@@ -184,7 +185,7 @@ async fn gramine_manifest(
     fmspc: Fmspc,
     tcbinfo_contract: AccountId,
     dcap_verifier_contract: AccountId,
-    node_url: &str,
+    node_url: &Url,
 ) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
@@ -210,7 +211,7 @@ async fn gramine_manifest(
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg(format!("-Dsk_file={}", sk_file.display()))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
-        .arg(format!("-Dnode_url={}", node_url))
+        .arg(format!("-Dnode_url={}", node_url.to_string()))
         .arg(format!("-Dtcbinfo_contract={}", tcbinfo_contract))
         .arg(format!(
             "-Ddcap_verifier_contract={}",

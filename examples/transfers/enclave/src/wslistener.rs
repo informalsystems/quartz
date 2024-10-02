@@ -1,4 +1,3 @@
-//TODO: get rid of this
 use std::{collections::BTreeMap, str::FromStr};
 
 use anyhow::{anyhow, Error, Result};
@@ -16,7 +15,6 @@ use quartz_common::{
     },
 };
 use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
-use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::{event::Event, query::EventType, SubscriptionClient, WebSocketClient};
 use tonic::Request;
@@ -118,9 +116,8 @@ impl<A: Attestor> WsListener for TransfersService<A> {
             }
         }
 
-        let wsurl = format!("ws://{}/websocket", config.node_url);
         // Wait some blocks to make sure transaction was confirmed
-        two_block_waitoor(&wsurl).await?;
+        two_block_waitoor(config.node_url.as_str()).await?;
 
         Ok(())
     }
@@ -169,8 +166,7 @@ async fn transfer_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
-    let cw_client = NeutrondClient::new(ws_config.sk_file.clone(), httpurl.clone());
+    let cw_client = NeutrondClient::new(ws_config.sk_file.clone(), ws_config.node_url.clone());
 
     // Query contract state
     let resp: QueryResult<Vec<TransferRequest>> = cw_client
@@ -190,13 +186,12 @@ async fn transfer_handler<A: Attestor>(
 
     // Wait 2 blocks
     info!("Waiting 2 blocks for light client proof");
-    let wsurl = format!("ws://{}/websocket", ws_config.node_url);
-    two_block_waitoor(&wsurl).await?;
+    two_block_waitoor(ws_config.node_url.as_str()).await?;
 
     // Call tm prover with trusted hash and height
     let prover_config = TmProverConfig {
-        primary: httpurl.as_str().parse()?,
-        witnesses: httpurl.as_str().parse()?,
+        primary: ws_config.node_url.as_str().parse()?,
+        witnesses: ws_config.node_url.as_str().parse()?,
         trusted_height: ws_config.trusted_height,
         trusted_hash: ws_config.trusted_hash,
         verbose: "1".parse()?, // TODO: both tm-prover and cli define the same Verbosity struct. Need to define this once and import
@@ -275,8 +270,7 @@ async fn query_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
-    let cw_client = NeutrondClient::new(ws_config.sk_file.clone(), httpurl);
+    let cw_client = NeutrondClient::new(ws_config.sk_file.clone(), ws_config.node_url.clone());
 
     // Query contract state
     let resp: QueryResult<HexBinary> = cw_client

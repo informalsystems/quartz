@@ -7,7 +7,6 @@ use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in 
 use cw_client::{CliWasmdClient, CwClient};
 use futures_util::stream::StreamExt;
 use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
-use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tracing::{debug, info};
@@ -47,11 +46,10 @@ impl Handler for HandshakeRequest {
 }
 
 async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
-    let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
     let wsurl = format!("ws://{}/websocket", config.node_url);
 
-    let tmrpc_client = HttpClient::new(httpurl.as_str())?;
-    let cw_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
+    let tmrpc_client = HttpClient::new(config.node_url.as_str())?;
+    let cw_client = CliWasmdClient::new(config.node_url.clone());
 
     let (trusted_height, trusted_hash) = read_cached_hash_height(&config).await?;
 
@@ -85,8 +83,8 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
 
     // Call tm prover with trusted hash and height
     let prover_config = TmProverConfig {
-        primary: httpurl.as_str().parse()?,
-        witnesses: httpurl.as_str().parse()?,
+        primary: config.node_url.as_str().parse()?,
+        witnesses: config.node_url.as_str().parse()?,
         trusted_height,
         trusted_hash,
         verbose: "1".parse()?, // TODO: both tm-prover and cli define the same Verbosity struct. Need to define this once and import

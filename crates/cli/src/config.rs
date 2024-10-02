@@ -1,8 +1,11 @@
 use std::path::PathBuf;
 
 use cosmrs::tendermint::chain::Id as ChainId;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 
+#[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
     /// Enable mock SGX mode for testing purposes.
@@ -20,7 +23,8 @@ pub struct Config {
 
     /// <host>:<port> to tendermint rpc interface for this chain
     #[serde(default = "default_node_url")]
-    pub node_url: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub node_url: Url,
 
     /// RPC interface for the Quartz enclave
     #[serde(default = "default_rpc_addr")]
@@ -52,8 +56,10 @@ fn default_rpc_addr() -> String {
     "http://127.0.0.1".to_string()
 }
 
-fn default_node_url() -> String {
-    "127.0.0.1:26657".to_string()
+fn default_node_url() -> Url {
+    "http://127.0.0.1:26657"
+        .parse()
+        .expect("valid hardcoded URL")
 }
 
 fn default_tx_sender() -> String {
