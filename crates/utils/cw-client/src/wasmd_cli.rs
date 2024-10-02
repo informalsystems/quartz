@@ -8,16 +8,32 @@ use serde::de::DeserializeOwned;
 use crate::CwClient;
 
 #[derive(Clone, Debug)]
+pub enum CliClientType {
+    Wasmd,
+    Neutrond,
+}
+
+impl CliClientType {
+    fn bin(&self) -> String {
+        match self {
+            CliClientType::Wasmd => "wasmd",
+            CliClientType::Neutrond => "neutrond",
+        }
+        .to_string()
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct CliClient {
-    bin: String,
+    kind: CliClientType,
     url: Url,
     gas_price: String,
 }
 
 impl CliClient {
-    pub fn new(bin: String, url: Url, gas_price: String) -> Self {
+    pub fn new(kind: CliClientType, url: Url, gas_price: String) -> Self {
         Self {
-            bin,
+            kind,
             url,
             gas_price,
         }
@@ -25,7 +41,7 @@ impl CliClient {
 
     pub fn wasmd(url: Url) -> Self {
         Self {
-            bin: "wasmd".to_string(),
+            kind: CliClientType::Wasmd,
             url,
             gas_price: "0.0025ucosm".to_string(),
         }
@@ -33,14 +49,14 @@ impl CliClient {
 
     pub fn neutrond(url: Url) -> Self {
         Self {
-            bin: "neutrond".to_string(),
+            kind: CliClientType::Neutrond,
             url,
             gas_price: "0.0053untrn".to_string(),
         }
     }
 
     fn new_command(&self) -> Command {
-        Command::new(self.bin.as_str())
+        Command::new(self.kind.bin())
     }
 }
 
@@ -217,13 +233,17 @@ impl CwClient for CliClient {
         let query_result: serde_json::Value =
             serde_json::from_slice(&output.stdout).unwrap_or_default();
 
-        let trusted_height = query_result["SyncInfo"]["latest_block_height"]
+        let sync_info = match self.kind {
+            CliClientType::Wasmd => "SyncInfo",
+            CliClientType::Neutrond => "sync_info",
+        };
+        let trusted_height = query_result[sync_info]["latest_block_height"]
             .as_str()
             .ok_or(anyhow!("Could not query height"))?;
 
         let trusted_height = trusted_height.parse::<u64>()?;
 
-        let trusted_hash = query_result["SyncInfo"]["latest_block_hash"]
+        let trusted_hash = query_result[sync_info]["latest_block_hash"]
             .as_str()
             .ok_or(anyhow!("Could not query height"))?
             .to_string();
