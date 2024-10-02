@@ -51,7 +51,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     let wsurl = config.websocket_url.clone();
 
     let tmrpc_client = HttpClient::new(httpurl.as_str())?;
-    let cw_client = CliWasmdClient::new(httpurl);
+    let cw_client = CliWasmdClient::new(httpurl.clone());
 
     let (trusted_height, trusted_hash) = read_cached_hash_height(&config).await?;
 

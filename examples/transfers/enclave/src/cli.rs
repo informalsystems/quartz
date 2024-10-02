@@ -64,7 +64,6 @@ pub struct Cli {
     #[clap(long, default_value = "5")]
     pub max_block_lag: u64,
 
-
     #[clap(long, default_value = "https://rpc-falcron.pion-1.ntrn.tech")]
     pub node_url: String,
 

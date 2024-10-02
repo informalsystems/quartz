@@ -1,9 +1,4 @@
-use std::{
-    env, fs,
-    fs::File,
-    path::Path,
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
+use std::{env, fs, fs::File, path::Path, time::Duration};
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
