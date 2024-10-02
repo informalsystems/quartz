@@ -6,6 +6,8 @@ use std::env;
 use std::io::Write;
 use std::fs::OpenOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::fs:
+use fs2;
 
 use std::path::PathBuf;
 use std::io::ErrorKind;
@@ -181,7 +183,7 @@ async fn transfer_handler<A: Attestor>(
 
      // Use a fixed directory
      let wasm_dir = PathBuf::from("/tmp/neutrond_wasm");
-     fs::create_dir_all(&wasm_dir).expect("Failed to create WasmVM directory");
+     fs2::create_dir_all(&wasm_dir).expect("Failed to create WasmVM directory");
  
      let lock_file_path = wasm_dir.join("exclusive.lock");
 
