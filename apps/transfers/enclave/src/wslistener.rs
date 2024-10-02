@@ -85,6 +85,11 @@ impl TryFrom<Event> for TransfersOpEvent {
         Err(anyhow!("Unsupported event."))
     }
 }
+const NEUTROND_WASM_DIR: &str = "/tmp/neutrond_wasm";
+
+pub fn get_lock_file_path() -> PathBuf {
+    PathBuf::from(NEUTROND_WASM_DIR).join("wasm").join("wasm").join("exclusive.lock")
+}
 
 // TODO: Need to prevent listener from taking actions until handshake is completed
 #[async_trait::async_trait]
@@ -183,7 +188,7 @@ async fn transfer_handler<A: Attestor>(
     let wasm_dir = PathBuf::from("/tmp/neutrond_wasm");
     create_dir_all(&wasm_dir).expect("Failed to create WasmVM directory");
 
-    let lock_file_path = wasm_dir.join("/wasm/wasm/exclusive.lock");
+    let lock_file_path = wasm_dir.join("exclusive.lock");
 
    // Attempt to create or open the lock file
    let mut lock_file = match OpenOptions::new()

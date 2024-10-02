@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::path::PathBuf;
 use std::{fs, path::Path};
 use std::time::Duration;
 use fs2::FileExt;
@@ -24,6 +25,9 @@ use crate::{
 
 const NEUTROND_WASM_DIR: &str = "/tmp/neutrond_wasm";
 
+pub fn get_lock_file_path() -> PathBuf {
+    PathBuf::from(NEUTROND_WASM_DIR).join("wasm").join("wasm").join("exclusive.lock")
+}
 
 #[async_trait]
 impl Handler for EnclaveStartRequest {
@@ -39,9 +43,7 @@ impl Handler for EnclaveStartRequest {
 
         info!("{}", "\nPeforming Enclave Start".blue().bold());
 
-        // Set the NEUTROND_WASM_DIR environment variable
-        env::set_var("NEUTROND_WASM_DIR", NEUTROND_WASM_DIR);
-
+      
         // Get trusted height and hash
         let (trusted_height, trusted_hash) = self.get_hash_height(&config)?;
         write_cache_hash_height(trusted_height, trusted_hash, &config).await?;
@@ -289,8 +291,14 @@ async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<(), Error> {
 async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
     info!("🚧 Attempting to spawn enclave process...");
 
-    let lock_file_path = enclave_dir.join("exclusive.lock");
-    
+    // Set the NEUTROND_WASM_DIR environment variable
+    env::set_var("NEUTROND_WASM_DIR", NEUTROND_WASM_DIR);
+    // When creating the lock file:
+    let lock_file_path = get_lock_file_path();
+    fs::create_dir_all(lock_file_path.parent().unwrap())?;
+
+    // let lock_file_path = enclave_dir.join("exclusive.lock");
+    // 
     // Try to remove the lock file if it exists (in case of a previous unclean shutdown)
     if lock_file_path.exists() {
         fs::remove_file(&lock_file_path).map_err(|e| {
