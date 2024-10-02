@@ -25,7 +25,7 @@ use transfers_contract::msg::{
     AttestedMsg, ExecuteMsg,
     QueryMsg::{GetRequests, GetState},
 };
-use cw_client::{CliWasmdClient, QueryResult, WasmdClient};
+use cw_client::{CliWasmdClient, QueryResult, CwClient};
 
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
@@ -173,11 +173,13 @@ async fn transfer_handler<A: Attestor>(
     // Query contract state
     let resp: QueryResult<Vec<TransferRequest>> = cw_client
         .query_smart(contract, json!(GetRequests {}))
+        .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
     let requests = resp.data;
 
     let resp: QueryResult<HexBinary> = cw_client
         .query_smart(contract, json!(GetState {}))
+        .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
     let state = resp.data;
 
@@ -255,7 +257,7 @@ async fn transfer_handler<A: Attestor>(
         2000000,
         &ws_config.tx_sender,
         json!(transfer_msg),
-    )?;
+    ).await?;
 
     println!("Output TX: {}", output);
     Ok(())
@@ -275,6 +277,7 @@ async fn query_handler<A: Attestor>(
     // Query contract state
     let resp: QueryResult<HexBinary> = cw_client
         .query_smart(contract, json!(GetState {}))
+        .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
     let state = resp.data;
 
@@ -322,7 +325,7 @@ async fn query_handler<A: Attestor>(
         2000000,
         &ws_config.tx_sender,
         json!(query_msg),
-    )?;
+    ).await?;
 
     println!("Output TX: {}", output);
     Ok(())

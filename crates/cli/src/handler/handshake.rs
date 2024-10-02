@@ -69,7 +69,8 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 2000000,
                 &config.tx_sender,
                 json!(res),
-            )?
+            )
+            .await?
             .as_str(),
     )?;
     debug!("\n\n SessionCreate tx output: {:?}", output);
@@ -116,7 +117,8 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 2000000,
                 &config.tx_sender,
                 json!(res),
-            )?
+            )
+            .await?
             .as_str(),
     )?;
 

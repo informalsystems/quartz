@@ -427,6 +427,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d965446196e3b7decd44aa7ee49e31d630118f90ef12f97900f262eb915c951d"
 
 [[package]]
+name = "bindgen"
+version = "0.66.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2b84e06fc203107bfbad243f4aba2af864eb7db3b1cf46ea0a023b0b433d2a7"
+dependencies = [
+ "bitflags 2.6.0",
+ "cexpr",
+ "clang-sys",
+ "lazy_static",
+ "lazycell",
+ "log",
+ "peeking_take_while",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "rustc-hash 1.1.0",
+ "shlex",
+ "syn 2.0.79",
+ "which",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -506,12 +529,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "cargo-emit"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1582e1c9e755dd6ad6b224dcffb135d199399a4568d454bd89fe515ca8425695"
+
+[[package]]
 name = "cc"
 version = "1.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bbb537bb4a30b90362caddba8f360c0a56bc13d3a5570028e7197204cb54a17"
 dependencies = [
  "shlex",
+]
+
+[[package]]
+name = "cexpr"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766"
+dependencies = [
+ "nom",
 ]
 
 [[package]]
@@ -565,6 +603,17 @@ checksum = "773f3b9af64447d2ce9850330c473515014aa235e6a783b02db81ff39e4a3dad"
 dependencies = [
  "crypto-common",
  "inout",
+]
+
+[[package]]
+name = "clang-sys"
+version = "1.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b023947811758c97c59bf9d1c188fd619ad4718dcaa767947df1cadb14f39f4"
+dependencies = [
+ "glob",
+ "libc",
+ "libloading",
 ]
 
 [[package]]
@@ -659,20 +708,21 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "cosmos-sdk-proto"
-version = "0.22.0"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57d1a42d9ef55bb4e84b48ce29860f55859e52e0088ebdb1371cedd62f2b78cc"
+checksum = "8b2f63ab112b8c8e7b8a29c891adc48f43145beb21c0bfbf562957072c1e0beb"
 dependencies = [
- "prost 0.12.6",
- "prost-types 0.12.6",
- "tendermint-proto 0.37.0",
+ "prost",
+ "prost-types",
+ "tendermint-proto",
+ "tonic",
 ]
 
 [[package]]
 name = "cosmrs"
-version = "0.17.0"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85efbd5a3487e52ccd77897ef8f97b077a015953b46623fabc939f39d9c501fc"
+checksum = "9f21bb63ec6a903510a3d01f44735dd4914724e5eccbe409e6da6833d17c7829"
 dependencies = [
  "cosmos-sdk-proto",
  "ecdsa",
@@ -683,7 +733,7 @@ dependencies = [
  "serde_json",
  "signature",
  "subtle-encoding",
- "tendermint 0.37.0",
+ "tendermint",
  "thiserror",
 ]
 
@@ -895,6 +945,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "cosmos-sdk-proto",
+ "cosmrs",
+ "hex",
+ "reqwest 0.12.8",
+ "serde",
+ "serde_json",
+ "tendermint",
+ "tonic",
+]
+
+[[package]]
 name = "cw-multi-test"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -907,27 +973,11 @@ dependencies = [
  "cw-utils",
  "derivative",
  "itertools 0.13.0",
- "prost 0.13.3",
+ "prost",
  "schemars",
  "serde",
  "sha2 0.10.8",
  "thiserror",
-]
-
-[[package]]
-name = "cw-proof"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
-dependencies = [
- "clap",
- "cosmrs",
- "displaydoc",
- "ics23",
- "prost 0.13.3",
- "serde",
- "serde_with",
- "tendermint 0.38.1",
- "tendermint-rpc",
 ]
 
 [[package]]
@@ -1444,6 +1494,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4271d37baee1b8c7e4b708028c57d816cf9d2434acb33a549475f78c181f6253"
 
 [[package]]
+name = "glob"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
+
+[[package]]
 name = "group"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1576,6 +1632,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
 dependencies = [
  "digest 0.10.7",
+]
+
+[[package]]
+name = "home"
+version = "0.5.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3d1354bf6b7235cb4a0576c2619fd4ed18183f689b12b006a0ee7329eeff9a5"
+dependencies = [
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1782,7 +1847,7 @@ dependencies = [
  "blake3",
  "bytes",
  "hex",
- "prost 0.13.3",
+ "prost",
  "ripemd",
  "sha2 0.10.8",
  "sha3",
@@ -1856,15 +1921,6 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
@@ -1915,10 +1971,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
+name = "lazycell"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
+
+[[package]]
 name = "libc"
 version = "0.2.159"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "561d97a539a36e26a9a5fad1ea11a3039a67714694aaa379433e580854bc3dc5"
+
+[[package]]
+name = "libloading"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4979f22fdb869068da03c9f7528f8297c6fd2606bc3a4affe42e6a823fdb8da4"
+dependencies = [
+ "cfg-if",
+ "windows-targets 0.52.6",
+]
 
 [[package]]
 name = "libsecp256k1"
@@ -2005,7 +2077,8 @@ checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 [[package]]
 name = "mc-attestation-verifier"
 version = "0.4.3"
-source = "git+https://github.com/informalsystems/attestation#ae86e2804abed218f4fd2fd4aec5e39408898cd8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcf39fb1af41156ec868564ab53156d6dd75f1dc8a7a073acdfb217b6140d9e4"
 dependencies = [
  "der",
  "displaydoc",
@@ -2021,10 +2094,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "mc-sgx-core-build"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94420a570e76dfc39924b4ec712c2df21a8d77e61ca5ba0857300b1c59889a5d"
+dependencies = [
+ "bindgen",
+ "cargo-emit",
+]
+
+[[package]]
 name = "mc-sgx-core-sys-types"
 version = "0.11.0"
-source = "git+https://github.com/informalsystems/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c5c33323d0f2855e63efaa538bdd7094104ff79f963734b4122f23302cff581"
 dependencies = [
+ "bindgen",
+ "cargo-emit",
+ "mc-sgx-core-build",
  "serde",
  "serde_with",
 ]
@@ -2032,7 +2119,8 @@ dependencies = [
 [[package]]
 name = "mc-sgx-core-types"
 version = "0.11.0"
-source = "git+https://github.com/informalsystems/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1191b0bb2868ff5bdf7766d3b3e9fa9bb94c23149ae21a82485e6f5f44074106"
 dependencies = [
  "bitflags 2.6.0",
  "displaydoc",
@@ -2049,15 +2137,19 @@ dependencies = [
 [[package]]
 name = "mc-sgx-dcap-sys-types"
 version = "0.11.0"
-source = "git+https://github.com/informalsystems/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2dd3e93a316a5c142de6fb9179970abc04ca4767732b90d118c90d531db47e89"
 dependencies = [
+ "bindgen",
+ "mc-sgx-core-build",
  "mc-sgx-core-sys-types",
 ]
 
 [[package]]
 name = "mc-sgx-dcap-types"
 version = "0.11.0"
-source = "git+https://github.com/informalsystems/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42c618d93a3f9561bdc27231fa7965ebe855c8d74f5cd5467da194042e0671a9"
 dependencies = [
  "const-oid",
  "displaydoc",
@@ -2077,15 +2169,8 @@ dependencies = [
 [[package]]
 name = "mc-sgx-util"
 version = "0.11.0"
-source = "git+https://github.com/informalsystems/sgx#f25807776cbe10901f53d23fca548c9e4f6f284c"
-
-[[package]]
-name = "mcmf"
-version = "2.0.0"
-source = "git+https://github.com/hu55a1n1/flow#cad8f3adb29d3be2177a31db0fa0e5c2a858beb0"
-dependencies = [
- "cc",
-]
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3c237bec3e33530c4b1a171c8c078ad5d525d5fae177ac9d62e8e454b3fffb7"
 
 [[package]]
 name = "memchr"
@@ -2127,20 +2212,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mtcs"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/mtcs.git#b2093085a53bc39107012fcae9e236edbc4433cb"
-dependencies = [
- "displaydoc",
- "itertools 0.10.5",
- "log",
- "mcmf",
- "num-traits",
- "petgraph 0.6.3",
- "serde",
-]
-
-[[package]]
 name = "multimap"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2174,35 +2245,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "num"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35bd024e8b2ff75562e5f34e7f4905839deb4b22955ef5e73d2fea1b9813cb23"
-dependencies = [
- "num-bigint",
- "num-complex",
- "num-integer",
- "num-iter",
- "num-rational",
- "num-traits",
-]
-
-[[package]]
 name = "num-bigint"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
- "num-traits",
-]
-
-[[package]]
-name = "num-complex"
-version = "0.4.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
-dependencies = [
  "num-traits",
 ]
 
@@ -2218,28 +2266,6 @@ version = "0.1.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f"
 dependencies = [
- "num-traits",
-]
-
-[[package]]
-name = "num-iter"
-version = "0.1.45"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1429034a0490724d0075ebb2bc9e875d6503c3cf69e235a8941aa757d83ef5bf"
-dependencies = [
- "autocfg",
- "num-integer",
- "num-traits",
-]
-
-[[package]]
-name = "num-rational"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f83d14da390562dca69fc84082e73e548e1ad308d24accdedd2720017cb37824"
-dependencies = [
- "num-bigint",
- "num-integer",
  "num-traits",
 ]
 
@@ -2377,6 +2403,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
+name = "peeking_take_while"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
+
+[[package]]
 name = "peg"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2417,16 +2449,6 @@ name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
-
-[[package]]
-name = "petgraph"
-version = "0.6.3"
-source = "git+https://github.com/hu55a1n1/petgraph?branch=min-cost-flow-primal-dual#3a2664a3b9d1e5b71c411a6ed497cf576c1a86ae"
-dependencies = [
- "fixedbitset",
- "indexmap 1.9.3",
- "num",
-]
 
 [[package]]
 name = "petgraph"
@@ -2549,22 +2571,12 @@ dependencies = [
 
 [[package]]
 name = "prost"
-version = "0.12.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "deb1435c188b76130da55f17a466d252ff7b1418b2ad3e037d127b94e3411f29"
-dependencies = [
- "bytes",
- "prost-derive 0.12.6",
-]
-
-[[package]]
-name = "prost"
 version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b0487d90e047de87f984913713b85c601c05609aad5b0df4b4573fbf69aa13f"
 dependencies = [
  "bytes",
- "prost-derive 0.13.3",
+ "prost-derive",
 ]
 
 [[package]]
@@ -2579,26 +2591,13 @@ dependencies = [
  "log",
  "multimap",
  "once_cell",
- "petgraph 0.6.5",
+ "petgraph",
  "prettyplease",
- "prost 0.13.3",
- "prost-types 0.13.3",
+ "prost",
+ "prost-types",
  "regex",
  "syn 2.0.79",
  "tempfile",
-]
-
-[[package]]
-name = "prost-derive"
-version = "0.12.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81bddcdb20abf9501610992b6759a4c888aef7d1a7247ef75e2404275ac24af1"
-dependencies = [
- "anyhow",
- "itertools 0.12.1",
- "proc-macro2",
- "quote",
- "syn 2.0.79",
 ]
 
 [[package]]
@@ -2616,20 +2615,11 @@ dependencies = [
 
 [[package]]
 name = "prost-types"
-version = "0.12.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9091c90b0a32608e984ff2fa4091273cbdd755d54935c51d520887f4a1dbd5b0"
-dependencies = [
- "prost 0.12.6",
-]
-
-[[package]]
-name = "prost-types"
 version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4759aa0d3a6232fb8dbdb97b61de2c20047c68aca932c7ed76da9d788508d670"
 dependencies = [
- "prost 0.13.3",
+ "prost",
 ]
 
 [[package]]
@@ -2643,44 +2633,42 @@ dependencies = [
  "color-eyre",
  "cosmrs",
  "cosmwasm-std",
+ "cw-client",
  "cw-multi-test",
  "ecies",
  "futures-util",
  "hex",
  "k256",
- "prost 0.13.3",
+ "prost",
  "quartz-common",
+ "quartz-tm-prover",
  "reqwest 0.12.8",
  "serde",
  "serde_json",
  "sha2 0.10.8",
- "tendermint 0.38.1",
+ "tendermint",
  "tendermint-light-client",
  "tendermint-rpc",
  "thiserror",
- "tm-prover",
  "tokio",
  "tonic",
  "tonic-build",
  "tracing",
  "transfers-contract",
- "wasmd-client",
 ]
 
 [[package]]
 name = "quartz-common"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
 dependencies = [
- "quartz-cw",
- "quartz-enclave",
+ "quartz-contract-core",
+ "quartz-enclave-core",
  "quartz-proto",
 ]
 
 [[package]]
-name = "quartz-cw"
+name = "quartz-contract-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
 dependencies = [
  "ciborium",
  "cosmwasm-schema",
@@ -2689,28 +2677,41 @@ dependencies = [
  "hex",
  "k256",
  "quartz-dcap-verifier-msgs",
+ "quartz-tcbinfo-msgs",
  "quartz-tee-ra",
  "serde",
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
- "tcbinfo-msgs",
  "thiserror",
+]
+
+[[package]]
+name = "quartz-cw-proof"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "cosmrs",
+ "displaydoc",
+ "ics23",
+ "prost",
+ "serde",
+ "serde_with",
+ "tendermint",
+ "tendermint-rpc",
 ]
 
 [[package]]
 name = "quartz-dcap-verifier-msgs"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
 ]
 
 [[package]]
-name = "quartz-enclave"
+name = "quartz-enclave-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2718,26 +2719,25 @@ dependencies = [
  "color-eyre",
  "cosmrs",
  "cosmwasm-std",
- "cw-proof",
  "ecies",
  "futures-util",
  "hex",
  "k256",
  "mc-sgx-dcap-sys-types",
- "mtcs",
- "quartz-cw",
+ "quartz-contract-core",
+ "quartz-cw-proof",
  "quartz-proto",
  "quartz-tee-ra",
+ "quartz-tm-stateless-verifier",
  "rand",
  "reqwest 0.12.8",
  "serde",
  "serde_json",
  "sha2 0.10.8",
- "tendermint 0.38.1",
+ "tendermint",
  "tendermint-light-client",
  "tendermint-rpc",
  "thiserror",
- "tm-stateless-verifier",
  "tokio",
  "tonic",
  "tower 0.5.1",
@@ -2747,17 +2747,22 @@ dependencies = [
 [[package]]
 name = "quartz-proto"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
 dependencies = [
- "prost 0.13.3",
+ "prost",
  "tonic",
  "tonic-build",
 ]
 
 [[package]]
+name = "quartz-tcbinfo-msgs"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+]
+
+[[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -2775,6 +2780,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "quartz-tm-prover"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "color-eyre",
+ "cosmrs",
+ "futures",
+ "quartz-cw-proof",
+ "serde",
+ "serde_json",
+ "tendermint",
+ "tendermint-light-client",
+ "tendermint-light-client-detector",
+ "tendermint-rpc",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "quartz-tm-stateless-verifier"
+version = "0.1.0"
+dependencies = [
+ "displaydoc",
+ "tendermint",
+ "tendermint-light-client",
+]
+
+[[package]]
 name = "quinn"
 version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2784,7 +2818,7 @@ dependencies = [
  "pin-project-lite",
  "quinn-proto",
  "quinn-udp",
- "rustc-hash",
+ "rustc-hash 2.0.0",
  "rustls 0.23.13",
  "socket2",
  "thiserror",
@@ -2801,7 +2835,7 @@ dependencies = [
  "bytes",
  "rand",
  "ring",
- "rustc-hash",
+ "rustc-hash 2.0.0",
  "rustls 0.23.13",
  "slab",
  "thiserror",
@@ -3063,6 +3097,12 @@ name = "rustc-demangle"
 version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "719b953e2095829ee67db738b3bfa9fa368c94900df327b3f07fe6e794d2fe1f"
+
+[[package]]
+name = "rustc-hash"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustc-hash"
@@ -3690,14 +3730,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tcbinfo-msgs"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
-dependencies = [
- "cosmwasm-schema",
-]
-
-[[package]]
 name = "tempfile"
 version = "3.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3712,37 +3744,6 @@ dependencies = [
 
 [[package]]
 name = "tendermint"
-version = "0.37.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "954496fbc9716eb4446cdd6d00c071a3e2f22578d62aa03b40c7e5b4fda3ed42"
-dependencies = [
- "bytes",
- "digest 0.10.7",
- "ed25519",
- "ed25519-consensus",
- "flex-error",
- "futures",
- "k256",
- "num-traits",
- "once_cell",
- "prost 0.12.6",
- "prost-types 0.12.6",
- "ripemd",
- "serde",
- "serde_bytes",
- "serde_json",
- "serde_repr",
- "sha2 0.10.8",
- "signature",
- "subtle",
- "subtle-encoding",
- "tendermint-proto 0.37.0",
- "time",
- "zeroize",
-]
-
-[[package]]
-name = "tendermint"
 version = "0.38.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "505d9d6ffeb83b1de47c307c6e0d2dff56c6256989299010ad03cd80a8491e97"
@@ -3753,10 +3754,12 @@ dependencies = [
  "ed25519-consensus",
  "flex-error",
  "futures",
+ "k256",
  "num-traits",
  "once_cell",
- "prost 0.13.3",
- "prost-types 0.13.3",
+ "prost",
+ "prost-types",
+ "ripemd",
  "serde",
  "serde_bytes",
  "serde_json",
@@ -3765,7 +3768,7 @@ dependencies = [
  "signature",
  "subtle",
  "subtle-encoding",
- "tendermint-proto 0.38.1",
+ "tendermint-proto",
  "time",
  "zeroize",
 ]
@@ -3779,7 +3782,7 @@ dependencies = [
  "flex-error",
  "serde",
  "serde_json",
- "tendermint 0.38.1",
+ "tendermint",
  "toml",
  "url",
 ]
@@ -3801,7 +3804,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "static_assertions",
- "tendermint 0.38.1",
+ "tendermint",
  "tendermint-light-client-verifier",
  "tendermint-rpc",
  "time",
@@ -3824,9 +3827,9 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "static_assertions",
- "tendermint 0.38.1",
+ "tendermint",
  "tendermint-light-client",
- "tendermint-proto 0.38.1",
+ "tendermint-proto",
  "tendermint-rpc",
  "time",
  "tracing",
@@ -3841,23 +3844,7 @@ dependencies = [
  "derive_more 0.99.18",
  "flex-error",
  "serde",
- "tendermint 0.38.1",
- "time",
-]
-
-[[package]]
-name = "tendermint-proto"
-version = "0.37.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc87024548c7f3da479885201e3da20ef29e85a3b13d04606b380ac4c7120d87"
-dependencies = [
- "bytes",
- "flex-error",
- "prost 0.12.6",
- "prost-types 0.12.6",
- "serde",
- "serde_bytes",
- "subtle-encoding",
+ "tendermint",
  "time",
 ]
 
@@ -3869,8 +3856,8 @@ checksum = "8ed14abe3b0502a3afe21ca74ca5cdd6c7e8d326d982c26f98a394445eb31d6e"
 dependencies = [
  "bytes",
  "flex-error",
- "prost 0.13.3",
- "prost-types 0.13.3",
+ "prost",
+ "prost-types",
  "serde",
  "serde_bytes",
  "subtle-encoding",
@@ -3899,9 +3886,9 @@ dependencies = [
  "serde_json",
  "subtle",
  "subtle-encoding",
- "tendermint 0.38.1",
+ "tendermint",
  "tendermint-config",
- "tendermint-proto 0.38.1",
+ "tendermint-proto",
  "thiserror",
  "time",
  "tokio",
@@ -3986,37 +3973,6 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
-
-[[package]]
-name = "tm-prover"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
-dependencies = [
- "clap",
- "color-eyre",
- "cosmrs",
- "cw-proof",
- "futures",
- "serde",
- "serde_json",
- "tendermint 0.38.1",
- "tendermint-light-client",
- "tendermint-light-client-detector",
- "tendermint-rpc",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "tm-stateless-verifier"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
-dependencies = [
- "displaydoc",
- "tendermint 0.38.1",
- "tendermint-light-client",
-]
 
 [[package]]
 name = "tokio"
@@ -4165,7 +4121,7 @@ dependencies = [
  "hyper-util",
  "percent-encoding",
  "pin-project",
- "prost 0.13.3",
+ "prost",
  "socket2",
  "tokio",
  "tokio-stream",
@@ -4505,19 +4461,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c62a0a307cb4a311d3a07867860911ca130c3494e8c2719593806c08bc5d0484"
 
 [[package]]
-name = "wasmd-client"
-version = "0.1.0"
-source = "git+ssh://git@github.com/informalsystems/cycles-quartz.git#e853c2ed1d7b9a720c1c39e822f701e9f71f13bb"
-dependencies = [
- "anyhow",
- "cosmrs",
- "hex",
- "reqwest 0.12.8",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "web-sys"
 version = "0.3.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4534,6 +4477,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "841c67bff177718f1d4dfefde8d8f0e78f9b6589319ba88312f567fc5841a958"
 dependencies = [
  "rustls-pki-types",
+]
+
+[[package]]
+name = "which"
+version = "4.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87ba24419a2078cd2b0f2ede2691b6c66d8e47836da3b6db8265ebad47afbfc7"
+dependencies = [
+ "either",
+ "home",
+ "once_cell",
+ "rustix",
 ]
 
 [[package]]
