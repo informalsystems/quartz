@@ -9,12 +9,38 @@ use crate::CwClient;
 
 #[derive(Clone, Debug)]
 pub struct CliClient {
+    bin: String,
     url: Url,
+    gas_price: String,
 }
 
 impl CliClient {
-    pub fn new(url: Url) -> Self {
-        Self { url }
+    pub fn new(bin: String, url: Url, gas_price: String) -> Self {
+        Self {
+            bin,
+            url,
+            gas_price,
+        }
+    }
+
+    pub fn wasmd(url: Url) -> Self {
+        Self {
+            bin: "wasmd".to_string(),
+            url,
+            gas_price: "0.0025ucosm".to_string(),
+        }
+    }
+
+    pub fn neutrond(url: Url) -> Self {
+        Self {
+            bin: "neutrond".to_string(),
+            url,
+            gas_price: "0.0053untrn".to_string(),
+        }
+    }
+
+    fn new_command(&self) -> Command {
+        Command::new(self.bin.as_str())
     }
 }
 
@@ -31,8 +57,8 @@ impl CwClient for CliClient {
         contract: &Self::Address,
         query: Self::Query,
     ) -> Result<R, Self::Error> {
-        let mut wasmd = Command::new("wasmd");
-        let command = wasmd
+        let mut command = self.new_command();
+        let command = command
             .args(["--node", self.url.as_str()])
             .args(["query", "wasm"])
             .args(["contract-state", "smart", contract.as_ref()])
@@ -54,8 +80,8 @@ impl CwClient for CliClient {
         contract: &Self::Address,
         query: Self::RawQuery,
     ) -> Result<R, Self::Error> {
-        let mut wasmd = Command::new("wasmd");
-        let command = wasmd
+        let mut command = self.new_command();
+        let command = command
             .args(["--node", self.url.as_str()])
             .args(["query", "wasm"])
             .args(["contract-state", "raw", contract.as_ref()])
@@ -72,8 +98,8 @@ impl CwClient for CliClient {
     }
 
     fn query_tx<R: DeserializeOwned + Default>(&self, txhash: &str) -> Result<R, Self::Error> {
-        let mut wasmd = Command::new("wasmd");
-        let command = wasmd
+        let mut command = self.new_command();
+        let command = command
             .args(["--node", self.url.as_str()])
             .args(["query", "tx"])
             .arg(txhash)
@@ -96,8 +122,8 @@ impl CwClient for CliClient {
         sender: &str,
         msg: M,
     ) -> Result<String, Self::Error> {
-        let mut wasmd = Command::new("wasmd");
-        let command = wasmd
+        let mut command = self.new_command();
+        let command = command
             .args(["--node", self.url.as_str()])
             .args(["--chain-id", chain_id.as_ref()])
             .args(["tx", "wasm"])
@@ -123,13 +149,13 @@ impl CwClient for CliClient {
         sender: &str,
         wasm_path: M,
     ) -> Result<String, Self::Error> {
-        let mut wasmd = Command::new("wasmd");
-        let command = wasmd
+        let mut command = self.new_command();
+        let command = command
             .args(["--node", self.url.as_str()])
             .args(["tx", "wasm", "store", &wasm_path.to_string()])
             .args(["--from", sender])
             .args(["--chain-id", chain_id.as_ref()])
-            .args(["--gas-prices", "0.0025ucosm"])
+            .args(["--gas-prices", &self.gas_price])
             .args(["--gas", "auto"])
             .args(["--gas-adjustment", "1.3"])
             .args(["-o", "json"])
@@ -153,8 +179,8 @@ impl CwClient for CliClient {
         init_msg: M,
         label: &str,
     ) -> Result<String, Self::Error> {
-        let mut wasmd = Command::new("wasmd");
-        let command = wasmd
+        let mut command = self.new_command();
+        let command = command
             .args(["--node", self.url.as_str()])
             .args(["tx", "wasm", "instantiate"])
             .args([&code_id.to_string(), &init_msg.to_string()])
@@ -162,7 +188,7 @@ impl CwClient for CliClient {
             .args(["--from", sender])
             .arg("--no-admin")
             .args(["--chain-id", chain_id.as_ref()])
-            .args(["--gas-prices", "0.0025ucosm"])
+            .args(["--gas-prices", &self.gas_price])
             .args(["--gas", "auto"])
             .args(["--gas-adjustment", "1.3"])
             .args(["-o", "json"])
@@ -179,8 +205,8 @@ impl CwClient for CliClient {
     }
 
     fn trusted_height_hash(&self) -> Result<(u64, String), Self::Error> {
-        let mut wasmd = Command::new("wasmd");
-        let command = wasmd.args(["--node", self.url.as_str()]).arg("status");
+        let mut command = self.new_command();
+        let command = command.args(["--node", self.url.as_str()]).arg("status");
 
         let output = command.output()?;
 

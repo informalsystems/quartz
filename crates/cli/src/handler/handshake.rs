@@ -47,7 +47,7 @@ impl Handler for HandshakeRequest {
 
 async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
     let tmrpc_client = HttpClient::new(config.node_url.as_str())?;
-    let cw_client = CliClient::new(config.node_url.clone());
+    let cw_client = CliClient::neutrond(config.node_url.clone());
 
     let (trusted_height, trusted_hash) = read_cached_hash_height(&config).await?;
 

@@ -60,7 +60,7 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
 
 // Queries the chain for the latested height and hash
 pub fn query_latest_height_hash(node_url: Url) -> Result<(Height, Hash), Error> {
-    let cw_client = CliClient::new(node_url);
+    let cw_client = CliClient::neutrond(node_url);
 
     let (trusted_height, trusted_hash) = cw_client
         .trusted_height_hash()
