@@ -22,6 +22,7 @@ loader.env.QUARTZ_PORT = { passthrough = true }
 
 loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "testing",
+                "--sk-file", "{{ sk_file }}",
                 "--fmspc", "{{ fmspc }}",
                 "--tcbinfo-contract", "{{ tcbinfo_contract }}",
                 "--dcap-verifier-contract", "{{ dcap_verifier_contract }}",

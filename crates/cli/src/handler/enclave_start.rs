@@ -82,6 +82,7 @@ impl Handler for EnclaveStartRequest {
                 &trusted_hash.to_string(),
                 quartz_dir_canon,
                 &enclave_dir,
+                &self.sk_file,
                 fmspc,
                 tcbinfo_contract,
                 dcap_verifier_contract,
@@ -179,6 +180,7 @@ async fn gramine_manifest(
     trusted_hash: &str,
     quartz_dir: &Path,
     enclave_dir: &Path,
+    sk_file: &Path,
     fmspc: Fmspc,
     tcbinfo_contract: AccountId,
     dcap_verifier_contract: AccountId,
@@ -206,6 +208,7 @@ async fn gramine_manifest(
         .arg(format!("-Dquartz_dir={}", quartz_dir.display()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
+        .arg(format!("-Dsk_file={}", sk_file.display()))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
         .arg(format!("-Dnode_url={}", node_url))
         .arg(format!("-Dtcbinfo_contract={}", tcbinfo_contract))
