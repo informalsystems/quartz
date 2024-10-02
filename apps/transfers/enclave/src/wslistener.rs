@@ -184,6 +184,16 @@ async fn transfer_handler<A: Attestor>(
     // Create the directory
     fs::create_dir_all(&wasm_dir).expect("Failed to create Wasm directory");
 
+    // Use a defer-like pattern to ensure cleanup happens
+    let _cleanup = defer::defer(|| {
+        debug!("Attempting to clean up directory: {}", wasm_dir);
+        if let Err(e) = fs::remove_dir_all(&wasm_dir) {
+            error!("Failed to remove temporary Wasm directory: {}", e);
+        } else {
+            info!("Successfully removed temporary Wasm directory: {}", wasm_dir);
+        }
+    });
+
 
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&ws_config.node_url.clone())?;
@@ -194,12 +204,6 @@ async fn transfer_handler<A: Attestor>(
         .query_smart(contract, json!(GetRequests {}))
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
     let requests = resp.data;
-
-    let resp: QueryResult<HexBinary> = wasmd_client
-        .query_smart(contract, json!(GetState {}))
-        .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-    let state = resp.data;
-
     // Request body contents
     let update_contents = UpdateRequestMessage { state, requests };
 
@@ -278,8 +282,6 @@ async fn transfer_handler<A: Attestor>(
     )?;
 
     println!("Output TX: {}", output);
-    // Clean up the temporary directory
-    fs::remove_dir_all(&wasm_dir).expect("Failed to remove temporary Wasm directory");
 
     Ok(())
 }
@@ -379,4 +381,24 @@ async fn two_block_waitoor(wsurl: &str) -> Result<(), Error> {
     let _ = driver_handle.await?;
 
     Ok(())
+}
+
+
+// Simple defer implementation
+mod defer {
+    use std::ops::Drop;
+
+    pub struct Defer<F: FnOnce()>(Option<F>);
+
+    impl<F: FnOnce()> Drop for Defer<F> {
+        fn drop(&mut self) {
+            if let Some(f) = self.0.take() {
+                f();
+            }
+        }
+    }
+
+    pub fn defer<F: FnOnce()>(f: F) -> Defer<F> {
+        Defer(Some(f))
+    }
 }
