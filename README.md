@@ -86,7 +86,7 @@ The actual types and verification logic for attestation is further encapsulated 
 
 `quartz-enclave-core` mirrors `quartz-contract-core`, in that its the enclave side of what happens
 on chain. Both have to manage a secure session. Where `quartz-contract-core` verifies
-attestionations, `quartz-enclave-core` produces them. But additionally, `quartz-enclave-core` must
+attestations, `quartz-enclave-core` produces them. But additionally, `quartz-enclave-core` must
 verify the state of the blockchain so that the enclave binary is restricted to
 only operate authorized commands. It does this via light-client verification.
 `quartz-enclave-core` does the following:
@@ -125,9 +125,13 @@ And for running everything in one go (build, deploy/start, handshake):
 The repo contains some additional utilities for supporting Quartz development:
 
 * [quartz-cw-prover](crates/utils/cw-prover) - Retrieve a merkle-proof for CosmWasm state
-  with [Obligato](https://github.com/informalsystems/obligato)
 * [quartz-tm-prover](crates/utils/tm-prover) - Generate light client and merkle proofs for CosmWasm storage in a format that Quartz
   understands
+* [quartz-cw-client](crates/utils/quartz-cw-client) - Rust client for wasmd
+  style blockchains
+* [quartz-print-fmspc](crates/utils/quartz-print-fmspc) - Print the FMSPC, a
+  description of the SGX processor family/model etc.
+
 
 ## Contributing
 
