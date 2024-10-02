@@ -215,11 +215,6 @@ async fn gramine_manifest(
         .display()
         .to_string();
 
-    // // Generate a unique timestamp
-    // let timestamp = SystemTime::now()
-    // .duration_since(UNIX_EPOCH)
-    // .expect("Time went backwards")
-    // .as_nanos();
 
     let status = Command::new("gramine-manifest")
         .arg("-Dlog_level=error")
@@ -293,12 +288,14 @@ async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
 
     // Set the NEUTROND_WASM_DIR environment variable
     env::set_var("NEUTROND_WASM_DIR", NEUTROND_WASM_DIR);
-    // When creating the lock file:
-    let lock_file_path = get_lock_file_path();
-    fs::create_dir_all(lock_file_path.parent().unwrap())?;
 
-    // let lock_file_path = enclave_dir.join("exclusive.lock");
-    // 
+    // Create the WASM directory if it doesn't exist
+    fs::create_dir_all(NEUTROND_WASM_DIR).map_err(|e| {
+        Error::GenericErr(format!("Failed to create WASM directory: {}", e))
+    })?;
+
+    let lock_file_path = get_lock_file_path();
+
     // Try to remove the lock file if it exists (in case of a previous unclean shutdown)
     if lock_file_path.exists() {
         fs::remove_file(&lock_file_path).map_err(|e| {

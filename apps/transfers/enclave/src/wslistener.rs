@@ -182,46 +182,47 @@ async fn transfer_handler<A: Attestor>(
     contract: &AccountId,
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
+    info!("Starting transfer handler");
+
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let httpurl = Url::parse(&ws_config.node_url.clone())?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
-    let wasm_dir = PathBuf::from("/tmp/neutrond_wasm");
-    create_dir_all(&wasm_dir).expect("Failed to create WasmVM directory");
 
-    let lock_file_path = wasm_dir.join("exclusive.lock");
+    // Use the NEUTROND_WASM_DIR constant
+    let wasm_dir = PathBuf::from(NEUTROND_WASM_DIR);
+    fs::create_dir_all(&wasm_dir).expect("Failed to create WasmVM directory");
 
-   // Attempt to create or open the lock file
-   let mut lock_file = match OpenOptions::new()
-   .write(true)
-   .create_new(true)
-   .open(&lock_file_path)
-   {
-       Ok(file) => file,
-       Err(e) if e.kind() == ErrorKind::AlreadyExists => {
-           return Err(anyhow!("Another VM is already running. Please wait for it to complete."));
-       }
-       Err(e) => {
-           return Err(anyhow!("Failed to create lock file: {}", e));
-       }
-   };
+    let lock_file_path = get_lock_file_path();
 
-   // Write the current process ID to the lock file
-   if let Err(e) = writeln!(lock_file, "{}", process::id()) {
-       return Err(anyhow!("Failed to write to lock file: {}", e));
-   }
+    // Attempt to create or open the lock file
+    let mut lock_file = match OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&lock_file_path)
+    {
+        Ok(file) => file,
+        Err(e) if e.kind() == ErrorKind::AlreadyExists => {
+            return Err(anyhow!("Another VM is already running. Please wait for it to complete."));
+        }
+        Err(e) => {
+            return Err(anyhow!("Failed to create lock file: {}", e));
+        }
+    };
 
-   // Set the NEUTROND_WASM_DIR environment variable
-   env::set_var("NEUTROND_WASM_DIR", wasm_dir.to_str().unwrap());
+    // Write the current process ID to the lock file
+    if let Err(e) = writeln!(lock_file, "{}", process::id()) {
+        return Err(anyhow!("Failed to write to lock file: {}", e));
+    }
 
-   // Use a defer-like pattern to ensure the lock file is removed
-   let lock_file_path_clone = lock_file_path.clone();
-   let _cleanup = defer::defer(move || {
-       if let Err(e) = std::fs::remove_file(&lock_file_path_clone) {
-           error!("Failed to remove lock file: {}", e);
-       } else {
-           info!("Successfully removed lock file");
-       }
-});
+    // Use a defer-like pattern to ensure the lock file is removed
+    let lock_file_path_clone = lock_file_path.clone();
+    let _cleanup = defer::defer(move || {
+        if let Err(e) = std::fs::remove_file(&lock_file_path_clone) {
+            error!("Failed to remove lock file: {}", e);
+        } else {
+            info!("Successfully removed lock file");
+        }
+    });
     // Query chain
     // Get epoch, obligations, liquidity sources
     let resp: QueryResult<Vec<TransferRequest>> = wasmd_client
