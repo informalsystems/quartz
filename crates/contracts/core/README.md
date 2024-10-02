@@ -11,6 +11,8 @@ Quartz CosmWasm (quartz-contract-core) is a high-level framework for building at
 - Verify DCAP attestations (by calling `dcap-verifier` and `tcbinfo` contracts) 
 - Mock SGX support for testing environments
 
+See also the [spec.md](./SPEC.md)
+
 ## Installation
 
 Add `quartz-contract-core` to your `Cargo.toml`:
