@@ -66,7 +66,8 @@ impl CwClient for NeutrondClient {
         let raw_query_response = client.smart_contract_state(raw_query_request).await?;
 
         let raw_value = raw_query_response.into_inner().data;
-        serde_json::from_slice(&raw_value).map_err(|e| anyhow!(e))
+        serde_json::from_slice(&raw_value)
+            .map_err(|e| anyhow!("failed to deserialize JSON reponse: {}", e))
     }
 
     fn query_raw<R: DeserializeOwned + Default>(
@@ -94,11 +95,14 @@ impl CwClient for NeutrondClient {
             let mut sk_file = File::open(self.sk_file.clone())?;
             sk_file.read_to_string(&mut secret_hex)?;
             let secret = hex::decode(secret_hex)?;
-            SigningKey::from_slice(&secret).map_err(|e| anyhow!(e))?
+            SigningKey::from_slice(&secret)
+                .map_err(|e| anyhow!("failed to read secret key: {}", e))?
         };
 
         let tm_pubkey = secret.public_key();
-        let sender = tm_pubkey.account_id("neutron").expect("todo");
+        let sender = tm_pubkey
+            .account_id("neutron")
+            .map_err(|e| anyhow!("failed to create AccountId from pubkey: {}", e))?;
 
         let msgs = vec![MsgExecuteContract {
             sender: sender.clone(),
@@ -111,10 +115,10 @@ impl CwClient for NeutrondClient {
 
         let account = account_info(self.url.to_string(), sender.to_string())
             .await
-            .expect("todo");
+            .map_err(|e| anyhow!("error querying account info: {}", e))?;
         let amount = Coin {
             amount: 20000u128,
-            denom: "untrn".parse().expect("todo"),
+            denom: "untrn".parse().expect("hardcoded denom"),
         };
         let tx_bytes = tx_bytes(
             &secret,
@@ -126,9 +130,11 @@ impl CwClient for NeutrondClient {
             account.account_number,
             &chain_id,
         )
-        .expect("todo");
+        .map_err(|e| anyhow!("failed to create msg/tx: {}", e))?;
 
-        let response = send_tx(self.url.to_string(), tx_bytes).await.expect("todo");
+        let response = send_tx(self.url.to_string(), tx_bytes)
+            .await
+            .map_err(|e| anyhow!("failed to send tx: {}", e))?;
         println!("{response:?}");
         Ok(response
             .tx_response
