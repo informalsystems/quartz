@@ -1,7 +1,7 @@
 # Quartz manifest file
 
 loader.entrypoint = "file:{{ gramine.libos }}"
-libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-enclave"
+libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-enclave-core"
 
 loader.log_level = "{{ log_level }}"
 
@@ -16,10 +16,10 @@ loader.env.RA_TLS_MRENCLAVE = { passthrough = true }
 loader.env.RA_TLS_MRSIGNER = { passthrough = true }
 loader.env.RA_TLS_ISV_SVN = { passthrough = true }
 loader.env.RA_TLS_ISV_PROD_ID = { passthrough = true }
-loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
+loader.env.RA_TLS_EPID_API_KEY = { passthrough = true } # TODO - remove
 loader.env.MYAPP_DATA = { passthrough = true }
 
-loader.argv = ["quartz-enclave",
+loader.argv = ["quartz-enclave-core",
                 "--chain-id", "testing",
                 "--trusted-height", "{{ trusted_height }}",
                 "--trusted-hash", "{{ trusted_hash }}"]
@@ -42,7 +42,7 @@ sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
 
 sgx.trusted_files = [
   "file:{{ gramine.libos }}",
-  "file:{{ quartz_dir }}/target/release/quartz-enclave",
+  "file:{{ quartz_dir }}/target/release/quartz-enclave-core",
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
