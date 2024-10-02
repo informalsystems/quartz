@@ -28,6 +28,8 @@ loader.argv = ["quartz-app-transfers-enclave",
                 "--tcbinfo-contract", "{{ tcbinfo_contract }}",
                 "--dcap-verifier-contract", "{{ dcap_verifier_contract }}",
                 "--node-url", "{{ node_url }}",
+                "--ws-url", "{{ ws_url }}",
+                "--grpc-url", "{{ grpc_url }}",
                 "--rpc-addr", "0.0.0.0:11090",
                 "--trusted-height", "{{ trusted_height }}",
                 "--trusted-hash", "{{ trusted_hash }}"]

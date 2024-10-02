@@ -46,8 +46,6 @@ impl Handler for HandshakeRequest {
 }
 
 async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
-    let wsurl = format!("ws://{}/websocket", config.node_url);
-
     let tmrpc_client = HttpClient::new(config.node_url.as_str())?;
     let cw_client = CliWasmdClient::new(config.node_url.clone());
 
@@ -79,7 +77,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
 
     // Wait 2 blocks
     info!("Waiting 2 blocks for light client proof");
-    two_block_waitoor(&wsurl).await?;
+    two_block_waitoor(config.ws_url.as_str()).await?;
 
     // Call tm prover with trusted hash and height
     let prover_config = TmProverConfig {

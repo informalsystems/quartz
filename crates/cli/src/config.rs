@@ -26,6 +26,16 @@ pub struct Config {
     #[serde_as(as = "DisplayFromStr")]
     pub node_url: Url,
 
+    /// websocket URL
+    #[serde(default = "default_ws_url")]
+    #[serde_as(as = "DisplayFromStr")]
+    pub ws_url: Url,
+
+    /// gRPC URL
+    #[serde(default = "default_grpc_url")]
+    #[serde_as(as = "DisplayFromStr")]
+    pub grpc_url: Url,
+
     /// RPC interface for the Quartz enclave
     #[serde(default = "default_rpc_addr")]
     pub enclave_rpc_addr: String,
@@ -62,6 +72,18 @@ fn default_node_url() -> Url {
         .expect("valid hardcoded URL")
 }
 
+fn default_ws_url() -> Url {
+    "ws://127.0.0.1/websocket"
+        .parse()
+        .expect("valid hardcoded URL")
+}
+
+fn default_grpc_url() -> Url {
+    "http://127.0.0.1:9090,"
+        .parse()
+        .expect("valid hardcoded URL")
+}
+
 fn default_tx_sender() -> String {
     String::from("admin")
 }
@@ -85,6 +107,8 @@ impl Default for Config {
             tx_sender: default_tx_sender(),
             chain_id: default_chain_id(),
             node_url: default_node_url(),
+            ws_url: default_ws_url(),
+            grpc_url: default_grpc_url(),
             enclave_rpc_addr: default_rpc_addr(),
             enclave_rpc_port: default_port(),
             app_dir: default_app_dir(),

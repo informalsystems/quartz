@@ -129,6 +129,18 @@ pub struct HandshakeArgs {
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub node_url: Option<Url>,
 
+    /// websocket URL
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub ws_url: Option<Url>,
+
+    /// gRPC URL
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub grpc_url: Option<Url>,
+
     /// RPC interface for the Quartz enclave
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -159,6 +171,18 @@ pub struct ContractDeployArgs {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub node_url: Option<Url>,
+
+    /// websocket URL
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub ws_url: Option<Url>,
+
+    /// gRPC URL
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub grpc_url: Option<Url>,
 
     /// Name or address of private key with which to sign
     #[arg(long)]

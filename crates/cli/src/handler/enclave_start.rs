@@ -43,6 +43,10 @@ impl Handler for EnclaveStartRequest {
                 trusted_hash.to_string(),
                 "--node-url".to_string(),
                 config.node_url.to_string(),
+                "--ws-url".to_string(),
+                config.ws_url.to_string(),
+                "--grpc-url".to_string(),
+                config.grpc_url.to_string(),
                 "--tx-sender".to_string(),
                 config.tx_sender,
             ];
@@ -88,6 +92,8 @@ impl Handler for EnclaveStartRequest {
                 tcbinfo_contract,
                 dcap_verifier_contract,
                 &config.node_url,
+                &config.ws_url,
+                &config.grpc_url,
             )
             .await?;
 
@@ -186,6 +192,8 @@ async fn gramine_manifest(
     tcbinfo_contract: AccountId,
     dcap_verifier_contract: AccountId,
     node_url: &Url,
+    ws_url: &Url,
+    grpc_url: &Url,
 ) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
@@ -212,6 +220,8 @@ async fn gramine_manifest(
         .arg(format!("-Dsk_file={}", sk_file.display()))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
         .arg(format!("-Dnode_url={}", node_url.to_string()))
+        .arg(format!("-Dws_url={}", ws_url.to_string()))
+        .arg(format!("-Dgrpc_url={}", grpc_url.to_string()))
         .arg(format!("-Dtcbinfo_contract={}", tcbinfo_contract))
         .arg(format!(
             "-Ddcap_verifier_contract={}",
