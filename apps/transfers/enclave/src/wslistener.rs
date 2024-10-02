@@ -189,7 +189,7 @@ async fn transfer_handler<A: Attestor>(
     let mut lock_file = match OpenOptions::new()
     .write(true)
     .create_new(true)
-    .open(&lock_file_path)
+    .open(&lock_file_path).await
     {
         Ok(file) => file,
         Err(e) if e.kind() == ErrorKind::AlreadyExists => {
