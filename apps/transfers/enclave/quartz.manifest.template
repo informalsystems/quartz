@@ -38,7 +38,7 @@ fs.mounts = [
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
   { uri = "file:/home/peppi/.gvm/pkgsets/go1.22/global/pkg/mod/github.com/!cosm!wasm/wasmvm/v2@v2.1.3/internal/api/libwasmvm.x86_64.so", path = "/usr/local/lib/libwasmvm.x86_64.so" },
   { uri = "file:/home/peppi/.neutrond" , path = "/root/.neutrond"},
-  { uri = "file:/home/peppi/.gvm/pkgsets/go1.22/global/bin/neutrond, path = "/root/.gvm/pkgsets/go1.22/global/bin/neutrond"},
+  { uri = "file:/home/peppi/.gvm/pkgsets/go1.22/global/bin/neutrond", path = "/root/.gvm/pkgsets/go1.22/global/bin/neutrond"},
   { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
   { uri = "file:/tmp", path = "/tmp" },
 ]
