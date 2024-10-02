@@ -1,21 +1,12 @@
 # Quartz TEE Remote Attestation (quartz-tee-ra)
 
-Quartz TEE Remote Attestation is a Rust library that provides functionality for verifying Intel SGX remote attestations. It supports DCAP attestation protocols, making it a versatile tool for secure enclave-based applications.
+This `quartz-tee-ra` handles Intel SGX remote attestation for DCAP.
 
 ## Features
 
 - DCAP attestation verification
 - Support for Intel SGX quote parsing and validation
 - Integration with MobileCoin's attestation verifier
-
-## Installation
-
-Add `quartz-tee-ra` to your `Cargo.toml`:
-
-```toml
-[dependencies]
-quartz-tee-ra = { path = "../packages/quartz-tee-ra" }
-```
 
 ## Usage
 
@@ -91,14 +82,6 @@ To run tests:
 cargo test
 ```
 
-## License
-
-[LICENSE_NAME] - see the LICENSE file for details.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 ## Safety
 
 This crate uses `#![deny(unsafe_code)]` to ensure everything is implemented in 100% Safe Rust.
@@ -126,7 +109,3 @@ This crate uses `#![deny(unsafe_code)]` to ensure everything is implemented in 1
 
 
 Note: There's a TODO to uncomment the `#![forbid(unsafe_code)]` once better wrappers for FFI structs and constructors are implemented.
-
-## Disclaimer
-
-This software is provided "as is" and without any express or implied warranties, including, without limitation, the implied warranties of merchantability and fitness for a particular purpose.

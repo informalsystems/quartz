@@ -5,10 +5,10 @@ Quartz CosmWasm (quartz-contract-core) is a high-level framework for building at
 
 ## Features
 
-- `Attested<T>` wrapper for secure message handling
-- Traits and structures for easy contract development
-- State management and message handling utilities
-- Support for DCAP attestation protocols
+- `Attested<M, A>` wrapper for a message and its attestation
+- MockAttestation type for development ease 
+- Session management for secure communication between contract and enclave
+- Verify DCAP attestations (by calling `dcap-verifier` and `tcbinfo` contracts) 
 - Mock SGX support for testing environments
 
 ## Installation
@@ -69,14 +69,3 @@ To run the tests:
 ```sh
 cargo test
 ```
-
-## License
-
-This project is licensed under [LICENSE_NAME]. See the LICENSE file for details.
-
-## Contributing
-
-We welcome contributions! Please feel free to submit a Pull Request.
-
-For more information on the implementation details, check out the following files:
-

@@ -1,5 +1,11 @@
 # CosmWasm smart contract to verify DCAP attestations
 
+Your personal DCAP detective! This package is a standalone smart contract for verifying DCAP attestations that can be called by other contracts.
+
+- Thin wrapper for standalone smart contract around the functionality provided in the `quartz-tee-ra` package
+- Provides query and execute entry points for attestation checks
+
+
 ## Testing instructions
 ```
 wasmd query wasm contract-state smart "$CONTRACT" '{

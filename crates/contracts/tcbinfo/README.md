@@ -1,6 +1,6 @@
 # CosmWasm SGX TcbInfo Smart Contract
 
-This smart contract facilitates the storage and verification of `TcbInfo`s for Intel SGX. The contract ensures that
+Standalone smart contract for storage and verification of `TcbInfo`s for Intel SGX. The contract ensures that
 TcbInfos are kept up-to-date so other contracts can query the latest TcbInfo state using the quote's `fmspc` during
 remote attestation verification to ensure the attesting enclave setup is up-to-date.
 
