@@ -24,7 +24,6 @@ use serde_json::json;
 use tendermint_rpc::{event::Event, query::EventType, SubscriptionClient, WebSocketClient};
 use tm_prover::{config::Config as TmProverConfig, prover::prove};
 use tonic::Request;
-use tracing::info;
 use transfers_contract::msg::{
     execute::{QueryResponseMsg, Request as TransferRequest, UpdateMsg},
     AttestedMsg, ExecuteMsg,
@@ -203,8 +202,14 @@ async fn transfer_handler<A: Attestor>(
     // Get epoch, obligations, liquidity sources
     let resp: QueryResult<Vec<TransferRequest>> = wasmd_client
         .query_smart(contract, json!(GetRequests {}))
-        .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
+        .map_err(|e| anyhow!("Problem querying contract state 1: {}", e))?;
     let requests = resp.data;
+
+    let resp: QueryResult<HexBinary> = wasmd_client
+    .query_smart(contract, json!(GetState {}))
+    .map_err(|e| anyhow!("Problem querying contract state 2: {}", e))?;
+    let state = resp.data;
+    
     // Request body contents
     let update_contents = UpdateRequestMessage { state, requests };
 
