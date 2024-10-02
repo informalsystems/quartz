@@ -3,10 +3,9 @@ use std::{collections::BTreeMap, str::FromStr};
 use tracing::{debug, error, info};
 
 use std::env;
-use std::fs;
+use std::fs::OpenOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tokio::fs::OpenOptions;
 use std::path::PathBuf;
 use std::io::ErrorKind;
 use std::process;
