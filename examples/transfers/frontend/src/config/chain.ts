@@ -2,6 +2,7 @@ import { ChainInfo } from '@keplr-wallet/types'
 
 import { localWasm } from './chains/localWasm'
 import { localNeutron } from './chains/localNeutron'
+import { testnetNeutron } from './chains/testnetNeutron'
 
 const supportedChains: Record<string, ChainInfo> = {
   doWasm: {
@@ -12,6 +13,7 @@ const supportedChains: Record<string, ChainInfo> = {
   },
   localNeutron,
   localWasm,
+  testnetNeutron,
 }
 
 const chain = supportedChains[process.env.NEXT_PUBLIC_TARGET_CHAIN!]

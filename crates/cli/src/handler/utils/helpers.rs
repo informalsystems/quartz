@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use cosmrs::{AccountId, ErrorReport};
-use cw_client::{CliWasmdClient, WasmdClient};
+use cw_client::{CliClient, CwClient};
 use regex::Regex;
 use reqwest::Url;
 use subtle_encoding::bech32::decode as bech32_decode;
@@ -16,11 +16,7 @@ use tracing::debug;
 use crate::{config::Config, error::Error};
 
 pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
-    let (hr, _) = bech32_decode(address_str).map_err(|e| anyhow!(e))?;
-    if hr != "wasm" {
-        return Err(anyhow!(hr));
-    }
-
+    let _ = bech32_decode(address_str).map_err(|e| anyhow!(e))?;
     address_str.parse().map_err(|e: ErrorReport| anyhow!(e))
 }
 
@@ -59,10 +55,8 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
 }
 
 // Queries the chain for the latested height and hash
-pub fn query_latest_height_hash(node_url: &String) -> Result<(Height, Hash), Error> {
-    let httpurl = Url::parse(&format!("http://{}", node_url))
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
-    let cw_client = CliWasmdClient::new(httpurl);
+pub fn query_latest_height_hash(node_url: Url) -> Result<(Height, Hash), Error> {
+    let cw_client = CliClient::neutrond(node_url);
 
     let (trusted_height, trusted_hash) = cw_client
         .trusted_height_hash()

@@ -1,6 +1,7 @@
 use std::{
     convert::Infallible,
     net::SocketAddr,
+    path::PathBuf,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -31,6 +32,7 @@ use quartz_proto::quartz::{
 };
 use quartz_tm_stateless_verifier::make_provider;
 use rand::Rng;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use tendermint::{block::Height, Hash};
 use tendermint_light_client::{
@@ -78,11 +80,14 @@ pub trait WebSocketHandler: Send + Sync + 'static {
 
 #[derive(Debug, Clone)]
 pub struct WsListenerConfig {
-    pub node_url: String,
+    pub node_url: Url,
+    pub ws_url: Url,
+    pub grpc_url: Url,
     pub chain_id: String,
     pub tx_sender: String,
     pub trusted_hash: Hash,
     pub trusted_height: Height,
+    pub sk_file: PathBuf,
 }
 
 /// A trait for wrapping a tonic service with the gRPC server handler
@@ -154,8 +159,9 @@ impl QuartzServer {
         ws_handlers: &Vec<Box<dyn WebSocketHandler>>,
         ws_config: WsListenerConfig,
     ) -> Result<(), QuartzError> {
-        let wsurl = format!("ws://{}/websocket", ws_config.node_url);
-        let (client, driver) = WebSocketClient::new(wsurl.as_str()).await.unwrap();
+        let (client, driver) = WebSocketClient::new(ws_config.ws_url.as_str())
+            .await
+            .unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
         let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
 

@@ -1,13 +1,9 @@
-use std::str::FromStr;
-
 use anyhow::anyhow;
 use async_trait::async_trait;
 use color_eyre::owo_colors::OwoColorize;
-use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
-use cw_client::{CliWasmdClient, WasmdClient};
+use cw_client::{CliClient, CwClient};
 use futures_util::stream::StreamExt;
 use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
-use reqwest::Url;
 use serde_json::json;
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tracing::{debug, info};
@@ -47,11 +43,8 @@ impl Handler for HandshakeRequest {
 }
 
 async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
-    let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
-    let wsurl = format!("ws://{}/websocket", config.node_url);
-
-    let tmrpc_client = HttpClient::new(httpurl.as_str())?;
-    let cw_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
+    let tmrpc_client = HttpClient::new(config.node_url.as_str())?;
+    let cw_client = CliClient::neutrond(config.node_url.clone());
 
     let (trusted_height, trusted_hash) = read_cached_hash_height(&config).await?;
 
@@ -69,7 +62,9 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 2000000,
                 &config.tx_sender,
                 json!(res),
-            )?
+                "11000untrn",
+            )
+            .await?
             .as_str(),
     )?;
     debug!("\n\n SessionCreate tx output: {:?}", output);
@@ -80,12 +75,12 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
 
     // Wait 2 blocks
     info!("Waiting 2 blocks for light client proof");
-    two_block_waitoor(&wsurl).await?;
+    two_block_waitoor(config.ws_url.as_str()).await?;
 
     // Call tm prover with trusted hash and height
     let prover_config = TmProverConfig {
-        primary: httpurl.as_str().parse()?,
-        witnesses: httpurl.as_str().parse()?,
+        primary: config.node_url.as_str().parse()?,
+        witnesses: config.node_url.as_str().parse()?,
         trusted_height,
         trusted_hash,
         verbose: "1".parse()?, // TODO: both tm-prover and cli define the same Verbosity struct. Need to define this once and import
@@ -112,11 +107,13 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
         cw_client
             .tx_execute(
                 &args.contract.clone(),
-                &ChainId::from_str("testing")?,
+                &config.chain_id,
                 2000000,
                 &config.tx_sender,
                 json!(res),
-            )?
+                "11000untrn",
+            )
+            .await?
             .as_str(),
     )?;
 

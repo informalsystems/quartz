@@ -1,9 +1,10 @@
-use std::{env, net::SocketAddr};
+use std::{env, net::SocketAddr, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
+use reqwest::Url;
 use tendermint::Hash;
 use tendermint_light_client::types::{Height, TrustThreshold};
 
@@ -64,11 +65,20 @@ pub struct Cli {
     #[clap(long, default_value = "5")]
     pub max_block_lag: u64,
 
-    #[clap(long, default_value = "127.0.0.1:11090")]
-    pub node_url: String,
+    #[clap(long, default_value = "http://127.0.0.1:26657")]
+    pub node_url: Url,
+
+    #[clap(long, default_value = "ws://127.0.0.1/websocket")]
+    pub ws_url: Url,
+
+    #[clap(long, default_value = "http://127.0.0.1:9090")]
+    pub grpc_url: Url,
 
     #[clap(long, default_value = "admin")]
     pub tx_sender: String,
+
+    #[clap(long, default_value = "admin.sk")]
+    pub sk_file: PathBuf,
 }
 
 fn default_rpc_addr() -> SocketAddr {

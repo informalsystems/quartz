@@ -32,8 +32,9 @@ use quartz_common::{
         server::{QuartzServer, WsListenerConfig},
     },
 };
-use transfers_server::{TransfersOp, TransfersService};
 use tokio::sync::mpsc;
+use transfers_server::{TransfersOp, TransfersService};
+
 use crate::wslistener::WsListener;
 
 #[tokio::main(flavor = "current_thread")]
@@ -73,10 +74,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let ws_config = WsListenerConfig {
         node_url: args.node_url,
+        ws_url: args.ws_url,
+        grpc_url: args.grpc_url,
         tx_sender: args.tx_sender,
         trusted_hash: args.trusted_hash,
         trusted_height: args.trusted_height,
         chain_id: args.chain_id,
+        sk_file: args.sk_file,
     };
 
     let sk = Arc::new(Mutex::new(None));

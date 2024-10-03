@@ -48,6 +48,7 @@ impl TryFrom<Command> for Request {
                 label: args.contract_deploy.label,
                 contract_manifest: args.contract_deploy.contract_manifest,
                 release: args.enclave_build.release,
+                sk_file: args.sk_file,
                 fmspc: args.fmspc,
                 tcbinfo_contract: args.tcbinfo_contract,
                 dcap_verifier_contract: args.dcap_verifier_contract,
@@ -101,6 +102,7 @@ impl TryFrom<EnclaveCommand> for Request {
             EnclaveCommand::Build(_) => Ok(EnclaveBuildRequest {}.into()),
             EnclaveCommand::Start(args) => Ok(EnclaveStartRequest {
                 unsafe_trust_latest: args.unsafe_trust_latest,
+                sk_file: args.sk_file,
                 fmspc: args.fmspc,
                 tcbinfo_contract: args.tcbinfo_contract,
                 dcap_verifier_contract: args.dcap_verifier_contract,

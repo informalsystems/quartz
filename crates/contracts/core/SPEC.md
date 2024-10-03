@@ -1,9 +1,9 @@
 
-# Quartz CosmWasm (quartz-cw) Specification
+# Quartz CosmWasm (quartz-contract-core) Specification
 
 ## Abstract
 
-This document specifies the `quartz-cw` package, which provides a high-level framework for building attestation-aware smart contracts on CosmWasm. The package implements secure message handling, state management, and attestation verification for Intel SGX-based contracts.
+This document specifies the `quartz-contract-core` package, which provides a high-level framework for building attestation-aware smart contracts on CosmWasm. The package implements secure message handling, state management, and attestation verification for Intel SGX-based contracts.
 
 ## Table of Contents
 
@@ -15,11 +15,11 @@ This document specifies the `quartz-cw` package, which provides a high-level fra
 
 ## Introduction
 
-The `quartz-cw` package is designed to facilitate the development of secure, attestation-aware smart contracts on the CosmWasm platform. It provides a set of tools and abstractions that allow developers to easily integrate Intel SGX remote attestation into their smart contracts, ensuring that only authorized enclaves can interact with the contract's sensitive functions.
+The `quartz-contract-core` package is designed to facilitate the development of secure, attestation-aware smart contracts on the CosmWasm platform. It provides a set of tools and abstractions that allow developers to easily integrate Intel SGX remote attestation into their smart contracts, ensuring that only authorized enclaves can interact with the contract's sensitive functions.
 
 ### Scope
 
-This specification covers the core components of the `quartz-cw` package, including:
+This specification covers the core components of the `quartz-contract-core` package, including:
 
 1. The `Attested<M, A>` wrapper for secure message handling
 2. Attestation types and verification processes
@@ -30,15 +30,15 @@ This specification covers the core components of the `quartz-cw` package, includ
 
 - Provide a secure and easy-to-use framework for attestation-aware smart contracts
 - Abstract away the complexities of SGX attestation verification
-- Ensure compatibility with both DCAP and EPID attestation protocols (though EPID is deprecated now by Intel)
+- Ensure compatibility with DCAP attestation protocols (EPID is deprecated now by Intel)
 - Allow for easy testing and mocking of SGX environments
 
 ## Functionality
 
-The `quartz-cw` package provides the following key functionalities:
+The `quartz-contract-core` package provides the following key functionalities:
 
 1. Secure message wrapping with `Attested<M, A>`
-2. Attestation verification for DCAP and EPID protocols
+2. Attestation verification for DCAP protocols
 3. State management utilities for CosmWasm contracts
 4. Execution handlers for attested messages
 
@@ -47,12 +47,11 @@ The `quartz-cw` package provides the following key functionalities:
 - `Attested<M, A>`: A wrapper struct that holds a message `M` and its attestation `A`.
 - `Attestation`: A trait that defines the common interface for different attestation types.
 - `DcapAttestation`: A struct representing a DCAP attestation.
-- `EpidAttestation`: A struct representing an EPID attestation.
 - `MockAttestation`: A struct for mocking attestations in test environments.
 
 ## Implementation
 
-The `quartz-cw` package is implemented in Rust and relies on the CosmWasm framework. The main components are:
+The `quartz-contract-core` package is implemented in Rust and relies on the CosmWasm framework. The main components are:
 
 ### Attested Message Wrapper
 
@@ -87,12 +86,11 @@ pub trait Attestation {
 
 ### Attestation Verification
 
-The attestation verification process is handled by the `quartz-tee-ra` package, which is a dependency of `quartz-cw`. The verification functions are called within the execution handlers of `quartz-cw`.
+The attestation verification process is handled by the `quartz-tee-ra` package, which is a dependency of `quartz-contract-core`. The verification functions are called within the execution handlers of `quartz-contract-core`.
 
 ```rust
 pub use intel_sgx::{
     dcap::verify as verify_dcap_attestation,
-    epid::{types::IASReport, verifier::verify as verify_epid_attestation},
     Error,
 };
 ```
@@ -128,7 +126,7 @@ where
 
 ## Properties
 
-The `quartz-cw` package ensures the following properties:
+The `quartz-contract-core` package ensures the following properties:
 
 1. **Attestation Integrity**: All messages wrapped with `Attested<M, A>` must have a valid attestation that can be verified.
 
@@ -136,13 +134,13 @@ The `quartz-cw` package ensures the following properties:
 
 3. **Enclave Identity Verification**: The package verifies that messages come from authorized enclaves by checking the MRENCLAVE value.
 
-4. **Protocol Flexibility**: The package supports both DCAP and EPID attestation protocols, allowing for different SGX deployment scenarios.
+4. **DCAP Support**: The package supports DCAP attestation protocols.
 
 5. **Testability**: The mock-sgx feature allows for easy testing of contracts without a real SGX environment.
 
 ## Assumptions
 
-The `quartz-cw` package operates under the following assumptions:
+The `quartz-contract-core` package operates under the following assumptions:
 
 1. The underlying SGX hardware and software stack is secure and not compromised.
 
@@ -152,8 +150,8 @@ The `quartz-cw` package operates under the following assumptions:
 
 4. The communication channel between the enclave and the smart contract is secure and resistant to man-in-the-middle attacks.
 
-5. The contract developers correctly implement the `quartz-cw` abstractions and follow secure coding practices.
+5. The contract developers correctly implement the `quartz-contract-core` abstractions and follow secure coding practices.
 
 6. The MRENCLAVE values of authorized enclaves are known and correctly configured in the contract's state.
 
-By adhering to this specification, developers can create secure, attestation-aware smart contracts that leverage the power of Intel SGX technology within the CosmWasm ecosystem.# Quartz CosmWasm (quartz-cw) Specification
+By adhering to this specification, developers can create secure, attestation-aware smart contracts that leverage the power of Intel SGX technology within the CosmWasm ecosystem.# Quartz CosmWasm (`quartz-contract-core`) Specification

@@ -96,8 +96,8 @@ x509-parser = { version = "0.16.0", default-features = false, features = [
 zeroize = { version = "1.7.0", default-features = false }
 
 # cosmos
-cosmos-sdk-proto = { version = "0.22.0", default-features = false }
-cosmrs = { version = "0.17.0", default-features = false }
+cosmos-sdk-proto = { version = "0.23.0", default-features = false }
+cosmrs = { version = "0.18.0", default-features = false }
 cosmwasm-schema = { version = "2.1.1", default-features = false }
 cosmwasm-std = { version = "2.1.1", default-features = false, features = [
     "std",
