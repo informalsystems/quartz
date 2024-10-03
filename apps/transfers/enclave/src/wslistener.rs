@@ -427,7 +427,7 @@ fn cleanup_old_wasm_dirs() -> std::io::Result<()> {
             let dir_age = current_time - metadata.modified()?.duration_since(UNIX_EPOCH).unwrap().as_secs();
             
             if dir_age > 3600 { // Remove if older than 1 hour
-                fs::remove_dir_all(path)?;
+                fs::remove_dir_all(path.clone())?;
                 info!("Removed old WasmVM directory: {:?}", path);
             }
         }
