@@ -250,7 +250,7 @@ where
             2000000,
             &ws_config.tx_sender,
             json!(transfer_msg),
-            "1000untrn",
+            "11000untrn",
         )
         .await?;
 
@@ -313,10 +313,10 @@ where
         .tx_execute(
             contract,
             chain_id,
-            300000,
+            2000000,
             &ws_config.tx_sender,
             json!(query_msg),
-            "40000untrn",
+            "11000untrn",
         )
         .await?;
 
