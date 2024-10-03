@@ -1,6 +1,7 @@
 //TODO: get rid of this
 use std::{collections::BTreeMap, str::FromStr};
 use tracing::{debug, error, warn, info};
+use tokio::time::{sleep, Duration};
 
 use std::env;
 use std::io::Write;
@@ -191,24 +192,34 @@ async fn transfer_handler<A: Attestor>(
     let httpurl = Url::parse(&ws_config.node_url.clone())?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
 
-    // finding latest lock file in latest wasmvm
-    let wasm_dir = find_latest_wasm_dir()?.ok_or_else(|| anyhow!("No WasmVM directory found"))?;
+    // Retry logic for finding WasmVM directory
+    let max_attempts = 5;
+    let retry_delay = Duration::from_secs(1);
+    let mut wasm_dir = None;
+
+    for attempt in 1..=max_attempts {
+        match find_latest_wasm_dir()? {
+            Some(dir) => {
+                wasm_dir = Some(dir);
+                break;
+            }
+            None => {
+                if attempt < max_attempts {
+                    info!("WasmVM directory not found. Retrying in 1 second... (Attempt {}/{})", attempt, max_attempts);
+                    sleep(retry_delay).await;
+                }
+            }
+        }
+    }
+
+    let wasm_dir = wasm_dir.ok_or_else(|| anyhow!("Failed to find WasmVM directory after {} attempts", max_attempts))?;
+
     let lock_file_path = wasm_dir.join("wasm").join("wasm").join("exclusive.lock");
-
-    // Check if the lock file exists
+    
     if !lock_file_path.exists() {
-        return Err(anyhow!("WasmVM lock file not found. WasmVM might not be initialized."));
+        return Err(anyhow!("WasmVM lock file not found at {:?}. WasmVM might not be initialized.", lock_file_path));
     }
 
-
-    // Read and verify the lock file contents
-    let mut file = File::open(&lock_file_path)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-
-    if !contents.contains("This is a lockfile that prevent two VM instances to operate on the same directory in parallel.\nSee codebase at github.com/CosmWasm/wasmvm for more information.\nSafety first – brought to you by Confio ❤️\n") {
-        return Err(anyhow!("Invalid lock file content. WasmVM might not be properly initialized."));
-    }
 
 
 
@@ -414,32 +425,46 @@ fn find_latest_wasm_dir() -> std::io::Result<Option<PathBuf>> {
     let tmp_dir = Path::new("/tmp");
     
     let mut latest_dir = None;
-    let mut latest_time = std::time::UNIX_EPOCH;
+    let mut latest_time = UNIX_EPOCH;
 
-    for entry in fs::read_dir(tmp_dir)? {
-        match entry {
-            Ok(entry) => {
-                let path = entry.path();
-                if path.is_dir() && path.file_name().and_then(|n| n.to_str()).map_or(false, |s| s.starts_with("neutrond")) {
-                    match entry.metadata().and_then(|m| m.modified()) {
-                        Ok(modified) => {
-                            if modified > latest_time {
-                                latest_time = modified;
-                                latest_dir = Some(path);
+    info!("Searching for WasmVM directories in /tmp");
+
+    match fs::read_dir(tmp_dir) {
+        Ok(entries) => {
+            for entry in entries {
+                match entry {
+                    Ok(entry) => {
+                        let path = entry.path();
+                        if path.is_dir() && path.file_name().and_then(|n| n.to_str()).map_or(false, |s| s.starts_with("neutrond")) {
+                            match fs::metadata(&path) {
+                                Ok(metadata) => {
+                                    if let Ok(created) = metadata.created() {
+                                        info!("Found directory: {:?}, created at: {:?}", path, created);
+                                        if created > latest_time {
+                                            latest_time = created;
+                                            latest_dir = Some(path);
+                                        }
+                                    } else {
+                                        warn!("Couldn't get creation time for {:?}", path);
+                                    }
+                                },
+                                Err(e) => warn!("Couldn't get metadata for {:?}: {}", path, e),
                             }
-                        },
-                        Err(e) => warn!("Couldn't get metadata for {:?}: {}", path, e),
-                    }
+                        }
+                    },
+                    Err(e) => warn!("Error reading directory entry: {}", e),
                 }
-            },
-            Err(e) => warn!("Error reading directory entry: {}", e),
+            }
+        },
+        Err(e) => {
+            error!("Failed to read /tmp directory: {}", e);
+            return Err(e);
         }
     }
 
-    if let Some(dir) = &latest_dir {
-        info!("Found latest WasmVM directory: {:?}", dir);
-    } else {
-        warn!("No WasmVM directory found");
+    match latest_dir {
+        Some(ref dir) => info!("Latest WasmVM directory found: {:?}", dir),
+        None => warn!("No WasmVM directory found in /tmp"),
     }
 
     Ok(latest_dir)
