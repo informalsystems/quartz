@@ -1,9 +1,6 @@
-use std::str::FromStr;
-
 use anyhow::anyhow;
 use async_trait::async_trait;
 use color_eyre::owo_colors::OwoColorize;
-use cosmrs::tendermint::chain::Id as ChainId; // TODO see if this redundancy in dependencies can be decreased
 use cw_client::{CliClient, CwClient};
 use futures_util::stream::StreamExt;
 use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
