@@ -3,16 +3,12 @@ use std::path::Path;
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
-use cw_client::{CliWasmdClient, WasmdClient};
-use reqwest::Url;
+use cw_client::{CliClient, CwClient};
 use serde_json::json;
 use tendermint_rpc::HttpClient;
 use tracing::{debug, info};
 
-use super::utils::{
-    helpers::block_tx_commit,
-    types::{Log, WasmdTxResponse},
-};
+use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 use crate::{
     config::Config,
     error::Error,
@@ -68,9 +64,8 @@ async fn deploy(
     args: ContractDeployRequest,
     config: &Config,
 ) -> Result<(u64, String), anyhow::Error> {
-    let httpurl = Url::parse(&format!("http://{}", config.node_url))?;
-    let tmrpc_client = HttpClient::new(httpurl.as_str())?;
-    let cw_client = CliWasmdClient::new(Url::parse(httpurl.as_str())?);
+    let tmrpc_client = HttpClient::new(config.node_url.as_str())?;
+    let cw_client = CliClient::neutrond(config.node_url.clone());
 
     info!("🚀 Deploying {} Contract", args.label);
     let code_id = if config.contract_has_changed(wasm_bin_path).await? {
@@ -81,8 +76,23 @@ async fn deploy(
         )?)?;
         let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
 
-        let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-        let code_id: u64 = log[0].events[1].attributes[1].value.parse()?;
+        // Find the 'code_id' attribute
+        let code_id = res
+            .tx_result
+            .events
+            .iter()
+            .find(|event| event.kind == "store_code")
+            .and_then(|event| {
+                event
+                    .attributes
+                    .iter()
+                    .find(|attr| attr.key_str().unwrap_or("") == "code_id")
+            })
+            .and_then(|attr| attr.value_str().ok().and_then(|v| v.parse().ok()))
+            .ok_or_else(|| anyhow::anyhow!("Failed to find code_id in the transaction result"))?;
+
+        info!("Code ID: {}", code_id);
+
         config.save_codeid_to_cache(wasm_bin_path, code_id).await?;
 
         code_id
@@ -108,8 +118,22 @@ async fn deploy(
     )?)?;
     let res = block_tx_commit(&tmrpc_client, init_output.txhash).await?;
 
-    let log: Vec<Log> = serde_json::from_str(&res.tx_result.log)?;
-    let contract_addr: &String = &log[0].events[1].attributes[0].value;
+    // Find the '_contract_address' attribute
+    let contract_addr: String = res
+        .tx_result
+        .events
+        .iter()
+        .find(|event| event.kind == "instantiate")
+        .and_then(|event| {
+            event
+                .attributes
+                .iter()
+                .find(|attr| attr.key_str().unwrap_or("") == "_contract_address")
+        })
+        .and_then(|attr| attr.value_str().ok().and_then(|v| v.parse().ok()))
+        .ok_or_else(|| {
+            anyhow::anyhow!("Failed to find contract_address in the transaction result")
+        })?;
 
     info!("🚀 Successfully deployed and instantiated contract!");
     info!("🆔 Code ID: {}", code_id);

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 use tendermint::{block::Height, Hash};
@@ -11,6 +13,7 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct EnclaveStartRequest {
     pub unsafe_trust_latest: bool,
+    pub sk_file: PathBuf,
     pub fmspc: Option<Fmspc>,
     pub tcbinfo_contract: Option<AccountId>,
     pub dcap_verifier_contract: Option<AccountId>,
@@ -28,7 +31,7 @@ impl EnclaveStartRequest {
         if self.unsafe_trust_latest || config.trusted_height == 0 || config.trusted_hash.is_empty()
         {
             debug!("querying latest trusted hash & height from node");
-            let (trusted_height, trusted_hash) = query_latest_height_hash(&config.node_url)?;
+            let (trusted_height, trusted_hash) = query_latest_height_hash(config.node_url.clone())?;
 
             Ok((trusted_height, trusted_hash))
         } else {

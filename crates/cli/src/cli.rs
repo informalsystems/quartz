@@ -4,7 +4,9 @@ use clap::{Parser, Subcommand};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use figment::{providers::Serialized, Figment};
 use quartz_common::enclave::types::Fmspc;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 use tracing::metadata::LevelFilter;
 
 use crate::handler::utils::helpers::wasmaddr_to_id;
@@ -79,6 +81,7 @@ pub enum Command {
     Dev(DevArgs),
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Subcommand, Serialize)]
 pub enum ContractCommand {
     Build(ContractBuildArgs),
@@ -100,6 +103,7 @@ pub struct InitArgs {
     pub name: PathBuf,
 }
 
+#[serde_as]
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct HandshakeArgs {
     /// Path to create & init a Quartz app, defaults to current path if unspecified
@@ -123,7 +127,20 @@ pub struct HandshakeArgs {
     /// <host>:<port> to tendermint rpc interface for this chain
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_url: Option<String>,
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub node_url: Option<Url>,
+
+    /// websocket URL
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub ws_url: Option<Url>,
+
+    /// gRPC URL
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub grpc_url: Option<Url>,
 
     /// RPC interface for the Quartz enclave
     #[arg(long)]
@@ -143,6 +160,7 @@ pub struct ContractBuildArgs {
     pub contract_manifest: PathBuf,
 }
 
+#[serde_as]
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct ContractDeployArgs {
     /// Json-formatted cosmwasm contract initialization message
@@ -152,7 +170,20 @@ pub struct ContractDeployArgs {
     /// <host>:<port> to tendermint rpc interface for this chain
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_url: Option<String>,
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub node_url: Option<Url>,
+
+    /// websocket URL
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub ws_url: Option<Url>,
+
+    /// gRPC URL
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub grpc_url: Option<Url>,
 
     /// Name or address of private key with which to sign
     #[arg(long)]
@@ -192,6 +223,10 @@ pub struct EnclaveStartArgs {
     #[arg(long)]
     pub unsafe_trust_latest: bool,
 
+    /// file containing the secret key of the tx-sender for the enclave
+    #[arg(long)]
+    pub sk_file: PathBuf,
+
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -228,6 +263,10 @@ pub struct DevArgs {
 
     #[command(flatten)]
     pub enclave_build: EnclaveBuildArgs,
+
+    /// file containing the secret key of the tx-sender for the enclave
+    #[arg(long)]
+    pub sk_file: PathBuf,
 
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
     #[arg(long)]

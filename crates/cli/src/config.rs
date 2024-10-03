@@ -1,8 +1,11 @@
 use std::path::PathBuf;
 
 use cosmrs::tendermint::chain::Id as ChainId;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 
+#[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
     /// Enable mock SGX mode for testing purposes.
@@ -20,7 +23,18 @@ pub struct Config {
 
     /// <host>:<port> to tendermint rpc interface for this chain
     #[serde(default = "default_node_url")]
-    pub node_url: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub node_url: Url,
+
+    /// websocket URL
+    #[serde(default = "default_ws_url")]
+    #[serde_as(as = "DisplayFromStr")]
+    pub ws_url: Url,
+
+    /// gRPC URL
+    #[serde(default = "default_grpc_url")]
+    #[serde_as(as = "DisplayFromStr")]
+    pub grpc_url: Url,
 
     /// RPC interface for the Quartz enclave
     #[serde(default = "default_rpc_addr")]
@@ -52,8 +66,22 @@ fn default_rpc_addr() -> String {
     "http://127.0.0.1".to_string()
 }
 
-fn default_node_url() -> String {
-    "127.0.0.1:26657".to_string()
+fn default_node_url() -> Url {
+    "http://127.0.0.1:26657"
+        .parse()
+        .expect("valid hardcoded URL")
+}
+
+fn default_ws_url() -> Url {
+    "ws://127.0.0.1/websocket"
+        .parse()
+        .expect("valid hardcoded URL")
+}
+
+fn default_grpc_url() -> Url {
+    "http://127.0.0.1:9090,"
+        .parse()
+        .expect("valid hardcoded URL")
 }
 
 fn default_tx_sender() -> String {
@@ -79,6 +107,8 @@ impl Default for Config {
             tx_sender: default_tx_sender(),
             chain_id: default_chain_id(),
             node_url: default_node_url(),
+            ws_url: default_ws_url(),
+            grpc_url: default_grpc_url(),
             enclave_rpc_addr: default_rpc_addr(),
             enclave_rpc_port: default_port(),
             app_dir: default_app_dir(),

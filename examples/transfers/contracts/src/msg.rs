@@ -24,7 +24,7 @@ pub enum QueryMsg {
 pub enum ExecuteMsg<RA = RawDefaultAttestation> {
     // quartz initialization
     Quartz(QuartzExecuteMsg<RA>),
-    
+
     // User msgs
     // clear text
     Deposit,

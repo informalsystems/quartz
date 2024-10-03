@@ -5,7 +5,7 @@ libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-app-transfers-enclave
 
 loader.log_level = "{{ log_level }}"
 
-loader.env.LD_LIBRARY_PATH = "/lib:{{ arch_libdir }}:/usr/{{ arch_libdir }}"
+loader.env.LD_LIBRARY_PATH = "/lib:/usr/local/lib:{{ arch_libdir }}:/usr{{ arch_libdir }}"
 loader.env.HOME = "{{ home }}"
 loader.env.INSIDE_SGX = "1"
 loader.env.TLS = { passthrough = true }
@@ -19,13 +19,17 @@ loader.env.RA_TLS_ISV_PROD_ID = { passthrough = true }
 loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
 loader.env.QUARTZ_PORT = { passthrough = true }
+loader.env.SSL_CERT_FILE = { passthrough = true }
+loader.insecure__use_host_env = true
 
 loader.argv = ["quartz-app-transfers-enclave",
-                "--chain-id", "testing",
+                "--chain-id", "{{ chain_id }}",
                 "--fmspc", "{{ fmspc }}",
                 "--tcbinfo-contract", "{{ tcbinfo_contract }}",
                 "--dcap-verifier-contract", "{{ dcap_verifier_contract }}",
                 "--node-url", "{{ node_url }}",
+                "--ws-url", "{{ ws_url }}",
+                "--grpc-url", "{{ grpc_url }}",
                 "--rpc-addr", "0.0.0.0:11090",
                 "--trusted-height", "{{ trusted_height }}",
                 "--trusted-hash", "{{ trusted_hash }}"]
@@ -35,11 +39,14 @@ fs.mounts = [
   { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
+  { uri = "file:{{ quartz_dir }}/../../crates/utils/cw-client/data/admin.sk", path = "/admin.sk" },
+  { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
+  { uri = "file:/usr/lib/ssl/cert.pem", path = "/usr/lib/ssl/cert.pem" },
 ]
 
 # sgx.debug = true
 sgx.enclave_size = "512M"
-sgx.max_threads = 4
+sgx.max_threads = 16
 sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
 
 sgx.remote_attestation = "{{ ra_type }}"
@@ -52,12 +59,24 @@ sgx.trusted_files = [
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
+  "file:/etc/ssl/certs/ca-certificates.crt",
+  "file:{{ quartz_dir }}/../../crates/utils/cw-client/data/admin.sk",
 ]
 
 sgx.allowed_files = [
-  "file:{{ quartz_dir }}/exchange.sk",
-  "file:{{ quartz_dir }}/request.json",
+  "file:admin.sk",
+  "file:/etc/nsswitch.conf",
+  "file:/etc/host.conf",
+  "file:/etc/ethers",
+  "file:/etc/hosts",
+  "file:/etc/group",
+  "file:/etc/passwd",
+  "file:/etc/gai.conf",
+  "file:/etc/ssl/certs/ca-certificates.crt",
+  "file:/usr/lib/ssl/cert.pem",
+  "file:/etc/sgx_default_qcnl.conf",
 ]
 
 sys.insecure__allow_eventfd = true
 sys.enable_sigterm_injection = true
+sys.enable_extra_runtime_domain_names_conf = true

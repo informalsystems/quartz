@@ -21,7 +21,13 @@ pub struct QueryResponse {
 }
 /// Generated client implementations.
 pub mod settlement_client {
-    #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
+    #![allow(
+        unused_variables,
+        dead_code,
+        missing_docs,
+        clippy::wildcard_imports,
+        clippy::let_unit_value,
+    )]
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
@@ -43,8 +49,8 @@ pub mod settlement_client {
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
         T::Error: Into<StdError>,
-        T::ResponseBody: Body<Data = Bytes> + Send + 'static,
-        <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+        T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
     {
         pub fn new(inner: T) -> Self {
             let inner = tonic::client::Grpc::new(inner);
@@ -69,7 +75,7 @@ pub mod settlement_client {
             >,
             <T as tonic::codegen::Service<
                 http::Request<tonic::body::BoxBody>,
-            >>::Error: Into<StdError> + Send + Sync,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
             SettlementClient::new(InterceptedService::new(inner, interceptor))
         }
@@ -112,8 +118,7 @@ pub mod settlement_client {
                 .ready()
                 .await
                 .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
+                    tonic::Status::unknown(
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
@@ -131,8 +136,7 @@ pub mod settlement_client {
                 .ready()
                 .await
                 .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
+                    tonic::Status::unknown(
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
@@ -149,11 +153,17 @@ pub mod settlement_client {
 }
 /// Generated server implementations.
 pub mod settlement_server {
-    #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
+    #![allow(
+        unused_variables,
+        dead_code,
+        missing_docs,
+        clippy::wildcard_imports,
+        clippy::let_unit_value,
+    )]
     use tonic::codegen::*;
     /// Generated trait containing gRPC methods that should be implemented for use with SettlementServer.
     #[async_trait]
-    pub trait Settlement: Send + Sync + 'static {
+    pub trait Settlement: std::marker::Send + std::marker::Sync + 'static {
         async fn run(
             &self,
             request: tonic::Request<super::UpdateRequest>,
@@ -164,14 +174,14 @@ pub mod settlement_server {
         ) -> std::result::Result<tonic::Response<super::QueryResponse>, tonic::Status>;
     }
     #[derive(Debug)]
-    pub struct SettlementServer<T: Settlement> {
+    pub struct SettlementServer<T> {
         inner: Arc<T>,
         accept_compression_encodings: EnabledCompressionEncodings,
         send_compression_encodings: EnabledCompressionEncodings,
         max_decoding_message_size: Option<usize>,
         max_encoding_message_size: Option<usize>,
     }
-    impl<T: Settlement> SettlementServer<T> {
+    impl<T> SettlementServer<T> {
         pub fn new(inner: T) -> Self {
             Self::from_arc(Arc::new(inner))
         }
@@ -225,8 +235,8 @@ pub mod settlement_server {
     impl<T, B> tonic::codegen::Service<http::Request<B>> for SettlementServer<T>
     where
         T: Settlement,
-        B: Body + Send + 'static,
-        B::Error: Into<StdError> + Send + 'static,
+        B: Body + std::marker::Send + 'static,
+        B::Error: Into<StdError> + std::marker::Send + 'static,
     {
         type Response = http::Response<tonic::body::BoxBody>;
         type Error = std::convert::Infallible;
@@ -327,23 +337,25 @@ pub mod settlement_server {
                 }
                 _ => {
                     Box::pin(async move {
-                        Ok(
-                            http::Response::builder()
-                                .status(200)
-                                .header("grpc-status", tonic::Code::Unimplemented as i32)
-                                .header(
-                                    http::header::CONTENT_TYPE,
-                                    tonic::metadata::GRPC_CONTENT_TYPE,
-                                )
-                                .body(empty_body())
-                                .unwrap(),
-                        )
+                        let mut response = http::Response::new(empty_body());
+                        let headers = response.headers_mut();
+                        headers
+                            .insert(
+                                tonic::Status::GRPC_STATUS,
+                                (tonic::Code::Unimplemented as i32).into(),
+                            );
+                        headers
+                            .insert(
+                                http::header::CONTENT_TYPE,
+                                tonic::metadata::GRPC_CONTENT_TYPE,
+                            );
+                        Ok(response)
                     })
                 }
             }
         }
     }
-    impl<T: Settlement> Clone for SettlementServer<T> {
+    impl<T> Clone for SettlementServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -355,7 +367,9 @@ pub mod settlement_server {
             }
         }
     }
-    impl<T: Settlement> tonic::server::NamedService for SettlementServer<T> {
-        const NAME: &'static str = "transfers.Settlement";
+    /// Generated gRPC service name
+    pub const SERVICE_NAME: &str = "transfers.Settlement";
+    impl<T> tonic::server::NamedService for SettlementServer<T> {
+        const NAME: &'static str = SERVICE_NAME;
     }
 }

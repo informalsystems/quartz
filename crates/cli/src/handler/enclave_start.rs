@@ -5,6 +5,8 @@ use cargo_metadata::MetadataCommand;
 use color_eyre::owo_colors::OwoColorize;
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
+use reqwest::Url;
+use tendermint::chain::Id;
 use tokio::process::{Child, Command};
 use tracing::{debug, info};
 
@@ -41,7 +43,11 @@ impl Handler for EnclaveStartRequest {
                 "--trusted-hash".to_string(),
                 trusted_hash.to_string(),
                 "--node-url".to_string(),
-                config.node_url,
+                config.node_url.to_string(),
+                "--ws-url".to_string(),
+                config.ws_url.to_string(),
+                "--grpc-url".to_string(),
+                config.grpc_url.to_string(),
                 "--tx-sender".to_string(),
                 config.tx_sender,
             ];
@@ -77,15 +83,22 @@ impl Handler for EnclaveStartRequest {
 
             // gramine manifest
             let quartz_dir_canon = &enclave_dir.join("..");
+
+            debug!("quartz_dir_canon: {:?}", quartz_dir_canon);
+
             gramine_manifest(
                 &trusted_height.to_string(),
                 &trusted_hash.to_string(),
+                &config.chain_id,
                 quartz_dir_canon,
                 &enclave_dir,
+                &self.sk_file,
                 fmspc,
                 tcbinfo_contract,
                 dcap_verifier_contract,
                 &config.node_url,
+                &config.ws_url,
+                &config.grpc_url,
             )
             .await?;
 
@@ -174,15 +187,20 @@ async fn gramine_sgx_gen_private_key(enclave_dir: &Path) -> Result<(), Error> {
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn gramine_manifest(
     trusted_height: &str,
     trusted_hash: &str,
+    chain_id: &Id,
     quartz_dir: &Path,
     enclave_dir: &Path,
+    sk_file: &Path,
     fmspc: Fmspc,
     tcbinfo_contract: AccountId,
     dcap_verifier_contract: AccountId,
-    node_url: &str,
+    node_url: &Url,
+    ws_url: &Url,
+    grpc_url: &Url,
 ) -> Result<(), Error> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
@@ -203,11 +221,15 @@ async fn gramine_manifest(
         .arg("-Dra_type=dcap")
         .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
+        .arg(format!("-Dchain_id={}", chain_id))
         .arg(format!("-Dquartz_dir={}", quartz_dir.display()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
+        .arg(format!("-Dsk_file={}", sk_file.display()))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
         .arg(format!("-Dnode_url={}", node_url))
+        .arg(format!("-Dws_url={}", ws_url))
+        .arg(format!("-Dgrpc_url={}", grpc_url))
         .arg(format!("-Dtcbinfo_contract={}", tcbinfo_contract))
         .arg(format!(
             "-Ddcap_verifier_contract={}",

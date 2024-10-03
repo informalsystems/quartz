@@ -1,23 +1,21 @@
-//TODO: get rid of this
 use std::{collections::BTreeMap, str::FromStr};
 
 use anyhow::{anyhow, Error, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Addr, HexBinary};
+use cw_client::{CwClient, GrpcClient};
 use futures_util::StreamExt;
 use quartz_common::{
-    contract::msg::execute::attested::{
-        MockAttestation, RawAttested, RawAttestedMsgSansHandler, RawMockAttestation,
-    },
+    contract::msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler},
     enclave::{
         attestor::Attestor,
         server::{WebSocketHandler, WsListenerConfig},
     },
 };
-use reqwest::Url;
+use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
+use serde::Deserialize;
 use serde_json::json;
 use tendermint_rpc::{event::Event, query::EventType, SubscriptionClient, WebSocketClient};
-use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
 use tonic::Request;
 use tracing::info;
 use transfers_contract::msg::{
@@ -25,13 +23,11 @@ use transfers_contract::msg::{
     AttestedMsg, ExecuteMsg,
     QueryMsg::{GetRequests, GetState},
 };
-use cw_client::{CliWasmdClient, QueryResult, WasmdClient};
 
 use crate::{
     proto::{settlement_server::Settlement, QueryRequest, UpdateRequest},
     transfers_server::{
-        QueryRequestMessage, TransfersOp, TransfersOpEvent,
-        TransfersService, UpdateRequestMessage,
+        QueryRequestMessage, TransfersOp, TransfersOpEvent, TransfersService, UpdateRequestMessage,
     },
 };
 
@@ -46,23 +42,26 @@ impl TryFrom<Event> for TransfersOpEvent {
 
     fn try_from(event: Event) -> Result<Self, Error> {
         if let Some(events) = &event.events {
-            for (key, _) in events {
+            for key in events.keys() {
                 match key.as_str() {
                     k if k.starts_with("wasm-query_balance") => {
                         let (contract_address, ephemeral_pubkey, sender) =
-                            extract_event_info(TransfersOpEventTypes::Query, &events)
-                                .map_err(|_| anyhow!("Failed to extract event info from query event"))?;
+                            extract_event_info(TransfersOpEventTypes::Query, events).map_err(
+                                |_| anyhow!("Failed to extract event info from query event"),
+                            )?;
 
                         return Ok(TransfersOpEvent::Query {
                             contract_address,
-                            ephemeral_pubkey: ephemeral_pubkey.ok_or(anyhow!("Missing ephemeral_pubkey"))?,
+                            ephemeral_pubkey: ephemeral_pubkey
+                                .ok_or(anyhow!("Missing ephemeral_pubkey"))?,
                             sender: sender.ok_or(anyhow!("Missing sender"))?,
                         });
                     }
                     k if k.starts_with("wasm-transfer.action") => {
                         let (contract_address, _, _) =
-                            extract_event_info(TransfersOpEventTypes::Transfer, &events)
-                                .map_err(|_| anyhow!("Failed to extract event info from transfer event"))?;
+                            extract_event_info(TransfersOpEventTypes::Transfer, events).map_err(
+                                |_| anyhow!("Failed to extract event info from transfer event"),
+                            )?;
 
                         return Ok(TransfersOpEvent::Transfer { contract_address });
                     }
@@ -99,7 +98,11 @@ pub trait WsListener: Send + Sync + 'static {
 }
 
 #[async_trait::async_trait]
-impl<A: Attestor> WsListener for TransfersService<A> {
+impl<A> WsListener for TransfersService<A>
+where
+    A: Attestor,
+    A::RawAttestation: for<'de> Deserialize<'de> + Send,
+{
     async fn process(&self, event: TransfersOpEvent, config: WsListenerConfig) -> Result<()> {
         match event {
             TransfersOpEvent::Transfer { contract_address } => {
@@ -116,9 +119,8 @@ impl<A: Attestor> WsListener for TransfersService<A> {
             }
         }
 
-        let wsurl = format!("ws://{}/websocket", config.node_url);
         // Wait some blocks to make sure transaction was confirmed
-        two_block_waitoor(&wsurl).await?;
+        two_block_waitoor(config.ws_url.as_str()).await?;
 
         Ok(())
     }
@@ -141,58 +143,57 @@ fn extract_event_info(
         .map_err(|e| anyhow!("Failed to parse contract address: {}", e))?;
 
     // Set info for specific events
-    match op_event {
-        TransfersOpEventTypes::Query => {
-            sender = events
-                .get("message.sender")
-                .ok_or_else(|| anyhow!("Missing message.sender in events"))?
-                .first()
-                .cloned();
+    if let TransfersOpEventTypes::Query = op_event {
+        sender = events
+            .get("message.sender")
+            .ok_or_else(|| anyhow!("Missing message.sender in events"))?
+            .first()
+            .cloned();
 
-            ephemeral_pubkey = events
-                .get("wasm-query_balance.emphemeral_pubkey")
-                .ok_or_else(|| anyhow!("Missing wasm-query_balance.emphemeral_pubkey in events"))?
-                .first()
-                .cloned();
-        }
-        _ => {}
+        ephemeral_pubkey = events
+            .get("wasm-query_balance.emphemeral_pubkey")
+            .ok_or_else(|| anyhow!("Missing wasm-query_balance.emphemeral_pubkey in events"))?
+            .first()
+            .cloned();
     }
 
     Ok((contract_address, ephemeral_pubkey, sender))
 }
 
-async fn transfer_handler<A: Attestor>(
+async fn transfer_handler<A>(
     client: &TransfersService<A>,
     contract: &AccountId,
     ws_config: &WsListenerConfig,
-) -> Result<()> {
+) -> Result<()>
+where
+    A: Attestor,
+    A::RawAttestation: for<'de> Deserialize<'de>,
+{
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
-    let cw_client = CliWasmdClient::new(httpurl.clone());
+    let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.grpc_url.clone());
 
     // Query contract state
-    let resp: QueryResult<Vec<TransferRequest>> = cw_client
+    let requests: Vec<TransferRequest> = cw_client
         .query_smart(contract, json!(GetRequests {}))
+        .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-    let requests = resp.data;
 
-    let resp: QueryResult<HexBinary> = cw_client
+    let state: HexBinary = cw_client
         .query_smart(contract, json!(GetState {}))
+        .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-    let state = resp.data;
 
     // Request body contents
     let update_contents = UpdateRequestMessage { state, requests };
 
     // Wait 2 blocks
     info!("Waiting 2 blocks for light client proof");
-    let wsurl = format!("ws://{}/websocket", ws_config.node_url);
-    two_block_waitoor(&wsurl).await?;
+    two_block_waitoor(ws_config.ws_url.as_str()).await?;
 
     // Call tm prover with trusted hash and height
     let prover_config = TmProverConfig {
-        primary: httpurl.as_str().parse()?,
-        witnesses: httpurl.as_str().parse()?,
+        primary: ws_config.node_url.as_str().parse()?,
+        witnesses: ws_config.node_url.as_str().parse()?,
         trusted_height: ws_config.trusted_height,
         trusted_hash: ws_config.trusted_hash,
         verbose: "1".parse()?, // TODO: both tm-prover and cli define the same Verbosity struct. Need to define this once and import
@@ -230,53 +231,52 @@ async fn transfer_handler<A: Attestor>(
         .into_inner();
 
     // Extract json from enclave response
-    let attested: RawAttested<UpdateMsg, HexBinary> =
+    let attested: RawAttested<UpdateMsg, A::RawAttestation> =
         serde_json::from_str(&update_response.message)
             .map_err(|e| anyhow!("Error deserializing UpdateMsg from enclave: {}", e))?;
 
     // Build on-chain response
     // TODO add non-mock support
-    let transfer_msg = ExecuteMsg::Update::<RawMockAttestation>(AttestedMsg {
+    let transfer_msg = ExecuteMsg::Update(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
-        attestation: MockAttestation(
-            attested
-                .attestation
-                .as_slice()
-                .try_into()
-                .map_err(|_| anyhow!("slice with incorrect length"))?,
-        )
-        .into(),
+        attestation: attested.attestation,
     });
 
     // Post response to chain
-    let output = cw_client.tx_execute(
-        contract,
-        chain_id,
-        2000000,
-        &ws_config.tx_sender,
-        json!(transfer_msg),
-    )?;
+    let output = cw_client
+        .tx_execute(
+            contract,
+            chain_id,
+            2000000,
+            &ws_config.tx_sender,
+            json!(transfer_msg),
+            "11000untrn",
+        )
+        .await?;
 
     println!("Output TX: {}", output);
     Ok(())
 }
 
-async fn query_handler<A: Attestor>(
+async fn query_handler<A>(
     client: &TransfersService<A>,
     contract: &AccountId,
-    msg_sender: &String,
-    pubkey: &String,
+    msg_sender: &str,
+    pubkey: &str,
     ws_config: &WsListenerConfig,
-) -> Result<()> {
+) -> Result<()>
+where
+    A: Attestor,
+    A::RawAttestation: for<'de> Deserialize<'de>,
+{
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let httpurl = Url::parse(&format!("http://{}", ws_config.node_url))?;
-    let cw_client = CliWasmdClient::new(httpurl);
+    let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.grpc_url.clone());
 
     // Query contract state
-    let resp: QueryResult<HexBinary> = cw_client
+    let state: HexBinary = cw_client
         .query_smart(contract, json!(GetState {}))
+        .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-    let state = resp.data;
 
     // Build request
     let update_contents = QueryRequestMessage {
@@ -297,32 +297,28 @@ async fn query_handler<A: Attestor>(
         .into_inner();
 
     // Extract json from the enclave response
-    let attested: RawAttested<QueryResponseMsg, HexBinary> =
+    let attested: RawAttested<QueryResponseMsg, A::RawAttestation> =
         serde_json::from_str(&query_response.message)
             .map_err(|e| anyhow!("Error deserializing QueryResponseMsg from enclave: {}", e))?;
 
     // Build on-chain response
     // TODO add non-mock support
-    let query_msg = ExecuteMsg::QueryResponse::<RawMockAttestation>(AttestedMsg {
+    let query_msg = ExecuteMsg::QueryResponse(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
-        attestation: MockAttestation(
-            attested
-                .attestation
-                .as_slice()
-                .try_into()
-                .map_err(|_| anyhow!("slice with incorrect length"))?,
-        )
-        .into(),
+        attestation: attested.attestation,
     });
 
     // Post response to chain
-    let output = cw_client.tx_execute(
-        contract,
-        chain_id,
-        2000000,
-        &ws_config.tx_sender,
-        json!(query_msg),
-    )?;
+    let output = cw_client
+        .tx_execute(
+            contract,
+            chain_id,
+            2000000,
+            &ws_config.tx_sender,
+            json!(query_msg),
+            "11000untrn",
+        )
+        .await?;
 
     println!("Output TX: {}", output);
     Ok(())
