@@ -425,46 +425,30 @@ fn find_latest_wasm_dir() -> std::io::Result<Option<PathBuf>> {
     let tmp_dir = Path::new("/tmp");
     
     let mut latest_dir = None;
-    let mut latest_time = UNIX_EPOCH;
+    let mut latest_time = std::time::UNIX_EPOCH;
 
-    info!("Searching for WasmVM directories in /tmp");
-
-    match fs::read_dir(tmp_dir) {
-        Ok(entries) => {
-            for entry in entries {
-                match entry {
-                    Ok(entry) => {
-                        let path = entry.path();
-                        if path.is_dir() && path.file_name().and_then(|n| n.to_str()).map_or(false, |s| s.starts_with("neutrond")) {
-                            match fs::metadata(&path) {
-                                Ok(metadata) => {
-                                    if let Ok(created) = metadata.created() {
-                                        info!("Found directory: {:?}, created at: {:?}", path, created);
-                                        if created > latest_time {
-                                            latest_time = created;
-                                            latest_dir = Some(path);
-                                        }
-                                    } else {
-                                        warn!("Couldn't get creation time for {:?}", path);
-                                    }
-                                },
-                                Err(e) => warn!("Couldn't get metadata for {:?}: {}", path, e),
-                            }
+    for entry in fs::read_dir(tmp_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        
+        if path.is_dir() && path.file_name().and_then(|n| n.to_str()).map_or(false, |s| s.starts_with("neutrond")) {
+            let lock_file = path.join("wasm").join("wasm").join("exclusive.lock");
+            if lock_file.exists() {
+                if let Ok(metadata) = fs::metadata(&lock_file) {
+                    if let Ok(created) = metadata.created() {
+                        if created > latest_time {
+                            latest_time = created;
+                            latest_dir = Some(path);
                         }
-                    },
-                    Err(e) => warn!("Error reading directory entry: {}", e),
+                    }
                 }
             }
-        },
-        Err(e) => {
-            error!("Failed to read /tmp directory: {}", e);
-            return Err(e);
         }
     }
 
-    match latest_dir {
-        Some(ref dir) => info!("Latest WasmVM directory found: {:?}", dir),
-        None => warn!("No WasmVM directory found in /tmp"),
+    match &latest_dir {
+        Some(dir) => info!("Found latest WasmVM directory: {:?}", dir),
+        None => warn!("No WasmVM directory with lock file found"),
     }
 
     Ok(latest_dir)
