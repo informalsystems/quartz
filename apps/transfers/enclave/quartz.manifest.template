@@ -63,7 +63,7 @@ sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
 
 sgx.trusted_files = [
   "file:/opt/quartz/lib/libwasmvm.x86_64.so",
-  "file:/usr/local/lib/.neutrond",
+  "file:/usr/local/lib/.neutrond/",
   "file:/usr/local/lib/neutrond",
   "file:{{ gramine.libos }}",
   "file:{{ quartz_dir }}/target/release/",
