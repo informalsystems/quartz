@@ -31,7 +31,7 @@ mock SGX:
    ```bash
    quartz --mock-sgx dev \
    --unsafe-trust-latest \
-   --contract-manifest "examples/transfers/contracts/Cargo.toml" \
+   --contract-manifest "contracts/Cargo.toml" \
    --init-msg '{"denom":"ucosm"}'
    ```
 5. Set up the frontend (see [Frontend](#frontend))
@@ -150,7 +150,7 @@ If building from source, you'll need to initialize the accounts yourself. See
 the guide on [setting up a CosmWasm chain](/docs/wasmd_setup.md) and then return
 back here.
 
-## Local Testnet Without SGX
+## Local wasmd Testnet Without SGX
 
 From the root of the `cycles-quartz` repo, we can now deploy our example
 transfers app. Deployment involves three components:
@@ -197,7 +197,7 @@ continue.
 2. Deploy the contract:
    ```bash
    quartz --mock-sgx contract deploy \
-   --contract-manifest "examples/transfers/contracts/Cargo.toml" \
+   --contract-manifest "contracts/Cargo.toml" \
    --init-msg '{"denom":"ucosm"}'
    ```
 
@@ -250,8 +250,8 @@ Now open `.env.local` and edit the values of
 NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS
 and 
 NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY 
-to be the contract address and pubkey from the previous step (deploying the
-contract and doing the handshake).
+to be the contract address and pubkey from the previous step. With quartz dev, they can be grabbed
+from the logs. From the manual process, you would have already stored them as environment variables.
 
 4. Finally, start the frontend:
    ```bash
@@ -260,7 +260,9 @@ contract and doing the handshake).
 
 ### Use the App
 
-Open your browser to `localhost:3000` to see the app.
+Open your browser to `localhost:3000` to see the app. You will be prompted to store a mnemonic. This key is stored
+in the browser, and allows you to query your encrypted balance in the future. You should save this, but in general
+you won't have to use it if you don't clear your browser storage.
 
 You'll need to have the Keplr wallet browser extension installed and unlocked.
 
@@ -285,10 +287,10 @@ the app!
 
 ## Real Testnet with SGX
 
-Now that we've tried the example app on a local tesnet with a mocked SGX, it's
+Now that we've tried the example app on a local testnet with a mocked SGX, it's
 time to use a real testnet and a real SGX core. This guide will walk through how
 to get setup with SGX on Azure, and how to deploy quartz contracts to the
-Neutron testnet using real remote attestions from SGX cores on Azure.
+Neutron testnet using real remote attestations from SGX cores on Azure.
 
 Real verification of SGX on a CosmWasm network requires two additional global contracts
 to be deployed: `quartz-dcap-verify` and `quartz-tcbinfo`. The
@@ -297,13 +299,75 @@ to be deployed: `quartz-dcap-verify` and `quartz-tcbinfo`. The
 versions of SGX processors. Together they allow contracts built with quartz to
 securely verify remote attestations from SGX enclaves.
 
-We have already predeployed the `quartz-dcap-verify` and `quartz-tcbinfo` contracts on the Neutron
+We have already pre-deployed the `quartz-dcap-verify` and `quartz-tcbinfo` contracts on the Neutron
 testnet at TODO. To deploy these on your own testnet, see [below](#other-testnets-with-sgx).
 
+### Setting up an Azure machine
 To begin, you'll need to deploy an SGX-enabled Azure instance and log in via ssh.
+Follow the [steps Microsoft lays out](https://learn.microsoft.com/en-us/azure/confidential-computing/quick-create-portal) to connect, choose Ubuntu 20.04, then ssh into the machine.
 
-Once logged in, clone and install Quartz like before (see
-[installation](#installation).
+Once logged in, clone and install Quartz like before (see [installation](#installation)). Once you clone the Quartz repo, you'll have to add some things to your azure machine
+
+```bash
+# install rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup install 1.79.0
+rustup default 1.79.0
+rustup target add wasm32-unknown-unknown
+
+# necessary building packages
+sudo apt update
+sudo apt upgrade -y
+sudo apt install build-essential
+sudo apt install clang libclang-dev
+export LIBCLANG_PATH=/usr/lib/llvm-10/lib
+sudo apt install pkg-config
+sudo apt install libssl-dev
+sudo apt install protobuf-compiler
+sudo apt-get install ca-certificates
+
+# Clone the repo and install quartz. Reminder - to setup ssh key on azure, or use https
+git clone ssh://git@github.com/informalsystems/cycles-quartz
+cd cycles-quartz
+cargo install --path crates/cli
+quartz --help
+
+# install gramine
+# Taken from https://gramine.readthedocs.io/en/stable/installation.html#ubuntu-22-04-lts-or-20-04-lts
+sudo curl -fsSLo /usr/share/keyrings/gramine-keyring.gpg https://packages.gramineproject.io/gramine-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/gramine-keyring.gpg] https://packages.gramineproject.io/ $(lsb_release -sc) main" \
+| sudo tee /etc/apt/sources.list.d/gramine.list
+
+sudo curl -fsSLo /usr/share/keyrings/intel-sgx-deb.asc https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-sgx-deb.asc] https://download.01.org/intel-sgx/sgx_repo/ubuntu $(lsb_release -sc) main" \
+| sudo tee /etc/apt/sources.list.d/intel-sgx.list
+
+sudo apt-get update
+sudo apt-get install gramine
+
+# add attestation dependencies
+# Taken from https://github.com/flashbots/geth-sgx-gramine/tree/main
+sudo apt-key adv --fetch-keys 'https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key'
+sudo add-apt-repository "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu `lsb_release -cs` main"
+sudo apt-get update && sudo apt-get install -y libsgx-dcap-ql
+sudo apt-key adv --fetch-keys 'https://packages.microsoft.com/keys/microsoft.asc'
+sudo apt-add-repository 'https://packages.microsoft.com/ubuntu/20.04/prod main'
+sudo apt-get update && sudo apt-get install -y az-dcap-client
+
+# generate gramine priv key
+gramine-sgx-gen-private-key
+
+
+# .... get connection to neutron
+# get those addresses
+
+```
+
+### Dave - deploy and build contracts
+```bash
+cd examples/transfers
+quartz enclave build
+quartz  enclave start  --fmspc "00606A000000" --tcbinfo-contract "neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps" --dcap-verifier-contract "neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf"
 
 ### Build and Deploy the Contracts
 
@@ -456,6 +520,8 @@ wasmd query wasm contract-state smart "$TCB_CONTRACT" '{"get_tcb_info": {"fmspc"
 
 ### Deploying the `quartz-dcap-verifier` contract
 
+I will do this later.
+
 1. Build the contract
 ```bash
 cargo run -- contract build --contract-manifest "../cosmwasm/packages/quartz-dcap-verifier/Cargo.toml"
@@ -547,6 +613,9 @@ wasm-opt version_119
 
 3. **Q: The frontend isn't connecting to the blockchain. What's wrong?**
    A: Verify that your `.env.local` file has the correct contract address and public key.
+
+4. **Error in event handler: Unsupported event**
+   This error is fine when it appears in the enclave logs, we are working to remove this erroneous message.
 
 For more issues, please refer to our GitHub issues page or community forums.
 
