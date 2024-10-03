@@ -192,19 +192,7 @@ async fn transfer_handler<A: Attestor>(
     let httpurl = Url::parse(&ws_config.node_url.clone())?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
 
-    // Retry logic for finding WasmVM directory
-    let max_attempts = 10; // Adjust as needed
-    let retry_delay = Duration::from_millis(500); // Adjust as needed
-
-    let wasm_dir = find_latest_wasm_dir(max_attempts, retry_delay).await?
-        .ok_or_else(|| anyhow!("No WasmVM directory with lock file found after multiple attempts"))?;
-
-    let lock_file_path = wasm_dir.join("wasm").join("wasm").join("exclusive.lock");
-    
-    info!("Using WasmVM directory: {:?}", wasm_dir);
-    info!("Lock file path: {:?}", lock_file_path);
-
-
+   
 
 
     // Query chain
@@ -298,7 +286,6 @@ async fn transfer_handler<A: Attestor>(
 
     println!("Output TX: {}", output);
 
-    let _ = cleanup_old_wasm_dirs();
 
     Ok(())
 }
