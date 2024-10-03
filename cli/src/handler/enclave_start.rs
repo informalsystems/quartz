@@ -107,7 +107,7 @@ impl Handler for EnclaveStartRequest {
             )
             .await?;
 
-            println!("{:?}",quartz_dir_canon);
+            eprintln!("{:?}",quartz_dir_canon);
             // gramine sign
             gramine_sgx_sign(&enclave_dir).await?;
             let enclave_child = create_gramine_sgx_child(&enclave_dir).await?;
@@ -164,6 +164,8 @@ async fn create_mock_enclave_child(
     command.args(enclave_args);
 
     debug!("Enclave Start Command: {:?}", command);
+
+    
 
     info!("{}", "🚧 Spawning enclave process ...".green().bold());
     let child = command
