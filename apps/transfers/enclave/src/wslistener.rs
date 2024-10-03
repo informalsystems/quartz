@@ -8,6 +8,7 @@ use std::fs::OpenOptions;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::fs;
 use std::fs::create_dir_all;
+use std::path::Path;
 
 use std::path::PathBuf;
 use std::io::ErrorKind;
@@ -291,7 +292,7 @@ async fn transfer_handler<A: Attestor>(
     )?;
 
     println!("Output TX: {}", output);
-    
+
     cleanup_old_wasm_dirs();
 
     Ok(())
