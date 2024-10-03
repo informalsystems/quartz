@@ -413,16 +413,50 @@ async fn two_block_waitoor(wsurl: &str) -> Result<(), Error> {
 fn find_latest_wasm_dir() -> std::io::Result<Option<PathBuf>> {
     let tmp_dir = Path::new("/tmp");
     
-    fs::read_dir(tmp_dir)?
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| {
-            entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) &&
-            entry.file_name().to_str().map(|s| s.starts_with("neutrond")).unwrap_or(false)
-        })
-        .max_by_key(|entry| entry.metadata().and_then(|m| m.modified()).unwrap_or_else(|_| std::time::SystemTime::UNIX_EPOCH))
-        .map(|entry| Ok(entry.path()))
-        .transpose()
+    let mut latest_dir = None;
+    let mut latest_time = std::time::UNIX_EPOCH;
+
+    for entry in fs::read_dir(tmp_dir)? {
+        match entry {
+            Ok(entry) => {
+                let path = entry.path();
+                if path.is_dir() && path.file_name().and_then(|n| n.to_str()).map_or(false, |s| s.starts_with("neutrond")) {
+                    match entry.metadata().and_then(|m| m.modified()) {
+                        Ok(modified) => {
+                            if modified > latest_time {
+                                latest_time = modified;
+                                latest_dir = Some(path);
+                            }
+                        },
+                        Err(e) => warn!("Couldn't get metadata for {:?}: {}", path, e),
+                    }
+                }
+            },
+            Err(e) => warn!("Error reading directory entry: {}", e),
+        }
+    }
+
+    if let Some(dir) = &latest_dir {
+        info!("Found latest WasmVM directory: {:?}", dir);
+    } else {
+        warn!("No WasmVM directory found");
+    }
+
+    Ok(latest_dir)
 }
+// fn find_latest_wasm_dir() -> std::io::Result<Option<PathBuf>> {
+//     let tmp_dir = Path::new("/tmp");
+    
+//     fs::read_dir(tmp_dir)?
+//         .filter_map(|entry| entry.ok())
+//         .filter(|entry| {
+//             entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) &&
+//             entry.file_name().to_str().map(|s| s.starts_with("neutrond")).unwrap_or(false)
+//         })
+//         .max_by_key(|entry| entry.metadata().and_then(|m| m.modified()).unwrap_or_else(|_| std::time::SystemTime::UNIX_EPOCH))
+//         .map(|entry| Ok(entry.path()))
+//         .transpose()
+// }
 
 fn cleanup_old_wasm_dirs() -> std::io::Result<()> {
     let tmp_dir = Path::new("/tmp");
