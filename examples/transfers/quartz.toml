@@ -1,11 +1,11 @@
 mock_sgx = false
 tx_sender = "admin"
-chain_id = "testing"
-node_url = "http://127.0.0.1:26657"
-ws_url = "ws://127.0.0.1/wesocket"
-grpc_url = "http://127.0.0.1:9090"
+chain_id = "pion-1"
+node_url = "https://rpc-falcron.pion-1.ntrn.tech"
+ws_url = "wss://rpc-falcron.pion-1.ntrn.tech/websocket"
+grpc_url = "https://grpc-falcron.pion-1.ntrn.tech:80"
 enclave_rpc_addr = "http://127.0.0.1"
 enclave_rpc_port = 11090
-trusted_hash = ""
-trusted_height = 0
+trusted_hash = "16F5C9B8A4C681DA381C4838224F78DBFE8A68D4E7AB6F06038D47368283092B"
+trusted_height = 19705134
 release = true
