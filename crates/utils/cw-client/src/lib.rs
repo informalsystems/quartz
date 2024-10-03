@@ -58,8 +58,3 @@ pub trait CwClient {
 
     fn trusted_height_hash(&self) -> Result<(u64, String), Self::Error>;
 }
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct QueryResult<T> {
-    pub data: T,
-}

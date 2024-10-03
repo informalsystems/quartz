@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, str::FromStr};
 use anyhow::{anyhow, Error, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::{Addr, HexBinary};
-use cw_client::{CwClient, GrpcClient, QueryResult};
+use cw_client::{CwClient, GrpcClient};
 use futures_util::StreamExt;
 use quartz_common::{
     contract::msg::execute::attested::{
@@ -166,17 +166,15 @@ async fn transfer_handler<A: Attestor>(
     let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.grpc_url.clone());
 
     // Query contract state
-    let resp: QueryResult<Vec<TransferRequest>> = cw_client
+    let requests: Vec<TransferRequest> = cw_client
         .query_smart(contract, json!(GetRequests {}))
         .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-    let requests = resp.data;
 
-    let resp: QueryResult<HexBinary> = cw_client
+    let state: HexBinary = cw_client
         .query_smart(contract, json!(GetState {}))
         .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-    let state = resp.data;
 
     // Request body contents
     let update_contents = UpdateRequestMessage { state, requests };
@@ -271,11 +269,10 @@ async fn query_handler<A: Attestor>(
     let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.grpc_url.clone());
 
     // Query contract state
-    let resp: QueryResult<HexBinary> = cw_client
+    let state: HexBinary = cw_client
         .query_smart(contract, json!(GetState {}))
         .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-    let state = resp.data;
 
     // Build request
     let update_contents = QueryRequestMessage {
