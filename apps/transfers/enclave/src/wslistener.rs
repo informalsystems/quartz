@@ -190,35 +190,17 @@ async fn transfer_handler<A: Attestor>(
     let httpurl = Url::parse(&ws_config.node_url.clone())?;
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
 
-    let wasm_dir = PathBuf::from(NEUTROND_WASM_DIR);
-    fs::create_dir_all(&wasm_dir).expect("Failed to create WasmVM directory");
-
-    let lock_file_path = get_lock_file_path();
+    // finding latest lock file in latest wasmvm
+    let wasm_dir = find_latest_wasm_dir()?.ok_or_else(|| anyhow!("No WasmVM directory found"))?;
+    let lock_file_path = wasm_dir.join("wasm").join("wasm").join("exclusive.lock");
 
     // Check if the lock file exists
-    if lock_file_path.exists() {
-        // Try to read the PID from the lock file
-        let mut file = File::open(&lock_file_path)?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
-        let pid: i32 = contents.trim().parse()?;
-
-        // Check if the process with this PID is still running
-        if process_exists(pid) {
-            info!("VM is already running with PID {}. Proceeding with the transfer.", pid);
-        } else {
-            // If the process doesn't exist, remove the stale lock file
-            fs::remove_file(&lock_file_path)?;
-            info!("Removed stale lock file.");
-        }
-    }
-
-    // If the lock file doesn't exist or was stale and removed, create a new one
     if !lock_file_path.exists() {
-        let mut file = File::create(&lock_file_path)?;
-        writeln!(file, "{}", process::id())?;
-        info!("Created new lock file with current PID.");
+        return Err(anyhow!("WasmVM lock file not found. WasmVM might not be initialized."));
     }
+
+
+
     // Query chain
     // Get epoch, obligations, liquidity sources
     let resp: QueryResult<Vec<TransferRequest>> = wasmd_client
@@ -309,6 +291,8 @@ async fn transfer_handler<A: Attestor>(
     )?;
 
     println!("Output TX: {}", output);
+    
+    cleanup_old_wasm_dirs();
 
     Ok(())
 }
@@ -378,6 +362,9 @@ async fn query_handler<A: Attestor>(
     )?;
 
     println!("Output TX: {}", output);
+    
+    cleanup_old_wasm_dirs();
+    
     Ok(())
 }
 
@@ -410,27 +397,39 @@ async fn two_block_waitoor(wsurl: &str) -> Result<(), Error> {
     Ok(())
 }
 
-fn process_exists(pid: i32) -> bool {
-    #[cfg(target_family = "unix")]
-    {
-        use nix::sys::signal::{kill, Signal};
-        use nix::unistd::Pid;
-        
-        kill(Pid::from_raw(pid), Signal::from_str("0").unwrap()).is_ok()
-    }
 
-    #[cfg(target_family = "windows")]
-    {
-        use winapi::um::handleapi::CloseHandle;
-        use winapi::um::processthreadsapi::OpenProcess;
-        use winapi::um::winnt::PROCESS_QUERY_INFORMATION;
+
+fn find_latest_wasm_dir() -> std::io::Result<Option<PathBuf>> {
+    let tmp_dir = Path::new("/tmp");
+    
+    fs::read_dir(tmp_dir)?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) &&
+            entry.file_name().to_str().map(|s| s.starts_with("neutrond")).unwrap_or(false)
+        })
+        .max_by_key(|entry| entry.metadata().and_then(|m| m.modified()).unwrap_or_else(|_| std::time::SystemTime::UNIX_EPOCH))
+        .map(|entry| Ok(entry.path()))
+        .transpose()
+}
+
+fn cleanup_old_wasm_dirs() -> std::io::Result<()> {
+    let tmp_dir = Path::new("/tmp");
+    let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+    
+    for entry in fs::read_dir(tmp_dir)? {
+        let entry = entry?;
+        let path = entry.path();
         
-        let handle = unsafe { OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid as u32) };
-        if handle.is_null() {
-            false
-        } else {
-            unsafe { CloseHandle(handle) };
-            true
+        if path.is_dir() && path.file_name().unwrap().to_str().unwrap().starts_with("neutrond") {
+            let metadata = fs::metadata(&path)?;
+            let dir_age = current_time - metadata.modified()?.duration_since(UNIX_EPOCH).unwrap().as_secs();
+            
+            if dir_age > 3600 { // Remove if older than 1 hour
+                fs::remove_dir_all(path)?;
+                info!("Removed old WasmVM directory: {:?}", path);
+            }
         }
     }
+    Ok(())
 }

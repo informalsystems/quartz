@@ -1,10 +1,10 @@
-use std::fs::File;
+// use std::fs::File;
 use std::path::PathBuf;
 use std::{fs, path::Path};
-use std::time::Duration;
-use fs2::FileExt;
+// use std::time::Duration;
+// use fs2::FileExt;
 
-use std::env;
+// use std::env;
 
 
 use async_trait::async_trait;
@@ -285,49 +285,49 @@ async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<(), Error> {
 // }
 async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
     info!("🚧 Attempting to spawn enclave process...");
-    // Set the NEUTROND_WASM_DIR environment variable
-    env::set_var("NEUTROND_WASM_DIR", NEUTROND_WASM_DIR);
+    // // Set the NEUTROND_WASM_DIR environment variable
+    // env::set_var("NEUTROND_WASM_DIR", NEUTROND_WASM_DIR);
 
-    let lock_file_path = get_lock_file_path();
+    // let lock_file_path = get_lock_file_path();
 
-    // Ensure the directory exists
-    if let Some(parent) = lock_file_path.parent() {
-        fs::create_dir_all(parent).map_err(|e| Error::GenericErr(format!("Failed to create lock file directory: {}", e)))?;
-    }
+    // // Ensure the directory exists
+    // if let Some(parent) = lock_file_path.parent() {
+    //     fs::create_dir_all(parent).map_err(|e| Error::GenericErr(format!("Failed to create lock file directory: {}", e)))?;
+    // }
 
-    // Try to remove the lock file if it exists (in case of a previous unclean shutdown)
-    if lock_file_path.exists() {
-        fs::remove_file(&lock_file_path).map_err(|e| {
-            Error::GenericErr(format!("Failed to remove existing lock file: {}", e))
-        })?;
-    }
+    // // Try to remove the lock file if it exists (in case of a previous unclean shutdown)
+    // if lock_file_path.exists() {
+    //     fs::remove_file(&lock_file_path).map_err(|e| {
+    //         Error::GenericErr(format!("Failed to remove existing lock file: {}", e))
+    //     })?;
+    // }
 
-    let lock_file = File::create(&lock_file_path).map_err(|e| {
-        Error::GenericErr(format!("Failed to create lock file: {}", e))
-    })?;
+    // let lock_file = File::create(&lock_file_path).map_err(|e| {
+    //     Error::GenericErr(format!("Failed to create lock file: {}", e))
+    // })?;
 
-    // Try to acquire an exclusive lock with a timeout
-    let timeout = Duration::from_secs(10);
-    let start = std::time::Instant::now();
-    while start.elapsed() < timeout {
-        match lock_file.try_lock_exclusive() {
-            Ok(_) => {
-                info!("Lock acquired successfully");
-                break;
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                tokio::time::sleep(Duration::from_millis(100)).await;
-                continue;
-            }
-            Err(e) => {
-                return Err(Error::GenericErr(format!("Failed to acquire lock: {}", e)));
-            }
-        }
-    }
+    // // Try to acquire an exclusive lock with a timeout
+    // let timeout = Duration::from_secs(10);
+    // let start = std::time::Instant::now();
+    // while start.elapsed() < timeout {
+    //     match lock_file.try_lock_exclusive() {
+    //         Ok(_) => {
+    //             info!("Lock acquired successfully");
+    //             break;
+    //         }
+    //         Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+    //             tokio::time::sleep(Duration::from_millis(100)).await;
+    //             continue;
+    //         }
+    //         Err(e) => {
+    //             return Err(Error::GenericErr(format!("Failed to acquire lock: {}", e)));
+    //         }
+    //     }
+    // }
 
-    if start.elapsed() >= timeout {
-        return Err(Error::GenericErr("Timeout while trying to acquire lock".to_string()));
-    }
+    // if start.elapsed() >= timeout {
+    //     return Err(Error::GenericErr("Timeout while trying to acquire lock".to_string()));
+    // }
 
     // Spawn the child process
     info!("🚀 Spawning enclave process...");
