@@ -120,7 +120,7 @@ where
         }
 
         // Wait some blocks to make sure transaction was confirmed
-        two_block_waitoor(config.node_url.as_str()).await?;
+        two_block_waitoor(config.ws_url.as_str()).await?;
 
         Ok(())
     }
@@ -188,7 +188,7 @@ where
 
     // Wait 2 blocks
     info!("Waiting 2 blocks for light client proof");
-    two_block_waitoor(ws_config.node_url.as_str()).await?;
+    two_block_waitoor(ws_config.ws_url.as_str()).await?;
 
     // Call tm prover with trusted hash and height
     let prover_config = TmProverConfig {
