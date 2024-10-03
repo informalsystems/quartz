@@ -201,6 +201,16 @@ async fn transfer_handler<A: Attestor>(
     }
 
 
+    // Read and verify the lock file contents
+    let mut file = File::open(&lock_file_path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    if !contents.contains("This is a lockfile that prevent two VM instances to operate on the same directory in parallel.\nSee codebase at github.com/CosmWasm/wasmvm for more information.\nSafety first – brought to you by Confio ❤️\n") {
+        return Err(anyhow!("Invalid lock file content. WasmVM might not be properly initialized."));
+    }
+
+
 
     // Query chain
     // Get epoch, obligations, liquidity sources
@@ -293,7 +303,7 @@ async fn transfer_handler<A: Attestor>(
 
     println!("Output TX: {}", output);
 
-    cleanup_old_wasm_dirs();
+    let _ = cleanup_old_wasm_dirs();
 
     Ok(())
 }
@@ -364,7 +374,7 @@ async fn query_handler<A: Attestor>(
 
     println!("Output TX: {}", output);
     
-    cleanup_old_wasm_dirs();
+    let _ = cleanup_old_wasm_dirs();
     
     Ok(())
 }
