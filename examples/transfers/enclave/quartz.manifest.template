@@ -39,13 +39,14 @@ fs.mounts = [
   { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
+  { uri = "file:{{ quartz_dir }}/../../crates/utils/cw-client/data/admin.sk", path = "/admin.sk" },
   { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
   { uri = "file:/usr/lib/ssl/cert.pem", path = "/usr/lib/ssl/cert.pem" },
 ]
 
 # sgx.debug = true
 sgx.enclave_size = "512M"
-sgx.max_threads = 8
+sgx.max_threads = 16
 sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
 
 sgx.remote_attestation = "{{ ra_type }}"
@@ -59,11 +60,11 @@ sgx.trusted_files = [
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
   "file:/etc/ssl/certs/ca-certificates.crt",
+  "file:{{ quartz_dir }}/../../crates/utils/cw-client/data/admin.sk",
 ]
 
 sgx.allowed_files = [
-  "file:{{ quartz_dir }}/exchange.sk",
-  "file:{{ quartz_dir }}/request.json",
+  "file:admin.sk",
   "file:/etc/nsswitch.conf",
   "file:/etc/host.conf",
   "file:/etc/ethers",
