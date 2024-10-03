@@ -6,15 +6,14 @@ use cosmwasm_std::{Addr, HexBinary};
 use cw_client::{CwClient, GrpcClient};
 use futures_util::StreamExt;
 use quartz_common::{
-    contract::msg::execute::attested::{
-        MockAttestation, RawAttested, RawAttestedMsgSansHandler, RawMockAttestation,
-    },
+    contract::msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler},
     enclave::{
         attestor::Attestor,
         server::{WebSocketHandler, WsListenerConfig},
     },
 };
 use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
+use serde::Deserialize;
 use serde_json::json;
 use tendermint_rpc::{event::Event, query::EventType, SubscriptionClient, WebSocketClient};
 use tonic::Request;
@@ -99,7 +98,11 @@ pub trait WsListener: Send + Sync + 'static {
 }
 
 #[async_trait::async_trait]
-impl<A: Attestor> WsListener for TransfersService<A> {
+impl<A> WsListener for TransfersService<A>
+where
+    A: Attestor,
+    A::RawAttestation: for<'de> Deserialize<'de> + Send,
+{
     async fn process(&self, event: TransfersOpEvent, config: WsListenerConfig) -> Result<()> {
         match event {
             TransfersOpEvent::Transfer { contract_address } => {
@@ -161,7 +164,11 @@ async fn transfer_handler<A: Attestor>(
     client: &TransfersService<A>,
     contract: &AccountId,
     ws_config: &WsListenerConfig,
-) -> Result<()> {
+) -> Result<()>
+where
+    A: Attestor,
+    A::RawAttestation: for<'de> Deserialize<'de>,
+{
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.grpc_url.clone());
 
@@ -224,22 +231,15 @@ async fn transfer_handler<A: Attestor>(
         .into_inner();
 
     // Extract json from enclave response
-    let attested: RawAttested<UpdateMsg, HexBinary> =
+    let attested: RawAttested<UpdateMsg, A::RawAttestation> =
         serde_json::from_str(&update_response.message)
             .map_err(|e| anyhow!("Error deserializing UpdateMsg from enclave: {}", e))?;
 
     // Build on-chain response
     // TODO add non-mock support
-    let transfer_msg = ExecuteMsg::Update::<RawMockAttestation>(AttestedMsg {
+    let transfer_msg = ExecuteMsg::Update(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
-        attestation: MockAttestation(
-            attested
-                .attestation
-                .as_slice()
-                .try_into()
-                .map_err(|_| anyhow!("slice with incorrect length"))?,
-        )
-        .into(),
+        attestation: attested.attestation,
     });
 
     // Post response to chain
@@ -258,13 +258,17 @@ async fn transfer_handler<A: Attestor>(
     Ok(())
 }
 
-async fn query_handler<A: Attestor>(
+async fn query_handler<A>(
     client: &TransfersService<A>,
     contract: &AccountId,
     msg_sender: &str,
     pubkey: &str,
     ws_config: &WsListenerConfig,
-) -> Result<()> {
+) -> Result<()>
+where
+    A: Attestor,
+    A::RawAttestation: for<'de> Deserialize<'de>,
+{
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.grpc_url.clone());
 
@@ -293,22 +297,15 @@ async fn query_handler<A: Attestor>(
         .into_inner();
 
     // Extract json from the enclave response
-    let attested: RawAttested<QueryResponseMsg, HexBinary> =
+    let attested: RawAttested<QueryResponseMsg, A::RawAttestation> =
         serde_json::from_str(&query_response.message)
             .map_err(|e| anyhow!("Error deserializing QueryResponseMsg from enclave: {}", e))?;
 
     // Build on-chain response
     // TODO add non-mock support
-    let query_msg = ExecuteMsg::QueryResponse::<RawMockAttestation>(AttestedMsg {
+    let query_msg = ExecuteMsg::QueryResponse(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
-        attestation: MockAttestation(
-            attested
-                .attestation
-                .as_slice()
-                .try_into()
-                .map_err(|_| anyhow!("slice with incorrect length"))?,
-        )
-        .into(),
+        attestation: attested.attestation,
     });
 
     // Post response to chain
