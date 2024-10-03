@@ -62,7 +62,6 @@ sgx.trusted_files = [
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
-  "file:/usr/local/lib/libwasmvm.x86_64.so",
   "file:/etc/ssl/certs/ca-certificates.crt",
   "file:/home/peppi/.gvm/pkgsets/go1.22/global/bin/neutrond",
 ]
