@@ -6,6 +6,8 @@ libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-app-transfers-enclave
 loader.log_level = "{{ log_level }}"
 
 loader.env.LD_LIBRARY_PATH = "/lib:/usr/local/lib:{{ arch_libdir }}:/usr{{ arch_libdir }}"
+loader.env.LD_PRELOAD = "/usr/local/lib/libwasmvm.x86_64.so"
+
 loader.env.HOME = "{{ home }}"
 loader.env.INSIDE_SGX = "1"
 loader.env.TLS = { passthrough = true }
@@ -60,6 +62,7 @@ sgx.trusted_files = [
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
+  "file:/usr/local/lib/libwasmvm.x86_64.so",
   "file:/etc/ssl/certs/ca-certificates.crt",
   "file:/home/peppi/.gvm/pkgsets/go1.22/global/bin/neutrond",
 ]
