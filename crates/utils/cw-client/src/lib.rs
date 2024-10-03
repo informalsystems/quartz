@@ -2,7 +2,7 @@ pub use cli::CliClient;
 use cosmrs::tendermint::chain::Id;
 pub use grpc::GrpcClient;
 use hex::ToHex;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 
 pub mod cli;
 
