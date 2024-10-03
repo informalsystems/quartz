@@ -160,7 +160,7 @@ fn extract_event_info(
     Ok((contract_address, ephemeral_pubkey, sender))
 }
 
-async fn transfer_handler<A: Attestor>(
+async fn transfer_handler<A>(
     client: &TransfersService<A>,
     contract: &AccountId,
     ws_config: &WsListenerConfig,

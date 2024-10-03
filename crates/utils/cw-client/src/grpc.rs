@@ -129,7 +129,7 @@ impl CwClient for GrpcClient {
             msgs,
             account.sequence,
             account.account_number,
-            &chain_id,
+            chain_id,
         )
         .map_err(|e| anyhow!("failed to create msg/tx: {}", e))?;
 
@@ -194,10 +194,10 @@ pub fn tx_bytes(
     chain_id: &TmChainId,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
     let tx_body = tx::Body::new(msgs, "", 0u16);
-    let signer_info = SignerInfo::single_direct(Some(tm_pubkey.into()), sequence_number);
+    let signer_info = SignerInfo::single_direct(Some(tm_pubkey), sequence_number);
     let auth_info = signer_info.auth_info(Fee::from_amount_and_gas(amount, gas));
     let sign_doc = SignDoc::new(&tx_body, &auth_info, chain_id, account_number)?;
-    let tx_signed = sign_doc.sign(&secret)?;
+    let tx_signed = sign_doc.sign(secret)?;
     Ok(tx_signed.to_bytes()?)
 }
 

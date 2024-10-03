@@ -221,7 +221,7 @@ async fn gramine_manifest(
         .arg("-Dra_type=dcap")
         .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
-        .arg(format!("-Dchain_id={}", chain_id.to_string()))
+        .arg(format!("-Dchain_id={}", chain_id))
         .arg(format!("-Dquartz_dir={}", quartz_dir.display()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
