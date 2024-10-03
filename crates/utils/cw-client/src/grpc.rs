@@ -92,6 +92,9 @@ impl CwClient for GrpcClient {
         _fees: &str,
     ) -> Result<String, Self::Error> {
         let secret = {
+            eprintln!("reading secret key from: {:?}", self.sk_file);
+            eprintln!("current dir: {:?}", std::env::current_dir().unwrap());
+
             let mut secret_hex = String::new();
             let mut sk_file = File::open(self.sk_file.clone())?;
             sk_file.read_to_string(&mut secret_hex)?;

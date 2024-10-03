@@ -83,6 +83,9 @@ impl Handler for EnclaveStartRequest {
 
             // gramine manifest
             let quartz_dir_canon = &enclave_dir.join("..");
+
+            debug!("quartz_dir_canon: {:?}", quartz_dir_canon);
+
             gramine_manifest(
                 &trusted_height.to_string(),
                 &trusted_hash.to_string(),
