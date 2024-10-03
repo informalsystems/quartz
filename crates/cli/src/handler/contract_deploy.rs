@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::fs;
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
@@ -41,11 +42,12 @@ impl Handler for ContractDeployRequest {
             .clone()
             .replace('-', "_");
 
-        let wasm_bin_path = config
+        let wasm_bin_path = fs::canonicalize(config
             .app_dir
             .join("target/wasm32-unknown-unknown/release")
             .join(package_name)
-            .with_extension("wasm");
+            .with_extension("wasm"));
+        println!("{:?}", wasm_bin_path);
 
         let (code_id, contract_addr) = deploy(wasm_bin_path.as_path(), self, config)
             .await

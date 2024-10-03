@@ -367,7 +367,9 @@ gramine-sgx-gen-private-key
 ```bash
 cd examples/transfers
 quartz enclave build
-quartz  enclave start  --fmspc "00606A000000" --tcbinfo-contract "neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps" --dcap-verifier-contract "neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf"
+export TCBINFO_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
+export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf
+quartz  enclave start  --fmspc "00606A000000" --tcbinfo-contract $TCBINFO_CONTRACT --dcap-verifier-contract $DCAP_CONTRACT --unsafe-trust-latest --sk-file ../utils/cw-client/data/admin.sk
 
 ### Build and Deploy the Contracts
 
