@@ -163,7 +163,7 @@ async fn transfer_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.node_url.clone());
+    let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.grpc_url.clone());
 
     // Query contract state
     let resp: QueryResult<Vec<TransferRequest>> = cw_client
@@ -252,7 +252,7 @@ async fn transfer_handler<A: Attestor>(
             2000000,
             &ws_config.tx_sender,
             json!(transfer_msg),
-            "1000untrn"
+            "1000untrn",
         )
         .await?;
 
@@ -268,7 +268,7 @@ async fn query_handler<A: Attestor>(
     ws_config: &WsListenerConfig,
 ) -> Result<()> {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.node_url.clone());
+    let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.grpc_url.clone());
 
     // Query contract state
     let resp: QueryResult<HexBinary> = cw_client
