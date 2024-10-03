@@ -4,7 +4,6 @@ import { localWasm } from './chains/localWasm'
 import { localNeutron } from './chains/localNeutron'
 import { testnetNeutron } from './chains/testnetNeutron'
 
-
 const supportedChains: Record<string, ChainInfo> = {
   doWasm: {
     ...localWasm,
