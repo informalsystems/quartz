@@ -46,7 +46,7 @@ impl Handler for ContractDeployRequest {
             .app_dir
             .join("target/wasm32-unknown-unknown/release")
             .join(package_name)
-            .with_extension("wasm"));
+            .with_extension("wasm"))?;
         println!("{:?}", wasm_bin_path);
 
         let (code_id, contract_addr) = deploy(wasm_bin_path.as_path(), self, config)
