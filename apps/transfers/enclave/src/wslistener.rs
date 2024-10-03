@@ -193,32 +193,16 @@ async fn transfer_handler<A: Attestor>(
     let wasmd_client = CliWasmdClient::new(httpurl.clone());
 
     // Retry logic for finding WasmVM directory
-    let max_attempts = 5;
-    let retry_delay = Duration::from_secs(1);
-    let mut wasm_dir = None;
+    let max_attempts = 10; // Adjust as needed
+    let retry_delay = Duration::from_millis(500); // Adjust as needed
 
-    for attempt in 1..=max_attempts {
-        match find_latest_wasm_dir()? {
-            Some(dir) => {
-                wasm_dir = Some(dir);
-                break;
-            }
-            None => {
-                if attempt < max_attempts {
-                    info!("WasmVM directory not found. Retrying in 1 second... (Attempt {}/{})", attempt, max_attempts);
-                    sleep(retry_delay).await;
-                }
-            }
-        }
-    }
-
-    let wasm_dir = wasm_dir.ok_or_else(|| anyhow!("Failed to find WasmVM directory after {} attempts", max_attempts))?;
+    let wasm_dir = find_latest_wasm_dir(max_attempts, retry_delay).await?
+        .ok_or_else(|| anyhow!("No WasmVM directory with lock file found after multiple attempts"))?;
 
     let lock_file_path = wasm_dir.join("wasm").join("wasm").join("exclusive.lock");
     
-    if !lock_file_path.exists() {
-        return Err(anyhow!("WasmVM lock file not found at {:?}. WasmVM might not be initialized.", lock_file_path));
-    }
+    info!("Using WasmVM directory: {:?}", wasm_dir);
+    info!("Lock file path: {:?}", lock_file_path);
 
 
 
@@ -421,37 +405,49 @@ async fn two_block_waitoor(wsurl: &str) -> Result<(), Error> {
 
 
 
-fn find_latest_wasm_dir() -> std::io::Result<Option<PathBuf>> {
+async fn find_latest_wasm_dir(max_attempts: u32, retry_delay: Duration) -> std::io::Result<Option<PathBuf>> {
+    let start_time = Instant::now();
     let tmp_dir = Path::new("/tmp");
     
-    let mut latest_dir = None;
-    let mut latest_time = std::time::UNIX_EPOCH;
-
-    for entry in fs::read_dir(tmp_dir)? {
-        let entry = entry?;
-        let path = entry.path();
+    for attempt in 1..=max_attempts {
+        info!("Searching for WasmVM directory (attempt {}/{})", attempt, max_attempts);
         
-        if path.is_dir() && path.file_name().and_then(|n| n.to_str()).map_or(false, |s| s.starts_with("neutrond")) {
-            let lock_file = path.join("wasm").join("wasm").join("exclusive.lock");
-            if lock_file.exists() {
-                if let Ok(metadata) = fs::metadata(&lock_file) {
-                    if let Ok(created) = metadata.created() {
-                        if created > latest_time {
-                            latest_time = created;
-                            latest_dir = Some(path);
+        let mut latest_dir = None;
+        let mut latest_time = SystemTime::UNIX_EPOCH;
+
+        for entry in fs::read_dir(tmp_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            
+            if path.is_dir() && path.file_name().and_then(|n| n.to_str()).map_or(false, |s| s.starts_with("neutrond")) {
+                let lock_file = path.join("wasm").join("wasm").join("exclusive.lock");
+                if lock_file.exists() {
+                    info!("Found lock file: {:?}", lock_file);
+                    if let Ok(metadata) = fs::metadata(&lock_file) {
+                        if let Ok(created) = metadata.created() {
+                            if created > latest_time {
+                                latest_time = created;
+                                latest_dir = Some(path);
+                            }
                         }
                     }
                 }
             }
         }
+
+        if let Some(dir) = latest_dir {
+            info!("Found latest WasmVM directory after {} attempts: {:?}", attempt, dir);
+            return Ok(Some(dir));
+        }
+
+        if attempt < max_attempts {
+            warn!("No WasmVM directory with lock file found. Retrying in {:?}...", retry_delay);
+            sleep(retry_delay).await;
+        }
     }
 
-    match &latest_dir {
-        Some(dir) => info!("Found latest WasmVM directory: {:?}", dir),
-        None => warn!("No WasmVM directory with lock file found"),
-    }
-
-    Ok(latest_dir)
+    error!("Failed to find WasmVM directory after {} attempts over {:?}", max_attempts, start_time.elapsed());
+    Ok(None)
 }
 // fn find_latest_wasm_dir() -> std::io::Result<Option<PathBuf>> {
 //     let tmp_dir = Path::new("/tmp");
