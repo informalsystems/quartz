@@ -20,7 +20,6 @@ loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
 loader.env.QUARTZ_PORT = { passthrough = true }
 loader.env.SSL_CERT_FILE = { passthrough = true }
-loader.env.NEUTROND_WASM_DIR = "/tmp/neutrond_wasm"
 
 loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "{{ chain_id }}",
@@ -40,13 +39,13 @@ fs.mounts = [
   { uri = "file:/home/peppi/.gvm/pkgsets/go1.22/global/pkg/mod/github.com/!cosm!wasm/wasmvm/v2@v2.1.3/internal/api/libwasmvm.x86_64.so", path = "/usr/local/lib/libwasmvm.x86_64.so" },
   { uri = "file:/home/peppi/.gvm/pkgsets/go1.22/global/bin/neutrond", path = "/home/peppi/.gvm/pkgsets/go1.22/global/bin/neutrond"},
   { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
-  { uri = "file:/tmp/neutrond_wasm", path = "/tmp/neutrond_wasm" },
+  { uri = "file:/tmp", path = "/tmp" },
   { uri = "file:/home/peppi/.neutrond" , path = "/home/peppi/.neutrond"},
 ]
 
 # sgx.debug = true
 sgx.enclave_size = "4G"
-sgx.max_threads = 16
+sgx.max_threads = 1
 sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
 
 sgx.remote_attestation = "{{ ra_type }}"
@@ -79,7 +78,7 @@ sgx.allowed_files = [
   "file:/etc/ssl/certs/ca-certificates.crt",
   "file:/etc/sgx_default_qcnl.conf",
   "file:/home/peppi/.gvm/pkgsets/go1.22/global/bin/neutrond",
-  "file:/tmp/neutrond_wasm/",
+  "file:/tmp/",
   "file:/home/peppi/.neutrond/",
 ]
 
