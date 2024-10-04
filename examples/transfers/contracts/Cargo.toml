@@ -1,11 +1,15 @@
-[workspace]
-
 [package]
 name = "transfers-contract"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.75.0"
+license-file = "LICENSE"
+readme = "README.md"
+repository = "https://github.com/informalsystems/cycles-quartz"
 authors = ["Informal Systems <hello@informal.systems>"]
 exclude = ["contract.wasm", "hash.txt"]
+description = """
+"""
 
 [[bin]]
 name = "schema"
@@ -37,7 +41,7 @@ thiserror = { version = "1.0.63" }
 
 # cosmwasm
 cosmwasm-std = { version = "2.1.1", default-features = false, features = [
-  "abort",
+    "abort",
 ] }
 cosmwasm-schema = { version = "2.1.1", default-features = false }
 cw-storage-plus = { version = "2.0.0", default-features = false }

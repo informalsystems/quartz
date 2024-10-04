@@ -1,7 +1,15 @@
 [package]
 name = "quartz-dcap-verifier"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license-file.workspace = true
+repository.workspace = true
+keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
+readme = "README.md"
+description = """
+"""
 
 exclude = [
     # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.

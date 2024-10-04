@@ -8,6 +8,8 @@ license-file.workspace = true
 repository.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
+description = """
+"""
 
 [features]
 mock-sgx = ["quartz-contract-core/mock-sgx"]
@@ -41,7 +43,7 @@ cosmrs.workspace = true
 cosmwasm-std.workspace = true
 tendermint.workspace = true
 tendermint-light-client.workspace = true
-tendermint-rpc = { workspace = true, features=["websocket-client", "http-client"] }
+tendermint-rpc = { workspace = true, features = ["websocket-client", "http-client"] }
 
 # quartz
 quartz-cw-proof.workspace = true

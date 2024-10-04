@@ -1,12 +1,15 @@
 [package]
 name = "quartz-common"
 version.workspace = true
+authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license-file.workspace = true
-readme.workspace = true
 repository.workspace = true
-authors.workspace = true
+keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
+readme = "README.md"
+description = """
+"""
 
 [features]
 full = ["contract", "enclave", "proto"]
