@@ -47,7 +47,13 @@ impl Handler for ContractDeployRequest {
             .join("target/wasm32-unknown-unknown/release")
             .join(package_name)
             .with_extension("wasm"))?;
-        println!("{:?}", wasm_bin_path);
+
+        if wasm_bin_path.exists() {
+            println!("File exists: {}", wasm_bin_path.display());
+        } else {
+            println!("File does not exist: {}", wasm_bin_path.display());
+        }
+    
 
         let (code_id, contract_addr) = deploy(wasm_bin_path.as_path(), self, config)
             .await
