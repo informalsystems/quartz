@@ -1,19 +1,26 @@
 name: "transfers"
+version: '5'
 
 volumes:
-  wasmd_data:
+  data:
 
 services:
-  node:
-    container_name: wasmd
-    build: "./wasmd"
-    ports:
-      - "26657:26657"
-      - "26656:26656"
-      - "1317:1317"
-    network_mode: host
+  neutrond:
+    image: neutron-node
+    container_name: neutron-node
+    build:
+      context: "./neutrond"
+      dockerfile: "Dockerfile"
     volumes:
-      - wasmd_data:/root/.wasmd
+      - data:/root/.neutrond
+    ports:
+      - 1317:1317
+      - 26657:26657
+      - 26656:26656
+      - 8090:9090
+    environment:
+      - ORACLE_ADDRESS=oracle:8080
+      - FEEMARKET_ENABLED=false
 
   enclave:
     container_name: quartz-cli-transfers
@@ -23,9 +30,86 @@ services:
       context: ".."
       dockerfile: "./crates/cli/Dockerfile"
     depends_on:
-      - node
+      - neutrond
     ports:
       - "11090:11090"
-    network_mode: host
     volumes:
-      - wasmd_data:/root/.wasmd
+      - data:/root/.neutrond
+      - ../examples/transfers:/opt/examples/transfers
+# name: "transfers"
+# version: '4'
+
+# volumes:
+#   data:
+
+# services:
+#   neutrond:
+#     image: neutron-node
+#     container_name: neutron-node
+#     build:
+#       context: "./neutrond"
+#       dockerfile: "Dockerfile"
+#     volumes:
+#       - data:/root/.neutrond
+#     ports:
+#       - 1317:1317
+#       - 26657:26657
+#       - 26656:26656
+#       - 8090:9090
+#     environment:
+#       - ORACLE_ADDRESS=oracle:8080
+#       - FEEMARKET_ENABLED=false
+
+#   enclave:
+#     container_name: quartz-cli-transfers
+#     environment:
+#       DOCKER_BUILDKIT: 1
+#     build:
+#       context: ".."
+#       dockerfile: "./crates/cli/Dockerfile"
+#     depends_on:
+#       - neutrond
+#     ports:
+#       - "11090:11090"
+#     volumes:
+#       - data:/root/.neutrond
+# name: "transfers"
+
+# volumes:
+#   data:
+
+# services:
+#   neutrond:
+#       image: neutron-node
+#       container_name: neutron-node
+#       build:
+#         context: ".."
+#         dockerfile: "docker/neutrond/Dockerfile"
+#       volumes:
+#         - data:/root/.neutrond
+#       ports:
+#         - 1317:1317
+#         - 26657:26657
+#         - 26656:26656
+#         - 8090:9090
+#       environment:
+#         - RUN_BACKGROUND=0
+#         - ORACLE_ADDRESS=oracle:8080
+#         - FEEMARKET_ENABLED=false
+#       command: 
+#         neutrond start --minimum-gas-prices "0.0053untrn"
+#       # network_mode: host
+
+#   enclave:
+#     container_name: quartz-cli-transfers
+#     environment:
+#       DOCKER_BUILDKIT: 1
+#     build:
+#       context: ".."
+#       dockerfile: "./crates/cli/Dockerfile"
+#     depends_on:
+#       - neutrond
+#     ports:
+#       - "11090:11090"
+#     volumes:
+#       - data:/root/.neutrond
