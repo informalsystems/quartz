@@ -57,7 +57,7 @@ Quartz is both a library (`quartz-contract-core`) for building SGX-aware CosmWas
 contracts, and a cli tool (`quartz`) for managing the enclave. 
 
 The library takes care of establishing a secure connection to the enclave (see
-[How it Works](/docs/how_it_works.md), and verifying attestations from
+[How it Works](/docs/how_it_works.md)), and verifying attestations from
 it. The quartz tool provides commands for managing the enclave.
 
 This guide is primarily about using the `quartz` tool to get the example app
@@ -315,6 +315,11 @@ rustup install 1.79.0
 rustup default 1.79.0
 rustup target add wasm32-unknown-unknown
 
+# install go
+wget https://go.dev/dl/go1.22.2.linux-amd64.tar.gz
+rm -rf /usr/local/go && tar -C /usr/local -xzf go1.22.2.linux-amd64.tar.gz
+echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
+
 # necessary building packages
 sudo apt update
 sudo apt upgrade -y
@@ -357,10 +362,46 @@ sudo apt-get update && sudo apt-get install -y az-dcap-client
 # generate gramine priv key
 gramine-sgx-gen-private-key
 
+# install neutron and setup accounts
+git clone -b main https://github.com/neutron-org/neutron.git
+cd neutron/
+make install
 
-# .... get connection to neutron
-# get those addresses
+neutrond keys add admin --keyring-backend test > ./accounts/val1.txt 2>&1
 
+# install node (needed for pccs)
+sudo apt-get install nodejs=20.10.0-1nodesource1
+
+# install pccs
+# instructions from https://download.01.org/intel-sgx/latest/linux-latest/docs/Intel_SGX_SW_Installation_Guide_for_Linux.pdf 
+# see appendix 2
+# You will be asked a bunch of configuration questions when setting up pcss - for dev, any values will work. In production, please give it careful thought
+sudo apt-get install sgx-dcap-pccs
+sudo systemctl start pccs
+
+# need to update /etc/sgx_default_qcnl.conf to what we have on our original azure machine
+# TODO - codify this in the repo, since uses can't copy paste from our azure
+sudo nano /etc/sgx_default_qcnl.conf # TODO - placeholder to note we have to edit it
+sudo systemctl restart pccs # reset after editing
+
+
+# not sure if its needed - TODO dave
+# edit crates/contracts/core/src/msg/execute/attested.rs to print the QUOTE
+# export QUOTE=<QUOTE_TEXT>
+cd cycles-quartz/crates/utils/print-fmspc/
+cargo run
+
+
+# run dev
+export TCBINFO_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
+export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf
+cargo run -- --app-dir "../../examples/transfers/" dev --unsafe-trust-latest --contract-manifest "../../examples/transfers/contracts/Cargo.toml" --fmspc "00606A000000" --tcbinfo-contract "$TCBINFO_CONTRACT" --dcap-verifier-contract "$DCAP_CONTRACT" --init-msg '{"denom":"untrn"}' --sk-file ../utils/cw-client/data/admin.sk
+
+# run individually instead of dev
+# TODO!
+
+
+# TODO - pull update, and do not use --sk-file
 ```
 
 ### Dave - deploy and build contracts
