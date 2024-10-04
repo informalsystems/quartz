@@ -3,7 +3,7 @@
 set -e
 
 # Initialize neutrond
-neutrond init testnet --chain-id test-1
+neutrond init testnet --chain-id test-1 --overwrite
 
 # Create accounts
 echo "y" | neutrond keys add val1 --keyring-backend test

@@ -5,6 +5,12 @@ ARG CARGO_FLAGS=""
 
 COPY . /opt
 
+# Temporarily disable GPG checks
+RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until \
+    && echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure \
+    && echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure
+
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     protobuf-compiler \
@@ -37,17 +43,9 @@ RUN cp /opt/target/release/quartz /usr/local/bin/
 
 # Create a directory for the app
 RUN mkdir -p /opt/examples/transfers
-# Create a simple wait-for-it script
-RUN echo '#!/bin/bash\n\
-while ! nc -z neutron-node 26657; do\n\
-  echo "Waiting for neutron-node..."\n\
-  sleep 1\n\
-done\n\
-echo "Neutron node is up - executing command"\n\
-exec $@' > /usr/local/bin/wait-for-neutron.sh && chmod +x /usr/local/bin/wait-for-neutron.sh
 
-ENTRYPOINT ["/usr/local/bin/wait-for-neutron.sh", "quartz", "--mock-sgx", "--app-dir", "/opt/examples/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/examples/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"untrn\"}", "--node-url", "http://neutron-node:26657", "--chain-id", "test-1"]
-# "--sk-file", "823ad58093b111e3c41369ca67103cba89e136995bdbd8a86c6b7eef9ca38b00" (val1)
+ENTRYPOINT ["quartz", "--mock-sgx", "--app-dir", "/opt/examples/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/examples/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"untrn\"}"]
+# "--sk-file", "823ad58093b111e3c41369ca67103cba89e136995bdbd8a86c6b7eef9ca38b00" ()
 # FROM rust:1.81 AS build
 
 # ENV TARGET=wasm32-unknown-unknown

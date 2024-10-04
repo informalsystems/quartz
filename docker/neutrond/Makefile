@@ -7,4 +7,8 @@ import-local-accounts:
 	neutrond keys add demowallet3 --keyring-backend test > ./accounts/demowallet3.txt 2>&1
 	neutrond keys add rly1 --keyring-backend test > ./accounts/rly1.txt 2>&1
 	neutrond keys add rly2 --keyring-backend test > ./accounts/rly2.txt 2>&1
-.PHONY: create-local-accounts
+
+create-local-accounts: import-local-accounts
+	@echo "Local accounts have been created."
+
+.PHONY: create-local-accounts import-local-accounts
