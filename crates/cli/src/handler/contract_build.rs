@@ -11,16 +11,16 @@ use crate::{
     request::contract_build::ContractBuildRequest,
     response::{contract_build::ContractBuildResponse, Response},
 };
+use color_eyre::{Result, Report, eyre::eyre};
 
 #[async_trait]
 impl Handler for ContractBuildRequest {
-    type Error = Error;
     type Response = Response;
 
     async fn handle<C: AsRef<Config> + Send>(
         self,
         config: C,
-    ) -> Result<Self::Response, Self::Error> {
+    ) -> Result<Self::Response, Report> {
         let config = config.as_ref();
         info!("{}", "\nPeforming Contract Build".blue().bold());
 
@@ -47,14 +47,13 @@ impl Handler for ContractBuildRequest {
 
         info!("{}", "🚧 Building contract binary ...".green().bold());
         let status = command
-            .status()
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
-
+            .status()?;
+        
         if !status.success() {
-            return Err(Error::GenericErr(format!(
+            return Err(eyre!(
                 "Couldn't build contract. \n{:?}",
                 status
-            )));
+            ));
         }
 
         config.log_build(false).await?;

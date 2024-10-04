@@ -1,8 +1,10 @@
 use std::{collections::HashMap, path::PathBuf};
 
+use color_eyre::eyre::Context;
 use serde::{Deserialize, Serialize};
 
-use crate::{error::Error, request::Request};
+use crate::request::Request;
+use color_eyre::Result;
 
 #[derive(Clone, Debug)]
 pub struct ContractDeployRequest {
@@ -18,10 +20,8 @@ impl From<ContractDeployRequest> for Request {
 }
 
 impl ContractDeployRequest {
-    pub fn checked_init(init_msg: String) -> Result<GenericQuartzInit, Error> {
-        let parsed: GenericQuartzInit = serde_json::from_str(&init_msg).map_err(|_| {
-            Error::GenericErr("Init message doesn't contain mandatory quartz field.".to_string())
-        })?;
+    pub fn checked_init(init_msg: String) -> Result<GenericQuartzInit> {
+        let parsed: GenericQuartzInit = serde_json::from_str(&init_msg).wrap_err("Init message doesn't contain mandatory quartz field")?;
 
         Ok(parsed)
     }

@@ -1,12 +1,15 @@
+use color_eyre::eyre::eyre;
+
 use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},
-    error::Error,
     request::{
         contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest,
         dev::DevRequest, enclave_build::EnclaveBuildRequest, enclave_start::EnclaveStartRequest,
         handshake::HandshakeRequest, init::InitRequest,
     },
 };
+
+use color_eyre::{Result, Report};
 
 pub mod contract_build;
 pub mod contract_deploy;
@@ -28,7 +31,7 @@ pub enum Request {
 }
 
 impl TryFrom<Command> for Request {
-    type Error = Error;
+    type Error = Report;
 
     fn try_from(cmd: Command) -> Result<Self, Self::Error> {
         match cmd {
@@ -43,8 +46,7 @@ impl TryFrom<Command> for Request {
             Command::Dev(args) => Ok(DevRequest {
                 watch: args.watch,
                 unsafe_trust_latest: args.unsafe_trust_latest,
-                init_msg: serde_json::from_str(&args.contract_deploy.init_msg)
-                    .map_err(|e| Error::GenericErr(e.to_string()))?,
+                init_msg: serde_json::from_str(&args.contract_deploy.init_msg)?,
                 label: args.contract_deploy.label,
                 contract_manifest: args.contract_deploy.contract_manifest,
                 release: args.enclave_build.release,
@@ -58,20 +60,17 @@ impl TryFrom<Command> for Request {
 }
 
 impl TryFrom<ContractCommand> for Request {
-    type Error = Error;
+    type Error = Report;
 
-    fn try_from(cmd: ContractCommand) -> Result<Request, Error> {
+    fn try_from(cmd: ContractCommand) -> Result<Request> {
         match cmd {
             ContractCommand::Deploy(args) => {
                 if !args.contract_manifest.exists() {
-                    return Err(Error::PathNotFile(
-                        args.contract_manifest.display().to_string(),
-                    ));
+                    return Err(eyre!("The contract manifest file does not exist: {}", args.contract_manifest.display()));
                 }
 
                 Ok(ContractDeployRequest {
-                    init_msg: serde_json::from_str(&args.init_msg)
-                        .map_err(|e| Error::GenericErr(e.to_string()))?,
+                    init_msg: serde_json::from_str(&args.init_msg)?,
                     label: args.label,
                     contract_manifest: args.contract_manifest,
                 }
@@ -79,9 +78,7 @@ impl TryFrom<ContractCommand> for Request {
             }
             ContractCommand::Build(args) => {
                 if !args.contract_manifest.exists() {
-                    return Err(Error::PathNotFile(
-                        args.contract_manifest.display().to_string(),
-                    ));
+                    return Err(eyre!("The contract manifest file does not exist: {}", args.contract_manifest.display()));
                 }
 
                 Ok(ContractBuildRequest {
@@ -94,9 +91,9 @@ impl TryFrom<ContractCommand> for Request {
 }
 
 impl TryFrom<EnclaveCommand> for Request {
-    type Error = Error;
+type Error = Report;
 
-    fn try_from(cmd: EnclaveCommand) -> Result<Request, Error> {
+    fn try_from(cmd: EnclaveCommand) -> Result<Request> {
         match cmd {
             EnclaveCommand::Build(_) => Ok(EnclaveBuildRequest {}.into()),
             EnclaveCommand::Start(args) => Ok(EnclaveStartRequest {

@@ -1,14 +1,13 @@
 use std::{path::PathBuf, time::Duration};
 
 use async_trait::async_trait;
-use color_eyre::owo_colors::OwoColorize;
-// todo get rid of this?
-use miette::{IntoDiagnostic, Result};
+use color_eyre::{eyre::{eyre, Context}, owo_colors::OwoColorize};
 use quartz_common::proto::core_client::CoreClient;
 use tokio::{sync::mpsc, time::sleep};
 use tracing::{debug, info};
 use watchexec::Watchexec;
 use watchexec_signals::Signal;
+use color_eyre::{Result, Report};
 
 use crate::{
     error::Error,
@@ -24,13 +23,12 @@ use crate::{
 
 #[async_trait]
 impl Handler for DevRequest {
-    type Error = Error;
     type Response = Response;
 
     async fn handle<C: AsRef<Config> + Send>(
         self,
         config: C,
-    ) -> Result<Self::Response, Self::Error> {
+    ) -> Result<Self::Response, Report> {
         let config = config.as_ref();
         info!("\nPeforming Dev");
 
@@ -58,7 +56,7 @@ async fn dev_driver(
     mut rx: mpsc::Receiver<DevRebuild>,
     args: &DevRequest,
     config: Config,
-) -> Result<(), Error> {
+) -> Result<(), Report> {
     // State
     let mut first_enclave_message = true;
     let mut first_contract_message = true;
@@ -88,7 +86,7 @@ async fn dev_driver(
                 spawn_enclave_start(args, &config)?;
 
                 // Deploy new contract and perform handshake
-                let res = deploy_and_handshake(None, args, &config).await;
+                let res = deploy_and_handshake(None, args, &config).await.wrap_err("Error running deploy and handshake in `quartz dev`");
 
                 // Save resulting contract address or shutdown and return error
                 match res {
@@ -134,7 +132,7 @@ async fn dev_driver(
                     Err(e) => {
                         eprintln!("Error restarting enclave and handshake");
 
-                        return Err(e);
+                        return Err(eyre!(e));
                     }
                 }
             }
@@ -154,7 +152,7 @@ async fn dev_driver(
                     Err(e) => {
                         eprintln!("Error deploying contract and handshake:");
 
-                        return Err(e);
+                        return Err(eyre!(e));
                     }
                 }
 
@@ -167,7 +165,7 @@ async fn dev_driver(
 }
 
 // Spawns enclve start in a separate task which runs in the background
-fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<(), Error> {
+fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<()> {
     // In separate process, launch the enclave
     let enclave_start = EnclaveStartRequest {
         unsafe_trust_latest: args.unsafe_trust_latest,
@@ -182,8 +180,6 @@ fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<(), Error> 
         if let Err(e) = enclave_start.handle(config_cpy).await {
             eprintln!("Error running enclave start.\n {}", e);
         }
-
-        Ok::<(), Error>(())
     });
 
     Ok(())
@@ -194,7 +190,7 @@ async fn deploy_and_handshake(
     contract: Option<&str>,
     args: &DevRequest,
     config: &Config,
-) -> Result<String, Error> {
+) -> Result<String> {
     info!("Waiting for enclave start to deploy contract and handshake");
 
     // Wait at most 60 seconds to connect to enclave
@@ -210,9 +206,7 @@ async fn deploy_and_handshake(
         i -= 1;
 
         if i == 0 {
-            return Err(Error::GenericErr(
-                "Could not connect to enclave".to_string(),
-            ));
+            return Err(eyre!("Could not connect to enclave"));
         }
     }
     // Calls which interact with enclave
@@ -244,7 +238,7 @@ async fn deploy_and_handshake(
     // Run handshake
     info!("Running handshake on contract `{}`", contract);
     let handshake = HandshakeRequest {
-        contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
+        contract: wasmaddr_to_id(&contract)?,
         unsafe_trust_latest: args.unsafe_trust_latest,
     };
 
@@ -255,7 +249,7 @@ async fn deploy_and_handshake(
             info!("Handshake complete: {}", res.pub_key);
         }
         Err(e) => {
-            return Err(e);
+            return Err(eyre!(e));
         }
         _ => unreachable!("Unexpected response variant"),
     };
@@ -304,7 +298,7 @@ async fn watcher(tx: mpsc::Sender<DevRebuild>, log_dir: PathBuf) -> Result<()> {
     wx.config.pathset([log_dir]);
 
     // Keep running until Watchexec quits
-    let _ = main.await.into_diagnostic()?;
+    let _ = main.await?;
 
     Ok(())
 }

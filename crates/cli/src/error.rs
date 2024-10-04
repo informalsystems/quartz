@@ -9,50 +9,20 @@ pub enum Error {
     PathNotFile(String),
     /// unspecified error: {0}
     GenericErr(String),
-    /// IoError: {0}
-    IoError(String),
+    /// Cache error: {0}
+    Cache(String),
+    /// Config error: {0}
+    Config(String),
     /// TOML Error : {0}
-    TomlError(String),
+    TomlError(#[from] toml::de::Error),
+    /// TOML Error : {0}
+    TomlSerError(#[from] toml::ser::Error),
     /// Tendermint error: {0}
-    TendermintError(String),
+    TendermintError(#[from] tendermint::Error),
     /// Clearscreen error: {0}
-    ClearscreenError(String),
+    ClearscreenError(#[from] clearscreen::Error),
     /// JSON Error: {0}
-    JsonError(String),
-}
-
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Self {
-        Error::IoError(err.to_string())
-    }
-}
-
-impl From<toml::de::Error> for Error {
-    fn from(err: toml::de::Error) -> Self {
-        Error::TomlError(err.to_string())
-    }
-}
-
-impl From<toml::ser::Error> for Error {
-    fn from(err: toml::ser::Error) -> Self {
-        Error::TomlError(err.to_string())
-    }
-}
-
-impl From<tendermint::Error> for Error {
-    fn from(err: tendermint::Error) -> Self {
-        Error::TendermintError(err.to_string())
-    }
-}
-
-impl From<clearscreen::Error> for Error {
-    fn from(err: clearscreen::Error) -> Self {
-        Error::ClearscreenError(err.to_string())
-    }
-}
-
-impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Self {
-        Error::JsonError(err.to_string())
-    }
+    JsonError(#[from] serde_json::Error),
+    /// IO Error: {0}
+    IoError(#[from] std::io::Error),
 }
