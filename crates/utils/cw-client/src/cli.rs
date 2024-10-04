@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use anyhow::anyhow;
+use color_eyre::{eyre::eyre, Report};
 use cosmrs::{tendermint::chain::Id, AccountId};
 use reqwest::Url;
 use serde::de::DeserializeOwned;
@@ -66,7 +66,7 @@ impl CwClient for CliClient {
     type Query = serde_json::Value;
     type RawQuery = String;
     type ChainId = Id;
-    type Error = anyhow::Error;
+    type Error = Report;
 
     async fn query_smart<R: DeserializeOwned + Send>(
         &self,
@@ -83,11 +83,11 @@ impl CwClient for CliClient {
 
         let output = command.output()?;
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         let query_result: R = serde_json::from_slice(&output.stdout)
-            .map_err(|e| anyhow!("Error deserializing: {}", e))?;
+            .map_err(|e| eyre!("Error deserializing: {}", e))?;
         Ok(query_result)
     }
 
@@ -106,7 +106,7 @@ impl CwClient for CliClient {
 
         let output = command.output()?;
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         let query_result: R = serde_json::from_slice(&output.stdout).unwrap_or_default();
@@ -123,7 +123,7 @@ impl CwClient for CliClient {
 
         let output = command.output()?;
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         let query_result: R = serde_json::from_slice(&output.stdout).unwrap_or_default();
@@ -154,7 +154,7 @@ impl CwClient for CliClient {
         let output = command.output()?;
 
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         // TODO: find the rust type for the tx output and return that
@@ -182,7 +182,7 @@ impl CwClient for CliClient {
         let output = command.output()?;
 
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         // TODO: find the rust type for the tx output and return that
@@ -215,7 +215,7 @@ impl CwClient for CliClient {
         let output = command.output()?;
 
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         // TODO: find the rust type for the tx output and return that
@@ -229,7 +229,7 @@ impl CwClient for CliClient {
         let output = command.output()?;
 
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         let query_result: serde_json::Value =
@@ -241,13 +241,13 @@ impl CwClient for CliClient {
         };
         let trusted_height = query_result[sync_info]["latest_block_height"]
             .as_str()
-            .ok_or(anyhow!("Could not query height"))?;
+            .ok_or(eyre!("Could not query height"))?;
 
         let trusted_height = trusted_height.parse::<u64>()?;
 
         let trusted_hash = query_result[sync_info]["latest_block_hash"]
             .as_str()
-            .ok_or(anyhow!("Could not query height"))?
+            .ok_or(eyre!("Could not query height"))?
             .to_string();
 
         Ok((trusted_height, trusted_hash))
