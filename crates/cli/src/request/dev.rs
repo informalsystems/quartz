@@ -13,7 +13,6 @@ pub struct DevRequest {
     pub label: String,
     pub contract_manifest: PathBuf,
     pub release: bool,
-    pub sk_file: PathBuf,
     pub fmspc: Option<Fmspc>,
     pub tcbinfo_contract: Option<AccountId>,
     pub dcap_verifier_contract: Option<AccountId>,

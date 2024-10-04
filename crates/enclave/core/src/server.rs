@@ -1,7 +1,6 @@
 use std::{
     convert::Infallible,
     net::SocketAddr,
-    path::PathBuf,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -87,7 +86,7 @@ pub struct WsListenerConfig {
     pub tx_sender: String,
     pub trusted_hash: Hash,
     pub trusted_height: Height,
-    pub sk_file: PathBuf,
+    pub admin_sk: String,
 }
 
 /// A trait for wrapping a tonic service with the gRPC server handler

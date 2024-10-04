@@ -20,6 +20,7 @@ loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
 loader.env.MYAPP_DATA = { passthrough = true }
 loader.env.QUARTZ_PORT = { passthrough = true }
 loader.env.SSL_CERT_FILE = { passthrough = true }
+loader.env.ADMIN_SK = { passthrough = true }
 loader.insecure__use_host_env = true
 
 loader.argv = ["quartz-app-transfers-enclave",
@@ -39,7 +40,6 @@ fs.mounts = [
   { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
-  { uri = "file:{{ quartz_dir }}/../../crates/utils/cw-client/data/admin.sk", path = "/admin.sk" },
   { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
   { uri = "file:/usr/lib/ssl/cert.pem", path = "/usr/lib/ssl/cert.pem" },
 ]
@@ -60,11 +60,9 @@ sgx.trusted_files = [
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
   "file:/etc/ssl/certs/ca-certificates.crt",
-  "file:{{ quartz_dir }}/../../crates/utils/cw-client/data/admin.sk",
 ]
 
 sgx.allowed_files = [
-  "file:admin.sk",
   "file:/etc/nsswitch.conf",
   "file:/etc/host.conf",
   "file:/etc/ethers",

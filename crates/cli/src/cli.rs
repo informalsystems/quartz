@@ -223,10 +223,6 @@ pub struct EnclaveStartArgs {
     #[arg(long)]
     pub unsafe_trust_latest: bool,
 
-    /// file containing the secret key of the tx-sender for the enclave
-    #[arg(long)]
-    pub sk_file: PathBuf,
-
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -263,10 +259,6 @@ pub struct DevArgs {
 
     #[command(flatten)]
     pub enclave_build: EnclaveBuildArgs,
-
-    /// file containing the secret key of the tx-sender for the enclave
-    #[arg(long)]
-    pub sk_file: PathBuf,
 
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
     #[arg(long)]
