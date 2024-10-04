@@ -170,7 +170,6 @@ async fn dev_driver(
 fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<(), Error> {
     // In separate process, launch the enclave
     let enclave_start = EnclaveStartRequest {
-        sk_file: args.sk_file.clone(),
         unsafe_trust_latest: args.unsafe_trust_latest,
         fmspc: args.fmspc.clone(),
         tcbinfo_contract: args.tcbinfo_contract.clone(),
@@ -180,9 +179,11 @@ fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<(), Error> 
     let config_cpy = config.clone();
 
     tokio::spawn(async move {
-        let res = enclave_start.handle(config_cpy).await?;
+        if let Err(e) = enclave_start.handle(config_cpy).await {
+            eprintln!("Error running enclave start.\n {}", e);
+        }
 
-        Ok::<Response, Error>(res)
+        Ok::<(), Error>(())
     });
 
     Ok(())

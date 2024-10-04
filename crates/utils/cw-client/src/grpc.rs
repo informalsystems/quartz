@@ -1,4 +1,4 @@
-use std::{error::Error, fs::File, io::Read, path::PathBuf};
+use std::error::Error;
 
 use anyhow::anyhow;
 use cosmos_sdk_proto::{
@@ -33,13 +33,13 @@ use crate::CwClient;
 
 #[derive(Clone, Debug)]
 pub struct GrpcClient {
-    sk_file: PathBuf,
+    sk: String,
     url: Url,
 }
 
 impl GrpcClient {
-    pub fn new(sk_file: PathBuf, url: Url) -> Self {
-        Self { sk_file, url }
+    pub fn new(sk: String, url: Url) -> Self {
+        Self { sk, url }
     }
 }
 
@@ -92,11 +92,7 @@ impl CwClient for GrpcClient {
         _fees: &str,
     ) -> Result<String, Self::Error> {
         let secret = {
-            let mut secret_hex = String::new();
-            let mut sk_file = File::open(self.sk_file.clone())?;
-            sk_file.read_to_string(&mut secret_hex)?;
-            let secret = hex::decode(secret_hex)?;
-            SigningKey::from_slice(&secret)
+            SigningKey::from_slice(&self.sk.as_bytes())
                 .map_err(|e| anyhow!("failed to read secret key: {}", e))?
         };
 

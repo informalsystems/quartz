@@ -76,9 +76,6 @@ pub struct Cli {
 
     #[clap(long, default_value = "admin")]
     pub tx_sender: String,
-
-    #[clap(long, default_value = "admin.sk")]
-    pub sk_file: PathBuf,
 }
 
 fn default_rpc_addr() -> SocketAddr {

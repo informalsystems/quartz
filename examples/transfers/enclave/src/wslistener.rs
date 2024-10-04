@@ -170,7 +170,7 @@ where
     A::RawAttestation: for<'de> Deserialize<'de>,
 {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.grpc_url.clone());
+    let cw_client = GrpcClient::new(ws_config.admin_sk.clone(), ws_config.grpc_url.clone());
 
     // Query contract state
     let requests: Vec<TransferRequest> = cw_client
@@ -270,7 +270,7 @@ where
     A::RawAttestation: for<'de> Deserialize<'de>,
 {
     let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let cw_client = GrpcClient::new(ws_config.sk_file.clone(), ws_config.grpc_url.clone());
+    let cw_client = GrpcClient::new(ws_config.admin_sk.clone(), ws_config.grpc_url.clone());
 
     // Query contract state
     let state: HexBinary = cw_client

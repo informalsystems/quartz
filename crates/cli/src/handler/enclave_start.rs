@@ -76,6 +76,12 @@ impl Handler for EnclaveStartRequest {
                 ));
             };
 
+            if let Err(_) = std::env::var("ADMIN_SK") {
+                return Err(Error::GenericErr(
+                    "ADMIN_SK environment variable is not set".to_string(),
+                ));
+            };
+
             let enclave_dir = fs::canonicalize(config.app_dir.join("enclave"))?;
 
             // gramine private key
@@ -92,7 +98,6 @@ impl Handler for EnclaveStartRequest {
                 &config.chain_id,
                 quartz_dir_canon,
                 &enclave_dir,
-                &self.sk_file,
                 fmspc,
                 tcbinfo_contract,
                 dcap_verifier_contract,
@@ -194,7 +199,6 @@ async fn gramine_manifest(
     chain_id: &Id,
     quartz_dir: &Path,
     enclave_dir: &Path,
-    sk_file: &Path,
     fmspc: Fmspc,
     tcbinfo_contract: AccountId,
     dcap_verifier_contract: AccountId,
@@ -225,7 +229,6 @@ async fn gramine_manifest(
         .arg(format!("-Dquartz_dir={}", quartz_dir.display()))
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
-        .arg(format!("-Dsk_file={}", sk_file.display()))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
         .arg(format!("-Dnode_url={}", node_url))
         .arg(format!("-Dws_url={}", ws_url))
