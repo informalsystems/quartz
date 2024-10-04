@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use color_eyre::{eyre::eyre, Report, Result, Help};
+use color_eyre::{eyre::eyre, Help, Report, Result};
 use cosmrs::{tendermint::chain::Id, AccountId};
 use reqwest::Url;
 use serde::de::DeserializeOwned;
@@ -58,9 +58,12 @@ impl CliClient {
     fn new_command(&self) -> Result<Command> {
         let bin = self.kind.bin();
         if !self.is_bin_available(&bin) {
-            return Err(eyre!("Binary '{}' not found in PATH", bin)).suggestion(format!("Have you installed {}? If so, check that it's in your PATH.", bin));
+            return Err(eyre!("Binary '{}' not found in PATH", bin)).suggestion(format!(
+                "Have you installed {}? If so, check that it's in your PATH.",
+                bin
+            ));
         }
-        
+
         Ok(Command::new(self.kind.bin()))
     }
     fn is_bin_available(&self, bin: &str) -> bool {
