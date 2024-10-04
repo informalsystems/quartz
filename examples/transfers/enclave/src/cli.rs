@@ -1,4 +1,4 @@
-use std::{env, net::SocketAddr, path::PathBuf};
+use std::{env, net::SocketAddr};
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};

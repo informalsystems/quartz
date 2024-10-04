@@ -169,8 +169,11 @@ where
     A: Attestor,
     A::RawAttestation: for<'de> Deserialize<'de>,
 {
-    let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let cw_client = GrpcClient::new(ws_config.admin_sk.clone(), ws_config.grpc_url.clone());
+    let sk = hex::decode(ws_config.admin_sk.clone())?
+        .as_slice()
+        .try_into()
+        .map_err(|e| anyhow!("failed to read/parse sk: {}", e))?;
+    let cw_client = GrpcClient::new(sk, ws_config.grpc_url.clone());
 
     // Query contract state
     let requests: Vec<TransferRequest> = cw_client
@@ -243,6 +246,7 @@ where
     });
 
     // Post response to chain
+    let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let output = cw_client
         .tx_execute(
             contract,
@@ -269,8 +273,11 @@ where
     A: Attestor,
     A::RawAttestation: for<'de> Deserialize<'de>,
 {
-    let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
-    let cw_client = GrpcClient::new(ws_config.admin_sk.clone(), ws_config.grpc_url.clone());
+    let sk = hex::decode(ws_config.admin_sk.clone())?
+        .as_slice()
+        .try_into()
+        .map_err(|e| anyhow!("failed to read/parse sk: {}", e))?;
+    let cw_client = GrpcClient::new(sk, ws_config.grpc_url.clone());
 
     // Query contract state
     let state: HexBinary = cw_client
@@ -309,6 +316,7 @@ where
     });
 
     // Post response to chain
+    let chain_id = &ChainId::from_str(&ws_config.chain_id)?;
     let output = cw_client
         .tx_execute(
             contract,
