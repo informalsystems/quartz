@@ -8,7 +8,7 @@ use tokio::{
 use tracing::debug;
 use xxhash_rust::xxh3::Xxh3;
 
-use color_eyre::{eyre::eyre, Report, Result};
+use color_eyre::{eyre::eyre, Result};
 use crate::config::Config;
 
 const BUFFER_SIZE: usize = 16384; // 16 KB buffer
@@ -116,13 +116,16 @@ impl Config {
             .await
             .map_err(|e| eyre!(e))
     }
-
     pub fn cache_dir(&self) -> Result<PathBuf> {
-        Ok(self.app_dir.join(".cache/"))
+        let cache_dir = self.app_dir.join(".cache/");
+        std::fs::create_dir_all(&cache_dir)?;
+        Ok(cache_dir)
     }
 
     pub fn build_log_dir(&self) -> Result<PathBuf> {
-        Ok(self.app_dir.join(".cache/log/"))
+        let build_log_dir = self.app_dir.join(".cache/log/");
+        std::fs::create_dir_all(&build_log_dir)?;
+        Ok(build_log_dir)
     }
 
     /// Creates the build log if it isn't created already, returns relative path from app_dir to log directory
@@ -144,7 +147,7 @@ impl Config {
             false => "contract",
         };
 
-        tokio::fs::write(log_dir.join(filename), "test")
+        tokio::fs::write(log_dir.join(filename), "log")
             .await?;
 
         Ok(())

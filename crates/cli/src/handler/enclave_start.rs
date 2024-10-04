@@ -13,7 +13,6 @@ use color_eyre::{Result, Report};
 
 use crate::{
     config::Config,
-    error::Error,
     handler::{utils::helpers::write_cache_hash_height, Handler},
     request::enclave_start::EnclaveStartRequest,
     response::{enclave_start::EnclaveStartResponse, Response},
@@ -160,18 +159,13 @@ async fn create_mock_enclave_child(
     Ok(child)
 }
 
-async fn gramine_sgx_gen_private_key(enclave_dir: &Path) -> Result<(), Error> {
+async fn gramine_sgx_gen_private_key(enclave_dir: &Path) -> Result<()> {
     // Launch the gramine-sgx-gen-private-key command
     Command::new("gramine-sgx-gen-private-key")
         .current_dir(enclave_dir)
         .output()
         .await
-        .map_err(|e| {
-            Error::GenericErr(format!(
-                "Failed to execute gramine-sgx-gen-private-key: {}",
-                e
-            ))
-        })?;
+        .map_err(|e| eyre!("Failed to execute gramine-sgx-gen-private-key: {}", e))?;
 
     // Continue regardless of error
     // > /dev/null 2>&1 || :  # may fail
@@ -191,7 +185,7 @@ async fn gramine_manifest(
     node_url: &Url,
     ws_url: &Url,
     grpc_url: &Url,
-) -> Result<(), Error> {
+) -> Result<()> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
         "/lib/{}-{}-{}",
@@ -200,7 +194,7 @@ async fn gramine_manifest(
 
     let ra_client_spid = "51CAF5A48B450D624AEFE3286D314894";
     let home_dir = dirs::home_dir()
-        .ok_or(Error::GenericErr("home dir not set".to_string()))?
+        .ok_or_else(|| eyre!("Home directory not set"))?
         .display()
         .to_string();
 
@@ -229,19 +223,16 @@ async fn gramine_manifest(
         .current_dir(enclave_dir)
         .status()
         .await
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
+        .map_err(|e| eyre!("Failed to execute gramine-manifest: {}", e))?;
 
     if !status.success() {
-        return Err(Error::GenericErr(format!(
-            "Couldn't run gramine manifest. {:?}",
-            status
-        )));
+        return Err(eyre!("gramine-manifest command failed with status: {:?}", status));
     }
 
     Ok(())
 }
 
-async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<(), Error> {
+async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<()> {
     let status = Command::new("gramine-sgx-sign")
         .arg("--manifest")
         .arg("quartz.manifest")
@@ -250,26 +241,24 @@ async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<(), Error> {
         .current_dir(enclave_dir)
         .status()
         .await
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
+        .map_err(|e| eyre!("Failed to execute gramine-sgx-sign: {}", e))?;
 
     if !status.success() {
-        return Err(Error::GenericErr(format!(
-            "gramine-sgx-sign command failed. {:?}",
-            status
-        )));
+        return Err(eyre!("gramine-sgx-sign command failed with status: {:?}", status));
     }
 
     Ok(())
 }
 
-async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child, Error> {
+async fn create_gramine_sgx_child(enclave_dir: &Path) -> Result<Child> {
     info!("🚧 Spawning enclave process ...");
 
     let child = Command::new("gramine-sgx")
         .arg("./quartz")
         .kill_on_drop(true)
         .current_dir(enclave_dir)
-        .spawn()?;
+        .spawn()
+        .map_err(|e| eyre!("Failed to spawn gramine-sgx child process: {}", e))?;
 
     Ok(child)
 }

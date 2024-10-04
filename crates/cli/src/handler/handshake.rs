@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use async_trait::async_trait;
 use color_eyre::{eyre::eyre, owo_colors::OwoColorize};
 use cw_client::{CliClient, CwClient};
@@ -12,7 +11,6 @@ use color_eyre::{Result, Report};
 use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 use crate::{
     config::Config,
-    error::Error,
     handler::{
         utils::{helpers::read_cached_hash_height, relay::RelayMessage},
         Handler,

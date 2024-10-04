@@ -6,7 +6,6 @@ use tracing::{debug, info};
 
 use crate::{
     config::Config,
-    error::Error,
     handler::Handler,
     request::contract_build::ContractBuildRequest,
     response::{contract_build::ContractBuildResponse, Response},

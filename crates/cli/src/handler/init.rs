@@ -9,7 +9,6 @@ use color_eyre::{Result, Report};
 
 use crate::{
     config::Config,
-    error::Error,
     handler::Handler,
     request::init::InitRequest,
     response::{init::InitResponse, Response},

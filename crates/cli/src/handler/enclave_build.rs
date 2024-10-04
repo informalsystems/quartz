@@ -6,7 +6,6 @@ use color_eyre::{Result, Report};
 
 use crate::{
     config::Config,
-    error::Error,
     handler::Handler,
     request::enclave_build::EnclaveBuildRequest,
     response::{enclave_build::EnclaveBuildResponse, Response},

@@ -43,18 +43,24 @@ impl TryFrom<Command> for Request {
             .into()),
             Command::Contract { contract_command } => contract_command.try_into(),
             Command::Enclave { enclave_command } => enclave_command.try_into(),
-            Command::Dev(args) => Ok(DevRequest {
-                watch: args.watch,
-                unsafe_trust_latest: args.unsafe_trust_latest,
-                init_msg: serde_json::from_str(&args.contract_deploy.init_msg)?,
-                label: args.contract_deploy.label,
-                contract_manifest: args.contract_deploy.contract_manifest,
-                release: args.enclave_build.release,
-                fmspc: args.fmspc,
-                tcbinfo_contract: args.tcbinfo_contract,
-                dcap_verifier_contract: args.dcap_verifier_contract,
+            Command::Dev(args) => {
+                if !args.contract_deploy.contract_manifest.exists() {
+                    return Err(eyre!("The contract manifest file does not exist: {}", args.contract_deploy.contract_manifest.display()));
+                }
+
+                Ok(DevRequest {
+                    watch: args.watch,
+                    unsafe_trust_latest: args.unsafe_trust_latest,
+                    contract_manifest: args.contract_deploy.contract_manifest,
+                    init_msg: serde_json::from_str(&args.contract_deploy.init_msg)?,
+                    label: args.contract_deploy.label,
+                    release: args.enclave_build.release,
+                    fmspc: args.fmspc,
+                    tcbinfo_contract: args.tcbinfo_contract,
+                    dcap_verifier_contract: args.dcap_verifier_contract,
+                }
+                .into())
             }
-            .into()),
         }
     }
 }
