@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use color_eyre::{eyre::eyre, Result};
 use serde::{Deserialize, Serialize};
 use tokio::{
     fs::File,
@@ -8,7 +9,6 @@ use tokio::{
 use tracing::debug;
 use xxhash_rust::xxh3::Xxh3;
 
-use color_eyre::{eyre::eyre, Result};
 use crate::config::Config;
 
 const BUFFER_SIZE: usize = 16384; // 16 KB buffer
@@ -41,8 +41,7 @@ impl Config {
 
     /// Return a hash of the given file's contents
     pub async fn gen_hash(file: &Path) -> Result<Hash> {
-        let file = File::open(file)
-            .await?;
+        let file = File::open(file).await?;
 
         let mut reader = BufReader::new(file);
 
@@ -50,10 +49,8 @@ impl Config {
 
         let mut buffer = [0; BUFFER_SIZE];
         loop {
-            let bytes_read = reader
-                .read(&mut buffer)
-                .await?;
-            
+            let bytes_read = reader.read(&mut buffer).await?;
+
             if bytes_read == 0 {
                 break;
             }
@@ -90,7 +87,10 @@ impl Config {
         // Get cache filepath (".quartz/cache/example.wasm.json") from "example.wasm" filepath
         let mut filename = file
             .file_name()
-            .ok_or(eyre!("file at cache filepath does not exist {}", file.display()))?
+            .ok_or(eyre!(
+                "file at cache filepath does not exist {}",
+                file.display()
+            ))?
             .to_os_string();
 
         filename.push(".json");
@@ -102,8 +102,7 @@ impl Config {
 
     /// Retreive hash from cache file
     async fn read_from_cache(cache_file: &Path) -> Result<DeployedContract> {
-        let content = tokio::fs::read_to_string(cache_file)
-            .await?;
+        let content = tokio::fs::read_to_string(cache_file).await?;
 
         serde_json::from_str(&content).map_err(|e| eyre!(e))
     }
@@ -132,8 +131,7 @@ impl Config {
     pub async fn create_build_log(&self) -> Result<PathBuf> {
         let log_dir = Self::build_log_dir(self)?;
         if !log_dir.exists() {
-            tokio::fs::create_dir_all(&log_dir)
-                .await?;
+            tokio::fs::create_dir_all(&log_dir).await?;
         }
 
         Ok(log_dir)
@@ -147,8 +145,7 @@ impl Config {
             false => "contract",
         };
 
-        tokio::fs::write(log_dir.join(filename), "log")
-            .await?;
+        tokio::fs::write(log_dir.join(filename), "log").await?;
 
         Ok(())
     }

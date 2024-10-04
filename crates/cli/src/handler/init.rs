@@ -2,10 +2,9 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 use cargo_generate::{generate, GenerateArgs, TemplatePath, Vcs};
-use color_eyre::{eyre::Context, owo_colors::OwoColorize};
+use color_eyre::{eyre::Context, owo_colors::OwoColorize, Report, Result};
 use tokio::fs;
 use tracing::info;
-use color_eyre::{Result, Report};
 
 use crate::{
     config::Config,
@@ -19,10 +18,7 @@ impl Handler for InitRequest {
     type Response = Response;
 
     // TODO: Add non-template init method
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Report> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         let config = config.as_ref();
         info!("{}", "\nPeforming Init".blue().bold());
 

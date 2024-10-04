@@ -1,4 +1,4 @@
-use color_eyre::eyre::eyre;
+use color_eyre::{eyre::eyre, Report, Result};
 
 use crate::{
     cli::{Command, ContractCommand, EnclaveCommand},
@@ -8,8 +8,6 @@ use crate::{
         handshake::HandshakeRequest, init::InitRequest,
     },
 };
-
-use color_eyre::{Result, Report};
 
 pub mod contract_build;
 pub mod contract_deploy;
@@ -45,7 +43,10 @@ impl TryFrom<Command> for Request {
             Command::Enclave { enclave_command } => enclave_command.try_into(),
             Command::Dev(args) => {
                 if !args.contract_deploy.contract_manifest.exists() {
-                    return Err(eyre!("The contract manifest file does not exist: {}", args.contract_deploy.contract_manifest.display()));
+                    return Err(eyre!(
+                        "The contract manifest file does not exist: {}",
+                        args.contract_deploy.contract_manifest.display()
+                    ));
                 }
 
                 Ok(DevRequest {
@@ -72,7 +73,10 @@ impl TryFrom<ContractCommand> for Request {
         match cmd {
             ContractCommand::Deploy(args) => {
                 if !args.contract_manifest.exists() {
-                    return Err(eyre!("The contract manifest file does not exist: {}", args.contract_manifest.display()));
+                    return Err(eyre!(
+                        "The contract manifest file does not exist: {}",
+                        args.contract_manifest.display()
+                    ));
                 }
 
                 Ok(ContractDeployRequest {
@@ -84,7 +88,10 @@ impl TryFrom<ContractCommand> for Request {
             }
             ContractCommand::Build(args) => {
                 if !args.contract_manifest.exists() {
-                    return Err(eyre!("The contract manifest file does not exist: {}", args.contract_manifest.display()));
+                    return Err(eyre!(
+                        "The contract manifest file does not exist: {}",
+                        args.contract_manifest.display()
+                    ));
                 }
 
                 Ok(ContractBuildRequest {
@@ -97,7 +104,7 @@ impl TryFrom<ContractCommand> for Request {
 }
 
 impl TryFrom<EnclaveCommand> for Request {
-type Error = Report;
+    type Error = Report;
 
     fn try_from(cmd: EnclaveCommand) -> Result<Request> {
         match cmd {

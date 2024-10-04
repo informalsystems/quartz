@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use async_trait::async_trait;
-use color_eyre::owo_colors::OwoColorize;
+use color_eyre::{eyre::eyre, owo_colors::OwoColorize, Report, Result};
 use tracing::{debug, info};
 
 use crate::{
@@ -10,16 +10,12 @@ use crate::{
     request::contract_build::ContractBuildRequest,
     response::{contract_build::ContractBuildResponse, Response},
 };
-use color_eyre::{Result, Report, eyre::eyre};
 
 #[async_trait]
 impl Handler for ContractBuildRequest {
     type Response = Response;
 
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Report> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         let config = config.as_ref();
         info!("{}", "\nPeforming Contract Build".blue().bold());
 
@@ -45,14 +41,10 @@ impl Handler for ContractBuildRequest {
         }
 
         info!("{}", "🚧 Building contract binary ...".green().bold());
-        let status = command
-            .status()?;
-        
+        let status = command.status()?;
+
         if !status.success() {
-            return Err(eyre!(
-                "Couldn't build contract. \n{:?}",
-                status
-            ));
+            return Err(eyre!("Couldn't build contract. \n{:?}", status));
         }
 
         config.log_build(false).await?;

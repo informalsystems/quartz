@@ -24,7 +24,10 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use cli::ToFigment;
-use color_eyre::{eyre::{eyre, Result}, owo_colors::OwoColorize};
+use color_eyre::{
+    eyre::{eyre, Result},
+    owo_colors::OwoColorize,
+};
 use config::Config;
 use figment::{
     providers::{Env, Format, Serialized, Toml},

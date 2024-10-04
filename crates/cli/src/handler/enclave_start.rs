@@ -2,14 +2,17 @@ use std::{fs, path::Path};
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
-use color_eyre::{eyre::{eyre, Context}, owo_colors::OwoColorize};
+use color_eyre::{
+    eyre::{eyre, Context},
+    owo_colors::OwoColorize,
+    Report, Result,
+};
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 use reqwest::Url;
 use tendermint::chain::Id;
 use tokio::process::{Child, Command};
 use tracing::{debug, info};
-use color_eyre::{Result, Report};
 
 use crate::{
     config::Config,
@@ -22,15 +25,14 @@ use crate::{
 impl Handler for EnclaveStartRequest {
     type Response = Response;
 
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Report> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         let config = config.as_ref().clone();
         info!("{}", "\nPeforming Enclave Start".blue().bold());
 
         // Get trusted height and hash
-        let (trusted_height, trusted_hash) = self.get_hash_height(&config).wrap_err("Error getting trusted hash and height")?;
+        let (trusted_height, trusted_hash) = self
+            .get_hash_height(&config)
+            .wrap_err("Error getting trusted hash and height")?;
         write_cache_hash_height(trusted_height, trusted_hash, &config).await?;
 
         if config.mock_sgx {
@@ -66,10 +68,12 @@ impl Handler for EnclaveStartRequest {
             };
 
             let Some(dcap_verifier_contract) = self.dcap_verifier_contract else {
-                return Err(eyre!("dcap_verifier_contract is required if MOCK_SGX isn't set"));
+                return Err(eyre!(
+                    "dcap_verifier_contract is required if MOCK_SGX isn't set"
+                ));
             };
 
-            if let Err(_) = std::env::var("ADMIN_SK") {
+            if std::env::var("ADMIN_SK").is_err() {
                 return Err(eyre!("ADMIN_SK environment variable is not set"));
             };
 
@@ -111,10 +115,8 @@ impl Handler for EnclaveStartRequest {
 }
 
 async fn handle_process(mut child: Child) -> Result<()> {
-    let status = child
-        .wait()
-        .await?;
-    
+    let status = child.wait().await?;
+
     if !status.success() {
         return Err(eyre!("Couldn't build enclave. {:?}", status));
     }
@@ -152,9 +154,7 @@ async fn create_mock_enclave_child(
     debug!("Enclave Start Command: {:?}", command);
 
     info!("{}", "🚧 Spawning enclave process ...".green().bold());
-    let child = command
-        .kill_on_drop(true)
-        .spawn()?;
+    let child = command.kill_on_drop(true).spawn()?;
 
     Ok(child)
 }
@@ -226,7 +226,10 @@ async fn gramine_manifest(
         .map_err(|e| eyre!("Failed to execute gramine-manifest: {}", e))?;
 
     if !status.success() {
-        return Err(eyre!("gramine-manifest command failed with status: {:?}", status));
+        return Err(eyre!(
+            "gramine-manifest command failed with status: {:?}",
+            status
+        ));
     }
 
     Ok(())
@@ -244,7 +247,10 @@ async fn gramine_sgx_sign(enclave_dir: &Path) -> Result<()> {
         .map_err(|e| eyre!("Failed to execute gramine-sgx-sign: {}", e))?;
 
     if !status.success() {
-        return Err(eyre!("gramine-sgx-sign command failed with status: {:?}", status));
+        return Err(eyre!(
+            "gramine-sgx-sign command failed with status: {:?}",
+            status
+        ));
     }
 
     Ok(())

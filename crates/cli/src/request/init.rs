@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
+use color_eyre::{eyre::eyre, Report, Result};
+
 use crate::request::Request;
-use color_eyre::{Result, eyre::eyre, Report};
 
 #[derive(Clone, Debug)]
 pub struct InitRequest {
@@ -15,7 +16,10 @@ impl TryFrom<InitRequest> for Request {
         if request.name.extension().is_some() {
             return Err(eyre!("Path is not a directory: {}", request.name.display()));
         } else if request.name.exists() {
-            return Err(eyre!("Directory already exists: {}", request.name.display()));
+            return Err(eyre!(
+                "Directory already exists: {}",
+                request.name.display()
+            ));
         }
 
         Ok(Request::Init(request))

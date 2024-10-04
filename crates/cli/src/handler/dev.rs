@@ -1,13 +1,16 @@
 use std::{path::PathBuf, time::Duration};
 
 use async_trait::async_trait;
-use color_eyre::{eyre::{eyre, Context}, owo_colors::OwoColorize};
+use color_eyre::{
+    eyre::{eyre, Context},
+    owo_colors::OwoColorize,
+    Report, Result,
+};
 use quartz_common::proto::core_client::CoreClient;
 use tokio::{sync::mpsc, time::sleep};
 use tracing::{debug, info};
 use watchexec::Watchexec;
 use watchexec_signals::Signal;
-use color_eyre::{Result, Report};
 
 use crate::{
     handler::{utils::helpers::wasmaddr_to_id, Handler},
@@ -24,10 +27,7 @@ use crate::{
 impl Handler for DevRequest {
     type Response = Response;
 
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Report> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         let config = config.as_ref();
         info!("\nPeforming Dev");
 
@@ -79,7 +79,10 @@ async fn dev_driver(
                 let contract_build = ContractBuildRequest {
                     contract_manifest: args.contract_manifest.clone(),
                 };
-                contract_build.handle(&config).await.wrap_err("Could not run `contract build`")?;
+                contract_build
+                    .handle(&config)
+                    .await
+                    .wrap_err("Could not run `contract build`")?;
 
                 // Start enclave in background
                 spawn_enclave_start(args, &config)?;
@@ -220,7 +223,10 @@ async fn deploy_and_handshake(
             contract_manifest: args.contract_manifest.clone(),
         };
         // Call handler
-        let cd_res = contract_deploy.handle(config).await.wrap_err("Could not run `quartz contract deploy`")?;
+        let cd_res = contract_deploy
+            .handle(config)
+            .await
+            .wrap_err("Could not run `quartz contract deploy`")?;
 
         if let Response::ContractDeploy(res) = cd_res {
             res.contract_addr
@@ -236,7 +242,10 @@ async fn deploy_and_handshake(
         unsafe_trust_latest: args.unsafe_trust_latest,
     };
 
-    let h_res = handshake.handle(config).await.wrap_err("Could not run `quartz handshake`")?;
+    let h_res = handshake
+        .handle(config)
+        .await
+        .wrap_err("Could not run `quartz handshake`")?;
     println!("got here");
     if let Response::Handshake(res) = h_res {
         info!("Handshake complete: {}", res.pub_key);

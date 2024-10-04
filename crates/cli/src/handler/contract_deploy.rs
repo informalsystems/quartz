@@ -2,12 +2,15 @@ use std::path::Path;
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
-use color_eyre::{eyre::Context, owo_colors::OwoColorize};
+use color_eyre::{
+    eyre::{eyre, Context},
+    owo_colors::OwoColorize,
+    Report, Result,
+};
 use cw_client::{CliClient, CwClient};
 use serde_json::json;
 use tendermint_rpc::HttpClient;
 use tracing::{debug, info};
-use color_eyre::{Result, Report, eyre::eyre};
 
 use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 use crate::{
@@ -21,10 +24,7 @@ use crate::{
 impl Handler for ContractDeployRequest {
     type Response = Response;
 
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Report> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         let config = config.as_ref();
         info!("{}", "\nPeforming Contract Deploy".blue().bold());
 
@@ -44,8 +44,7 @@ impl Handler for ContractDeployRequest {
             .join(package_name)
             .with_extension("wasm");
 
-        let (code_id, contract_addr) = deploy(wasm_bin_path.as_path(), self, config)
-            .await?;
+        let (code_id, contract_addr) = deploy(wasm_bin_path.as_path(), self, config).await?;
 
         Ok(ContractDeployResponse {
             code_id,
@@ -65,12 +64,17 @@ async fn deploy(
 
     info!("🚀 Deploying {} Contract", args.label);
     let code_id = if config.contract_has_changed(wasm_bin_path).await? {
-        let deploy_output: WasmdTxResponse = serde_json::from_str(&cw_client.deploy(
-            &config.chain_id,
-            &config.tx_sender,
-            wasm_bin_path.display().to_string(),
-        ).map_err(|err| eyre!(Box::new(err)))?).wrap_err("Error calling deploy on cw client")?;
-        
+        let deploy_output: WasmdTxResponse = serde_json::from_str(
+            &cw_client
+                .deploy(
+                    &config.chain_id,
+                    &config.tx_sender,
+                    wasm_bin_path.display().to_string(),
+                )
+                .map_err(|err| eyre!(Box::new(err)))?,
+        )
+        .wrap_err("Error calling deploy on cw client")?;
+
         let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
 
         // Find the 'code_id' attribute
@@ -90,11 +94,17 @@ async fn deploy(
 
         info!("Code ID: {}", code_id);
 
-        config.save_codeid_to_cache(wasm_bin_path, code_id).await.wrap_err("Error saving contract code id to cache")?;
+        config
+            .save_codeid_to_cache(wasm_bin_path, code_id)
+            .await
+            .wrap_err("Error saving contract code id to cache")?;
 
         code_id
     } else {
-        config.get_cached_codeid(wasm_bin_path).await.wrap_err("Error getting contract code id from cache")?
+        config
+            .get_cached_codeid(wasm_bin_path)
+            .await
+            .wrap_err("Error getting contract code id from cache")?
     };
 
     info!("🚀 Communicating with Relay to Instantiate...");
@@ -106,13 +116,17 @@ async fn deploy(
 
     info!("🚀 Instantiating {}", args.label);
 
-    let init_output: WasmdTxResponse = serde_json::from_str(&cw_client.init(
-        &config.chain_id,
-        &config.tx_sender,
-        code_id,
-        json!(init_msg),
-        &format!("{} Contract #{}", args.label, code_id),
-    ).map_err(|err| eyre!(Box::new(err)))?)?; // TODO: change underlying error type to be eyre instead of anyhow
+    let init_output: WasmdTxResponse = serde_json::from_str(
+        &cw_client
+            .init(
+                &config.chain_id,
+                &config.tx_sender,
+                code_id,
+                json!(init_msg),
+                &format!("{} Contract #{}", args.label, code_id),
+            )
+            .map_err(|err| eyre!(Box::new(err)))?,
+    )?; // TODO: change underlying error type to be eyre instead of anyhow
 
     let res = block_tx_commit(&tmrpc_client, init_output.txhash).await?;
 
@@ -129,9 +143,7 @@ async fn deploy(
                 .find(|attr| attr.key_str().unwrap_or("") == "_contract_address")
         })
         .and_then(|attr| attr.value_str().ok().and_then(|v| v.parse().ok()))
-        .ok_or_else(|| {
-            eyre!("Failed to find contract_address in the transaction result")
-        })?;
+        .ok_or_else(|| eyre!("Failed to find contract_address in the transaction result"))?;
 
     info!("🚀 Successfully deployed and instantiated contract!");
     info!("🆔 Code ID: {}", code_id);

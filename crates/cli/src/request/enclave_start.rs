@@ -1,13 +1,10 @@
+use color_eyre::Result;
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 use tendermint::{block::Height, Hash};
 use tracing::debug;
-use color_eyre::Result;
 
-use crate::{
-    config::Config, handler::utils::helpers::query_latest_height_hash,
-    request::Request,
-};
+use crate::{config::Config, handler::utils::helpers::query_latest_height_hash, request::Request};
 
 #[derive(Clone, Debug)]
 pub struct EnclaveStartRequest {
@@ -36,10 +33,8 @@ impl EnclaveStartRequest {
             debug!("reusing config trusted hash & height");
             Ok((
                 config.trusted_height.try_into()?,
-                config
-                    .trusted_hash
-                    .parse()?
-                ))
+                config.trusted_hash.parse()?,
+            ))
         }
     }
 }

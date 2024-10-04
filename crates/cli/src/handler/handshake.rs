@@ -1,12 +1,11 @@
 use async_trait::async_trait;
-use color_eyre::{eyre::eyre, owo_colors::OwoColorize};
+use color_eyre::{eyre::eyre, owo_colors::OwoColorize, Report, Result};
 use cw_client::{CliClient, CwClient};
 use futures_util::stream::StreamExt;
 use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
 use serde_json::json;
 use tendermint_rpc::{query::EventType, HttpClient, SubscriptionClient, WebSocketClient};
 use tracing::{debug, info};
-use color_eyre::{Result, Report};
 
 use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 use crate::{
@@ -23,18 +22,14 @@ use crate::{
 impl Handler for HandshakeRequest {
     type Response = Response;
 
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Report> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         let config = config.as_ref().clone();
 
         info!("{}", "\nPeforming Handshake".blue().bold());
 
         // TODO: may need to import verbosity here
-        let pub_key = handshake(self, config)
-            .await?;
-        
+        let pub_key = handshake(self, config).await?;
+
         Ok(HandshakeResponse { pub_key }.into())
     }
 }
@@ -120,7 +115,9 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String> {
     block_tx_commit(&tmrpc_client, output.txhash).await?;
     info!("SessionSetPubKey tx committed");
 
-    let output: WasmdTxResponse = cw_client.query_tx(&output.txhash.to_string()).map_err(|err| eyre!(Box::new(err)))?; // todo change
+    let output: WasmdTxResponse = cw_client
+        .query_tx(&output.txhash.to_string())
+        .map_err(|err| eyre!(Box::new(err)))?; // todo change
 
     let wasm_event = output
         .events

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use color_eyre::{Report, Result};
 
 use crate::{config::Config, request::Request, response::Response};
-use color_eyre::{Result, Report};
 
 pub mod utils;
 // commands
@@ -17,20 +17,14 @@ pub mod init;
 pub trait Handler {
     type Response;
 
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Report>;
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report>;
 }
 
 #[async_trait]
 impl Handler for Request {
     type Response = Response;
 
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Report> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         match self {
             Request::Init(request) => request.handle(config).await,
             Request::Handshake(request) => request.handle(config).await,

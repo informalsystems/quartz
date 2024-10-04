@@ -1,5 +1,9 @@
 use std::time::Duration;
 
+use color_eyre::{
+    eyre::{eyre, WrapErr},
+    Result,
+};
 use cosmrs::{AccountId, ErrorReport};
 use cw_client::{CliClient, CwClient};
 use regex::Regex;
@@ -11,7 +15,6 @@ use tendermint_rpc::{
 };
 use tokio::fs::{self};
 use tracing::debug;
-use color_eyre::{eyre::eyre, Result, eyre::WrapErr};
 
 use crate::config::Config;
 
@@ -62,7 +65,7 @@ pub fn query_latest_height_hash(node_url: Url) -> Result<(Height, Hash)> {
         .trusted_height_hash()
         .map_err(|e| eyre!(e))
         .wrap_err("Could not query chain with cw client")?;
-    
+
     Ok((
         trusted_height.try_into()?,
         trusted_hash.parse().expect("invalid hash from wasmd"),
@@ -87,10 +90,16 @@ pub async fn read_cached_hash_height(config: &Config) -> Result<(Height, Hash)> 
     let hash_path = config.cache_dir()?.join("trusted.hash");
 
     if !height_path.exists() {
-        return Err(eyre!("Could not read trusted height from cache: {}", height_path.display().to_string()));
+        return Err(eyre!(
+            "Could not read trusted height from cache: {}",
+            height_path.display().to_string()
+        ));
     }
     if !hash_path.exists() {
-        return Err(eyre!("Could not read trusted hash from cache: {}", hash_path.display().to_string()));
+        return Err(eyre!(
+            "Could not read trusted hash from cache: {}",
+            hash_path.display().to_string()
+        ));
     }
 
     let trusted_height: Height = fs::read_to_string(height_path.as_path()).await?.parse()?;
