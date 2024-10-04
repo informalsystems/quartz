@@ -12,7 +12,6 @@ use color_eyre::{Result, Report, eyre::eyre};
 use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 use crate::{
     config::Config,
-    error::Error,
     handler::{utils::relay::RelayMessage, Handler},
     request::contract_deploy::ContractDeployRequest,
     response::{contract_deploy::ContractDeployResponse, Response},

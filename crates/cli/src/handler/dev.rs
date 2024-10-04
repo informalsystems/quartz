@@ -10,7 +10,6 @@ use watchexec_signals::Signal;
 use color_eyre::{Result, Report};
 
 use crate::{
-    error::Error,
     handler::{utils::helpers::wasmaddr_to_id, Handler},
     request::{
         contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest,
@@ -80,13 +79,13 @@ async fn dev_driver(
                 let contract_build = ContractBuildRequest {
                     contract_manifest: args.contract_manifest.clone(),
                 };
-                contract_build.handle(&config).await?;
+                contract_build.handle(&config).await.wrap_err("Could not run `contract build`")?;
 
                 // Start enclave in background
                 spawn_enclave_start(args, &config)?;
 
                 // Deploy new contract and perform handshake
-                let res = deploy_and_handshake(None, args, &config).await.wrap_err("Error running deploy and handshake in `quartz dev`");
+                let res = deploy_and_handshake(None, args, &config).await;
 
                 // Save resulting contract address or shutdown and return error
                 match res {
@@ -97,9 +96,7 @@ async fn dev_driver(
                         info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
-                        eprintln!("Error launching quartz app");
-
-                        return Err(e);
+                        return Err(e).wrap_err("Error initializing `quartz dev`");
                     }
                 }
             }
@@ -130,9 +127,7 @@ async fn dev_driver(
                         info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
-                        eprintln!("Error restarting enclave and handshake");
-
-                        return Err(eyre!(e));
+                        return Err(e).wrap_err("Error restarting enclave after rebuild");
                     }
                 }
             }
@@ -152,7 +147,7 @@ async fn dev_driver(
                     Err(e) => {
                         eprintln!("Error deploying contract and handshake:");
 
-                        return Err(eyre!(e));
+                        return Err(e).wrap_err("Error redeploying contract after rebuild");
                     }
                 }
 
@@ -178,7 +173,7 @@ fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<()> {
 
     tokio::spawn(async move {
         if let Err(e) = enclave_start.handle(config_cpy).await {
-            eprintln!("Error running enclave start.\n {}", e);
+            eprintln!("Error running enclave start.\n {:?}", e);
         }
     });
 
@@ -225,13 +220,12 @@ async fn deploy_and_handshake(
             contract_manifest: args.contract_manifest.clone(),
         };
         // Call handler
-        let cd_res = contract_deploy.handle(config).await;
+        let cd_res = contract_deploy.handle(config).await.wrap_err("Could not run `quartz contract deploy`")?;
 
-        // Return contract address or shutdown enclave & error
-        match cd_res {
-            Ok(Response::ContractDeploy(res)) => res.contract_addr,
-            Err(e) => return Err(e),
-            _ => unreachable!("Unexpected response variant"),
+        if let Response::ContractDeploy(res) = cd_res {
+            res.contract_addr
+        } else {
+            unreachable!("Unexpected response variant")
         }
     };
 
@@ -242,17 +236,11 @@ async fn deploy_and_handshake(
         unsafe_trust_latest: args.unsafe_trust_latest,
     };
 
-    let h_res = handshake.handle(config).await;
-
-    match h_res {
-        Ok(Response::Handshake(res)) => {
-            info!("Handshake complete: {}", res.pub_key);
-        }
-        Err(e) => {
-            return Err(eyre!(e));
-        }
-        _ => unreachable!("Unexpected response variant"),
-    };
+    let h_res = handshake.handle(config).await.wrap_err("Could not run `quartz handshake`")?;
+    println!("got here");
+    if let Response::Handshake(res) = h_res {
+        info!("Handshake complete: {}", res.pub_key);
+    }
 
     Ok(contract)
 }
