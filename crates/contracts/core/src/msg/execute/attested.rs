@@ -151,8 +151,8 @@ impl From<DcapAttestation> for RawDcapAttestation {
             collateral: collateral_serialized.into(),
         };
         eprintln!(
-            "RawDcapAttestation: {}",
-            serde_json::to_string(&raw_attestation).expect("")
+            "DcapAttestation: {}",
+            serde_json::to_string(&value).expect("")
         );
         raw_attestation
     }
