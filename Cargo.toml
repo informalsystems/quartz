@@ -136,7 +136,7 @@ quartz-tcbinfo = { path = "crates/contracts/tcbinfo", default-features = false, 
 ] }
 quartz-tcbinfo-msgs = { path = "crates/contracts/tcbinfo/msgs", default-features = false }
 quartz-tm-prover = { path = "crates/utils/tm-prover", default-features = false }
-quartz-tm-stateless-verifier = { path = "crates/contracts/tm-stateless-verifier", default-features = false }
+quartz-tm-stateless-verifier = { path = "crates/enclave/tm-stateless-verifier", default-features = false }
 cw-client = { path = "crates/utils/cw-client", default-features = false }
 
 [profile.release]
