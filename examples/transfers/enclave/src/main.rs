@@ -41,7 +41,8 @@ use crate::wslistener::WsListener;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
-    let admin_sk = std::env::var("ADMIN_SK").map_err(|_| anyhow::anyhow!("Admin secret key not found in env vars"))?;
+    let admin_sk = std::env::var("ADMIN_SK")
+        .map_err(|_| anyhow::anyhow!("Admin secret key not found in env vars"))?;
 
     let light_client_opts = LightClientOpts::new(
         args.chain_id.clone(),

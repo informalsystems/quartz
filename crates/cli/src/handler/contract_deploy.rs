@@ -116,17 +116,13 @@ async fn deploy(
 
     info!("🚀 Instantiating {}", args.label);
 
-    let init_output: WasmdTxResponse = serde_json::from_str(
-        &cw_client
-            .init(
-                &config.chain_id,
-                &config.tx_sender,
-                code_id,
-                json!(init_msg),
-                &format!("{} Contract #{}", args.label, code_id),
-            )
-            .map_err(|err| eyre!(Box::new(err)))?,
-    )?; // TODO: change underlying error type to be eyre instead of anyhow
+    let init_output: WasmdTxResponse = serde_json::from_str(&cw_client.init(
+        &config.chain_id,
+        &config.tx_sender,
+        code_id,
+        json!(init_msg),
+        &format!("{} Contract #{}", args.label, code_id),
+    )?)?;
 
     let res = block_tx_commit(&tmrpc_client, init_output.txhash).await?;
 
