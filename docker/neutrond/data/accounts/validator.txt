@@ -1,6 +1,6 @@
 
 - address: neutron1zf0a8ueetawfqwzzx5njmq88jpmqa827t5v38a
-  name: demowallet3
+  name: validator
   pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"Av2LbNFHvcNR0D4BHk51lmiVvCRLOmoh4YMlJLnNbvg5"}'
   type: local
 
