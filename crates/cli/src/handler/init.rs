@@ -2,13 +2,12 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 use cargo_generate::{generate, GenerateArgs, TemplatePath, Vcs};
-use color_eyre::owo_colors::OwoColorize;
+use color_eyre::{eyre::Context, owo_colors::OwoColorize, Report, Result};
 use tokio::fs;
 use tracing::info;
 
 use crate::{
     config::Config,
-    error::Error,
     handler::Handler,
     request::init::InitRequest,
     response::{init::InitResponse, Response},
@@ -16,14 +15,10 @@ use crate::{
 
 #[async_trait]
 impl Handler for InitRequest {
-    type Error = Error;
     type Response = Response;
 
     // TODO: Add non-template init method
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         let config = config.as_ref();
         info!("{}", "\nPeforming Init".blue().bold());
 
@@ -36,7 +31,7 @@ impl Handler for InitRequest {
             .expect("path already validated");
         fs::create_dir_all(&parent)
             .await
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
+            .wrap_err("Error creating directories to target app folder")?;
 
         let file_name = self
             .name

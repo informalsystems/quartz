@@ -2,7 +2,11 @@ use std::path::Path;
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
-use color_eyre::owo_colors::OwoColorize;
+use color_eyre::{
+    eyre::{eyre, Context},
+    owo_colors::OwoColorize,
+    Report, Result,
+};
 use cw_client::{CliClient, CwClient};
 use serde_json::json;
 use tendermint_rpc::HttpClient;
@@ -11,7 +15,6 @@ use tracing::{debug, info};
 use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 use crate::{
     config::Config,
-    error::Error,
     handler::{utils::relay::RelayMessage, Handler},
     request::contract_deploy::ContractDeployRequest,
     response::{contract_deploy::ContractDeployResponse, Response},
@@ -19,24 +22,18 @@ use crate::{
 
 #[async_trait]
 impl Handler for ContractDeployRequest {
-    type Error = Error;
     type Response = Response;
 
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         let config = config.as_ref();
         info!("{}", "\nPeforming Contract Deploy".blue().bold());
 
         // Get contract package name in snake_case
         let package_name = MetadataCommand::new()
             .manifest_path(&self.contract_manifest)
-            .exec()
-            .map_err(|e| Error::GenericErr(e.to_string()))?
+            .exec()?
             .root_package()
-            .ok_or("No root package found in the metadata")
-            .map_err(|e| Error::GenericErr(e.to_string()))?
+            .ok_or(eyre!("No root package found in the metadata"))?
             .name
             .clone()
             .replace('-', "_");
@@ -47,9 +44,7 @@ impl Handler for ContractDeployRequest {
             .join(package_name)
             .with_extension("wasm");
 
-        let (code_id, contract_addr) = deploy(wasm_bin_path.as_path(), self, config)
-            .await
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
+        let (code_id, contract_addr) = deploy(wasm_bin_path.as_path(), self, config).await?;
 
         Ok(ContractDeployResponse {
             code_id,
@@ -63,17 +58,23 @@ async fn deploy(
     wasm_bin_path: &Path,
     args: ContractDeployRequest,
     config: &Config,
-) -> Result<(u64, String), anyhow::Error> {
+) -> Result<(u64, String), Report> {
     let tmrpc_client = HttpClient::new(config.node_url.as_str())?;
     let cw_client = CliClient::neutrond(config.node_url.clone());
 
     info!("🚀 Deploying {} Contract", args.label);
     let code_id = if config.contract_has_changed(wasm_bin_path).await? {
-        let deploy_output: WasmdTxResponse = serde_json::from_str(&cw_client.deploy(
-            &config.chain_id,
-            &config.tx_sender,
-            wasm_bin_path.display().to_string(),
-        )?)?;
+        let deploy_output: WasmdTxResponse = serde_json::from_str(
+            &cw_client
+                .deploy(
+                    &config.chain_id,
+                    &config.tx_sender,
+                    wasm_bin_path.display().to_string(),
+                )
+                .map_err(|err| eyre!(Box::new(err)))?,
+        )
+        .wrap_err("Error calling deploy on cw client")?;
+
         let res = block_tx_commit(&tmrpc_client, deploy_output.txhash).await?;
 
         // Find the 'code_id' attribute
@@ -89,15 +90,21 @@ async fn deploy(
                     .find(|attr| attr.key_str().unwrap_or("") == "code_id")
             })
             .and_then(|attr| attr.value_str().ok().and_then(|v| v.parse().ok()))
-            .ok_or_else(|| anyhow::anyhow!("Failed to find code_id in the transaction result"))?;
+            .ok_or_else(|| eyre!("Failed to find code_id in the transaction result"))?;
 
         info!("Code ID: {}", code_id);
 
-        config.save_codeid_to_cache(wasm_bin_path, code_id).await?;
+        config
+            .save_codeid_to_cache(wasm_bin_path, code_id)
+            .await
+            .wrap_err("Error saving contract code id to cache")?;
 
         code_id
     } else {
-        config.get_cached_codeid(wasm_bin_path).await?
+        config
+            .get_cached_codeid(wasm_bin_path)
+            .await
+            .wrap_err("Error getting contract code id from cache")?
     };
 
     info!("🚀 Communicating with Relay to Instantiate...");
@@ -116,6 +123,7 @@ async fn deploy(
         json!(init_msg),
         &format!("{} Contract #{}", args.label, code_id),
     )?)?;
+
     let res = block_tx_commit(&tmrpc_client, init_output.txhash).await?;
 
     // Find the '_contract_address' attribute
@@ -131,9 +139,7 @@ async fn deploy(
                 .find(|attr| attr.key_str().unwrap_or("") == "_contract_address")
         })
         .and_then(|attr| attr.value_str().ok().and_then(|v| v.parse().ok()))
-        .ok_or_else(|| {
-            anyhow::anyhow!("Failed to find contract_address in the transaction result")
-        })?;
+        .ok_or_else(|| eyre!("Failed to find contract_address in the transaction result"))?;
 
     info!("🚀 Successfully deployed and instantiated contract!");
     info!("🆔 Code ID: {}", code_id);
