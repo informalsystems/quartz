@@ -6,6 +6,7 @@ use color_eyre::{
     owo_colors::OwoColorize,
     Report, Result,
 };
+use dcap_qvl::collateral::get_collateral;
 use tempfile::tempdir;
 use tokio::{fs::File, io::AsyncWriteExt, process::Command};
 use tracing::{debug, info};
@@ -18,6 +19,7 @@ use crate::{
 };
 
 const GEN_QUOTE_MANIFEST_TEMPLATE: &str = include_str!("../bin/gen-quote.manifest.template");
+const DEFAULT_PCCS_URL: &str = "https://localhost:8081/sgx/certification/v4/";
 
 #[async_trait]
 impl Handler for PrintFmspcRequest {
@@ -128,19 +130,31 @@ impl Handler for PrintFmspcRequest {
 
         info!("{}", "\nGenerating dummy quote".blue().bold());
 
-        let mut child = Command::new("gramine-sgx")
+        let child = Command::new("gramine-sgx")
             .arg("./gen-quote")
             .kill_on_drop(true)
             .current_dir(temp_dir_path)
             .spawn()
             .map_err(|e| eyre!("Failed to spawn gramine-sgx child process: {}", e))?;
 
-        let status = child.wait().await?;
-        if !status.success() {
+        let output = child.wait_with_output().await?;
+        if !output.status.success() {
             return Err(eyre!("Couldn't build enclave. {:?}", status));
         }
 
-        Ok(PrintFmspcResponse.into())
+        let quote = output.stdout;
+
+        let collateral =
+            get_collateral(DEFAULT_PCCS_URL, &quote, std::time::Duration::from_secs(10))
+                .await
+                .expect("failed to get collateral");
+        let tcb_info: serde_json::Value = serde_json::from_str(&collateral.tcb_info)
+            .expect("Retrieved Tcbinfo is not valid JSON");
+
+        Ok(PrintFmspcResponse {
+            fmspc: tcb_info["fmspc"].to_string().parse()?,
+        }
+        .into())
     }
 }
 
