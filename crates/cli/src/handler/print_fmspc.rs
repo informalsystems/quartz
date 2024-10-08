@@ -6,7 +6,8 @@ use color_eyre::{
     owo_colors::OwoColorize,
     Report, Result,
 };
-use tokio::process::Command;
+use tempfile::tempdir;
+use tokio::{fs::File, io::AsyncWriteExt, process::Command};
 use tracing::{debug, info};
 
 use crate::{
@@ -15,6 +16,8 @@ use crate::{
     request::print_fmspc::PrintFmspcRequest,
     response::{print_fmspc::PrintFmspcResponse, Response},
 };
+
+const GEN_QUOTE_MANIFEST_TEMPLATE: &str = include_str!("../bin/gen-quote.manifest.template");
 
 #[async_trait]
 impl Handler for PrintFmspcRequest {
@@ -72,7 +75,15 @@ impl Handler for PrintFmspcRequest {
             .to_string();
 
         let gen_quote_bin_path = file_path(current_exe_path.clone(), "gen-quote");
-        let gen_quote_manifest_path = file_path(current_exe_path, "gen-quote.manifest.template");
+
+        let temp_dir = tempdir()?;
+        let temp_dir_path = temp_dir.path();
+
+        let gen_quote_manifest_path = temp_dir_path.join("gen-quote.manifest.template");
+        let mut gen_quote_manifest_file = File::create(&gen_quote_manifest_path).await?;
+        gen_quote_manifest_file
+            .write_all(GEN_QUOTE_MANIFEST_TEMPLATE.as_bytes())
+            .await?;
 
         let status = Command::new("gramine-manifest")
             .arg("-Dlog_level=error")
@@ -86,7 +97,7 @@ impl Handler for PrintFmspcRequest {
             ))
             .arg(gen_quote_manifest_path)
             .arg("gen-quote.manifest")
-            .current_dir("/tmp/")
+            .current_dir(temp_dir_path)
             .status()
             .await
             .map_err(|e| eyre!("Failed to execute gramine-manifest: {}", e))?;
@@ -103,7 +114,7 @@ impl Handler for PrintFmspcRequest {
             .arg("gen-quote.manifest")
             .arg("--output")
             .arg("gen-quote.manifest.sgx")
-            .current_dir("/tmp/")
+            .current_dir(temp_dir_path)
             .status()
             .await
             .map_err(|e| eyre!("Failed to execute gramine-sgx-sign: {}", e))?;
@@ -120,7 +131,7 @@ impl Handler for PrintFmspcRequest {
         let mut child = Command::new("gramine-sgx")
             .arg("./gen-quote")
             .kill_on_drop(true)
-            .current_dir("/tmp/")
+            .current_dir(temp_dir_path)
             .spawn()
             .map_err(|e| eyre!("Failed to spawn gramine-sgx child process: {}", e))?;
 
