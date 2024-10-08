@@ -21,7 +21,7 @@ fs.mounts = [
   { uri = "file:{{ gramine.runtimedir() }}", path = "/lib" },
   { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
   { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
-  { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
+  { uri = "file:{{ gen_quote_bin_path }}", path = "{{ gen_quote_bin_path }}" },
 ]
 
 sgx.enclave_size = "512M"
@@ -33,7 +33,7 @@ sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
 
 sgx.trusted_files = [
   "file:{{ gramine.libos }}",
-  "file:{{ quartz_dir }}/target/release/",
+  "file:{{ gen_quote_bin_path }}",
   "file:{{ gramine.runtimedir() }}/",
   "file:{{ arch_libdir }}/",
   "file:/usr/{{ arch_libdir }}/",
