@@ -14,7 +14,7 @@ fn main() -> io::Result<()> {
     file.read_to_end(&mut buffer)?;
 
     let quote_hex = hex::encode(&buffer);
-    println!("{}", quote_hex);
+    print!("{}", quote_hex);
 
     Ok(())
 }
