@@ -4320,13 +4320,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quartz-gen-quote"
-version = "0.1.0"
-dependencies = [
- "hex",
-]
-
-[[package]]
 name = "quartz-print-fmspc"
 version = "0.1.0"
 dependencies = [
