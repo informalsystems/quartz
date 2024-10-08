@@ -29,6 +29,30 @@ impl Handler for PrintFmspcRequest {
             ));
         }
 
+        let current_exe_path =
+            env::current_exe().context("Failed to get current executable path")?;
+        let exe_path_str = current_exe_path.to_string_lossy();
+
+        if exe_path_str.contains("target") {
+            // i.e. this isn't a `cargo install` based installation
+
+            info!("{}", "\nBuilding dummy enclave".blue().bold());
+
+            let mut cargo = Command::new("cargo");
+            let command = cargo.arg("build");
+
+            if exe_path_str.contains("release") {
+                // add the release flag to make sure it's built in the right place
+                command.arg("--release");
+            }
+
+            let status = command.status().await?;
+
+            if !status.success() {
+                return Err(eyre!("Couldn't build enclave. {:?}", status));
+            }
+        }
+
         debug!("{}", "\nGenerating SGX private key".blue().bold());
 
         let _ = Command::new("gramine-sgx-gen-private-key")
@@ -47,8 +71,6 @@ impl Handler for PrintFmspcRequest {
             .display()
             .to_string();
 
-        let current_exe_path =
-            env::current_exe().context("Failed to get current executable path")?;
         let gen_quote_bin_path = file_path(current_exe_path.clone(), "gen-quote");
         let gen_quote_manifest_path = file_path(current_exe_path, "gen-quote.manifest.template");
 
