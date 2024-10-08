@@ -1,0 +1,12 @@
+[package]
+name = "quartz-gen-quote"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+hex = "0.4.3"
