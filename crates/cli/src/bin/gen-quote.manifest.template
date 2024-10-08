@@ -1,6 +1,6 @@
 # Manifest file for creating dummy quotes
 
-libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-gen-quote"
+libos.entrypoint = "{{ gen_quote_bin_path }}"
 
 loader.log_level = "{{ log_level }}"
 loader.entrypoint = "file:{{ gramine.libos }}"
