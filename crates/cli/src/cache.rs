@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use color_eyre::{eyre::eyre, Result};
 use serde::{Deserialize, Serialize};
 use tokio::{
     fs::File,
@@ -8,7 +9,7 @@ use tokio::{
 use tracing::debug;
 use xxhash_rust::xxh3::Xxh3;
 
-use crate::{config::Config, error::Error};
+use crate::config::Config;
 
 const BUFFER_SIZE: usize = 16384; // 16 KB buffer
 type Hash = u64;
@@ -22,7 +23,7 @@ struct DeployedContract {
 // Porcelain
 
 impl Config {
-    pub async fn contract_has_changed(&self, file: &Path) -> Result<bool, Error> {
+    pub async fn contract_has_changed(&self, file: &Path) -> Result<bool> {
         let cur_hash: Hash = Self::gen_hash(file).await?;
         debug!("current file hash: {}", cur_hash);
 
@@ -39,20 +40,17 @@ impl Config {
     }
 
     /// Return a hash of the given file's contents
-    pub async fn gen_hash(file: &Path) -> Result<Hash, Error> {
-        let file = File::open(file)
-            .await
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
+    pub async fn gen_hash(file: &Path) -> Result<Hash> {
+        let file = File::open(file).await?;
+
         let mut reader = BufReader::new(file);
 
         let mut hasher = Xxh3::new();
 
         let mut buffer = [0; BUFFER_SIZE];
         loop {
-            let bytes_read = reader
-                .read(&mut buffer)
-                .await
-                .map_err(|e| Error::GenericErr(e.to_string()))?;
+            let bytes_read = reader.read(&mut buffer).await?;
+
             if bytes_read == 0 {
                 break;
             }
@@ -65,7 +63,7 @@ impl Config {
         Ok(hash)
     }
 
-    pub async fn save_codeid_to_cache(&self, file: &Path, code_id: u64) -> Result<(), Error> {
+    pub async fn save_codeid_to_cache(&self, file: &Path, code_id: u64) -> Result<()> {
         let contract_hash = Self::gen_hash(file).await?;
         let dest = Self::to_cache_path(self, file)?;
         let deployed_contract = DeployedContract {
@@ -76,7 +74,7 @@ impl Config {
         Self::write_to_cache(dest.as_path(), &deployed_contract).await
     }
 
-    pub async fn get_cached_codeid(&self, file: &Path) -> Result<u64, Error> {
+    pub async fn get_cached_codeid(&self, file: &Path) -> Result<u64> {
         let cache_path = Self::to_cache_path(self, file)?;
         let code_id = Self::read_from_cache(cache_path.as_path()).await?.code_id;
 
@@ -85,12 +83,16 @@ impl Config {
 
     // Plumbing
 
-    fn to_cache_path(&self, file: &Path) -> Result<PathBuf, Error> {
+    fn to_cache_path(&self, file: &Path) -> Result<PathBuf> {
         // Get cache filepath (".quartz/cache/example.wasm.json") from "example.wasm" filepath
         let mut filename = file
             .file_name()
-            .ok_or(Error::PathNotFile(file.display().to_string()))?
+            .ok_or(eyre!(
+                "file at cache filepath does not exist {}",
+                file.display()
+            ))?
             .to_os_string();
+
         filename.push(".json");
 
         let cached_file_path = Self::cache_dir(self)?.join::<PathBuf>(filename.into());
@@ -99,42 +101,43 @@ impl Config {
     }
 
     /// Retreive hash from cache file
-    async fn read_from_cache(cache_file: &Path) -> Result<DeployedContract, Error> {
-        let content = tokio::fs::read_to_string(cache_file)
-            .await
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
-        serde_json::from_str(&content).map_err(|e| Error::GenericErr(e.to_string()))
+    async fn read_from_cache(cache_file: &Path) -> Result<DeployedContract> {
+        let content = tokio::fs::read_to_string(cache_file).await?;
+
+        serde_json::from_str(&content).map_err(|e| eyre!(e))
     }
 
     /// Write a given file's contents hash to a file in cache directory
-    async fn write_to_cache(cache_file: &Path, data: &DeployedContract) -> Result<(), Error> {
-        let content = serde_json::to_string(data).map_err(|e| Error::GenericErr(e.to_string()))?;
+    async fn write_to_cache(cache_file: &Path, data: &DeployedContract) -> Result<()> {
+        let content = serde_json::to_string(data)?;
+
         tokio::fs::write(cache_file, content)
             .await
-            .map_err(|e| Error::GenericErr(e.to_string()))
+            .map_err(|e| eyre!(e))
+    }
+    pub fn cache_dir(&self) -> Result<PathBuf> {
+        let cache_dir = self.app_dir.join(".cache/");
+        std::fs::create_dir_all(&cache_dir)?;
+        Ok(cache_dir)
     }
 
-    pub fn cache_dir(&self) -> Result<PathBuf, Error> {
-        Ok(self.app_dir.join(".cache/"))
-    }
-
-    pub fn build_log_dir(&self) -> Result<PathBuf, Error> {
-        Ok(self.app_dir.join(".cache/log/"))
+    pub fn build_log_dir(&self) -> Result<PathBuf> {
+        let build_log_dir = self.app_dir.join(".cache/log/");
+        std::fs::create_dir_all(&build_log_dir)?;
+        Ok(build_log_dir)
     }
 
     /// Creates the build log if it isn't created already, returns relative path from app_dir to log directory
-    pub async fn create_build_log(&self) -> Result<PathBuf, Error> {
+    pub async fn create_build_log(&self) -> Result<PathBuf> {
         let log_dir = Self::build_log_dir(self)?;
         if !log_dir.exists() {
-            tokio::fs::create_dir_all(&log_dir)
-                .await
-                .map_err(|e| Error::GenericErr(e.to_string()))?;
+            tokio::fs::create_dir_all(&log_dir).await?;
         }
 
         Ok(log_dir)
     }
 
-    pub async fn log_build(&self, is_enclave: bool) -> Result<(), Error> {
+    pub async fn log_build(&self, is_enclave: bool) -> Result<()> {
         let log_dir = Self::create_build_log(self).await?;
 
         let filename = match is_enclave {
@@ -142,9 +145,7 @@ impl Config {
             false => "contract",
         };
 
-        tokio::fs::write(log_dir.join(filename), "test")
-            .await
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
+        tokio::fs::write(log_dir.join(filename), "log").await?;
 
         Ok(())
     }

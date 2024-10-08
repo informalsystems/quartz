@@ -16,7 +16,6 @@
 pub mod cache;
 pub mod cli;
 pub mod config;
-pub mod error;
 pub mod handler;
 pub mod request;
 pub mod response;
@@ -25,7 +24,10 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use cli::ToFigment;
-use color_eyre::{eyre::Result, owo_colors::OwoColorize};
+use color_eyre::{
+    eyre::{eyre, Result},
+    owo_colors::OwoColorize,
+};
 use config::Config;
 use figment::{
     providers::{Env, Format, Serialized, Toml},
@@ -97,10 +99,10 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn check_path(path: &Option<PathBuf>) -> Result<(), error::Error> {
+fn check_path(path: &Option<PathBuf>) -> Result<()> {
     if let Some(path) = path {
         if !path.is_dir() {
-            return Err(error::Error::PathNotDir(format!("{}", path.display())));
+            return Err(eyre!("Path is not a directory: {}", path.display()));
         }
     }
 
