@@ -1,9 +1,11 @@
 use std::{path::PathBuf, time::Duration};
 
 use async_trait::async_trait;
-use color_eyre::owo_colors::OwoColorize;
-// todo get rid of this?
-use miette::{IntoDiagnostic, Result};
+use color_eyre::{
+    eyre::{eyre, Context},
+    owo_colors::OwoColorize,
+    Report, Result,
+};
 use quartz_common::proto::core_client::CoreClient;
 use tokio::{sync::mpsc, time::sleep};
 use tracing::{debug, info};
@@ -11,7 +13,6 @@ use watchexec::Watchexec;
 use watchexec_signals::Signal;
 
 use crate::{
-    error::Error,
     handler::{utils::helpers::wasmaddr_to_id, Handler},
     request::{
         contract_build::ContractBuildRequest, contract_deploy::ContractDeployRequest,
@@ -24,13 +25,9 @@ use crate::{
 
 #[async_trait]
 impl Handler for DevRequest {
-    type Error = Error;
     type Response = Response;
 
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         let config = config.as_ref();
         info!("\nPeforming Dev");
 
@@ -58,7 +55,7 @@ async fn dev_driver(
     mut rx: mpsc::Receiver<DevRebuild>,
     args: &DevRequest,
     config: Config,
-) -> Result<(), Error> {
+) -> Result<(), Report> {
     // State
     let mut first_enclave_message = true;
     let mut first_contract_message = true;
@@ -82,7 +79,10 @@ async fn dev_driver(
                 let contract_build = ContractBuildRequest {
                     contract_manifest: args.contract_manifest.clone(),
                 };
-                contract_build.handle(&config).await?;
+                contract_build
+                    .handle(&config)
+                    .await
+                    .wrap_err("Could not run `contract build`")?;
 
                 // Start enclave in background
                 spawn_enclave_start(args, &config)?;
@@ -99,9 +99,7 @@ async fn dev_driver(
                         info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
-                        eprintln!("Error launching quartz app");
-
-                        return Err(e);
+                        return Err(e).wrap_err("Error initializing `quartz dev`");
                     }
                 }
             }
@@ -132,9 +130,7 @@ async fn dev_driver(
                         info!("{}", "Enclave is listening for requests...".green().bold());
                     }
                     Err(e) => {
-                        eprintln!("Error restarting enclave and handshake");
-
-                        return Err(e);
+                        return Err(e).wrap_err("Error restarting enclave after rebuild");
                     }
                 }
             }
@@ -154,7 +150,7 @@ async fn dev_driver(
                     Err(e) => {
                         eprintln!("Error deploying contract and handshake:");
 
-                        return Err(e);
+                        return Err(e).wrap_err("Error redeploying contract after rebuild");
                     }
                 }
 
@@ -167,7 +163,7 @@ async fn dev_driver(
 }
 
 // Spawns enclve start in a separate task which runs in the background
-fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<(), Error> {
+fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<()> {
     // In separate process, launch the enclave
     let enclave_start = EnclaveStartRequest {
         unsafe_trust_latest: args.unsafe_trust_latest,
@@ -180,10 +176,8 @@ fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<(), Error> 
 
     tokio::spawn(async move {
         if let Err(e) = enclave_start.handle(config_cpy).await {
-            eprintln!("Error running enclave start.\n {}", e);
+            eprintln!("Error running enclave start.\n {:?}", e);
         }
-
-        Ok::<(), Error>(())
     });
 
     Ok(())
@@ -194,7 +188,7 @@ async fn deploy_and_handshake(
     contract: Option<&str>,
     args: &DevRequest,
     config: &Config,
-) -> Result<String, Error> {
+) -> Result<String> {
     info!("Waiting for enclave start to deploy contract and handshake");
 
     // Wait at most 60 seconds to connect to enclave
@@ -210,9 +204,7 @@ async fn deploy_and_handshake(
         i -= 1;
 
         if i == 0 {
-            return Err(Error::GenericErr(
-                "Could not connect to enclave".to_string(),
-            ));
+            return Err(eyre!("Could not connect to enclave"));
         }
     }
     // Calls which interact with enclave
@@ -231,34 +223,33 @@ async fn deploy_and_handshake(
             contract_manifest: args.contract_manifest.clone(),
         };
         // Call handler
-        let cd_res = contract_deploy.handle(config).await;
+        let cd_res = contract_deploy
+            .handle(config)
+            .await
+            .wrap_err("Could not run `quartz contract deploy`")?;
 
-        // Return contract address or shutdown enclave & error
-        match cd_res {
-            Ok(Response::ContractDeploy(res)) => res.contract_addr,
-            Err(e) => return Err(e),
-            _ => unreachable!("Unexpected response variant"),
+        if let Response::ContractDeploy(res) = cd_res {
+            res.contract_addr
+        } else {
+            unreachable!("Unexpected response variant")
         }
     };
 
     // Run handshake
     info!("Running handshake on contract `{}`", contract);
     let handshake = HandshakeRequest {
-        contract: wasmaddr_to_id(&contract).map_err(|_| Error::GenericErr(String::default()))?,
+        contract: wasmaddr_to_id(&contract)?,
         unsafe_trust_latest: args.unsafe_trust_latest,
     };
 
-    let h_res = handshake.handle(config).await;
-
-    match h_res {
-        Ok(Response::Handshake(res)) => {
-            info!("Handshake complete: {}", res.pub_key);
-        }
-        Err(e) => {
-            return Err(e);
-        }
-        _ => unreachable!("Unexpected response variant"),
-    };
+    let h_res = handshake
+        .handle(config)
+        .await
+        .wrap_err("Could not run `quartz handshake`")?;
+    println!("got here");
+    if let Response::Handshake(res) = h_res {
+        info!("Handshake complete: {}", res.pub_key);
+    }
 
     Ok(contract)
 }
@@ -304,7 +295,7 @@ async fn watcher(tx: mpsc::Sender<DevRebuild>, log_dir: PathBuf) -> Result<()> {
     wx.config.pathset([log_dir]);
 
     // Keep running until Watchexec quits
-    let _ = main.await.into_diagnostic()?;
+    let _ = main.await?;
 
     Ok(())
 }
