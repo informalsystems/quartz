@@ -1,11 +1,10 @@
-use quartz_common::enclave::types::Fmspc;
 use serde::Serialize;
 
 use crate::response::Response;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct PrintFmspcResponse {
-    pub fmspc: Fmspc,
+    pub fmspc: String,
 }
 
 impl From<PrintFmspcResponse> for Response {

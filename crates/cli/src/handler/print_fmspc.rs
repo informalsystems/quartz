@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf};
+use std::{env, path::PathBuf, process::Stdio};
 
 use async_trait::async_trait;
 use color_eyre::{
@@ -134,6 +134,8 @@ impl Handler for PrintFmspcRequest {
             .arg("./gen-quote")
             .kill_on_drop(true)
             .current_dir(temp_dir_path)
+            .stdout(Stdio::piped())  // Redirect stdout to a pipe
+            .stderr(Stdio::piped())  // Redirect stderr to a pipe
             .spawn()
             .map_err(|e| eyre!("Failed to spawn gramine-sgx child process: {}", e))?;
 
@@ -142,7 +144,7 @@ impl Handler for PrintFmspcRequest {
             return Err(eyre!("Couldn't build enclave. {:?}", status));
         }
 
-        let quote = output.stdout;
+        let quote = hex::decode(output.stdout)?;
 
         let collateral =
             get_collateral(DEFAULT_PCCS_URL, &quote, std::time::Duration::from_secs(10))
@@ -152,7 +154,7 @@ impl Handler for PrintFmspcRequest {
             .expect("Retrieved Tcbinfo is not valid JSON");
 
         Ok(PrintFmspcResponse {
-            fmspc: tcb_info["fmspc"].to_string().parse()?,
+            fmspc: tcb_info["fmspc"].to_string(),
         }
         .into())
     }
