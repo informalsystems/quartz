@@ -79,7 +79,7 @@ fn default_ws_url() -> Url {
 }
 
 fn default_grpc_url() -> Url {
-    "http://127.0.0.1:9090,"
+    "http://127.0.0.1:9090"
         .parse()
         .expect("valid hardcoded URL")
 }

@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use anyhow::anyhow;
+use color_eyre::{eyre::eyre, Help, Report, Result};
 use cosmrs::{tendermint::chain::Id, AccountId};
 use reqwest::Url;
 use serde::de::DeserializeOwned;
@@ -55,8 +55,23 @@ impl CliClient {
         }
     }
 
-    fn new_command(&self) -> Command {
-        Command::new(self.kind.bin())
+    fn new_command(&self) -> Result<Command> {
+        let bin = self.kind.bin();
+        if !self.is_bin_available(&bin) {
+            return Err(eyre!("Binary '{}' not found in PATH", bin)).suggestion(format!(
+                "Have you installed {}? If so, check that it's in your PATH.",
+                bin
+            ));
+        }
+
+        Ok(Command::new(self.kind.bin()))
+    }
+    fn is_bin_available(&self, bin: &str) -> bool {
+        Command::new("which")
+            .arg(bin)
+            .output()
+            .map(|output| output.status.success())
+            .unwrap_or(false)
     }
 }
 
@@ -66,14 +81,14 @@ impl CwClient for CliClient {
     type Query = serde_json::Value;
     type RawQuery = String;
     type ChainId = Id;
-    type Error = anyhow::Error;
+    type Error = Report;
 
     async fn query_smart<R: DeserializeOwned + Send>(
         &self,
         contract: &Self::Address,
         query: Self::Query,
     ) -> Result<R, Self::Error> {
-        let mut command = self.new_command();
+        let mut command = self.new_command()?;
         let command = command
             .args(["--node", self.url.as_str()])
             .args(["query", "wasm"])
@@ -83,11 +98,11 @@ impl CwClient for CliClient {
 
         let output = command.output()?;
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         let query_result: R = serde_json::from_slice(&output.stdout)
-            .map_err(|e| anyhow!("Error deserializing: {}", e))?;
+            .map_err(|e| eyre!("Error deserializing: {}", e))?;
         Ok(query_result)
     }
 
@@ -96,7 +111,7 @@ impl CwClient for CliClient {
         contract: &Self::Address,
         query: Self::RawQuery,
     ) -> Result<R, Self::Error> {
-        let mut command = self.new_command();
+        let mut command = self.new_command()?;
         let command = command
             .args(["--node", self.url.as_str()])
             .args(["query", "wasm"])
@@ -106,7 +121,7 @@ impl CwClient for CliClient {
 
         let output = command.output()?;
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         let query_result: R = serde_json::from_slice(&output.stdout).unwrap_or_default();
@@ -114,7 +129,7 @@ impl CwClient for CliClient {
     }
 
     fn query_tx<R: DeserializeOwned + Default>(&self, txhash: &str) -> Result<R, Self::Error> {
-        let mut command = self.new_command();
+        let mut command = self.new_command()?;
         let command = command
             .args(["--node", self.url.as_str()])
             .args(["query", "tx"])
@@ -123,7 +138,7 @@ impl CwClient for CliClient {
 
         let output = command.output()?;
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         let query_result: R = serde_json::from_slice(&output.stdout).unwrap_or_default();
@@ -139,7 +154,7 @@ impl CwClient for CliClient {
         msg: M,
         fees: &str,
     ) -> Result<String, Self::Error> {
-        let mut command = self.new_command();
+        let mut command = self.new_command()?;
         let command = command
             .args(["--node", self.url.as_str()])
             .args(["--chain-id", chain_id.as_ref()])
@@ -154,7 +169,7 @@ impl CwClient for CliClient {
         let output = command.output()?;
 
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         // TODO: find the rust type for the tx output and return that
@@ -167,7 +182,7 @@ impl CwClient for CliClient {
         sender: &str,
         wasm_path: M,
     ) -> Result<String, Self::Error> {
-        let mut command = self.new_command();
+        let mut command = self.new_command()?;
         let command = command
             .args(["--node", self.url.as_str()])
             .args(["tx", "wasm", "store", &wasm_path.to_string()])
@@ -182,7 +197,7 @@ impl CwClient for CliClient {
         let output = command.output()?;
 
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         // TODO: find the rust type for the tx output and return that
@@ -197,7 +212,7 @@ impl CwClient for CliClient {
         init_msg: M,
         label: &str,
     ) -> Result<String, Self::Error> {
-        let mut command = self.new_command();
+        let mut command = self.new_command()?;
         let command = command
             .args(["--node", self.url.as_str()])
             .args(["tx", "wasm", "instantiate"])
@@ -215,7 +230,7 @@ impl CwClient for CliClient {
         let output = command.output()?;
 
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         // TODO: find the rust type for the tx output and return that
@@ -223,13 +238,13 @@ impl CwClient for CliClient {
     }
 
     fn trusted_height_hash(&self) -> Result<(u64, String), Self::Error> {
-        let mut command = self.new_command();
+        let mut command = self.new_command()?;
         let command = command.args(["--node", self.url.as_str()]).arg("status");
 
         let output = command.output()?;
 
         if !output.status.success() {
-            return Err(anyhow!("{:?}", output));
+            return Err(eyre!("{:?}", output));
         }
 
         let query_result: serde_json::Value =
@@ -241,13 +256,13 @@ impl CwClient for CliClient {
         };
         let trusted_height = query_result[sync_info]["latest_block_height"]
             .as_str()
-            .ok_or(anyhow!("Could not query height"))?;
+            .ok_or(eyre!("Could not query height"))?;
 
         let trusted_height = trusted_height.parse::<u64>()?;
 
         let trusted_hash = query_result[sync_info]["latest_block_hash"]
             .as_str()
-            .ok_or(anyhow!("Could not query height"))?
+            .ok_or(eyre!("Could not query height"))?
             .to_string();
 
         Ok((trusted_height, trusted_hash))

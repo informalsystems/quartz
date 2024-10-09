@@ -1,6 +1,5 @@
-use anyhow::anyhow;
 use async_trait::async_trait;
-use color_eyre::owo_colors::OwoColorize;
+use color_eyre::{eyre::eyre, owo_colors::OwoColorize, Report, Result};
 use cw_client::{CliClient, CwClient};
 use futures_util::stream::StreamExt;
 use quartz_tm_prover::{config::Config as TmProverConfig, prover::prove};
@@ -11,7 +10,6 @@ use tracing::{debug, info};
 use super::utils::{helpers::block_tx_commit, types::WasmdTxResponse};
 use crate::{
     config::Config,
-    error::Error,
     handler::{
         utils::{helpers::read_cached_hash_height, relay::RelayMessage},
         Handler,
@@ -22,27 +20,21 @@ use crate::{
 
 #[async_trait]
 impl Handler for HandshakeRequest {
-    type Error = Error;
     type Response = Response;
 
-    async fn handle<C: AsRef<Config> + Send>(
-        self,
-        config: C,
-    ) -> Result<Self::Response, Self::Error> {
+    async fn handle<C: AsRef<Config> + Send>(self, config: C) -> Result<Self::Response, Report> {
         let config = config.as_ref().clone();
 
         info!("{}", "\nPeforming Handshake".blue().bold());
 
         // TODO: may need to import verbosity here
-        let pub_key = handshake(self, config)
-            .await
-            .map_err(|e| Error::GenericErr(e.to_string()))?;
+        let pub_key = handshake(self, config).await?;
 
         Ok(HandshakeResponse { pub_key }.into())
     }
 }
 
-async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, anyhow::Error> {
+async fn handshake(args: HandshakeRequest, config: Config) -> Result<String> {
     let tmrpc_client = HttpClient::new(config.node_url.as_str())?;
     let cw_client = CliClient::neutrond(config.node_url.clone());
 
@@ -64,7 +56,8 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 json!(res),
                 "11000untrn",
             )
-            .await?
+            .await
+            .map_err(|err| eyre!(Box::new(err)))?// TODO: change
             .as_str(),
     )?;
     debug!("\n\n SessionCreate tx output: {:?}", output);
@@ -92,7 +85,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
 
     let proof_output = prove(prover_config)
         .await
-        .map_err(|report| anyhow!("Tendermint prover failed. Report: {}", report))?;
+        .map_err(|report| eyre!("Tendermint prover failed. Report: {}", report))?;
 
     // Execute SessionSetPubKey on enclave
     info!("Running SessionSetPubKey");
@@ -113,7 +106,8 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
                 json!(res),
                 "11000untrn",
             )
-            .await?
+            .await
+            .map_err(|err| eyre!(Box::new(err)))? // todo change
             .as_str(),
     )?;
 
@@ -121,7 +115,9 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     block_tx_commit(&tmrpc_client, output.txhash).await?;
     info!("SessionSetPubKey tx committed");
 
-    let output: WasmdTxResponse = cw_client.query_tx(&output.txhash.to_string())?;
+    let output: WasmdTxResponse = cw_client
+        .query_tx(&output.txhash.to_string())
+        .map_err(|err| eyre!(Box::new(err)))?; // todo change
 
     let wasm_event = output
         .events
@@ -136,11 +132,11 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String, any
     }) {
         Ok(pubkey.value_str()?.to_string())
     } else {
-        Err(anyhow!("Failed to find pubkey from SetPubKey message"))
+        Err(eyre!("Failed to find pubkey from SetPubKey message"))
     }
 }
 
-async fn two_block_waitoor(wsurl: &str) -> Result<(), anyhow::Error> {
+async fn two_block_waitoor(wsurl: &str) -> Result<()> {
     let (client, driver) = WebSocketClient::new(wsurl).await?;
 
     let driver_handle = tokio::spawn(async move { driver.run().await });
