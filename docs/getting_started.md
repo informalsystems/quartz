@@ -231,6 +231,8 @@ Now the contract is ready to start processing requests to the enclave.
 
 ### Frontend
 
+TODO - mention to start locally, not on SGX machine
+
 1. Navigate to the frontend folder:
    ```bash
    cd examples/transfers/frontend
@@ -357,7 +359,7 @@ sudo add-apt-repository "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_
 sudo apt-get update && sudo apt-get install -y libsgx-dcap-ql
 sudo apt-key adv --fetch-keys 'https://packages.microsoft.com/keys/microsoft.asc'
 sudo apt-add-repository 'https://packages.microsoft.com/ubuntu/20.04/prod main'
-sudo apt-get update && sudo apt-get install -y az-dcap-client
+sudo apt-get update && sudo apt-get install -y az-dcap-client # note - might not need az-dcap-client
 
 # generate gramine priv key
 gramine-sgx-gen-private-key
@@ -395,7 +397,7 @@ cargo run
 # run dev
 export TCBINFO_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
 export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf
-cargo run -- --app-dir "../../examples/transfers/" dev --unsafe-trust-latest --contract-manifest "../../examples/transfers/contracts/Cargo.toml" --fmspc "00606A000000" --tcbinfo-contract "$TCBINFO_CONTRACT" --dcap-verifier-contract "$DCAP_CONTRACT" --init-msg '{"denom":"untrn"}' --sk-file ../utils/cw-client/data/admin.sk
+cargo run -- --app-dir "../../examples/transfers/" dev --unsafe-trust-latest --contract-manifest "../../examples/transfers/contracts/Cargo.toml" --fmspc "00906ED50000" --tcbinfo-contract "$TCBINFO_CONTRACT" --dcap-verifier-contract "$DCAP_CONTRACT" --init-msg '{"denom":"untrn"}' --sk-file ../utils/cw-client/data/admin.sk
 
 # run individually instead of dev
 # TODO!
@@ -426,7 +428,7 @@ quartz --app-dir "examples/transfers/" contract build --contract-manifest "examp
 ```
 This command will compile the smart contract to WebAssembly and build the contract binary.
 
-The following configuration assumes that the `wasmd` node will be running in the same Azure instance as the enclave. 
+The following configuration assumes that the `wasmd` node will be running in the same Azure instance as the enclave. TODO - wasdm or neutrond
 If you wish to use another enclave provider you have to make sure that `QUARTZ_NODE_URL` is set to the enclave address and port as an argument as in:
 
 ```bash
