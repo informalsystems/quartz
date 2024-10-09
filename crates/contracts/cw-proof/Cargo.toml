@@ -11,7 +11,7 @@ categories = ["cryptography::cryptocurrencies", "wasm"]
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
-Produce and verify merkle proofs of CosmWasm contract state.
+Merkle proofs of CosmWasm contract state. This crate contains proof types and a verifier implementation.
 """
 
 [dependencies]

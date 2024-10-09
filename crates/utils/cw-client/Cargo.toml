@@ -12,7 +12,7 @@ keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
 Rust library for interacting with CosmWasm-enabled blockchains. 
-Deploy contracts, query them, execute transactions, and query results.
+Deploy contracts, query them, and execute transactions.
 """
 
 [lib]
