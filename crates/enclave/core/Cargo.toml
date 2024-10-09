@@ -7,6 +7,7 @@ rust-version.workspace = true
 license-file.workspace = true
 repository.workspace = true
 homepage.workspace = true
+categories = ["cryptography::cryptocurrencies", "hardware-support", "wasm"]
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
