@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
+Standalone CosmWasm smart contract for verifying Intel SGX DCAP attestations that can be called by other contracts.
 """
 
 exclude = [

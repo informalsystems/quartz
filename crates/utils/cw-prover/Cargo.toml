@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
+CLI to generate a merkle proof of a key in the state of a CosmWasm contract.
 """
 
 [dependencies]

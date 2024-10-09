@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
+A Rust framework for building Intel SGX enclaves managed by a CosmWasm contract.
 """
 
 [features]

@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
+Convenience tool to print the FMSPC (Family-Model-Stepping-Platform-Custom) of the local SGX processor.
 """
 
 [dependencies]

@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
+A CLI tool to streamline development and deployment of Quartz applications. Quartz is a flexible framework for privacy-preserving computation via Trusted Execution Environments (TEEs) organized and secured by smart contracts.
 """
 
 [[bin]]

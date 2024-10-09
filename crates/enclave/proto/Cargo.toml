@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
+Protobuf types defining the Quartz handshake to initialize connection between a smart contract and trusted execution environment.
 """
 
 

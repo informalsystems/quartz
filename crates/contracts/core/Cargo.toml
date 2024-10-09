@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
+A CosmWasm framework for securely interacting with Intel SGX enclaves.
 """
 
 [features]

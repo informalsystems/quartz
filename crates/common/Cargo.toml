@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
+A wrapper crate around quartz-contract-core, quartz-enclave-core, and quartz-proto.
 """
 
 [features]

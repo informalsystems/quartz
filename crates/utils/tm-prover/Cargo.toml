@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
+CLI for generating a tendermint light client proof (i.e. verification trace) for a given block height and trusted height/hash. Resulting proofs can be verified by quartz-tm-stateless-verifier.
 """
 
 [[bin]]

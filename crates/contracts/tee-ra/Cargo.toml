@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
 readme = "README.md"
 description = """
+Internal CosmWasm library for handling Intel SGX DCAP remote attestations.
 """
 
 [dependencies]
