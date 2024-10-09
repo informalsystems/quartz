@@ -1,9 +1,9 @@
-FROM phusion/baseimage:focal-1.2.0
+FROM golang:1.22-bullseye
 
-RUN curl -L -s -O --compressed https://github.com/neutron-org/neutron/releases/download/v4.2.4/neutrond-linux-amd64 && \
-    chmod +x neutrond-linux-amd64 && \
-    mv neutrond-linux-amd64 /usr/local/bin/neutrond
+RUN apt-get update && apt-get install -y jq  && \
+    git clone https://github.com/neutron-org/neutron.git /root/neutron && \
+    cd /root/neutron && make install-test-binary
 
 COPY data /root/
 
-ENTRYPOINT ["/root/entrypoint.sh"]
+CMD bash /root/entrypoint.sh

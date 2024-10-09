@@ -22,17 +22,17 @@ services:
     build:
       context: "./neutrond"
     network_mode: host
-  # enclave:
-  #   environment:
-  #     DOCKER_BUILDKIT: 1
-  #   build:
-  #     context: ".."
-  #     dockerfile: "./crates/cli/Dockerfile"
-  #   depends_on:
-  #     node:
-  #       condition: service_healthy
-  #   ports:
-  #     - "11090:11090"
-  #   volumes:
-  #     - data:/root/.neutrond
-  #     - ../examples/transfers:/opt/examples/transfers
+  enclave:
+    environment:
+      DOCKER_BUILDKIT: 1
+      ADMIN_SK: 07b291dca4ead76392945ea0a8c35b2d506617d36337788c9043c8fc992213e1
+    build:
+      context: ".."
+      dockerfile: "./crates/cli/Dockerfile"
+    depends_on:
+      node:
+        condition: service_healthy
+    volumes:
+      - data:/root/.neutrond
+      - ../examples/transfers:/opt/examples/transfers
+    network_mode: host
