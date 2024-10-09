@@ -288,7 +288,7 @@ impl PrefixedCommandEx for Command {
             program.push_str(command);
             program
         } else {
-            command
+            command.to_string()
         };
 
         Command::new(program)
