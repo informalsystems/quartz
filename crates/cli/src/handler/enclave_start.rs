@@ -281,16 +281,18 @@ pub trait PrefixedCommandEx: Sized {
 }
 
 impl PrefixedCommandEx for Command {
-    fn new_prefixed(prefix: &str, command: &str) -> Self {
-        let program = if !prefix.is_empty() {
-            let mut program = String::from(prefix);
-            program.push(' ');
-            program.push_str(command);
-            program
-        } else {
-            command.to_string()
-        };
+    fn new_prefixed(prefix: &str, program: &str) -> Self {
+        if !prefix.is_empty() {
+            let mut parts = prefix.split_whitespace();
+            let prefix_command = parts.next().unwrap();
+            let prefix_args: Vec<&str> = parts.collect();
 
-        Command::new(program)
+            let mut command = Command::new(prefix_command);
+            command.args(&prefix_args);
+            command.arg(program);
+            command
+        } else {
+            Command::new(program)
+        }
     }
 }
