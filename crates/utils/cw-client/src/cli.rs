@@ -193,7 +193,7 @@ impl CwClient for CliClient {
             .args(["--gas-adjustment", "1.3"])
             .args(["-o", "json"])
             .arg("-y");
-        eprintln!("{:?}", command);
+
         let output = command.output()?;
 
         if !output.status.success() {
