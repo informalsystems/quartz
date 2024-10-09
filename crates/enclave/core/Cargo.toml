@@ -8,7 +8,7 @@ license-file.workspace = true
 repository.workspace = true
 homepage.workspace = true
 categories = ["cryptography::cryptocurrencies", "hardware-support", "wasm"]
-keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
+keywords = ["cosmos", "cosmwasm", "cycles", "quartz", "sgx"]
 readme = "README.md"
 description = """
 A Rust framework for building Intel SGX enclaves managed by a CosmWasm contract.

@@ -8,7 +8,7 @@ license-file.workspace = true
 repository.workspace = true
 homepage.workspace = true
 categories = ["cryptography::cryptocurrencies", "wasm"]
-keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
+keywords = ["cosmos", "cosmwasm", "cycles", "quartz", "sgx"]
 readme = "README.md"
 description = """
 Standalone CosmWasm smart contract for storage and verification of TcbInfos for Intel SGX.

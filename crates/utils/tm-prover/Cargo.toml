@@ -8,7 +8,7 @@ license-file.workspace = true
 repository.workspace = true
 homepage.workspace = true
 categories = ["command-line-utilities", "cryptography::cryptocurrencies", "wasm"]
-keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
+keywords = ["cosmos", "cosmwasm", "cycles", "quartz", "sgx"]
 readme = "README.md"
 description = """
 CLI for generating a Merkle proof of CosmWasm state and accompanying tendermint light client proof (i.e. verification trace) for a given block height and trusted height/hash. Resulting proofs can be verified by quartz-tm-stateless-verifier.
