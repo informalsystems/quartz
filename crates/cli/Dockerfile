@@ -5,6 +5,12 @@ ARG CARGO_FLAGS=""
 
 COPY . /opt
 
+# Temporarily disable GPG checks
+RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until \
+    && echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure \
+    && echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure
+
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     protobuf-compiler \
@@ -15,12 +21,12 @@ RUN apt-get update && \
 # Install Go
 RUN apt-get update && \
     apt-get install -y --no-install-recommends wget && \
-    wget https://go.dev/dl/go1.20.5.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.20.5.linux-amd64.tar.gz && \
-    rm go1.20.5.linux-amd64.tar.gz && \
-    wget https://github.com/CosmWasm/wasmd/releases/download/v0.44.0/wasmd-v0.44.0-linux-amd64.tar.gz && \
-    tar -C /usr/local/bin -xzf wasmd-v0.44.0-linux-amd64.tar.gz && \
-    rm wasmd-v0.44.0-linux-amd64.tar.gz && \
+    wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz && \
+    rm go1.22.0.linux-amd64.tar.gz && \
+    wget https://github.com/neutron-org/neutron/releases/download/v4.2.4/neutrond-linux-amd64 && \
+    chmod +x neutrond-linux-amd64 && \
+    cp neutrond-linux-amd64 /usr/local/bin/neutrond && \
     apt-get remove -y wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -35,4 +41,7 @@ WORKDIR /opt/crates/cli
 RUN cargo build --locked --release ${CARGO_FLAGS}
 RUN cp /opt/target/release/quartz /usr/local/bin/
 
-CMD ["quartz", "--mock-sgx", "--app-dir", "/opt/examples/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/examples/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"ucosm\"}"]
+# Create a directory for the app
+RUN mkdir -p /opt/examples/transfers
+
+ENTRYPOINT ["quartz", "--mock-sgx", "--app-dir", "/opt/examples/transfers", "dev", "--unsafe-trust-latest", "--contract-manifest", "/opt/examples/transfers/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"untrn\"}"]
