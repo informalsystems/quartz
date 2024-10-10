@@ -192,7 +192,6 @@ async fn gramine_manifest(
         host.architecture, host.operating_system, host.environment
     );
 
-    let ra_client_spid = "51CAF5A48B450D624AEFE3286D314894";
     let home_dir = dirs::home_dir()
         .ok_or_else(|| eyre!("Home directory not set"))?
         .display()
@@ -203,7 +202,6 @@ async fn gramine_manifest(
         .arg(format!("-Dhome={}", home_dir))
         .arg(format!("-Darch_libdir={}", arch_libdir))
         .arg("-Dra_type=dcap")
-        .arg(format!("-Dra_client_spid={}", ra_client_spid))
         .arg("-Dra_client_linkable=1")
         .arg(format!("-Dchain_id={}", chain_id))
         .arg(format!("-Dquartz_dir={}", quartz_dir.display()))

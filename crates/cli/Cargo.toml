@@ -4,11 +4,16 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-license.workspace = true
+license-file.workspace = true
 repository.workspace = true
-keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
+homepage.workspace = true
+categories = ["command-line-utilities", "cryptography::cryptocurrencies", "hardware-support", "wasm"]
+keywords = ["cosmos", "cosmwasm", "cycles", "quartz", "sgx"]
 readme = "README.md"
 default-run = "quartz"
+description = """
+A CLI tool to streamline development and deployment of Quartz applications. Quartz is a flexible framework for privacy-preserving computation via Trusted Execution Environments (TEEs) organized and secured by smart contracts.
+"""
 
 [[bin]]
 name = "quartz"

@@ -12,10 +12,11 @@ exclude = ["examples/transfers/contracts", "examples/transfers/enclave"]
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.74.1"
-license = ""
+rust-version = "1.75.0"
+license-file = "LICENSE"
 readme = "README.md"
 repository = "https://github.com/informalsystems/cycles-quartz"
+homepage = "https://cycles.money"
 authors = ["Informal Systems <hello@informal.systems>"]
 
 [workspace.dependencies]
