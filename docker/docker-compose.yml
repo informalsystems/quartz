@@ -22,12 +22,8 @@ services:
     build:
       context: "./neutrond"
     network_mode: host
-    ports:
-      - "26657:26657"
-      - "26656:26656"
-      - "1317:1317"
-      - "9090:9090"
   enclave:
+    container_name: enclave
     environment:
       DOCKER_BUILDKIT: 1
       ADMIN_SK: 07b291dca4ead76392945ea0a8c35b2d506617d36337788c9043c8fc992213e1
@@ -41,5 +37,3 @@ services:
       - data:/root/.neutrond
       - ../examples/transfers:/opt/examples/transfers
     network_mode: host
-    ports:
-      - "11090:11090"
