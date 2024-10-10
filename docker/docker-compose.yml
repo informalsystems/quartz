@@ -5,6 +5,7 @@ volumes:
 
 services:
   node:
+    container_name: neutron
     healthcheck:
       test:
         [
@@ -35,5 +36,4 @@ services:
         condition: service_healthy
     volumes:
       - data:/root/.neutrond
-      - ../examples/transfers:/opt/examples/transfers
     network_mode: host
