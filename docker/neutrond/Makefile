@@ -4,7 +4,6 @@ import-local-accounts:
 	neutrond keys add alice --keyring-backend test > ./data/accounts/alice.txt 2>&1
 	neutrond keys add bob --keyring-backend test > ./data/accounts/bob.txt 2>&1
 	neutrond keys add charlie --keyring-backend test > ./data/accounts/charlie.txt 2>&1
-	neutrond keys add validator --keyring-backend test > ./data/accounts/validator.txt 2>&1
 
 create-local-accounts: import-local-accounts
 	@echo "Local accounts have been created."
