@@ -4,10 +4,15 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-license.workspace = true
+license-file.workspace = true
 repository.workspace = true
-keywords = ["blockchain", "cosmos", "tendermint", "cycles", "quartz"]
+homepage.workspace = true
+categories = ["cryptography::cryptocurrencies", "wasm"]
+keywords = ["cosmos", "cosmwasm", "cycles", "quartz", "sgx"]
 readme = "README.md"
+description = """
+Protobuf types defining the Quartz handshake to initialize connection between a smart contract and trusted execution environment.
+"""
 
 
 [dependencies]
