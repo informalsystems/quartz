@@ -5,6 +5,7 @@ use std::{
     time::Duration,
 };
 
+use cosmrs::AccountId;
 use futures_util::StreamExt;
 use k256::ecdsa::SigningKey;
 use quartz_contract_core::{
@@ -15,10 +16,11 @@ use quartz_contract_core::{
         },
         instantiate::CoreInstantiate,
     },
-    state::{Config, LightClientOpts, Nonce, Session},
+    state::{Config, LightClientOpts, Nonce, Session, SESSION_KEY},
 };
 use quartz_cw_proof::proof::{
     cw::{CwProof, RawCwProof},
+    key::CwAbciKey,
     Proof,
 };
 use quartz_proto::quartz::{
@@ -254,7 +256,12 @@ where
                 .map_err(|e| Status::invalid_argument(e.to_string()))?;
 
         let (value, _msg) = proof
-            .verify(self.config.light_client_opts())
+            .verify(
+                self.config.light_client_opts(),
+                AccountId::new("wasm", &[]).expect(""), // FIXME(hu55a1n1): get this from the config!
+                SESSION_KEY.to_string(),
+                None,
+            )
             .map_err(Status::failed_precondition)?;
 
         let session: Session = serde_json::from_slice(&value).unwrap();
@@ -290,7 +297,13 @@ pub struct ProofOfPublication<M> {
 }
 
 impl<M> ProofOfPublication<M> {
-    pub fn verify(self, light_client_opts: &LightClientOpts) -> Result<(Vec<u8>, M), String> {
+    pub fn verify(
+        self,
+        light_client_opts: &LightClientOpts,
+        contract_address: AccountId,
+        storage_key: String,
+        storage_namespace: Option<String>,
+    ) -> Result<(Vec<u8>, M), String> {
         let config_trust_threshold = light_client_opts.trust_threshold();
         let trust_threshold =
             TrustThreshold::new(config_trust_threshold.0, config_trust_threshold.1).unwrap();
@@ -321,6 +334,11 @@ impl<M> ProofOfPublication<M> {
         )
         .and_then(|mut primary| primary.verify_to_height(target_height))
         .map_err(|e| e.to_string())?;
+
+        let key = CwAbciKey::new(contract_address, storage_key, storage_namespace);
+        if &key.into_vec() != self.merkle_proof.key() {
+            return Err("Merkle proof key mismatch".to_string());
+        }
 
         let proof = CwProof::from(self.merkle_proof);
         proof
