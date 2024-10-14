@@ -2678,6 +2678,7 @@ name = "quartz-contract-core"
 version = "0.1.0"
 dependencies = [
  "ciborium",
+ "cosmrs",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
