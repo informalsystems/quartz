@@ -108,13 +108,19 @@ impl QuartzServer {
     pub fn new<A>(
         config: Config,
         sk: Arc<Mutex<Option<SigningKey>>>,
+        contract: Arc<Mutex<Option<AccountId>>>,
         attestor: A,
         ws_config: WsListenerConfig,
     ) -> Self
     where
         A: Attestor + Clone,
     {
-        let core_service = CoreServer::new(CoreService::new(config, sk.clone(), attestor.clone()));
+        let core_service = CoreServer::new(CoreService::new(
+            config,
+            contract.clone(),
+            sk.clone(),
+            attestor.clone(),
+        ));
 
         Self {
             router: Server::builder().add_service(core_service),
@@ -186,6 +192,7 @@ impl QuartzServer {
 pub struct CoreService<A> {
     config: Config,
     nonce: Arc<Mutex<Nonce>>,
+    contract: Arc<Mutex<Option<AccountId>>>,
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
 }
@@ -194,10 +201,16 @@ impl<A> CoreService<A>
 where
     A: Attestor,
 {
-    pub fn new(config: Config, sk: Arc<Mutex<Option<SigningKey>>>, attestor: A) -> Self {
+    pub fn new(
+        config: Config,
+        contract: Arc<Mutex<Option<AccountId>>>,
+        sk: Arc<Mutex<Option<SigningKey>>>,
+        attestor: A,
+    ) -> Self {
         Self {
             config,
             nonce: Arc::new(Mutex::new([0u8; 32])),
+            contract,
             sk,
             attestor,
         }
@@ -228,12 +241,19 @@ where
 
     async fn session_create(
         &self,
-        _request: Request<RawSessionCreateRequest>,
+        request: Request<RawSessionCreateRequest>,
     ) -> TonicResult<Response<RawSessionCreateResponse>> {
         // FIXME(hu55a1n1) - disallow calling more than once
+        let deployed_contract: AccountId = serde_json::from_str(&request.into_inner().message)
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+
+        let mut contract = self.contract.lock().unwrap();
+        *contract = Some(deployed_contract.clone());
+
         let mut nonce = self.nonce.lock().unwrap();
         *nonce = rand::thread_rng().gen::<Nonce>();
-        let msg = SessionCreate::new(*nonce);
+
+        let msg = SessionCreate::new(*nonce, deployed_contract);
 
         let attestation = self
             .attestor
@@ -255,10 +275,12 @@ where
             serde_json::from_str(&request.into_inner().message)
                 .map_err(|e| Status::invalid_argument(e.to_string()))?;
 
+        let contract = self.contract.lock().unwrap().clone();
+
         let (value, _msg) = proof
             .verify(
                 self.config.light_client_opts(),
-                AccountId::new("wasm", &[]).expect(""), // FIXME(hu55a1n1): get this from the config!
+                contract.expect("contract not set"),
                 SESSION_KEY.to_string(),
                 None,
             )

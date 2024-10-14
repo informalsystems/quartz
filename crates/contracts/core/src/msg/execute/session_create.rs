@@ -1,3 +1,4 @@
+use cosmrs::AccountId;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError};
 use sha2::{Digest, Sha256};
@@ -10,11 +11,12 @@ use crate::{
 #[derive(Clone, Debug, PartialEq)]
 pub struct SessionCreate {
     nonce: Nonce,
+    contract: AccountId,
 }
 
 impl SessionCreate {
-    pub fn new(nonce: Nonce) -> Self {
-        Self { nonce }
+    pub fn new(nonce: Nonce, contract: AccountId) -> Self {
+        Self { nonce, contract }
     }
 
     pub fn into_nonce(self) -> Nonce {
@@ -25,6 +27,7 @@ impl SessionCreate {
 #[cw_serde]
 pub struct RawSessionCreate {
     nonce: HexBinary,
+    contract: String,
 }
 
 impl TryFrom<RawSessionCreate> for SessionCreate {
@@ -32,7 +35,11 @@ impl TryFrom<RawSessionCreate> for SessionCreate {
 
     fn try_from(value: RawSessionCreate) -> Result<Self, Self::Error> {
         let nonce = value.nonce.to_array()?;
-        Ok(Self { nonce })
+        let contract = value
+            .contract
+            .parse()
+            .map_err(|e| StdError::parse_err("AccountId", e))?;
+        Ok(Self { nonce, contract })
     }
 }
 
@@ -40,6 +47,7 @@ impl From<SessionCreate> for RawSessionCreate {
     fn from(value: SessionCreate) -> Self {
         Self {
             nonce: value.nonce.into(),
+            contract: value.contract.to_string(),
         }
     }
 }
