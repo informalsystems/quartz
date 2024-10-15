@@ -358,7 +358,7 @@ impl<M> ProofOfPublication<M> {
         .map_err(|e| e.to_string())?;
 
         let key = CwAbciKey::new(contract_address, storage_key, storage_namespace);
-        if &key.into_vec() != self.merkle_proof.key() {
+        if key.into_vec() != self.merkle_proof.key() {
             return Err("Merkle proof key mismatch".to_string());
         }
 

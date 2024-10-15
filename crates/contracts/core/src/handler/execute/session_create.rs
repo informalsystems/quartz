@@ -17,7 +17,7 @@ impl Handler for SessionCreate {
         }
 
         SESSION
-            .save(deps.storage, &Session::create(self.nonce().clone()))
+            .save(deps.storage, &Session::create(self.nonce()))
             .map_err(Error::Std)?;
 
         Ok(Response::new().add_attribute("action", "session_create"))
