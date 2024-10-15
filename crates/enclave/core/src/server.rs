@@ -253,7 +253,7 @@ where
         let mut nonce = self.nonce.lock().unwrap();
         *nonce = rand::thread_rng().gen::<Nonce>();
 
-        let msg = SessionCreate::new(*nonce, deployed_contract);
+        let msg = SessionCreate::new(*nonce, deployed_contract.to_string());
 
         let attestation = self
             .attestor

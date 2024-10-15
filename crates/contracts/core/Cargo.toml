@@ -23,7 +23,6 @@ library = []
 [dependencies]
 # external
 ciborium.workspace = true
-cosmrs.workspace = true
 hex.workspace = true
 k256.workspace = true
 serde.workspace = true
