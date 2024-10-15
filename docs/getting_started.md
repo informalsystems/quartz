@@ -6,7 +6,7 @@
 - [Quick Start](#quick-start)
 - [Simple Example](#simple-example)
 - [Installation](#installation)
-- [Local Testnet without SGX](#local-testnet-without-sgx)
+- [Local Testnet without SGX](#local-testnet-without-sgx) TODO - broken
 - [Real Testnet with SGX](#real-testnet-with-sgx)
 - [Other Testnets with SGX](#other-testnets-with-sgx)
 - [Troubleshooting and FAQ](#troubleshooting-and-faq)
@@ -23,7 +23,7 @@ This guide will help you get up and running with an example Quartz application. 
 For those who want to get started quickly with the example Transfers app with
 mock SGX:
 
-1. Install dependencies (Rust, wasmd or neutrond)
+1. Install dependencies (Rust, neutrond)
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
 3. Install Quartz CLI: `cargo install --path crates/cli`
 4. Navigate to the example app: `cd examples/transfers`
@@ -31,7 +31,7 @@ mock SGX:
    ```bash
    quartz --mock-sgx dev \
    --unsafe-trust-latest \
-   --contract-manifest "contracts/Cargo.toml" \
+   --contract-manifest "contracts/Cargo.toml" \ TODO - dont these need to be updated with teh TCB and DCAP?
    --init-msg '{"denom":"ucosm"}'
    ```
 5. Set up the frontend (see [Frontend](#frontend))
@@ -64,7 +64,7 @@ This guide is primarily about using the `quartz` tool to get the example app
 setup. For more on building application, see 
 - [Building Apps](/docs/building_apps.md) - conceptual overview 
 - [quartz-contract-core](/cosmwasm/quartz-contract-core) - main library. provides msgs and handlers
-  for the handshake and for verifying attestations
+  for the handshake and for verifying attestations TODO - link broken
 - [transfers contracts](/examples/transfers/contracts): transfer app example itself
 
 Onwards with the installation and running our example app! 
@@ -72,7 +72,7 @@ Onwards with the installation and running our example app!
 ## Installation
 
 Quartz is built in Rust (+wasm32 target). It expects to interact with a CosmWasm compatible
-blockchain (eg. `wasmd` or `neutrond`), built in Go (or run with Docker). And it requires `npm` for
+blockchain (eg. `neutrond`), built in Go (or run with Docker). And it requires `npm` for
 building the frontend. Here we cover how to install Rust, Quartz, and CosmWasm
 blockchains. You're responsible for installing Go and NPM.
 
@@ -118,39 +118,37 @@ quartz --help
 
 ### Install a CosmWasm Client
 
-For the local testnet, we use `wasmd`. 
+For the local testnet, we can use `neutrond` with a single validator (we have a docker image for this).
 
-For the real testnet, we use `neutrond`.
-
-We quickest start, we provide docker images for both.
+For the real testnet, we use `neutrond` and connect to their existing testnet (see the [config file](../examples/transfers/quartz.neutron_pion-1.toml)).
 
 You can also use an existing installation if you have, or you can build from
-source in Go. If so, you'll have to setup accounts that can pay gas. See [wasmd setup instructions](/docs/wasmd_setup.md)
+source in Go. If so, you'll have to setup accounts that can pay gas. See [neutrond setup instructions](/docs/neutrond_setup.md)
 
 The docker images come with everything. To use them install and setup docker.
 
-Then for wasmd`:
-
-```bash
-cd docker/wasmd
-make run
-```
-
-Or for `neutrond`:
+For `neutrond`:
 
 ```bash
 cd docker/neutron
 make start-docker-container
 ```
 
-If will pre-configure a few keys (admin, alice, etc.) and allocate funds to them. 
+Or for wasmd`:
+
+```bash
+cd docker/wasmd
+make run
+```
+
+It will pre-configure a few keys (admin, alice, etc.) and allocate funds to them. 
 The default sending account for quartz txs is `admin`. 
 
 If building from source, you'll need to initialize the accounts yourself. See
-the guide on [setting up a CosmWasm chain](/docs/wasmd_setup.md) and then return
+the guide on [setting up a CosmWasm chain](/docs/neutrond_setup.md) and then return
 back here.
 
-## Local wasmd Testnet Without SGX
+## Local neutrond Testnet Without SGX
 
 From the root of the `cycles-quartz` repo, we can now deploy our example
 transfers app. Deployment involves three components:
@@ -231,7 +229,7 @@ Now the contract is ready to start processing requests to the enclave.
 
 ### Frontend
 
-TODO - mention to start locally, not on SGX machine
+You can run the front end on your local computer, so it is easy to test in a browser. If you are running your application in the cloud (such as an Azure SGX machine), you can configure the front end to talk to that blockchain over the internet.
 
 1. Navigate to the frontend folder:
    ```bash
@@ -248,11 +246,8 @@ TODO - mention to start locally, not on SGX machine
    cp .env.example .env.local
    ```
 
-Now open `.env.local` and edit the values of 
-NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS
-and 
-NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY 
-to be the contract address and pubkey from the previous step. With quartz dev, they can be grabbed
+Now open `.env.local` and edit the values of `NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS` and 
+`NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY` to be the contract address and pubkey from the previous step. With quartz dev, they can be grabbed
 from the logs. From the manual process, you would have already stored them as environment variables.
 
 4. Finally, start the frontend:
@@ -264,7 +259,7 @@ from the logs. From the manual process, you would have already stored them as en
 
 Open your browser to `localhost:3000` to see the app. You will be prompted to store a mnemonic. This key is stored
 in the browser, and allows you to query your encrypted balance in the future. You should save this, but in general
-you won't have to use it if you don't clear your browser storage.
+if you are just testing and you don't clear your browser storage, you will be fine.
 
 You'll need to have the Keplr wallet browser extension installed and unlocked.
 
@@ -276,12 +271,12 @@ address some funds from the `admin` account setup with your local node. For
 instance, send 10M ucosm with:
 
 ```bash
-wasmd tx bank send admin <KEPLR ADDRESS> 10000000ucosm --chain-id testing
+neutrond tx bank send admin <KEPLR ADDRESS> 10000000ucosm --chain-id testing
 ```
 
 You should now see the funds on your local testnet on Keplr.
 
-Now you can interact with the app by depositing funds, privately transfering
+Now you can interact with the app by depositing funds, privately transferring
 them to other addresses, and finally withdrawing them. 
 
 Be sure to check the enclave window to see the logs from your interaction with
@@ -302,15 +297,24 @@ versions of SGX processors. Together they allow contracts built with quartz to
 securely verify remote attestations from SGX enclaves.
 
 We have already pre-deployed the `quartz-dcap-verify` and `quartz-tcbinfo` contracts on the Neutron
-testnet at TODO. To deploy these on your own testnet, see [below](#other-testnets-with-sgx).
+testnet at:
+- verifier - `neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf`
+- tcbinfo - `neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps`
+
+
+To deploy these on your own testnet, see [below](#other-testnets-with-sgx). Although for v0.1, we recommend going with these already deployed contracts.
 
 ### Setting up an Azure machine
 To begin, you'll need to deploy an SGX-enabled Azure instance and log in via ssh.
 Follow the [steps Microsoft lays out](https://learn.microsoft.com/en-us/azure/confidential-computing/quick-create-portal) to connect, choose Ubuntu 20.04, then ssh into the machine.
 
-Once logged in, clone and install Quartz like before (see [installation](#installation)). Once you clone the Quartz repo, you'll have to add some things to your azure machine
+Once logged in, clone and install Quartz like before (see [installation](#installation)). Once you clone the Quartz repo, you'll have to add some things to your azure machine.
+
+Below we have provided a very long instruction set to get the azure machine setup. We plan on dockerizing all of this after the v0.1 launch, as it is quite complex. You can reach out for the team for help if you get stuck here. 
 
 ```bash
+### INSIDE YOUR AZURE SGX MACHINE ###
+
 # install rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup install 1.79.0
@@ -359,7 +363,7 @@ sudo add-apt-repository "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_
 sudo apt-get update && sudo apt-get install -y libsgx-dcap-ql
 sudo apt-key adv --fetch-keys 'https://packages.microsoft.com/keys/microsoft.asc'
 sudo apt-add-repository 'https://packages.microsoft.com/ubuntu/20.04/prod main'
-sudo apt-get update && sudo apt-get install -y az-dcap-client # note - might not need az-dcap-client
+sudo apt-get update && sudo apt-get install -y az-dcap-client
 
 # generate gramine priv key
 gramine-sgx-gen-private-key
@@ -374,36 +378,25 @@ neutrond keys add admin --keyring-backend test > ./accounts/val1.txt 2>&1
 # install node (needed for pccs)
 sudo apt-get install nodejs=20.10.0-1nodesource1
 
-# install pccs
+# install pccs - see appendix 2
 # instructions from https://download.01.org/intel-sgx/latest/linux-latest/docs/Intel_SGX_SW_Installation_Guide_for_Linux.pdf 
-# see appendix 2
-# You will be asked a bunch of configuration questions when setting up pcss - for dev, any values will work. In production, please give it careful thought
+# Note - You will be asked a bunch of configuration questions when setting up pcss - for testing, any values will work. In production, please give it careful thought
 sudo apt-get install sgx-dcap-pccs
 sudo systemctl start pccs
 
-# need to update /etc/sgx_default_qcnl.conf to what we have on our original azure machine
-# TODO - codify this in the repo, since uses can't copy paste from our azure
-sudo nano /etc/sgx_default_qcnl.conf # TODO - placeholder to note we have to edit it
-sudo systemctl restart pccs # reset after editing
+# update /etc/sgx_default_qcnl.conf to config in our repo
+sudo cp sgx_default_qcnl.conf /etc/sgx_default_qcnl.conf
 
-
-# not sure if its needed - TODO dave
-# edit crates/contracts/core/src/msg/execute/attested.rs to print the QUOTE
-# export QUOTE=<QUOTE_TEXT>
-cd cycles-quartz/crates/utils/print-fmspc/
-cargo run
-
+# reset pccs
+sudo systemctl restart pccs
 
 # run dev
 export TCBINFO_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
 export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf
-cargo run -- --app-dir "../../examples/transfers/" dev --unsafe-trust-latest --contract-manifest "../../examples/transfers/contracts/Cargo.toml" --fmspc "00906ED50000" --tcbinfo-contract "$TCBINFO_CONTRACT" --dcap-verifier-contract "$DCAP_CONTRACT" --init-msg '{"denom":"untrn"}' --sk-file ../utils/cw-client/data/admin.sk
-
-# run individually instead of dev
-# TODO!
+export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
 
 
-# TODO - pull update, and do not use --sk-file
+
 ```
 
 ### Dave - deploy and build contracts
@@ -412,19 +405,19 @@ cd examples/transfers
 quartz enclave build
 export TCBINFO_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
 export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf
-quartz  enclave start  --fmspc "00606A000000" --tcbinfo-contract $TCBINFO_CONTRACT --dcap-verifier-contract $DCAP_CONTRACT --unsafe-trust-latest --sk-file ../utils/cw-client/data/admin.sk
+quartz  enclave start  --fmspc "00606A000000" --tcbinfo-contract $TCBINFO_CONTRACT --dcap-verifier-contract $DCAP_CONTRACT --unsafe-trust-latest
 
 ### Build and Deploy the Contracts
 
 TODO: 
 - make this about deploying to neutron.
-- do it from examples/transfers to avoid specifying `--app-dir`
+- do it from examples/transfers to avoid specifying `--app-dir` 
 
 
 To build both the contract binaries, use the build command:
 
 ```bash
-quartz --app-dir "examples/transfers/" contract build --contract-manifest "examples/transfers/contracts/Cargo.toml"
+quartz contract build --contract-manifest "contracts/Cargo.toml"
 ```
 This command will compile the smart contract to WebAssembly and build the contract binary.
 
@@ -507,146 +500,9 @@ Events coming from the contract will be logged following the handshake as they a
 ## Other Testnets With SGX
 
 To setup on another testnet we need to deploy a `quartz-tcbinfo` contract and a
-`quartz-dcap-verifier` contract.
+`quartz-dcap-verifier` contract. However we recommend using the deployed contracts on neutrons public testnet for v0.1.
 
-### Get the FMSPC of the host machine
-
-```bash
-export QUOTE="/* quote generated during the handshake should work */"
-cd crates/utils/print-fmspc/
-cargo run > /dev/null
-```
-
-### Deploying the `quartz-tcbinfo` contract
-
-1. Build and store the contract on-chain
-```bash
-cargo run -- contract build --contract-manifest "../cosmwasm/packages/tcbinfo/Cargo.toml"
-RES=$(wasmd tx wasm store ./target/wasm32-unknown-unknown/release/tcbinfo.wasm --from alice -y --output json --chain-id "testing" --gas-prices 0.0025ucosm --gas auto --gas-adjustment 1.3)
-TX_HASH=$(echo $RES | jq -r '.["txhash"]')
-```
-
-2. Instantiate the contract using Intel's root CA cert.
-```bash
-CERT=$(sed ':a;N;$!ba;s/\n/\\n/g' ../cosmwasm/packages/quartz-tee-ra/data/root_ca.pem)
-RES=$(wasmd query tx "$TX_HASH" --output json)
-CODE_ID=$(echo $RES | jq -r '.logs[0].events[1].attributes[1].value')
-wasmd tx wasm instantiate "$CODE_ID" "{\"root_cert\": \"$CERT\"}" --from "alice" --label "tcbinfo" --chain-id "testing" --gas-prices 0.0025ucosm --gas auto --gas-adjustment 1.3 -y --no-admin --output json	
-TCB_CONTRACT=$(wasmd query wasm list-contract-by-code "$CODE_ID" --output json | jq -r '.contracts[0]')
-```
-
-3. Get the Tcbinfo for the given FMSPC.
-```bash
-HEADERS=$(wget -q -S -O - https://api.trustedservices.intel.com/sgx/certification/v4/tcb?fmspc=00606A000000 2>&1 >/dev/null)
-TCB_INFO=$(wget -q -O - https://api.trustedservices.intel.com/sgx/certification/v4/tcb?fmspc=00606A000000)
-export TCB_ISSUER_CERT=$(echo "$HEADERS" | 
-        grep 'TCB-Info-Issuer-Chain:' | 
-        sed 's/.*TCB-Info-Issuer-Chain: //' | 
-        sed 's/%0A/\n/g' | 
-        sed 's/%20/ /g' | 
-        sed 's/-----BEGIN%20CERTIFICATE-----/-----BEGIN CERTIFICATE-----/' | 
-        sed 's/-----END%20CERTIFICATE-----/-----END CERTIFICATE-----/' | 
-        perl -MURI::Escape -ne 'print uri_unescape($_)' | 
-        awk '/-----BEGIN CERTIFICATE-----/{flag=1; print; next} /-----END CERTIFICATE-----/{print; flag=0; exit} flag')
-
-TCB_ISSUER_CERT=$(echo "$TCB_ISSUER_CERT" | sed ':a;N;$!ba;s/\n/\\n/g')
-echo "TCB_INFO:"
-echo "$TCB_INFO"
-echo
-echo "TCB_ISSUER_CERT:"
-echo "$TCB_ISSUER_CERT"
-```
-
-4. Add the Tcbinfo for the given FMSPC to the contract (and test it with a query)
-```bash
-wasmd tx wasm execute "$TCB_CONTRACT" "{\"tcb_info\": $(echo "$TCB_INFO" | jq -Rs .), \"certificate\": \"$TCB_ISSUER_CERT\"}" --from admin --chain-id testing --gas auto --gas-adjustment 1.2 -y 
-wasmd query wasm contract-state smart "$TCB_CONTRACT" '{"get_tcb_info": {"fmspc": "00606A000000"}}'
-```
-
-### Deploying the `quartz-dcap-verifier` contract
-
-I will do this later.
-
-1. Build the contract
-```bash
-cargo run -- contract build --contract-manifest "../cosmwasm/packages/quartz-dcap-verifier/Cargo.toml"
-```
-
-2. Optimize the contract
-In order to optimize the contract, you need to install `wasm-opt` v.119. See the HOWTO section below for installation instructions.
-```bash
-wasm-opt -Oz ./target/wasm32-unknown-unknown/release/quartz_dcap_verifier.wasm -o ./target/wasm32-unknown-unknown/release/quartz_dcap_verifier.optimized.wasm
-```
-
-3. Store the optimized contract on-chain
-```bash
-RES=$(wasmd tx wasm store ./target/wasm32-unknown-unknown/release/quartz_dcap_verifier.optimized.wasm --from admin -y --output json --chain-id "testing" --gas-prices 0.0025ucosm --gas auto --gas-adjustment 1.3)
-TX_HASH=$(echo $RES | jq -r '.["txhash"]')
-RES=$(wasmd query tx "$TX_HASH" --output json)
-CODE_ID=$(echo $RES | jq -r '.logs[0].events[1].attributes[1].value')
-```
-
-4. Instantiate the `quartz-dcap-verifier` contract.
-```bash
-wasmd tx wasm instantiate "$CODE_ID" null --from "admin" --label "dcap-verifier" --chain-id "testing" --gas-prices 0.0025ucosm --gas auto --gas-adjustment 1.3 -y --no-admin --output json
-DCAP_CONTRACT=$(wasmd query wasm list-contract-by-code "$CODE_ID" --output json | jq -r '.contracts[0]')
-```
-
-### Quartz setup
-```bash
-quartz --app-dir "../examples/transfers/" \
-    --contract-manifest "../examples/transfers/contracts/Cargo.toml" \
-    --unsafe-trust-latest \
-    --init-msg '{"denom":"ucosm"}' \
-     dev \
-    --fmspc "00606A000000" \
-    --tcbinfo-contract "$TCB_CONTRACT" \
-    --dcap-verifier-contract "$DCAP_CONTRACT"
-```
-
-#### HOWTO Install `wasm-opt`
-
-To install `wasm-opt` version 119 on an Azure SGX machine running Ubuntu, follow these steps:
-
-1. **Update and install dependencies:**
-
-```bash
-sudo apt update
-sudo apt install -y build-essential cmake git
-```
-
-2. **Download and build `wasm-opt` version 119:**
-
-```bash
-git clone https://github.com/WebAssembly/binaryen.git
-cd binaryen
-git checkout version_119
-```
-
-3. **Build the project:**
-
-```bash
-cmake . && make
-```
-
-4. **Install `wasm-opt`:**
-
-```bash
-sudo make install
-```
-
-5. **Verify the installation:**
-
-```bash
-wasm-opt --version
-```
-
-This should return something like:
-
-```
-wasm-opt version_119
-```
-
+Instructions can be followed in [this guide](./tcbinfo_and_verifier.md).
 
 ## Troubleshooting and FAQ
 
