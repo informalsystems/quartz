@@ -1,6 +1,9 @@
 use std::time::Duration;
 
-use anyhow::anyhow;
+use color_eyre::{
+    eyre::{eyre, WrapErr},
+    Result,
+};
 use cosmrs::{AccountId, ErrorReport};
 use cw_client::{CliClient, CwClient};
 use regex::Regex;
@@ -13,15 +16,15 @@ use tendermint_rpc::{
 use tokio::fs::{self};
 use tracing::debug;
 
-use crate::{config::Config, error::Error};
+use crate::config::Config;
 
-pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId, anyhow::Error> {
-    let _ = bech32_decode(address_str).map_err(|e| anyhow!(e))?;
-    address_str.parse().map_err(|e: ErrorReport| anyhow!(e))
+pub fn wasmaddr_to_id(address_str: &str) -> Result<AccountId> {
+    let _ = bech32_decode(address_str).map_err(|e| eyre!(e))?;
+    address_str.parse().map_err(|e: ErrorReport| eyre!(e))
 }
 
 // Note: time until tx commit is empiraclly 800ms on DO wasmd chain.
-pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxResponse, anyhow::Error> {
+pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxResponse> {
     let re = Regex::new(r"tx \([A-F0-9]{64}\) not found")?;
 
     tokio::time::sleep(Duration::from_millis(400)).await;
@@ -35,7 +38,7 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
                 match e.0 {
                     ErrorDetail::Response(subdetail) => {
                         if !re.is_match(subdetail.source.data().unwrap_or_default()) {
-                            return Err(anyhow!(
+                            return Err(eyre!(
                                 "Error querying for tx: {}",
                                 ErrorDetail::Response(subdetail)
                             ));
@@ -46,7 +49,7 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
                         }
                     }
                     _ => {
-                        return Err(anyhow!("Error querying for tx: {}", e.0));
+                        return Err(eyre!("Error querying for tx: {}", e.0));
                     }
                 }
             }
@@ -55,12 +58,13 @@ pub async fn block_tx_commit(client: &HttpClient, tx: Hash) -> Result<TmTxRespon
 }
 
 // Queries the chain for the latested height and hash
-pub fn query_latest_height_hash(node_url: Url) -> Result<(Height, Hash), Error> {
+pub fn query_latest_height_hash(node_url: Url) -> Result<(Height, Hash)> {
     let cw_client = CliClient::neutrond(node_url);
 
     let (trusted_height, trusted_hash) = cw_client
         .trusted_height_hash()
-        .map_err(|e| Error::GenericErr(e.to_string()))?;
+        .map_err(|e| eyre!(e))
+        .wrap_err("Could not query chain with cw client")?;
 
     Ok((
         trusted_height.try_into()?,
@@ -72,7 +76,7 @@ pub async fn write_cache_hash_height(
     trusted_height: Height,
     trusted_hash: Hash,
     config: &Config,
-) -> Result<(), Error> {
+) -> Result<()> {
     let height_path = config.cache_dir()?.join("trusted.height");
     fs::write(height_path.as_path(), trusted_height.to_string()).await?;
     let hash_path = config.cache_dir()?.join("trusted.hash");
@@ -81,15 +85,21 @@ pub async fn write_cache_hash_height(
     Ok(())
 }
 
-pub async fn read_cached_hash_height(config: &Config) -> Result<(Height, Hash), Error> {
+pub async fn read_cached_hash_height(config: &Config) -> Result<(Height, Hash)> {
     let height_path = config.cache_dir()?.join("trusted.height");
     let hash_path = config.cache_dir()?.join("trusted.hash");
 
     if !height_path.exists() {
-        return Err(Error::PathNotFile(height_path.display().to_string()));
+        return Err(eyre!(
+            "Could not read trusted height from cache: {}",
+            height_path.display().to_string()
+        ));
     }
     if !hash_path.exists() {
-        return Err(Error::PathNotFile(hash_path.display().to_string()));
+        return Err(eyre!(
+            "Could not read trusted hash from cache: {}",
+            hash_path.display().to_string()
+        ));
     }
 
     let trusted_height: Height = fs::read_to_string(height_path.as_path()).await?.parse()?;

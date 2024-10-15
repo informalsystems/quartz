@@ -1,4 +1,4 @@
-use std::{error::Error, fs::File, io::Read, path::PathBuf};
+use std::error::Error;
 
 use anyhow::anyhow;
 use cosmos_sdk_proto::{
@@ -31,15 +31,14 @@ use serde::de::DeserializeOwned;
 
 use crate::CwClient;
 
-#[derive(Clone, Debug)]
 pub struct GrpcClient {
-    sk_file: PathBuf,
+    sk: SigningKey,
     url: Url,
 }
 
 impl GrpcClient {
-    pub fn new(sk_file: PathBuf, url: Url) -> Self {
-        Self { sk_file, url }
+    pub fn new(sk: SigningKey, url: Url) -> Self {
+        Self { sk, url }
     }
 }
 
@@ -91,16 +90,7 @@ impl CwClient for GrpcClient {
         msg: M,
         _fees: &str,
     ) -> Result<String, Self::Error> {
-        let secret = {
-            let mut secret_hex = String::new();
-            let mut sk_file = File::open(self.sk_file.clone())?;
-            sk_file.read_to_string(&mut secret_hex)?;
-            let secret = hex::decode(secret_hex)?;
-            SigningKey::from_slice(&secret)
-                .map_err(|e| anyhow!("failed to read secret key: {}", e))?
-        };
-
-        let tm_pubkey = secret.public_key();
+        let tm_pubkey = self.sk.public_key();
         let sender = tm_pubkey
             .account_id("neutron")
             .map_err(|e| anyhow!("failed to create AccountId from pubkey: {}", e))?;
@@ -122,7 +112,7 @@ impl CwClient for GrpcClient {
             denom: "untrn".parse().expect("hardcoded denom"),
         };
         let tx_bytes = tx_bytes(
-            &secret,
+            &self.sk,
             amount,
             gas,
             tm_pubkey,
@@ -221,18 +211,22 @@ mod tests {
     use serde_json::json;
     use transfers_contract::msg::{execute::Request, QueryMsg::GetRequests};
 
-    use crate::{CwClient, GrpcClient};
+    use crate::{grpc::GrpcClient, CwClient};
 
     #[tokio::test]
     #[ignore]
     async fn test_query() -> Result<(), Box<dyn Error>> {
-        let sk_file = "../data/admin.sk".parse().unwrap();
+        let sk = hex::decode("ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2")
+            .unwrap()
+            .as_slice()
+            .try_into()
+            .unwrap();
         let url = "https://grpc-falcron.pion-1.ntrn.tech:80".parse().unwrap();
         let contract = "neutron15ruzx9wvrupt9cffzsp6868uad2svhfym2nsgxm2skpeqr3qrd4q4uwk83"
             .parse()
             .unwrap();
 
-        let cw_client = GrpcClient::new(sk_file, url);
+        let cw_client = GrpcClient::new(sk, url);
         let resp: Vec<Request> = cw_client
             .query_smart(&contract, json!(GetRequests {}))
             .await?;
@@ -244,14 +238,18 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_execute() -> Result<(), Box<dyn Error>> {
-        let sk_file = "data/admin.sk".parse().unwrap();
+        let sk = hex::decode("ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2")
+            .unwrap()
+            .as_slice()
+            .try_into()
+            .unwrap();
         let url = "https://grpc-falcron.pion-1.ntrn.tech:80".parse().unwrap();
         let contract = "neutron15ruzx9wvrupt9cffzsp6868uad2svhfym2nsgxm2skpeqr3qrd4q4uwk83"
             .parse()
             .unwrap();
         let chain_id = "pion-1".parse().unwrap();
 
-        let cw_client = GrpcClient::new(sk_file, url);
+        let cw_client = GrpcClient::new(sk, url);
         let tx_hash = cw_client
             .tx_execute(
                 &contract,

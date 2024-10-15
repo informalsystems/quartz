@@ -1285,6 +1285,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "color-eyre",
  "cosmos-sdk-proto",
  "cosmrs",
  "hex",
@@ -4352,6 +4353,7 @@ dependencies = [
  "cosmrs",
  "cosmwasm-std",
  "cw-client",
+ "dcap-qvl",
  "dirs 5.0.1",
  "displaydoc",
  "figment",

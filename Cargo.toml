@@ -12,10 +12,11 @@ exclude = ["examples/transfers/contracts", "examples/transfers/enclave"]
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.74.1"
-license = ""
+rust-version = "1.75.0"
+license-file = "LICENSE"
 readme = "README.md"
 repository = "https://github.com/informalsystems/cycles-quartz"
+homepage = "https://cycles.money"
 authors = ["Informal Systems <hello@informal.systems>"]
 
 [workspace.dependencies]
@@ -124,7 +125,7 @@ mc-sgx-dcap-sys-types = { version = "0.11.0", default-features = false }
 mc-attestation-verifier = { version = "0.4.3", default-features = false }
 
 # quartz
-quartz-cw-proof = { path = "crates/contracts/cw-proof", default-features = false }
+quartz-cw-proof = { path = "crates/enclave/cw-proof", default-features = false }
 quartz-common = { path = "crates/common", default-features = false }
 quartz-contract-core = { path = "crates/contracts/core", default-features = false }
 quartz-dcap-verifier-msgs = { path = "crates/contracts/dcap-verifier/msgs", default-features = false }
@@ -136,7 +137,7 @@ quartz-tcbinfo = { path = "crates/contracts/tcbinfo", default-features = false, 
 ] }
 quartz-tcbinfo-msgs = { path = "crates/contracts/tcbinfo/msgs", default-features = false }
 quartz-tm-prover = { path = "crates/utils/tm-prover", default-features = false }
-quartz-tm-stateless-verifier = { path = "crates/contracts/tm-stateless-verifier", default-features = false }
+quartz-tm-stateless-verifier = { path = "crates/enclave/tm-stateless-verifier", default-features = false }
 cw-client = { path = "crates/utils/cw-client", default-features = false }
 
 [profile.release]
