@@ -146,15 +146,10 @@ impl From<DcapAttestation> for RawDcapAttestation {
         ciborium::into_writer(&value.collateral, &mut collateral_serialized)
             .expect("infallible serializer");
 
-        let raw_attestation = Self {
+        Self {
             quote: value.quote.as_ref().to_vec().into(),
             collateral: collateral_serialized.into(),
-        };
-        eprintln!(
-            "DcapAttestation: {}",
-            serde_json::to_string(&value).expect("")
-        );
-        raw_attestation
+        }
     }
 }
 
