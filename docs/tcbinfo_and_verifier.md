@@ -1,5 +1,5 @@
 # Deploying tcbinfo and dcap verifier on a chain
-We have deployed the `dcap-verifier-contract` and `tcbinfo-contract` on neutrons public testnet. If you need to setup your own testnet, or use another testnet, you can use this guide. However in v0.1, we recommend sticking to the contracts we deployed. 
+We have deployed the `dcap-verifier-contract` and `tcbinfo-contract` on neutrons public testnet. If you need to setup your own testnet, or use another testnet, you can use this guide. However in v0.1, we recommend sticking to the contracts we deployed. Remember to set the `QUARTZ_NODE_URL` env var to your testnet. 
 
 ## Get the FMSPC of the host machine
 

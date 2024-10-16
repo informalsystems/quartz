@@ -1,4 +1,6 @@
-# CosmWasm Binaries: Install and Configure
+# CosmWasm Binaries: Manual Install and Configure
+
+> Note - We highly recommend setting up `neutrond` with the docker image provided. However, we have provided these detailed instructions in case you wanted to take a deeper look.
 
 Quartz expects to interact with a CosmWasm-based blockchain. 
 The default/archetypal binary is `neutrond`. We have included instructions for `wasmd`, but it is not supported in the cli today.

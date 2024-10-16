@@ -14,7 +14,7 @@
 
 ## Introduction
 
-This guide will help you get up and running with an example Quartz application. You can run this locally using a "mock" enclave (without real privacy or attestations), or you can use a machine with Intel SGX enabled for secure execution.
+This guide will help you get up and running with an example Quartz application. You can run this locally using a "mock" enclave (without real privacy or attestations), or you can use a machine with Intel SGX enabled for secure execution. We will go over both setups.
 
 > **Note**: This guide assumes familiarity with blockchain concepts and basic smart contract development.
 
@@ -25,20 +25,21 @@ mock SGX:
 
 1. Install dependencies (Rust, neutrond)
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
-3. Install Quartz CLI: `cargo install --path crates/cli`
-4. Navigate to the example app: `cd examples/transfers`
-4. Deploy the example app in one command (enclave, contracts, secure handshake):
+3. Run neutrond: `cd cycles-quarts/docker && docker compose up node`
+4. Install Quartz CLI: `cd .. && cargo install --path crates/cli`
+5. Navigate to the example app: `cd examples/transfers`
+6. Deploy the example app in one command (enclave, contracts, secure handshake):
    ```bash
    quartz --mock-sgx dev \
    --unsafe-trust-latest \
-   --contract-manifest "contracts/Cargo.toml" \ TODO - dont these need to be updated with teh TCB and DCAP?
+   --contract-manifest "contracts/Cargo.toml" \
    --init-msg '{"denom":"ucosm"}'
    ```
-5. Set up the frontend (see [Frontend](#frontend))
+6. Set up the frontend (see [Frontend](#frontend))
 
 For more detailed background and instructions, read on.
 
-## Simple Example
+## Simple Example - Local Mock SGX Application
 
 Quartz includes a simple example we call the `Transfer` application,
 located in [/examples/transfers](/examples/transfers), that comes with a Keplr-based
@@ -69,7 +70,7 @@ setup. For more on building application, see
 
 Onwards with the installation and running our example app! 
 
-## Installation
+### Installation
 
 Quartz is built in Rust (+wasm32 target). It expects to interact with a CosmWasm compatible
 blockchain (eg. `neutrond`), built in Go (or run with Docker). And it requires `npm` for
@@ -82,11 +83,10 @@ Pre-reqs:
 - Go or Docker
 - NPM
 
-### Install Rust
+#### Install Rust
 
 The minimum Rust supported version is v1.74.1.
-The recommended Rust version v1.79.0 since we're running against
-wasmd v0.45.
+The recommended Rust version v1.79.0.
 
 Install rust [here](https://www.rust-lang.org/tools/install).
 
@@ -100,7 +100,7 @@ rustup target add wasm32-unknown-unknown
 
 And you should be good to go!
 
-### Install Quartz
+#### Install Quartz
 
 Now clone and build the repo:
 
@@ -116,39 +116,24 @@ And check that it worked:
 quartz --help
 ```
 
-### Install a CosmWasm Client
+#### Install a CosmWasm Client
 
 For the local testnet, we can use `neutrond` with a single validator (we have a docker image for this).
-
-For the real testnet, we use `neutrond` and connect to their existing testnet (see the [config file](../examples/transfers/quartz.neutron_pion-1.toml)).
-
-You can also use an existing installation if you have, or you can build from
-source in Go. If so, you'll have to setup accounts that can pay gas. See [neutrond setup instructions](/docs/neutrond_setup.md)
-
-The docker images come with everything. To use them install and setup docker.
 
 For `neutrond`:
 
 ```bash
-cd docker/neutron
-make start-docker-container
-```
-
-Or for wasmd`:
-
-```bash
-cd docker/wasmd
-make run
+cd docker
+docker compose up node
 ```
 
 It will pre-configure a few keys (admin, alice, etc.) and allocate funds to them. 
 The default sending account for quartz txs is `admin`. 
 
 If building from source, you'll need to initialize the accounts yourself. See
-the guide on [setting up a CosmWasm chain](/docs/neutrond_setup.md) and then return
-back here.
+the guide on [setting up a CosmWasm chain](/docs/neutrond_setup.md) and then return back here.
 
-## Local neutrond Testnet Without SGX
+### Local neutrond Testnet Without SGX
 
 From the root of the `cycles-quartz` repo, we can now deploy our example
 transfers app. Deployment involves three components:
@@ -225,11 +210,15 @@ environment variable:
 export PUBKEY=<PUBKEY>
 ```
 
-Now the contract is ready to start processing requests to the enclave.
+Now the contract is ready to start processing requests to the enclave. You will see logs from the enclave showing:
+
+```bash
+2024-09-24T11:12:25.156779Z  INFO Enclave is listening for requests...
+```
 
 ### Frontend
 
-You can run the front end on your local computer, so it is easy to test in a browser. If you are running your application in the cloud (such as an Azure SGX machine), you can configure the front end to talk to that blockchain over the internet.
+You can run the front end on your local computer, so it is easy to test in a browser. If you are running your application in the cloud (such as an Azure SGX machine), you can configure the front end to talk to that blockchain over the internet. You will need node `>= v18.17.0` to build the front end.
 
 1. Navigate to the frontend folder:
    ```bash
@@ -282,7 +271,7 @@ them to other addresses, and finally withdrawing them.
 Be sure to check the enclave window to see the logs from your interaction with
 the app!
 
-## Real Testnet with SGX
+## Hard Example - Real Testnet with Azure SGX
 
 Now that we've tried the example app on a local testnet with a mocked SGX, it's
 time to use a real testnet and a real SGX core. This guide will walk through how
@@ -301,7 +290,6 @@ testnet at:
 - verifier - `neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf`
 - tcbinfo - `neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps`
 
-
 To deploy these on your own testnet, see [below](#other-testnets-with-sgx). Although for v0.1, we recommend going with these already deployed contracts.
 
 ### Setting up an Azure machine
@@ -310,7 +298,7 @@ Follow the [steps Microsoft lays out](https://learn.microsoft.com/en-us/azure/co
 
 Once logged in, clone and install Quartz like before (see [installation](#installation)). Once you clone the Quartz repo, you'll have to add some things to your azure machine.
 
-Below we have provided a very long instruction set to get the azure machine setup. We plan on dockerizing all of this after the v0.1 launch, as it is quite complex. You can reach out for the team for help if you get stuck here. 
+Below we have provided a long instruction set to get the azure machine setup. We plan on dockerizing all of this after the v0.1 launch, as it is quite complex. You can reach out for the team for help if you get stuck here. 
 
 ```bash
 ### INSIDE YOUR AZURE SGX MACHINE ###
@@ -390,114 +378,41 @@ sudo cp sgx_default_qcnl.conf /etc/sgx_default_qcnl.conf
 # reset pccs
 sudo systemctl restart pccs
 
-# run dev
+# build and start the enclave
 export TCBINFO_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
 export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf
 export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
-
-
-
-```
-
-### Dave - deploy and build contracts
-```bash
 cd examples/transfers
+
+# copy the neutron testnet config file to the default quartz.toml file, so we connect to the right nodes
+cp quartz.neutron_pion-1.toml quartz.toml
 quartz enclave build
-export TCBINFO_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
-export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf
-quartz  enclave start  --fmspc "00606A000000" --tcbinfo-contract $TCBINFO_CONTRACT --dcap-verifier-contract $DCAP_CONTRACT --unsafe-trust-latest
+quartz enclave start  --fmspc "00906ED50000" --tcbinfo-contract $TCBINFO_CONTRACT --dcap-verifier-contract $DCAP_CONTRACT --unsafe-trust-latest
 
-### Build and Deploy the Contracts
-
-TODO: 
-- make this about deploying to neutron.
-- do it from examples/transfers to avoid specifying `--app-dir` 
-
-
-To build both the contract binaries, use the build command:
-
-```bash
+# build and deploy the contracts
 quartz contract build --contract-manifest "contracts/Cargo.toml"
+quartz contract deploy --contract-manifest "contracts/Cargo.toml" --init-msg '{"denom":"ucosm"}'
+
+# store the output
+export CONTRACT=<CONTRACT_ADDRESS>
+
+# create the handshake
+quartz handshake --contract $CONTRACT
+
+### ENCLAVE IS SETUP AND RUNNING! CONGRATS!
+### Now follow instructions in the Front End section of this doc to test the enclave
 ```
-This command will compile the smart contract to WebAssembly and build the contract binary.
 
-The following configuration assumes that the `wasmd` node will be running in the same Azure instance as the enclave. TODO - wasdm or neutrond
-If you wish to use another enclave provider you have to make sure that `QUARTZ_NODE_URL` is set to the enclave address and port as an argument as in:
-
+### Using an enclave on another machine
+You can use a remote enclave machine by setting the following env var:
 ```bash
-QUARTZ_NODE_URL=87.23.1.3:11090 && quartz --app-dir "examples/transfers/" contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
+QUARTZ_NODE_URL=<YOUR_IP_ADDR>:11090
+# You can now use that enclave to deploy
+cd examples/transfers
+quartz contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
 ```
 
-If you wish to use another blockchain you have to make sure that `--node-url` is set to the chain address and port as an option in the `cli` as in:
-
-```bash
-QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "examples/transfers/" --node-url "https://92.43.1.4:26657" contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
-```
-
-### Build and Run the SGX Enclave
-
-First we build the enclave like before:
-
-```bash
-# Configure the enclave
-quartz --app-dir "examples/transfers/" enclave build
-```
-
-Before starting the enclave, we should check that the relevant contracts
-(`quartz-tcbinfo`, `quartz-dcap-verifier`) have been instantiated.
-
-TODO: how to query to check this?
-
-TODO: use variables for the contract addresses 
-
-
-
-```bash
-# Start the enclave
-QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "examples/transfers/" enclave start  --fmspc "00606A000000" --tcbinfo-contract "wasm1pk6xe9hr5wgvl5lcd6wp62236t5p600v9g7nfcsjkf6guvta2s5s7353wa" --dcap-verifier-contract "wasm107cq7x4qmm7mepkuxarcazas23037g4q9u72urzyqu7r4saq3l6srcykw2"
-```
-
-The enclave will start running and wait for commands.
-
-### Deploying the Contract
-
-With the enclave running, open a new terminal window to deploy the contract:
-
-```bash
-QUARTZ_NODE_URL=127.0.0.1:11090 && quartz --app-dir "examples/transfers/" contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
-```
-
-Make note of the deployed contract address, as you'll need it for the next step. You should see output similar to:
-
-```
-2024-09-26T15:21:39.036639Z  INFO 🆔 Code ID: 66
-2024-09-26T15:21:39.036640Z  INFO 📌 Contract Address: wasm1z0az3d9j9s3rjmaukxc58t8hdydu8v0d59wy9p6slce66mwnzjusy76vdq
-{"ContractDeploy":{"code_id":66,"contract_addr":"wasm1z0az3d9j9s3rjmaukxc58t8hdydu8v0d59wy9p6slce66mwnzjusy76vdq"}}
-```
-
-### Performing the Handshake + activating listener
-
-To establish communication between the contract and the enclave, perform the handshake:
-
-```bash
-quartz --app-dir "examples/transfers/" handshake --contract <CONTRACT_ADDRESS>
-```
-
-Replace `<CONTRACT_ADDRESS>` with the address you received when deploying the contract.
-
-Make note of the handshake generate public key, as you'll need it for the `.env.local` files on the front-end. You should see output similar to:
-
-```bash
-2024-09-24T11:12:16.961641Z  INFO Handshake complete: 02360955ff74750f6ea0b539f41cce89451f591e4c835d0a5406e6effa96dd169d
-```
-
-Events coming from the contract will be logged following the handshake as they are retrieved by the listener:
-
-```bash
-2024-09-24T11:12:25.156779Z  INFO Enclave is listening for requests...
-```
-
-## Other Testnets With SGX
+### Other Testnets With SGX
 
 To setup on another testnet we need to deploy a `quartz-tcbinfo` contract and a
 `quartz-dcap-verifier` contract. However we recommend using the deployed contracts on neutrons public testnet for v0.1.
