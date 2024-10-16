@@ -6,8 +6,8 @@
 - [Quick Start](#quick-start)
 - [Simple Example](#simple-example)
 - [Installation](#installation)
-- [Local Testnet without SGX](#local-testnet-without-sgx) TODO - broken
-- [Real Testnet with SGX](#real-testnet-with-sgx)
+- [Local Testnet without SGX](#local-neutrond-testnet-without-sgx)
+- [Real Testnet with SGX](#hard-example---real-testnet-with-azure-sgx))
 - [Other Testnets with SGX](#other-testnets-with-sgx)
 - [Troubleshooting and FAQ](#troubleshooting-and-faq)
 - [Glossary](#glossary)
@@ -64,8 +64,8 @@ it. The quartz tool provides commands for managing the enclave.
 This guide is primarily about using the `quartz` tool to get the example app
 setup. For more on building application, see 
 - [Building Apps](/docs/building_apps.md) - conceptual overview 
-- [quartz-contract-core](/cosmwasm/quartz-contract-core) - main library. provides msgs and handlers
-  for the handshake and for verifying attestations TODO - link broken
+- [quartz-contract-core](/crates/contracts/core/) - main library. provides msgs and handlers
+  for the handshake and for verifying attestations
 - [transfers contracts](/examples/transfers/contracts): transfer app example itself
 
 Onwards with the installation and running our example app! 
