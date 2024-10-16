@@ -17,7 +17,7 @@ Protobuf types defining the Quartz handshake to initialize connection between a 
 
 [dependencies]
 # external
-prost.workspace = true
+prost = { workspace = true, features = ["derive"] }
 tonic.workspace = true
 
 [build-dependencies]
