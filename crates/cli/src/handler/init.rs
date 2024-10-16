@@ -45,11 +45,12 @@ impl Handler for InitRequest {
             overwrite: true,
             vcs: Some(Vcs::Git),
             template_path: TemplatePath {
-                git: Some("git@github.com:informalsystems/cycles-quartz.git".to_string()),
+                git: Some("https://github.com/informalsystems/cycles-quartz.git".to_string()),
                 ..TemplatePath::default()
             },
             ..GenerateArgs::default()
         };
+            
 
         let result_dir = generate(wasm_pack_args)
             .expect("something went wrong!")

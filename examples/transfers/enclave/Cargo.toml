@@ -71,9 +71,9 @@ tendermint-light-client = { version = "=0.38.1", default-features = false, featu
 transfers-contract = { path = "../contracts", default-features = false }
 
 # quartz
-cw-client = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", package = "cw-client", default-features = false }
-quartz-common = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", package = "quartz-common", features = ["full"] }
-quartz-tm-prover = { git = "ssh://git@github.com/informalsystems/cycles-quartz.git", package = "tm-prover", default-features = false }
+cw-client = { git = "https://github.com/informalsystems/cycles-quartz.git", package = "cw-client", default-features = false }
+quartz-common = { git = "https://github.com/informalsystems/cycles-quartz.git", package = "quartz-common", features = ["full"] }
+quartz-tm-prover = { git = "https://github.com/informalsystems/cycles-quartz.git", package = "tm-prover", default-features = false }
 
 
 
