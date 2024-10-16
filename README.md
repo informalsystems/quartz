@@ -54,7 +54,7 @@ Quartz provides developers three main tools:
 - a rust library (`quartz-enclave-core`) for building blockchain constrained SGX enclaves
 - a cli tool (`quartz`) for connecting the contract and the enclave.
 
-This repo contains an example, [`transfers`](/apps/transfers), which combines these
+This repo contains an example, [`transfers`](/examples/transfers), which combines these
 tools into a working private transfers application, complete with a Keplr-based
 frontend.
 
@@ -127,9 +127,9 @@ The repo contains some additional utilities for supporting Quartz development:
 * [quartz-cw-prover](crates/utils/cw-prover) - Retrieve a merkle-proof for CosmWasm state
 * [quartz-tm-prover](crates/utils/tm-prover) - Generate light client and merkle proofs for CosmWasm storage in a format that Quartz
   understands
-* [quartz-cw-client](crates/utils/quartz-cw-client) - Rust client for wasmd
+* [quartz-cw-client](crates/utils/cw-client) - Rust client for wasmd
   style blockchains
-* [quartz-print-fmspc](crates/utils/quartz-print-fmspc) - Print the FMSPC, a
+* [quartz-print-fmspc](crates/utils/print-fmspc) - Print the FMSPC, a
   description of the SGX processor family/model etc.
 
 
