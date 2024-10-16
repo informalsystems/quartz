@@ -45,8 +45,8 @@ impl Handler for InitRequest {
             overwrite: true,
             vcs: Some(Vcs::Git),
             template_path: TemplatePath {
-                // git: Some("git@github.com:informalsystems/cycles-quartz.git".to_string()), // TODO: replace with git address when open-sourced
-                path: Some(root_dir.join("examples/transfers").display().to_string()),
+                git: Some("git@github.com:informalsystems/cycles-quartz.git".to_string()), // Use the GitHub repository
+                path: Some("examples/transfers".to_string()), // Subdirectory where the template is located
                 ..TemplatePath::default()
             },
             ..GenerateArgs::default()
