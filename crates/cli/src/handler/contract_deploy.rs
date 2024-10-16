@@ -1,4 +1,4 @@
-use std::{path::Path};
+use std::path::Path;
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
