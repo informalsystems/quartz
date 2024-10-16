@@ -2,8 +2,8 @@ use std::{env, fs, path::PathBuf};
 
 fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-    let source_dir =
-        PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("../../contracts/tee-ra/data");
+    let source_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
+        .join("../../../crates/contracts/tee-ra/data");
 
     fs::create_dir_all(&out_dir).unwrap();
 
