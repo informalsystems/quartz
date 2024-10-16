@@ -10,6 +10,7 @@ homepage.workspace = true
 keywords = ["cosmos", "cosmwasm", "cycles", "quartz", "sgx"]
 readme = "README.md"
 description = """
+Message and query definitions for the quartz-dcap-verifier contract
 """
 
 [dependencies]
