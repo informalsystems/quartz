@@ -50,7 +50,6 @@ impl Handler for InitRequest {
             },
             ..GenerateArgs::default()
         };
-            
 
         let result_dir = generate(wasm_pack_args)
             .expect("something went wrong!")
