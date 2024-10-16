@@ -95,5 +95,5 @@ The enclave code can then produce a remote attestation of the result, and
 optionally a zero-knowledge proof (ZKP) of execution.
 
 
-[transfers_app]: /apps/transfers
+[transfers_app]: /examples/transfers
 [how_it_works]: /docs/how_it_works.md
