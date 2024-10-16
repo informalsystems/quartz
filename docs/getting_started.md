@@ -195,6 +195,12 @@ environment variable:
 export CONTRACT_ADDRESS=<CONTRACT_ADDRESS>
 ```
 
+You must also set the admin secret key:
+
+```bash
+export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
+```
+
 3. Perform the handshake:
    ```bash
    quartz --mock-sgx handshake --contract $CONTRACT_ADDRESS
