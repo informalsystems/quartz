@@ -73,7 +73,7 @@ transfers-contract = { path = "../contracts", default-features = false }
 # quartz
 cw-client = { git = "https://github.com/informalsystems/cycles-quartz.git", package = "cw-client", default-features = false }
 quartz-common = { git = "https://github.com/informalsystems/cycles-quartz.git", package = "quartz-common", features = ["full"] }
-quartz-tm-prover = { git = "https://github.com/informalsystems/cycles-quartz.git", package = "tm-prover", default-features = false }
+quartz-tm-prover = { git = "https://github.com/informalsystems/cycles-quartz.git", package = "quartz-tm-prover", default-features = false }
 
 
 
