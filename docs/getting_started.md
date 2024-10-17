@@ -23,7 +23,7 @@ This guide will help you get up and running with an example Quartz application. 
 For those who want to get started quickly with the example Transfers app with
 mock SGX:
 
-1. Install dependencies (Rust, docker desktop v.4.34.3 )
+1. Install dependencies (Rust, docker desktop v.4.34.3 or docker cli)
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
 3. Run everything: `cd cycles-quartz/docker && docker compose up`
 4. On docker desktop, go to the `enclave` logs and copy `contract address` and `pub key` to later setup the Frontend `env.local`
