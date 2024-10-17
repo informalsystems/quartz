@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use async_trait::async_trait;
 use cargo_generate::{generate, GenerateArgs, TemplatePath, Vcs};
 use color_eyre::{eyre::Context, owo_colors::OwoColorize, Report, Result};
