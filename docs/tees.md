@@ -6,21 +6,14 @@ TEEs allow you to do things that cryptography alone doesnt - like verifiable
 data deletion, decentralized front-end hosting, collusion resistance, etc.
 
 They also let you overcome current deficiencies and inefficiencies in
-cryptographic solutions.
+cryptographic solutions. TEEs are best seen as complements to a cryptographic stack.
 
-TEEs are best seen as complements to a cryptographic stack.
+A major motivation for TEEs is private computation. There are really only two ways to do computation on private data: MPC and TEEs.
 
-There are really only two ways to do computation on private data: MPC and TEEs.
-
-MPC is still highly inefficient for complex transactions. 
-
-FHE is just a way to accelerate MPC (trading off network IO for compute). It's
-not a privacy solution for blockchains on its own.
-
-ZKP provide privacy from the verifier but not from the prover. Producing a ZKP
-privately either requires MPC or a TEE.
-
-Ideal stack combines all privacy technologies as appropriate.
+- MPC is still highly inefficient for complex transactions. 
+- FHE is just a way to accelerate MPC (trading off network IO for compute). It's not a privacy solution for blockchains on its own.
+- ZKP provide privacy from the verifier but not from the prover. Producing a ZKP privately either requires MPC or a TEE.
+- Ideal stack combines all privacy technologies as appropriate.
 
 The goal with Quartz is to provide a simple framework for getting started using
 TEEs with an eye towards reducing dependency on the TEE as much as possible
