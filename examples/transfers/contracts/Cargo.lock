@@ -1009,9 +1009,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.159"
+version = "0.2.160"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "561d97a539a36e26a9a5fad1ea11a3039a67714694aaa379433e580854bc3dc5"
+checksum = "f0b21006cd1874ae9e650973c565615676dc4a274c965bb0a73796dac838ce4f"
 
 [[package]]
 name = "libloading"
@@ -1315,8 +1315,9 @@ dependencies = [
 
 [[package]]
 name = "quartz-common"
-version = "0.1.0"
-source = "git+https://github.com/informalsystems/cycles-quartz.git?branch=main#023552c0e6f6b391af760d0a96064fcb1f6e9398"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ede21ada6835cd4f0982988c6987099707c82ef2d41ca460424164b139da039d"
 dependencies = [
  "quartz-contract-core",
 ]
@@ -1324,7 +1325,8 @@ dependencies = [
 [[package]]
 name = "quartz-contract-core"
 version = "0.1.0"
-source = "git+https://github.com/informalsystems/cycles-quartz.git?branch=main#023552c0e6f6b391af760d0a96064fcb1f6e9398"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bba4ce403201fecbea60e7fccd8624fb3f8a62c29ec4eae280a9e20ec7fdc273"
 dependencies = [
  "ciborium",
  "cosmwasm-schema",
@@ -1345,7 +1347,8 @@ dependencies = [
 [[package]]
 name = "quartz-dcap-verifier-msgs"
 version = "0.1.0"
-source = "git+https://github.com/informalsystems/cycles-quartz.git?branch=main#023552c0e6f6b391af760d0a96064fcb1f6e9398"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a6e9adb2e1877aa743947f021bebb9dffcee248e1ecb469acdda9c7fd0342fb"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1354,7 +1357,8 @@ dependencies = [
 [[package]]
 name = "quartz-tcbinfo-msgs"
 version = "0.1.0"
-source = "git+https://github.com/informalsystems/cycles-quartz.git?branch=main#023552c0e6f6b391af760d0a96064fcb1f6e9398"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "addfd5be75e367b1e2a1da5dd9c2ee7b75527ccc02e29ce3df701f54387f8732"
 dependencies = [
  "cosmwasm-schema",
 ]
@@ -1362,7 +1366,8 @@ dependencies = [
 [[package]]
 name = "quartz-tee-ra"
 version = "0.1.0"
-source = "git+https://github.com/informalsystems/cycles-quartz.git?branch=main#023552c0e6f6b391af760d0a96064fcb1f6e9398"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42bbe5f9eaf06430360b7bc0d5e1d0941b7aa720f6241088cd012321f69b0b52"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
