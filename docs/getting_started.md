@@ -7,7 +7,7 @@
 - [Simple Example](#simple-example)
 - [Installation](#installation)
 - [Local Testnet without SGX](#local-neutrond-testnet-without-sgx)
-- [Real Testnet with SGX](#hard-example---real-testnet-with-azure-sgx))
+- [Real Testnet with SGX](#real-testnet-with-azure-sgx)
 - [Other Testnets with SGX](#other-testnets-with-sgx)
 - [Troubleshooting and FAQ](#troubleshooting-and-faq)
 - [Glossary](#glossary)
@@ -277,12 +277,14 @@ them to other addresses, and finally withdrawing them.
 Be sure to check the enclave window to see the logs from your interaction with
 the app!
 
-## Hard Example - Real Testnet with Azure SGX
+## Real Testnet with Azure SGX
 
 Now that we've tried the example app on a local testnet with a mocked SGX, it's
 time to use a real testnet and a real SGX core. This guide will walk through how
 to get setup with SGX on Azure, and how to deploy quartz contracts to the
-Neutron testnet using real remote attestations from SGX cores on Azure.
+Neutron testnet using real remote attestations from SGX cores on Azure. Since
+this requires setting up an actual SGX setup, its naturally much more
+complicated.
 
 Real verification of SGX on a CosmWasm network requires two additional global contracts
 to be deployed: `quartz-dcap-verify` and `quartz-tcbinfo`. The
@@ -383,7 +385,11 @@ sudo cp sgx_default_qcnl.conf /etc/sgx_default_qcnl.conf
 
 # reset pccs
 sudo systemctl restart pccs
+```
 
+Now everything is installed and ready and we can start running quartz:
+
+```
 # build and start the enclave
 export TCBINFO_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
 export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf
@@ -406,8 +412,9 @@ export CONTRACT=<CONTRACT_ADDRESS>
 quartz handshake --contract $CONTRACT
 
 ### ENCLAVE IS SETUP AND RUNNING! CONGRATS!
-### Now follow instructions in the Front End section of this doc to test the enclave
 ```
+
+Wahoo! Now follow the instructions in the [Front End section](#frontend) of this doc to test the application with a real enclave.
 
 ### Using an enclave on another machine
 You can use a remote enclave machine by setting the following env var:
