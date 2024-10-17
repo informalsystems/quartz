@@ -4255,7 +4255,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-common"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "quartz-contract-core 0.1.0",
  "quartz-enclave-core",
@@ -4375,7 +4375,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-enclave-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-trait",

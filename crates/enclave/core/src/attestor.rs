@@ -27,10 +27,10 @@ pub type DefaultAttestor = DcapAttestor;
 #[cfg(feature = "mock-sgx")]
 pub type DefaultAttestor = MockAttestor;
 
-const QE_IDENTITY_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/qe_identity.json"));
-const ROOT_CA: &str = include_str!(concat!(env!("OUT_DIR"), "/root_ca.pem"));
-const ROOT_CRL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/root_crl.der"));
-const TCB_SIGNER: &str = include_str!(concat!(env!("OUT_DIR"), "/tcb_signer.pem"));
+const QE_IDENTITY_JSON: &str = include_str!("../data/qe_identity.json");
+const ROOT_CA: &str = include_str!("../data/root_ca.pem");
+const ROOT_CRL: &[u8] = include_bytes!("../data/root_crl.der");
+const TCB_SIGNER: &str = include_str!("../data/tcb_signer.pem");
 
 /// The trait defines the interface for generating attestations from within an enclave.
 pub trait Attestor: Send + Sync + 'static {
