@@ -22,8 +22,6 @@ impl Handler for InitRequest {
         let config = config.as_ref();
         info!("{}", "\nPeforming Init".blue().bold());
 
-        let root_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-
         let parent = self
             .name
             .parent()
