@@ -23,7 +23,7 @@ This guide will help you get up and running with an example Quartz application. 
 For those who want to get started quickly with the example Transfers app with
 mock SGX:
 
-1. Install dependencies (Rust, docket desktop v.4.34.3 )
+1. Install dependencies (Rust, docker desktop v.4.34.3 )
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
 3. Run everything: `cd cycles-quartz/docker && docker compose up`
 4. On docker desktop, go to the `enclave` logs and copy `contract address` and `pub key` to later setup the Frontend `env.local`
@@ -259,7 +259,7 @@ address some funds from the `admin` account setup with your local node. For
 instance, send 10M untrn with:
 
 ```bash
-neutrond tx bank send admin <KEPLR ADDRESS> untrn --chain-id testing
+neutrond tx bank send admin <KEPLR ADDRESS> 10000000untrn --chain-id testing
 ```
 
 You should now see the funds on your local testnet on Keplr.
