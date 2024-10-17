@@ -23,19 +23,11 @@ This guide will help you get up and running with an example Quartz application. 
 For those who want to get started quickly with the example Transfers app with
 mock SGX:
 
-1. Install dependencies (Rust, neutrond)
+1. Install dependencies (Rust, docker desktop v.4.34.3 or docker cli)
 2. Clone the repository: `git clone ssh://git@github.com/informalsystems/cycles-quartz`
-3. Run neutrond: `cd cycles-quarts/docker && docker compose up node`
-4. Install Quartz CLI: `cd .. && cargo install --path crates/cli`
-5. Navigate to the example app: `cd examples/transfers`
-6. Deploy the example app in one command (enclave, contracts, secure handshake):
-   ```bash
-   quartz --mock-sgx dev \
-   --unsafe-trust-latest \
-   --contract-manifest "contracts/Cargo.toml" \
-   --init-msg '{"denom":"ucosm"}'
-   ```
-6. Set up the frontend (see [Frontend](#frontend))
+3. Run everything: `cd cycles-quartz/docker && docker compose up`
+4. On docker desktop, go to the `enclave` logs and copy `contract address` and `pub key` to later setup the Frontend `env.local`
+5. Set up the frontend (see [Frontend](#frontend))
 
 For more detailed background and instructions, read on.
 
@@ -81,6 +73,7 @@ Pre-reqs:
 - Git
 - Make
 - Go or Docker
+- Docker desktop v.4.34.3 with `host networking` enabled [here](https://docs.docker.com/engine/network/drivers/host/?uuid=67f19d61-ae59-4996-9060-01ebef9a586c%0A#docker-desktop).
 - NPM
 
 #### Install Rust
@@ -181,7 +174,7 @@ continue.
    ```bash
    quartz --mock-sgx contract deploy \
    --contract-manifest "contracts/Cargo.toml" \
-   --init-msg '{"denom":"ucosm"}'
+   --init-msg '{"denom":"untrn"}'
    ```
 
 Note our contract takes initialization data in the `--init-msg` which for
@@ -263,10 +256,10 @@ Testing Chain` so you can talk to your local chain and see your balance.
 
 Create a new address in Keplr for testing purpose. You'll need to send this
 address some funds from the `admin` account setup with your local node. For
-instance, send 10M ucosm with:
+instance, send 10M untrn with:
 
 ```bash
-neutrond tx bank send admin <KEPLR ADDRESS> 10000000ucosm --chain-id testing
+neutrond tx bank send admin <KEPLR ADDRESS> 10000000untrn --chain-id testing
 ```
 
 You should now see the funds on your local testnet on Keplr.
@@ -403,7 +396,7 @@ quartz enclave start  --fmspc "00906ED50000" --tcbinfo-contract $TCBINFO_CONTRAC
 
 # build and deploy the contracts
 quartz contract build --contract-manifest "contracts/Cargo.toml"
-quartz contract deploy --contract-manifest "contracts/Cargo.toml" --init-msg '{"denom":"ucosm"}'
+quartz contract deploy --contract-manifest "contracts/Cargo.toml" --init-msg '{"denom":"untrn"}'
 
 # store the output
 export CONTRACT=<CONTRACT_ADDRESS>
@@ -422,7 +415,7 @@ You can use a remote enclave machine by setting the following env var:
 QUARTZ_NODE_URL=<YOUR_IP_ADDR>:11090
 # You can now use that enclave to deploy
 cd examples/transfers
-quartz contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"ucosm"}'
+quartz contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"untrn"}'
 ```
 
 ### Other Testnets With SGX
