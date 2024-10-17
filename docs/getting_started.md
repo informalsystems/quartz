@@ -7,7 +7,7 @@
 - [Simple Example](#simple-example)
 - [Installation](#installation)
 - [Local Testnet without SGX](#local-neutrond-testnet-without-sgx)
-- [Real Testnet with SGX](#hard-example---real-testnet-with-azure-sgx)
+- [Real Testnet with SGX](#real-testnet-with-azure-sgx)
 - [Other Testnets with SGX](#other-testnets-with-sgx)
 - [Troubleshooting and FAQ](#troubleshooting-and-faq)
 - [Glossary](#glossary)
