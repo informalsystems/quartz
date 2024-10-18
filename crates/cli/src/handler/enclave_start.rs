@@ -1,4 +1,5 @@
 use std::{fs, path::Path};
+
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use color_eyre::{
@@ -10,9 +11,12 @@ use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 use reqwest::Url;
 use tendermint::chain::Id;
-use tokio::{io::{AsyncBufReadExt, BufReader}, sync::oneshot};
-use tokio::process::{Child, Command};
-use tracing::{debug, info, error};
+use tokio::{
+    io::{AsyncBufReadExt, BufReader},
+    process::{Child, Command},
+    sync::oneshot,
+};
+use tracing::{debug, error, info};
 
 use crate::{
     config::Config,
@@ -20,8 +24,6 @@ use crate::{
     request::enclave_start::EnclaveStartRequest,
     response::{enclave_start::EnclaveStartResponse, Response},
 };
-
-
 
 #[async_trait]
 impl Handler for EnclaveStartRequest {
@@ -42,7 +44,15 @@ impl Handler for EnclaveStartRequest {
 
         // Spawn the enclave process in the background
         tokio::spawn(async move {
-            if let Err(e) = start_enclave(self, &config, trusted_height.to_string(), trusted_hash.to_string(), tx).await {
+            if let Err(e) = start_enclave(
+                self,
+                &config,
+                trusted_height.to_string(),
+                trusted_hash.to_string(),
+                tx,
+            )
+            .await
+            {
                 error!("Error starting enclave: {:?}", e);
             }
         });
@@ -95,7 +105,8 @@ async fn start_mock_enclave(
         config.tx_sender.clone(),
     ];
 
-    let mut child = create_mock_enclave_child(&config.app_dir, config.release, enclave_args).await?;
+    let mut child =
+        create_mock_enclave_child(&config.app_dir, config.release, enclave_args).await?;
     handle_process(&mut child).await
 }
 
@@ -144,9 +155,13 @@ async fn create_mock_enclave_child(
 async fn handle_process(child: &mut Child) -> Result<()> {
     info!("Enclave process is running...");
 
-    let stdout = child.stdout.take()
+    let stdout = child
+        .stdout
+        .take()
         .ok_or_else(|| eyre!("Failed to capture stdout"))?;
-    let stderr = child.stderr.take()
+    let stderr = child
+        .stderr
+        .take()
         .ok_or_else(|| eyre!("Failed to capture stderr"))?;
 
     let mut stdout_reader = BufReader::new(stdout).lines();
@@ -187,18 +202,24 @@ async fn handle_process(child: &mut Child) -> Result<()> {
     Ok(())
 }
 
-
-
-
 async fn start_real_enclave(
     request: &EnclaveStartRequest,
     config: &Config,
     trusted_height: String,
     trusted_hash: String,
 ) -> Result<()> {
-    let fmspc = request.fmspc.as_ref().ok_or_else(|| eyre!("FMSPC is required if MOCK_SGX isn't set"))?;
-    let tcbinfo_contract = request.tcbinfo_contract.as_ref().ok_or_else(|| eyre!("tcbinfo_contract is required if MOCK_SGX isn't set"))?;
-    let dcap_verifier_contract = request.dcap_verifier_contract.as_ref().ok_or_else(|| eyre!("dcap_verifier_contract is required if MOCK_SGX isn't set"))?;
+    let fmspc = request
+        .fmspc
+        .as_ref()
+        .ok_or_else(|| eyre!("FMSPC is required if MOCK_SGX isn't set"))?;
+    let tcbinfo_contract = request
+        .tcbinfo_contract
+        .as_ref()
+        .ok_or_else(|| eyre!("tcbinfo_contract is required if MOCK_SGX isn't set"))?;
+    let dcap_verifier_contract = request
+        .dcap_verifier_contract
+        .as_ref()
+        .ok_or_else(|| eyre!("dcap_verifier_contract is required if MOCK_SGX isn't set"))?;
 
     if std::env::var("ADMIN_SK").is_err() {
         return Err(eyre!("ADMIN_SK environment variable is not set"));
@@ -221,15 +242,14 @@ async fn start_real_enclave(
         &config.node_url,
         &config.ws_url,
         &config.grpc_url,
-    ).await?;
+    )
+    .await?;
     gramine_sgx_sign(&enclave_dir).await?;
 
     // Start Gramine SGX enclave
     let mut enclave_child = create_gramine_sgx_child(&enclave_dir).await?;
     handle_process(&mut enclave_child).await
 }
-
-
 
 async fn gramine_sgx_gen_private_key(enclave_dir: &Path) -> Result<()> {
     // Launch the gramine-sgx-gen-private-key command
