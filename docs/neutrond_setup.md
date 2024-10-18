@@ -22,7 +22,7 @@ For `neutrond`:
 git clone -b main https://github.com/neutron-org/neutron.git
 cd neutron
 git checkout v4.0.1
-make install
+make install-test-binary
 ```
 
 For `wasmd` (NOTE - NOT SUPPORTED BY CLI):
