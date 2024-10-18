@@ -133,10 +133,15 @@ docker compose up node
 It will pre-configure a few keys (admin, alice, etc.) and allocate funds to them. 
 The default sending account for quartz txs is `admin`.
 However, these accounts are setup in the docker image. Because we will be deploying our contracts outside of the docker image
-we need to have these accounts imported locally. You can do this with:
+we need to have these accounts imported locally. You can do this by install neutrond locally and importing the accounts:
 
 ```bash
-cd docker/neutrond
+cd ~
+git clone -b main https://github.com/neutron-org/neutron.git
+cd neutron/
+make install-test-binary
+
+cd cycles-quartz/docker/neutrond
 make import-local-accounts
 ```
 
@@ -179,7 +184,7 @@ Now, from `examples/transfers`:
    quartz --mock-sgx enclave start
    ```
 
-The enclave is a long running process. You'll have to open another window to
+If the enclave says `Spawning enclave process....` it is working. Now open another window to
 continue.
 
 ### Contract
