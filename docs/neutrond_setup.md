@@ -21,7 +21,7 @@ For `neutrond`:
 ```bash
 git clone -b main https://github.com/neutron-org/neutron.git
 cd neutron
-git checkout v4.0.0
+git checkout v4.0.1
 make install
 ```
 
@@ -53,7 +53,9 @@ to initialize the local neutrond folder.
 Now open the file `~/.neutrond/config/client.toml` and change the field
 `keyring-backend` from `os` to `test`:
 
-```toml keyring-backend = "test" ```
+```toml 
+keyring-backend = "test" 
+```
 
 Now, finally, we can create a local admin key for your neutrond. You'll use this to
 deploy contracts:
@@ -67,20 +69,15 @@ This should output a neutron address.
 Now create the genesis file.
 
 ```bash 
-# generate a second key for the validator 
-neutrond keys add validator
+# fund the account in genesis 
+neutrond add-genesis-account admin 100000000000ucosm 
 
-# fund both accounts in genesis 
-neutrond genesis add-genesis-account admin 100000000000stake,100000000000ucosm 
-neutrond genesis add-genesis-account validator 100000000000stake,100000000000ucosm
-
-# sign genesis tx from validator and compose genesis 
-neutrond genesis gentx validator 100000000stake --chain-id testing 
-neutrond genesis collect-gentxs 
+# configure the ICS setup (neutrond expects to run as a consumer chain)
+neutrond add-consumer-section
 ```
 
 Before finally starting the node, for it to work with the front end, you need to
-configure CORS.
+configure CORS and a min gas price.
 
 ### Configure CORS
 
@@ -100,6 +97,14 @@ And in `~/.neutrond/config/app.toml`:
 enable = true 
 address = "tcp://0.0.0.0:1317" 
 enabled-unsafe-cors = true 
+```
+
+### Configure min gas
+
+In `~/.neutrond/config/app.toml`, set the min gas price:
+
+```toml
+minimum-gas-prices = "0.0025untrn"
 ```
 
 Now, finally:
