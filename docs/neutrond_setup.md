@@ -45,7 +45,7 @@ We also have to give the chain a chain ID. We'll use `testing`.
 Run 
 
 ```bash
-neutrond init <your name> --chain-id testing
+neutrond init <your name> --chain-id testing --default-denom untrn
 ```
 
 to initialize the local neutrond folder.
@@ -70,7 +70,7 @@ Now create the genesis file.
 
 ```bash 
 # fund the account in genesis 
-neutrond add-genesis-account admin 100000000000ucosm 
+neutrond add-genesis-account admin 100000000000untrn
 
 # configure the ICS setup (neutrond expects to run as a consumer chain)
 neutrond add-consumer-section
@@ -105,6 +105,18 @@ In `~/.neutrond/config/app.toml`, set the min gas price:
 
 ```toml
 minimum-gas-prices = "0.0025untrn"
+```
+
+And in `~/.neutrond/config/genesis.json`, set the feemarket min gas price:
+
+```json
+        "min_base_gas_price": "0.002500000000000000",
+```
+
+and 
+
+```json
+        "base_gas_price": "0.002500000000000000",
 ```
 
 Now, finally:
