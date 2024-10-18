@@ -3,10 +3,6 @@ name: "transfers"
 volumes:
   data:
 
-networks:
-  default:
-    name: quartz-network
-
 services:
   node:
     container_name: neutron
@@ -26,12 +22,7 @@ services:
       - data:/root/.neutrond
     build:
       context: "./neutrond"
-    ports:
-      - "26657:26657"
-      - "1317:1317"
-      - "26656:26656"
-      - "9090:9090"
-
+    network_mode: host
   enclave:
     container_name: enclave
     environment:
@@ -45,5 +36,4 @@ services:
         condition: service_healthy
     volumes:
       - data:/root/.neutrond
-    ports:
-      - "11090:11090"
+    network_mode: host

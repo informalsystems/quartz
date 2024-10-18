@@ -1,5 +1,5 @@
 mock_sgx = true
-tx_sender = "val1"
+tx_sender = "admin"
 chain_id = "test-1"
 node_url = "http://127.0.0.1:26657"
 ws_url = "ws://127.0.0.1:26657/websocket"
