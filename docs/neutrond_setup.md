@@ -1,4 +1,4 @@
-# CosmWasm Binaries: Manual Install and Configure
+  CosmWasm Binaries: Manual Install and Configure
 
 > Note - We highly recommend setting up `neutrond` with the docker image provided. However, we have provided these detailed instructions in case you wanted to take a deeper look.
 
@@ -45,7 +45,7 @@ We also have to give the chain a chain ID. We'll use `testing`.
 Run 
 
 ```bash
-neutrond init <your name> --chain-id testing --default-denom untrn
+neutrond init yourname --chain-id testing --default-denom untrn
 ```
 
 to initialize the local neutrond folder.
@@ -104,19 +104,23 @@ enabled-unsafe-cors = true
 In `~/.neutrond/config/app.toml`, set the min gas price:
 
 ```toml
-minimum-gas-prices = "0.0025untrn"
+minimum-gas-prices = "0.0001untrn"
 ```
 
-And in `~/.neutrond/config/genesis.json`, set the feemarket min gas price:
+And in `~/.neutrond/config/genesis.json`, set the denom and the feemarket min gas price:
 
 ```json
-        "min_base_gas_price": "0.002500000000000000",
+        "fee_denom": "untrn", 
+```
+
+```json
+        "min_base_gas_price": "0.000100000000000000",
 ```
 
 and 
 
 ```json
-        "base_gas_price": "0.002500000000000000",
+        "base_gas_price": "0.000100000000000000",
 ```
 
 Now, finally:
