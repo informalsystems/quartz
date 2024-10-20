@@ -1,9 +1,10 @@
-  CosmWasm Binaries: Manual Install and Configure
+# Neutrond Setup
 
-> Note - We highly recommend setting up `neutrond` with the docker image provided. However, we have provided these detailed instructions in case you wanted to take a deeper look.
+> Note - We would like to highly recommend setting up the `neutrond` node with the docker image provided. However, we also understand that docker is a poison upon the human soul, and thus provide these instructions for setting up the neutrond node locally, without imbibing such poision. It will probably take less time to follow these instructions than it will to build the holy docker image anyways. Up to you 🫡 
 
 Quartz expects to interact with a CosmWasm-based blockchain. 
-The default/archetypal binary is `neutrond`. 
+The default/archetypal binary is `neutrond`. Currently its hardcoded to use
+`neutrond` though of course we will make this configurable soon.
 
 Here we describe how to get setup from scratch or how to use an existing `neutrond`
 binary/network you have access to.
