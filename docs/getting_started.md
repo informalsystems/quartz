@@ -68,13 +68,14 @@ Quartz is built in Rust (+wasm32 target). It expects to interact with a CosmWasm
 blockchain (eg. `neutrond`), built in Go (or run with Docker). 
 It also requires a local version of `neutrond` for handling signing keys. And it requires `npm` for
 building the frontend. Here we cover how to install Rust, Quartz, and Neutrond.
-. You're responsible for installing Go and NPM.
+. You're responsible for installing Go and NPM (and optionally Docker).
 
 Pre-reqs:
 - Git
 - Make
-- Go or Docker
-- Docker desktop v.4.34.3 with `host networking` enabled [here](https://docs.docker.com/engine/network/drivers/host/?uuid=67f19d61-ae59-4996-9060-01ebef9a586c%0A#docker-desktop).
+- Go 
+- Docker
+    - For Mac, Docker desktop v.4.34.3 with `host networking` enabled [here](https://docs.docker.com/engine/network/drivers/host/?uuid=67f19d61-ae59-4996-9060-01ebef9a586c%0A#docker-desktop).
 - NPM
 
 #### Install Rust
@@ -125,9 +126,18 @@ git checkout v4.0.1
 make install-test-binary
 ```
 
-To use this version of `neutrond` to run the node, you'll have to setup your
-config and genesis files. See the [neutrond setup guide](/docs/neutrond_setup.md), and then return back here.
-Alternatively, you can start the node more simply using docker:
+You can now start the node either using this version of `neutrond` or using
+Docker.
+
+To use your local `neutrond` to run the node, you'll have to setup your
+config and genesis files. See the [neutrond setup guide](/docs/neutrond_setup.md), and then return back here and 
+skip down to the bottom of this section.
+
+Alternatively, you can start the node using docker.
+
+If you're on Mac using Docker Desktop, make sure to enable [host networking](https://docs.docker.com/engine/network/drivers/host/?uuid=67f19d61-ae59-4996-9060-01ebef9a586c%0A#docker-desktop).
+
+Then:
 
 ```bash
 cd docker
