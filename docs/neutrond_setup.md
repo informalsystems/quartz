@@ -3,7 +3,7 @@
 > Note - We highly recommend setting up `neutrond` with the docker image provided. However, we have provided these detailed instructions in case you wanted to take a deeper look.
 
 Quartz expects to interact with a CosmWasm-based blockchain. 
-The default/archetypal binary is `neutrond`. We have included instructions for `wasmd`, but it is not supported in the cli today.
+The default/archetypal binary is `neutrond`. 
 
 Here we describe how to get setup from scratch or how to use an existing `neutrond`
 binary/network you have access to.
@@ -25,20 +25,12 @@ git checkout v4.0.1
 make install-test-binary
 ```
 
-For `wasmd` (NOTE - NOT SUPPORTED BY CLI):
-
-```bash
-git clone https://github.com/cosmwasm/wasmd/
-cd wasmd
-git checkout v0.45.0
-go install ./cmd/wasmd
-```
-
 ## Configure From Scratch
 
 We have to initialize a new chain and load it with some accounts.
 
-We'll assume you're using `neutrond` but it could be `wasmd` or any other.
+If you already have `neutrond` keys, you may need to rename them or use
+different names if the names overlap.
 
 We also have to give the chain a chain ID. We'll use `testing`.
 
@@ -63,6 +55,10 @@ deploy contracts:
 ```bash 
 neutrond keys add admin 
 ```
+
+If you already have a key called `admin` in your keystore it's advised to rename it first.
+If you want to use a different name then `admin`, be sure to also change it in
+the `examples/transfers/quartz.toml` and everywhere we use it below.
 
 This should output a neutron address. 
 
