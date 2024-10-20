@@ -1,6 +1,6 @@
 # Neutrond Setup
 
-> Note - We would like to highly recommend setting up the `neutrond` node with the docker image provided. However, we also understand that docker is a poison upon the human soul, and thus provide these instructions for setting up the neutrond node locally, without imbibing such poision. It will probably take less time to follow these instructions than it will to build the holy docker image anyways. Up to you 🫡 
+> Note - We would like to highly recommend setting up the `neutrond` node with the docker image provided. However, we also understand that docker is a poison upon the human soul, and thus provide these instructions for setting up the neutrond node locally, without imbibing such poision. It will probably take less time to follow these instructions than it will to build the docker image anyways. Up to you 🫡 
 
 Quartz expects to interact with a CosmWasm-based blockchain. 
 The default/archetypal binary is `neutrond`. Currently its hardcoded to use

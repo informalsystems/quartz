@@ -145,13 +145,14 @@ docker compose up node
 ```
 
 It will pre-configure a few keys (admin, alice, etc.) and allocate funds to them. 
-The default sending account for quartz txs is `admin`. 
+The default sending account for txs is `admin`, as specified in
+`examples/transfers/quartz.toml`. 
 
 Finally, you'll need to import the keys from the docker container into your
 local `neutrond`. From inside the `docker` dir:
 
 ```bash
-tail -n 1 data/accounts/admin.txt  | neutrond keys add admin  --no-backup --recover --keyring-backend=test 
+tail -n 1 neutrond/data/accounts/admin.txt  | neutrond keys add admin  --no-backup --recover --keyring-backend=test 
 ```
 
 If you already have a key called `admin` in your keystore you'll have to rename it first.
@@ -162,7 +163,7 @@ the `examples/transfers/quartz.toml` and everywhere we use it below.
 Check that the key is there:
 
 ```bash
-neutrond keys list
+neutrond keys show admin
 ```
 
 And you're good to go!
