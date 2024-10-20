@@ -67,8 +67,7 @@ Onwards with the installation and running our example app!
 Quartz is built in Rust (+wasm32 target). It expects to interact with a CosmWasm compatible
 blockchain (eg. `neutrond`), built in Go (or run with Docker). 
 It also requires a local version of `neutrond` for handling signing keys. And it requires `npm` for
-building the frontend. Here we cover how to install Rust, Quartz, and Neutrond.
-. You're responsible for installing Go and NPM (and optionally Docker).
+building the frontend. Here we cover how to install Rust, Quartz, and Neutrond. You're responsible for installing Go and NPM (and optionally Docker).
 
 Pre-reqs:
 - Git
