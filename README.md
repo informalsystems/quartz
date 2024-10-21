@@ -1,3 +1,14 @@
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/informalsystems/cycles-quartz)
+[![Code Coverage](https://img.shields.io/badge/coverage-80%25-yellowgreen)](https://github.com/informalsystems/cycles-quartz)
+[![docs](https://img.shields.io/badge/docs-passing-brightgreen)](https://github.com/informalsystems/cycles-quartz/docs)
+[![GitHub Issues](https://img.shields.io/github/issues/informalsystems/cycles-quartz)](https://github.com/informalsystems/cycles-quartz/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/informalsystems/cycles-quartz/pulls)
+[![GitHub Stars](https://img.shields.io/github/stars/informalsystems/cycles-quartz)](https://github.com/informalsystems/cycles-quartz/stargazers)
+[![Rust](https://img.shields.io/badge/Rust-passing-brightgreen)](https://github.com/informalsystems/cycles-quartz)
+[![msrv](https://img.shields.io/badge/msrv-1.72.1-blue)](https://github.com/informalsystems/cycles-quartz)
+[![crates.io](https://img.shields.io/badge/crates.io-v0.1.0-blue)](https://crates.io/crates/quartz-rs)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](https://github.com/informalsystems/cycles-quartz/blob/main/LICENSE)
+
 # Quartz
 
 Quartz is a flexible framework for privacy-preserving computation via Trusted Execution
