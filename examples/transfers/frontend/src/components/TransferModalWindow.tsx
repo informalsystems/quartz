@@ -48,6 +48,7 @@ export function TransferModalWindow(props: ModalWindowProps) {
       console.log(data)
       setLoading(false)
       showSuccess('Transfer transaction sent successfully')
+      props.onClose() // Close the modal immediately after sending the transaction
     },
     onError: (error: any) => {
       setLoading(false)

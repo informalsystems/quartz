@@ -25,6 +25,7 @@ export function DepositModalWindow(props: ModalWindowProps) {
       console.log(data)
       setLoading(false)
       showSuccess('Deposit transaction sent successfully')
+      props.onClose() // Close the modal immediately after sending the transaction
     },
     onError: (error: any) => {
       setLoading(false)

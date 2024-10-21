@@ -19,6 +19,7 @@ export function WithdrawModalWindow(props: ModalWindowProps) {
       console.log(data)
       setLoading(false)
       showSuccess('Withdraw transaction sent successfully')
+      props.onClose() // Close the modal immediately after sending the transaction
     },
     onError: (error: any) => {
       setLoading(false)
