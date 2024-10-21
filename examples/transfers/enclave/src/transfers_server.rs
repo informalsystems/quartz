@@ -211,7 +211,7 @@ where
         }
 
         let seq_num_diff = message.seq_num - self.seq_num;
-        if seq_num_diff != pending_sequenced_requests {
+        if seq_num_diff != pending_sequenced_requests as u64 {
             return Err(Status::failed_precondition("seq_num_diff mismatch"));
         }
 
