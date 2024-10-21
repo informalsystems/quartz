@@ -65,15 +65,16 @@ Onwards with the installation and running our example app!
 ### Installation
 
 Quartz is built in Rust (+wasm32 target). It expects to interact with a CosmWasm compatible
-blockchain (eg. `neutrond`), built in Go (or run with Docker). And it requires `npm` for
-building the frontend. Here we cover how to install Rust, Quartz, and CosmWasm
-blockchains. You're responsible for installing Go and NPM.
+blockchain (eg. `neutrond`), built in Go (or run with Docker). 
+It also requires a local version of `neutrond` for handling signing keys. And it requires `npm` for
+building the frontend. Here we cover how to install Rust, Quartz, and Neutrond. You're responsible for installing Go and NPM (and optionally Docker).
 
 Pre-reqs:
 - Git
 - Make
-- Go or Docker
-- Docker desktop v.4.34.3 with `host networking` enabled [here](https://docs.docker.com/engine/network/drivers/host/?uuid=67f19d61-ae59-4996-9060-01ebef9a586c%0A#docker-desktop).
+- Go 
+- Docker
+    - For Mac, Docker desktop v.4.34.3 with `host networking` enabled [here](https://docs.docker.com/engine/network/drivers/host/?uuid=67f19d61-ae59-4996-9060-01ebef9a586c%0A#docker-desktop).
 - NPM
 
 #### Install Rust
@@ -109,11 +110,33 @@ And check that it worked:
 quartz --help
 ```
 
-#### Install a CosmWasm Client
+#### Install Neutrond
 
-For the local testnet, we can use `neutrond` with a single validator (we have a docker image for this).
+A version of `neutrond` is required both for running a node and for managing
+keys. Running the node can be done via docker, which is easier to get running,
+but the Go binary will have to be installed regardless for signing transactions.
 
-For `neutrond`:
+To install the `neutrond` binary: 
+
+```bash
+git clone -b main https://github.com/neutron-org/neutron.git
+cd neutron
+git checkout v4.0.1
+make install-test-binary
+```
+
+You can now start the node either using this version of `neutrond` or using
+Docker.
+
+To use your local `neutrond` to run the node, you'll have to setup your
+config and genesis files. See the [neutrond setup guide](/docs/neutrond_setup.md), and then return back here and 
+skip down to the bottom of this section.
+
+Alternatively, you can start the node using docker.
+
+If you're on Mac using Docker Desktop, make sure to enable [host networking](https://docs.docker.com/engine/network/drivers/host/?uuid=67f19d61-ae59-4996-9060-01ebef9a586c%0A#docker-desktop).
+
+Then:
 
 ```bash
 cd docker
@@ -121,10 +144,28 @@ docker compose up node
 ```
 
 It will pre-configure a few keys (admin, alice, etc.) and allocate funds to them. 
-The default sending account for quartz txs is `admin`. 
+The default sending account for txs is `admin`, as specified in
+`examples/transfers/quartz.toml`. 
 
-If building from source, you'll need to initialize the accounts yourself. See
-the guide on [setting up a CosmWasm chain](/docs/neutrond_setup.md) and then return back here.
+Finally, you'll need to import the keys from the docker container into your
+local `neutrond`. From inside the `docker` dir:
+
+```bash
+tail -n 1 neutrond/data/accounts/admin.txt  | neutrond keys add admin  --no-backup --recover --keyring-backend=test 
+```
+
+If you already have a key called `admin` in your keystore you'll have to rename it first.
+
+If you want to use a different name then `admin`, be sure to also change it in
+the `examples/transfers/quartz.toml` and everywhere we use it below.
+
+Check that the key is there:
+
+```bash
+neutrond keys show admin
+```
+
+And you're good to go!
 
 ### Local neutrond Testnet Without SGX
 
@@ -138,6 +179,30 @@ transfers app. Deployment involves three components:
 We can deploy the enclave and contract all at once using the `quartz dev`
 convenience command (like in the [quick start](#quick-start)), but here we'll
 show the individual commands.
+
+### Configure Key
+
+At the moment, we have to do an insecure operation to export the private key to
+be used for signing transactions so it can be used by the enclave. This is a
+temporary hack.
+
+If you're using docker, the key is hardcoded:
+
+```bash
+export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
+```
+
+Otherwise, you can set the key like so:
+
+```bash
+export ADMIN_SK=$(yes | neutrond keys export admin --unsafe --unarmored-hex)
+```
+
+Now make sure the key is set:
+
+```bash
+echo $ADMIN_SK
+```
 
 ### Enclave
 
@@ -188,11 +253,6 @@ environment variable:
 export CONTRACT_ADDRESS=<CONTRACT_ADDRESS>
 ```
 
-You must also set the admin secret key:
-
-```bash
-export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
-```
 
 3. Perform the handshake:
    ```bash
@@ -209,11 +269,11 @@ environment variable:
 export PUBKEY=<PUBKEY>
 ```
 
-Now the contract is ready to start processing requests to the enclave. You will see logs from the enclave showing:
+Now the contract is ready to start processing requests to the enclave!
 
-```bash
-2024-09-24T11:12:25.156779Z  INFO Enclave is listening for requests...
-```
+The enclave process should be showing logs that it's listening for request.
+There's a bug so it won't right now, and will show some error you can ignore.
+Good times. Let's move on to setting up the frontend.
 
 ### Frontend
 
@@ -235,8 +295,10 @@ You can run the front end on your local computer, so it is easy to test in a bro
    ```
 
 Now open `.env.local` and edit the values of `NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS` and 
-`NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY` to be the contract address and pubkey from the previous step. With quartz dev, they can be grabbed
-from the logs. From the manual process, you would have already stored them as environment variables.
+`NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY` to be the contract address and pubkey from the previous step. 
+You should have them stored as environment variables `$CONTRACT_ADDRESS` and
+`$PUBKEY`. (Note if you ran `quartz dev` instead of all the manual steps you can
+get them out of the logs)
 
 4. Finally, start the frontend:
    ```bash
@@ -251,21 +313,25 @@ if you are just testing and you don't clear your browser storage, you will be fi
 
 You'll need to have the Keplr wallet browser extension installed and unlocked.
 
-You may have to go to "Manage Chain Visibility" in Keplr settings to add the `My
-Testing Chain` so you can talk to your local chain and see your balance.
+You may have to go to "Manage Chain Visibility" in Keplr settings to add the
+`Local Neutron Testchain` so you can talk to your local chain and see your balance.
 
 Create a new address in Keplr for testing purpose. You'll need to send this
 address some funds from the `admin` account setup with your local node. For
 instance, send 10M untrn with:
 
 ```bash
-neutrond tx bank send admin <KEPLR ADDRESS> 10000000untrn --chain-id testing
+neutrond tx bank send admin <KEPLR ADDRESS> 10000000untrn --chain-id testing --fees 10000untrn
 ```
 
 You should now see the funds on your local testnet on Keplr.
 
 Now you can interact with the app by depositing funds, privately transferring
 them to other addresses, and finally withdrawing them. 
+
+If you want to test multiple addresses, create the other addresses in Keplr and
+be sure to send them some `untrn` from the `admin` account so they can pay for
+gas.
 
 Be sure to check the enclave window to see the logs from your interaction with
 the app!
