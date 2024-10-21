@@ -48,6 +48,7 @@ export function TransferModalWindow(props: ModalWindowProps) {
       console.log(data)
       setLoading(false)
       showSuccess('Transfer transaction sent successfully')
+      setTimeout(() => props.onClose(), 2000) // Close after 2 seconds
     },
     onError: (error: any) => {
       setLoading(false)
