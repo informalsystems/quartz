@@ -25,6 +25,7 @@ export function DepositModalWindow(props: ModalWindowProps) {
       console.log(data)
       setLoading(false)
       showSuccess('Deposit transaction sent successfully')
+      props.onClose() // Close the modal immediately after sending the transaction
     },
     onError: (error: any) => {
       setLoading(false)
@@ -38,7 +39,6 @@ export function DepositModalWindow(props: ModalWindowProps) {
 
     if (amount <= 0) {
       setError('Amount should be greater than zero.')
-
       return
     }
 
@@ -94,7 +94,7 @@ export function DepositModalWindow(props: ModalWindowProps) {
         <StyledText
           as="button"
           className="bg-emerald-500"
-          disabled={amount === 0}
+          disabled={amount === 0 || loading}
           variant="button.primary"
           onClick={handleDeposit}
         >
@@ -104,6 +104,7 @@ export function DepositModalWindow(props: ModalWindowProps) {
           as="button"
           variant="button.secondary"
           onClick={props.onClose}
+          disabled={loading}
         >
           Cancel
         </StyledText>
