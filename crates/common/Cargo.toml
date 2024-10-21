@@ -1,10 +1,10 @@
 [package]
 name = "quartz-common"
-version.workspace = true
+version = "0.1.1"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-license-file.workspace = true
+license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 categories = ["cryptography::cryptocurrencies", "wasm"]
