@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use commit_reveal_contract::msg::{execute::Ping, ExecuteMsg};
+use ping_pong_contract::msg::{execute::Ping, ExecuteMsg};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::HexBinary;
 use cw_client::{CliClient, CwClient};
@@ -15,7 +15,7 @@ use serde_json::json;
 async fn main() {
     // Enclave public key
     let decoded: Vec<u8> =
-        hex::decode("031cfdb9bc7eb0c75a715e2d609b7407dcaebc531fb8c51c6168787b480097888b")
+        hex::decode("03f203bab62d28f7f7be693b67ca616d922e4d57bf5402bf8414e64937fa22e192")
             .expect("Decoding failed");
     let pk_hex = VerifyingKey::from_sec1_bytes(&decoded).unwrap();
 
@@ -28,7 +28,7 @@ async fn main() {
 
     // Prepare cosmwasm message
     // Set pubkey to user's pubkey
-    let reveal_msg: ExecuteMsg = ExecuteMsg::Ping(Ping {
+    let pong_msg: ExecuteMsg = ExecuteMsg::Ping(Ping {
         pubkey: HexBinary::from_hex(
             "026452a47ff13ef0aefcaf79b4e68389c55759abaa644166e99c1b9bfc904597d4",
         )
@@ -43,13 +43,13 @@ async fn main() {
     let output = cw_client
         .tx_execute(
             &AccountId::from_str(
-                "neutron1u0ehv853npcmu9m4jexampykq6yeuf6nlnxpvm5m8w73g2vrv9wqyx0mdp",
+                "neutron127ja8eh527c6cw84lq5ft4gwlzwlld9v7u2af6a7v4xfm4aw9gjqftxyak",
             )
             .unwrap(),
             chain_id,
             2000000,
             "admin",
-            json!(reveal_msg),
+            json!(pong_msg),
             "11000untrn",
         )
         .await;

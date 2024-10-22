@@ -1,7 +1,7 @@
 [workspace]
 
 [package]
-name = "commit-reveal-enclave"
+name = "ping-pong-enclave"
 version = "0.1.0"
 edition = "2021"
 authors = ["Informal Systems <hello@informal.systems>"]
@@ -56,7 +56,7 @@ tendermint-rpc = { version = "=0.38.1", default-features = false }
 tendermint-light-client = { version = "=0.38.1", default-features = false, features = [
   "rust-crypto",
 ] }
-commit-reveal-contract = { path = "../contracts", default-features = false }
+ping-pong-contract = { path = "../contracts", default-features = false }
 
 # quartz
 # TODO: Until the repo is public, let's use the relative path

@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use commit_reveal_contract::msg::execute::{Ping, Pong};
+use ping_pong_contract::msg::execute::{Ping, Pong};
 use cosmrs::AccountId;
 use cosmwasm_std::HexBinary;
 use ecies::{decrypt, encrypt};

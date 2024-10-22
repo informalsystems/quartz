@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, str::FromStr};
 
 use anyhow::{anyhow, Error, Result};
-use commit_reveal_contract::msg::{
+use ping_pong_contract::msg::{
     execute::{Ping, Pong},
     AttestedMsg, ExecuteMsg,
 };
@@ -33,7 +33,6 @@ impl TryFrom<Event> for PingOpEvent {
     fn try_from(event: Event) -> Result<Self, Error> {
         if let Some(events) = &event.events {
             for key in events.keys() {
-                println!("keys: {}", key);
                 match key.as_str() {
                     k if k.starts_with("wasm.action") => {
                         let (contract, ping) = extract_event_info(events)
@@ -82,8 +81,8 @@ where
     async fn process(&self, event: PingOpEvent, config: WsListenerConfig) -> Result<()> {
         match event {
             PingOpEvent::Ping { contract, ping } => {
-                println!("Processing commit event");
-                reveal_handler(self, &contract, ping, &config).await?;
+                println!("Processing ping event");
+                ping_handler(self, &contract, ping, &config).await?;
             }
         }
 
@@ -105,9 +104,9 @@ fn extract_event_info(events: &BTreeMap<String, Vec<String>>) -> Result<(Account
         .map_err(|e| anyhow!("Failed to parse contract address: {}", e))?;
 
     let ping_str = events
-        .get("wasm.ping")
+        .get("wasm.ping_data")
         .and_then(|v| v.first())
-        .ok_or_else(|| anyhow!("Missing commit in events"))?;
+        .ok_or_else(|| anyhow!("Missing ping data in event"))?;
     println!("Ping: {}", ping_str);
 
     let ping: Ping = serde_json::from_str(&ping_str)?;
@@ -115,7 +114,7 @@ fn extract_event_info(events: &BTreeMap<String, Vec<String>>) -> Result<(Account
     Ok((contract_address, ping))
 }
 
-async fn reveal_handler<A>(
+async fn ping_handler<A>(
     client: &PingPongService<A>,
     contract: &AccountId,
     ping: Ping,
@@ -174,7 +173,7 @@ where
     });
 
     // Send request to enclave over tonic gRPC client
-    let reveal_response = client
+    let pong_response = client
         .run(request)
         .await
         .map_err(|e| anyhow!("Failed to communicate to relayer. {e}"))?
@@ -182,12 +181,12 @@ where
 
     // Extract json from enclave response
     let attested: RawAttested<Pong, A::RawAttestation> =
-        serde_json::from_str(&reveal_response.message)
-            .map_err(|e| anyhow!("Error deserializing RevealData from enclave: {}", e))?;
+        serde_json::from_str(&pong_response.message)
+            .map_err(|e| anyhow!("Error deserializing Pong response from enclave: {}", e))?;
 
     // Build on-chain response
     // TODO add non-mock support
-    let reveal_msg = ExecuteMsg::Pong(AttestedMsg {
+    let pong_msg = ExecuteMsg::Pong(AttestedMsg {
         msg: RawAttestedMsgSansHandler(attested.msg),
         attestation: attested.attestation,
     });
@@ -200,7 +199,7 @@ where
             chain_id,
             2000000,
             &ws_config.tx_sender,
-            json!(reveal_msg),
+            json!(pong_msg),
             "11000untrn",
         )
         .await?;

@@ -64,7 +64,7 @@ pub mod execute {
         _info: MessageInfo,
         ping: Ping,
     ) -> Result<Response, ContractError> {
-        // Instantiate map entry for `commit`
+        // Instantiate map entry for ping
         PINGS.save(deps.storage, ping.pubkey.to_hex(), &ping.message)?;
 
         Ok(Response::new()
@@ -79,7 +79,7 @@ pub mod execute {
         _info: MessageInfo,
         pong: Pong,
     ) -> Result<Response, ContractError> {
-        // Overwrite entry with key `commit` with its revealed value
+        // Overwrite entry with key `ping.pubkey` with the enclave's response, encrypted to the pubkey
         PINGS.save(deps.storage, pong.pubkey.to_hex(), &pong.response)?;
 
         Ok(Response::new()
@@ -104,10 +104,10 @@ mod query {
     use crate::state::PINGS;
 
     pub fn get_all_messages(deps: Deps) -> StdResult<BTreeMap<String, HexBinary>> {
-        let commits = PINGS
+        let pings = PINGS
             .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
             .collect::<StdResult<BTreeMap<_, _>>>();
 
-        commits
+        pings
     }
 }
