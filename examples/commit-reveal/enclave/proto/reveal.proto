@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package reveal;
+
+service Reveal {
+  rpc Run (RevealRequest) returns (RevealResponse) {}
+}
+
+message RevealRequest {
+  string message = 1;
+}
+
+message RevealResponse {
+  string message = 1;
+}

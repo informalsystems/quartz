@@ -1,0 +1,11 @@
+[template]
+description = "An functioning example of a quartz app"
+
+ignore = [
+    "target/",  
+    "contracts/target",
+    "contracts/schema",
+    "enclave/target",
+    "enclave/src/prost/*",
+    "frontend/package-lock.json",
+]
