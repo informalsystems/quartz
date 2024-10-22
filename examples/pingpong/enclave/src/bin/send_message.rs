@@ -15,7 +15,7 @@ use serde_json::json;
 async fn main() {
     // Enclave public key
     let decoded: Vec<u8> =
-        hex::decode("03f203bab62d28f7f7be693b67ca616d922e4d57bf5402bf8414e64937fa22e192")
+        hex::decode("02a353f7bfdab237a12628724e4f33935d8300bd5dbcdb2115105e46de40bfd333")
             .expect("Decoding failed");
     let pk_hex = VerifyingKey::from_sec1_bytes(&decoded).unwrap();
 
@@ -43,7 +43,7 @@ async fn main() {
     let output = cw_client
         .tx_execute(
             &AccountId::from_str(
-                "neutron127ja8eh527c6cw84lq5ft4gwlzwlld9v7u2af6a7v4xfm4aw9gjqftxyak",
+                "neutron1des3nftm0wd7qhxc3dwlflk46rjucg5rlrcugukdpv7r4ly2ru8scx2su4",
             )
             .unwrap(),
             chain_id,
@@ -59,12 +59,12 @@ async fn main() {
 
 // For decrypting response from enclave
 #[test]
-fn decrypt_2() {
+fn decrypt_enclave_response() {
     let decoded: Vec<u8> =
         hex::decode("3255344d1af484a7aacce85a49897c69099bceb99cba9126cc1229a18926d3c3")
             .expect("Decoding failed");
 
-    let res = decrypt(&decoded, &hex::decode("04051cabe31a3ec2721e06a7fa0acad190b62e1d66ecf67136fd6dba0f0c13c4ca3fada53a3bcf95ee7e150f0a94457dc90a5efc4e28550440dd3cad4e5519e9b6897e9f43757068e40463236c90dbc61d4c1048b0d6e3b588e822fe2b6f43e2d4bd6fc30a08603bb05f1ae0f3783f09b4bcad2f000967df61aca620").unwrap()).unwrap();
+    let res = decrypt(&decoded, &hex::decode("043647ded7ab2cc5f2f93a6d026af8481c66cc717b0aff98e933679774ecedcd6d6df27c2e8b1e3155edc8af4d87137d2f379d71001aa4d91ee4d37f037a3d16c88afc5fc351b4fd0201e9969ea3a5deb556174f13d91fac2f490d242852b697a9ca55e9e32f46df3fe902ce17514ad4e6d48fa3b15c4c747fb491c938").unwrap()).unwrap();
     println!("{}", String::from_utf8(res).unwrap());
 }
 
