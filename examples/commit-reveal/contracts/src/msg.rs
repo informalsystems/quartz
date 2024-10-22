@@ -1,8 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use quartz_common::contract::{
-    msg::execute::attested::{
-        RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation,
-    },
+    msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler, RawDefaultAttestation},
     prelude::*,
 };
 
@@ -48,15 +46,15 @@ pub mod execute {
             let mut hasher = Sha256::new();
             hasher.update(serde_json::to_string(&self).expect("infallible serializer"));
             let digest: [u8; 32] = hasher.finalize().into();
-    
+
             let mut user_data = [0u8; 64];
             user_data[0..32].copy_from_slice(&digest);
             user_data
         }
-    }    
+    }
 }
 
 #[cw_serde]
 pub enum QueryMsg {
-    GetAllMessages {}
+    GetAllMessages {},
 }

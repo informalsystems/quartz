@@ -2,14 +2,11 @@ use std::sync::{Arc, Mutex};
 
 use commit_reveal_contract::msg::execute::{Ping, Pong};
 use cosmrs::AccountId;
-use cosmwasm_std::{Addr, HexBinary, Uint128};
+use cosmwasm_std::HexBinary;
 use ecies::{decrypt, encrypt};
-use k256::ecdsa::{SigningKey, VerifyingKey};
+use k256::ecdsa::SigningKey;
 use quartz_common::{
-    contract::{
-        msg::execute::attested::{HasUserData, RawAttested},
-        state::{Config, UserData},
-    },
+    contract::{msg::execute::attested::RawAttested, state::Config},
     enclave::{
         attestor::Attestor,
         server::{IntoServer, ProofOfPublication, WsListenerConfig},
@@ -35,10 +32,7 @@ pub type RawCipherText = HexBinary;
 
 #[derive(Clone, Debug)]
 pub enum PingOpEvent {
-    Ping {
-        contract: AccountId,
-        ping: Ping,
-    },
+    Ping { contract: AccountId, ping: Ping },
 }
 
 #[derive(Clone, Debug)]
@@ -99,26 +93,28 @@ where
         }
 
         // Perform enclave logic
-        // Decrypt the ciphertext using enclave private key        
+        // Decrypt the ciphertext using enclave private key
         let decrypted_message: String = {
             let sk_lock = self
                 .sk
                 .lock()
                 .map_err(|e| Status::internal(e.to_string()))?;
-            
+
             let sk = sk_lock
                 .as_ref()
                 .ok_or(Status::internal("SigningKey unavailable"))?;
 
-            let msg_bytes = decrypt(&sk.to_bytes(), &ping.message).map_err(|e| Status::invalid_argument("decryption failed"))?;
+            let msg_bytes = decrypt(&sk.to_bytes(), &ping.message)
+                .map_err(|_| Status::invalid_argument("decryption failed"))?;
 
-            String::from_utf8(msg_bytes).map_err(|e| Status::invalid_argument("Byte conversion to string failed"))?
+            String::from_utf8(msg_bytes)
+                .map_err(|_| Status::invalid_argument("Byte conversion to string failed"))?
         };
 
         println!("\nDecryption Result: {}\n", decrypted_message);
         let response = format!("Enclave responded to {}", decrypted_message);
 
-        // Encrypt enclave response to the user's provided pubkey 
+        // Encrypt enclave response to the user's provided pubkey
         let encrypted_response: Vec<u8> = {
             encrypt(&ping.pubkey, response.as_bytes())
                 .map_err(|e| Status::invalid_argument(e.to_string()))?
@@ -127,7 +123,7 @@ where
         // Prepare message to chain
         let msg = Pong {
             pubkey: ping.pubkey,
-            response: HexBinary::from(encrypted_response)
+            response: HexBinary::from(encrypted_response),
         };
 
         // Attest to message

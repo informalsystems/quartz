@@ -1,4 +1,7 @@
-use cosmwasm_std::{entry_point, to_json_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult};
+use cosmwasm_std::{
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response,
+    StdResult,
+};
 use quartz_common::contract::handler::RawHandler;
 
 use crate::{
@@ -49,7 +52,11 @@ pub mod execute {
     use cosmwasm_std::{DepsMut, Env, Event, MessageInfo, Response};
     use serde_json::json;
 
-    use crate::{error::ContractError, msg::execute::{Ping, Pong}, state::PINGS};
+    use crate::{
+        error::ContractError,
+        msg::execute::{Ping, Pong},
+        state::PINGS,
+    };
 
     pub fn ping(
         deps: DepsMut,
@@ -82,18 +89,17 @@ pub mod execute {
     }
 }
 
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetAllMessages { } => to_json_binary(&query::get_all_messages(deps)?),
+        QueryMsg::GetAllMessages {} => to_json_binary(&query::get_all_messages(deps)?),
     }
 }
 
 mod query {
     use std::collections::BTreeMap;
 
-    use cosmwasm_std::{Addr, Deps, HexBinary, StdResult};
+    use cosmwasm_std::{Deps, HexBinary, StdResult};
 
     use crate::state::PINGS;
 

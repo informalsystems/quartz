@@ -13,8 +13,8 @@
 )]
 
 pub mod cli;
-pub mod proto;
 pub mod ping_pong_server;
+pub mod proto;
 pub mod state;
 pub mod wslistener;
 
@@ -25,6 +25,7 @@ use std::{
 
 use clap::Parser;
 use cli::Cli;
+use ping_pong_server::{PingPongService, PongOp};
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
@@ -32,7 +33,6 @@ use quartz_common::{
         server::{QuartzServer, WsListenerConfig},
     },
 };
-use ping_pong_server::{PongOp, PingPongService};
 use tokio::sync::mpsc;
 
 use crate::wslistener::WsListener;

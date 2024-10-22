@@ -1,9 +1,11 @@
 use std::{collections::BTreeMap, str::FromStr};
 
 use anyhow::{anyhow, Error, Result};
-use commit_reveal_contract::msg::{execute::{Ping, Pong}, AttestedMsg, ExecuteMsg, QueryMsg};
+use commit_reveal_contract::msg::{
+    execute::{Ping, Pong},
+    AttestedMsg, ExecuteMsg,
+};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
-use cosmwasm_std::{Addr, HexBinary};
 use cw_client::{CwClient, GrpcClient};
 use futures_util::StreamExt;
 use quartz_common::{
@@ -21,7 +23,8 @@ use tonic::Request;
 use tracing::info;
 
 use crate::{
-    ping_pong_server::{PingOpEvent, PingPongService, PongOp}, proto::{ping_pong_server::PingPong, PingRequest, PongResponse}
+    ping_pong_server::{PingOpEvent, PingPongService, PongOp},
+    proto::{ping_pong_server::PingPong, PingRequest},
 };
 
 impl TryFrom<Event> for PingOpEvent {
@@ -33,10 +36,8 @@ impl TryFrom<Event> for PingOpEvent {
                 println!("keys: {}", key);
                 match key.as_str() {
                     k if k.starts_with("wasm.action") => {
-                        let (contract, ping) =
-                            extract_event_info(events).map_err(
-                                |_| anyhow!("Failed to extract event info from event"),
-                            )?;
+                        let (contract, ping) = extract_event_info(events)
+                            .map_err(|_| anyhow!("Failed to extract event info from event"))?;
 
                         return Ok(PingOpEvent::Ping { contract, ping });
                     }
@@ -80,7 +81,7 @@ where
 {
     async fn process(&self, event: PingOpEvent, config: WsListenerConfig) -> Result<()> {
         match event {
-            PingOpEvent::Ping { contract, ping} => {
+            PingOpEvent::Ping { contract, ping } => {
                 println!("Processing commit event");
                 reveal_handler(self, &contract, ping, &config).await?;
             }
@@ -137,7 +138,7 @@ where
     info!("Waiting 2 blocks for light client proof");
     two_block_waitoor(ws_config.ws_url.as_str()).await?;
 
-    // Generate proof that the requested data (ping.message) is stored on-chain. 
+    // Generate proof that the requested data (ping.message) is stored on-chain.
     // Call tm prover with trusted hash and height
     let prover_config = TmProverConfig {
         primary: ws_config.node_url.as_str().parse()?,
