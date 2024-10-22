@@ -46,41 +46,43 @@ For more detailed background and instructions, read on.
 
 Quartz includes a simple example we call the `Transfer` application,
 located in [/examples/transfers](/examples/transfers), that comes with a Keplr-based
-frontend. It's a simple demo app designed to showcase very basic use of the Quartz framework. 
-It allows users to deposit funds into a contract, 
+frontend. It's a simple demo app designed to showcase very basic use of the Quartz framework.
+It allows users to deposit funds into a contract,
 transfer them privately within the contract's encrypted state (updated by the
-enclave),and ultimately withdraw whatever balance they have left or have accumulated. 
+enclave),and ultimately withdraw whatever balance they have left or have accumulated.
 
-Every application has a common structure: 
+Every application has a common structure:
 
 1. **Frontend**: The user interface (eg. Next.js, cosmjs / graz)
 2. **Contracts**: The backend application as a CosmWasm smart contract
 3. **Enclave**: Code that executes off-chain and privately in an enclave
 
 Quartz is both a library (`quartz-contract-core`) for building SGX-aware CosmWasm
-contracts, and a cli tool (`quartz`) for managing the enclave. 
+contracts, and a cli tool (`quartz`) for managing the enclave.
 
 The library takes care of establishing a secure connection to the enclave (see
 [How it Works](/docs/how_it_works.md)), and verifying attestations from
 it. The quartz tool provides commands for managing the enclave.
 
 This guide is primarily about using the `quartz` tool to get the example app
-setup. For more on building application, see 
-- [Building Apps](/docs/building_apps.md) - conceptual overview 
+setup. For more on building application, see
+
+- [Building Apps](/docs/building_apps.md) - conceptual overview
 - [quartz-contract-core](/crates/contracts/core/) - main library. provides msgs and handlers
   for the handshake and for verifying attestations
 - [transfers contracts](/examples/transfers/contracts): transfer app example itself
 
-Onwards with the installation and running our example app! 
+Onwards with the installation and running our example app!
 
 ### Installation
 
 Quartz is built in Rust (+wasm32 target). It expects to interact with a CosmWasm compatible
-blockchain (eg. `neutrond`), built in Go (or run with Docker). And it requires `npm` for
-building the frontend. Here we cover how to install Rust, Quartz, and CosmWasm
-blockchains. You're responsible for installing Go and NPM.
+blockchain (eg. `neutrond`), built in Go (or run with Docker).
+It also requires a local version of `neutrond` for handling signing keys. And it requires `npm` for
+building the frontend. Here we cover how to install Rust, Quartz, and Neutrond. You're responsible for installing Go and NPM (and optionally Docker).
 
 Pre-reqs:
+
 - Git
 - Make
 - Go or Docker
@@ -96,7 +98,7 @@ Install rust [here](https://www.rust-lang.org/tools/install).
 Check the version with `cargo version`.
 
 Add the wasm32 target:
-    
+
 ```bash
 rustup target add wasm32-unknown-unknown
 ```
@@ -119,19 +121,42 @@ And check that it worked:
 quartz --help
 ```
 
-#### Install a CosmWasm Client
+#### Install Neutrond
 
-For the local testnet, we can use `neutrond` with a single validator (we have a docker image for this).
+A version of `neutrond` is required both for running a node and for managing
+keys. Running the node can be done via docker, which is easier to get running,
+but the Go binary will have to be installed regardless for signing transactions.
 
-For `neutrond`:
+To install the `neutrond` binary:
+
+```bash
+git clone -b main https://github.com/neutron-org/neutron.git
+cd neutron
+git checkout v4.0.1
+make install-test-binary
+```
+
+You can now start the node either using this version of `neutrond` or using
+Docker.
+
+To use your local `neutrond` to run the node, you'll have to setup your
+config and genesis files. See the [neutrond setup guide](/docs/neutrond_setup.md), and then return back here and
+skip down to the bottom of this section.
+
+Alternatively, you can start the node using docker.
+
+If you're on Mac using Docker Desktop, make sure to enable [host networking](https://docs.docker.com/engine/network/drivers/host/?uuid=67f19d61-ae59-4996-9060-01ebef9a586c%0A#docker-desktop).
+
+Then:
 
 ```bash
 cd docker
 docker compose up node
 ```
 
-It will pre-configure a few keys (admin, alice, etc.) and allocate funds to them. 
-The default sending account for quartz txs is `admin`.
+It will pre-configure a few keys (admin, alice, etc.) and allocate funds to them.
+The default sending account for txs is `admin`, as specified in
+`examples/transfers/quartz.toml`.
 However, these accounts are setup in the docker image. Because we will be deploying our contracts outside of the docker image
 we need to have these accounts imported locally. You can do this by install neutrond locally and importing the accounts:
 
@@ -147,8 +172,25 @@ make import-local-accounts
 
 Your local `admin` will now be the exact same as the `admin` in the docker image.
 
-If building from source, you'll need to initialize the accounts yourself. See
-the guide on [setting up a CosmWasm chain](/docs/neutrond_setup.md) and then return back here.
+Finally, you'll need to import the keys from the docker container into your
+local `neutrond`. From inside the `docker` dir:
+
+```bash
+tail -n 1 neutrond/data/accounts/admin.txt  | neutrond keys add admin  --no-backup --recover --keyring-backend=test
+```
+
+If you already have a key called `admin` in your keystore you'll have to rename it first.
+
+If you want to use a different name then `admin`, be sure to also change it in
+the `examples/transfers/quartz.toml` and everywhere we use it below.
+
+Check that the key is there:
+
+```bash
+neutrond keys show admin
+```
+
+And you're good to go!
 
 ### Local neutrond Testnet Without SGX
 
@@ -163,9 +205,33 @@ We can deploy the enclave and contract all at once using the `quartz dev`
 convenience command (like in the [quick start](#quick-start)), but here we'll
 show the individual commands.
 
+### Configure Key
+
+At the moment, we have to do an insecure operation to export the private key to
+be used for signing transactions so it can be used by the enclave. This is a
+temporary hack.
+
+If you're using docker, the key is hardcoded:
+
+```bash
+export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
+```
+
+Otherwise, you can set the key like so:
+
+```bash
+export ADMIN_SK=$(yes | neutrond keys export admin --unsafe --unarmored-hex)
+```
+
+Now make sure the key is set:
+
+```bash
+echo $ADMIN_SK
+```
+
 ### Enclave
 
-First we build and run the enclave code. 
+First we build and run the enclave code.
 Quartz provides a `--mock-sgx` flag so we can deploy locally for testing and
 development purposes without needing access to an SGX core.
 
@@ -175,6 +241,7 @@ from elsewhere by specify a path, eg. from the root of the repo with `--app-dir 
 Now, from `examples/transfers`:
 
 1. Build the enclave binary:
+
    ```bash
    quartz --mock-sgx enclave build
    ```
@@ -190,6 +257,7 @@ continue.
 ### Contract
 
 1. Build the contract binary:
+
    ```bash
    quartz --mock-sgx contract build --contract-manifest "contracts/Cargo.toml"
    ```
@@ -212,12 +280,6 @@ environment variable:
 export CONTRACT_ADDRESS=<CONTRACT_ADDRESS>
 ```
 
-You must also set the admin secret key:
-
-```bash
-export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
-```
-
 3. Perform the handshake:
    ```bash
    quartz --mock-sgx handshake --contract $CONTRACT_ADDRESS
@@ -227,28 +289,30 @@ This will setup a secure connection between the contract and the enclave.
 
 If successful, it should output a pubkey value. We'll need both the contract
 address and this pubkey value to configure the frontend. Save this to an
-environment variable: 
+environment variable:
 
 ```bash
 export PUBKEY=<PUBKEY>
 ```
 
-Now the contract is ready to start processing requests to the enclave. You will see logs from the enclave showing:
+Now the contract is ready to start processing requests to the enclave!
 
-```bash
-2024-09-24T11:12:25.156779Z  INFO Enclave is listening for requests...
-```
+The enclave process should be showing logs that it's listening for request.
+There's a bug so it won't right now, and will show some error you can ignore.
+Good times. Let's move on to setting up the frontend.
 
 ### Frontend
 
 You can run the front end on your local computer, so it is easy to test in a browser. If you are running your application in the cloud (such as an Azure SGX machine), you can configure the front end to talk to that blockchain over the internet. You will need node `>= v18.17.0` to build the front end.
 
 1. Navigate to the frontend folder:
+
    ```bash
    cd examples/transfers/frontend
    ```
 
 2. Install dependencies:
+
    ```bash
    npm ci
    ```
@@ -258,9 +322,11 @@ You can run the front end on your local computer, so it is easy to test in a bro
    cp .env.example .env.local
    ```
 
-Now open `.env.local` and edit the values of `NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS` and 
-`NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY` to be the contract address and pubkey from the previous step. With quartz dev, they can be grabbed
-from the logs. From the manual process, you would have already stored them as environment variables.
+Now open `.env.local` and edit the values of `NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS` and
+`NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY` to be the contract address and pubkey from the previous step.
+You should have them stored as environment variables `$CONTRACT_ADDRESS` and
+`$PUBKEY`. (Note if you ran `quartz dev` instead of all the manual steps you can
+get them out of the logs)
 
 4. Finally, start the frontend:
    ```bash
@@ -275,21 +341,25 @@ if you are just testing and you don't clear your browser storage, you will be fi
 
 You'll need to have the Keplr wallet browser extension installed and unlocked.
 
-You may have to go to "Manage Chain Visibility" in Keplr settings to add the `My
-Testing Chain` so you can talk to your local chain and see your balance.
+You may have to go to "Manage Chain Visibility" in Keplr settings to add the
+`Local Neutron Testchain` so you can talk to your local chain and see your balance.
 
 Create a new address in Keplr for testing purpose. You'll need to send this
 address some funds from the `admin` account setup with your local node. For
 instance, send 10M untrn with:
 
 ```bash
-neutrond tx bank send admin <KEPLR ADDRESS> 10000000untrn --chain-id testing
+neutrond tx bank send admin <KEPLR ADDRESS> 10000000untrn --chain-id testing --fees 10000untrn
 ```
 
 You should now see the funds on your local testnet on Keplr.
 
 Now you can interact with the app by depositing funds, privately transferring
-them to other addresses, and finally withdrawing them. 
+them to other addresses, and finally withdrawing them.
+
+If you want to test multiple addresses, create the other addresses in Keplr and
+be sure to send them some `untrn` from the `admin` account so they can pay for
+gas.
 
 Be sure to check the enclave window to see the logs from your interaction with
 the app!
@@ -312,18 +382,20 @@ securely verify remote attestations from SGX enclaves.
 
 We have already pre-deployed the `quartz-dcap-verify` and `quartz-tcbinfo` contracts on the Neutron
 testnet at:
+
 - verifier - `neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf`
 - tcbinfo - `neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps`
 
 To deploy these on your own testnet, see [below](#other-testnets-with-sgx). Although for v0.1, we recommend going with these already deployed contracts.
 
 ### Setting up an Azure machine
+
 To begin, you'll need to deploy an SGX-enabled Azure instance and log in via ssh.
 Follow the [steps Microsoft lays out](https://learn.microsoft.com/en-us/azure/confidential-computing/quick-create-portal) to connect, choose Ubuntu 20.04, then ssh into the machine.
 
 Once logged in, clone and install Quartz like before (see [installation](#installation)). Once you clone the Quartz repo, you'll have to add some things to your azure machine.
 
-Below we have provided a long instruction set to get the azure machine setup. We plan on dockerizing all of this after the v0.1 launch, as it is quite complex. You can reach out for the team for help if you get stuck here. 
+Below we have provided a long instruction set to get the azure machine setup. We plan on dockerizing all of this after the v0.1 launch, as it is quite complex. You can reach out for the team for help if you get stuck here.
 
 ```bash
 ### INSIDE YOUR AZURE SGX MACHINE ###
@@ -392,7 +464,7 @@ neutrond keys add admin --keyring-backend test > ./accounts/val1.txt 2>&1
 sudo apt-get install nodejs=20.10.0-1nodesource1
 
 # install pccs - see appendix 2
-# instructions from https://download.01.org/intel-sgx/latest/linux-latest/docs/Intel_SGX_SW_Installation_Guide_for_Linux.pdf 
+# instructions from https://download.01.org/intel-sgx/latest/linux-latest/docs/Intel_SGX_SW_Installation_Guide_for_Linux.pdf
 # Note - You will be asked a bunch of configuration questions when setting up pcss - for testing, any values will work. In production, please give it careful thought
 sudo apt-get install sgx-dcap-pccs
 sudo systemctl start pccs
@@ -434,7 +506,9 @@ quartz handshake --contract $CONTRACT
 Wahoo! Now follow the instructions in the [Front End section](#frontend) of this doc to test the application with a real enclave.
 
 ### Using an enclave on another machine
+
 You can use a remote enclave machine by setting the following env var:
+
 ```bash
 QUARTZ_NODE_URL=<YOUR_IP_ADDR>:11090
 # You can now use that enclave to deploy

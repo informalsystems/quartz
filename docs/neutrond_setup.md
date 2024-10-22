@@ -1,9 +1,10 @@
-# CosmWasm Binaries: Manual Install and Configure
+# Neutrond Setup
 
-> Note - We highly recommend setting up `neutrond` with the docker image provided. However, we have provided these detailed instructions in case you wanted to take a deeper look.
+> Note - We would like to highly recommend setting up the `neutrond` node with the docker image provided. However, we also understand that docker is a poison upon the human soul, and thus provide these instructions for setting up the neutrond node locally, without imbibing such poision. It will probably take less time to follow these instructions than it will to build the docker image anyways. Up to you 🫡 
 
 Quartz expects to interact with a CosmWasm-based blockchain. 
-The default/archetypal binary is `neutrond`. We have included instructions for `wasmd`, but it is not supported in the cli today.
+The default/archetypal binary is `neutrond`. Currently its hardcoded to use
+`neutrond` though of course we will make this configurable soon.
 
 Here we describe how to get setup from scratch or how to use an existing `neutrond`
 binary/network you have access to.
@@ -21,31 +22,23 @@ For `neutrond`:
 ```bash
 git clone -b main https://github.com/neutron-org/neutron.git
 cd neutron
-git checkout v4.0.0
-make install
-```
-
-For `wasmd` (NOTE - NOT SUPPORTED BY CLI):
-
-```bash
-git clone https://github.com/cosmwasm/wasmd/
-cd wasmd
-git checkout v0.45.0
-go install ./cmd/wasmd
+git checkout v4.0.1
+make install-test-binary
 ```
 
 ## Configure From Scratch
 
 We have to initialize a new chain and load it with some accounts.
 
-We'll assume you're using `neutrond` but it could be `wasmd` or any other.
+If you already have `neutrond` keys, you may need to rename them or use
+different names if the names overlap.
 
 We also have to give the chain a chain ID. We'll use `testing`.
 
 Run 
 
 ```bash
-neutrond init <your name> --chain-id testing
+neutrond init yourname --chain-id testing --default-denom untrn
 ```
 
 to initialize the local neutrond folder.
@@ -53,7 +46,9 @@ to initialize the local neutrond folder.
 Now open the file `~/.neutrond/config/client.toml` and change the field
 `keyring-backend` from `os` to `test`:
 
-```toml keyring-backend = "test" ```
+```toml 
+keyring-backend = "test" 
+```
 
 Now, finally, we can create a local admin key for your neutrond. You'll use this to
 deploy contracts:
@@ -62,25 +57,24 @@ deploy contracts:
 neutrond keys add admin 
 ```
 
+If you already have a key called `admin` in your keystore it's advised to rename it first.
+If you want to use a different name then `admin`, be sure to also change it in
+the `examples/transfers/quartz.toml` and everywhere we use it below.
+
 This should output a neutron address. 
 
 Now create the genesis file.
 
 ```bash 
-# generate a second key for the validator 
-neutrond keys add validator
+# fund the account in genesis 
+neutrond add-genesis-account admin 100000000000untrn
 
-# fund both accounts in genesis 
-neutrond genesis add-genesis-account admin 100000000000stake,100000000000ucosm 
-neutrond genesis add-genesis-account validator 100000000000stake,100000000000ucosm
-
-# sign genesis tx from validator and compose genesis 
-neutrond genesis gentx validator 100000000stake --chain-id testing 
-neutrond genesis collect-gentxs 
+# configure the ICS setup (neutrond expects to run as a consumer chain)
+neutrond add-consumer-section
 ```
 
 Before finally starting the node, for it to work with the front end, you need to
-configure CORS.
+configure CORS and a min gas price.
 
 ### Configure CORS
 
@@ -100,6 +94,30 @@ And in `~/.neutrond/config/app.toml`:
 enable = true 
 address = "tcp://0.0.0.0:1317" 
 enabled-unsafe-cors = true 
+```
+
+### Configure min gas
+
+In `~/.neutrond/config/app.toml`, set the min gas price:
+
+```toml
+minimum-gas-prices = "0.0001untrn"
+```
+
+And in `~/.neutrond/config/genesis.json`, set the denom and the feemarket min gas price:
+
+```json
+        "fee_denom": "untrn", 
+```
+
+```json
+        "min_base_gas_price": "0.000100000000000000",
+```
+
+and 
+
+```json
+        "base_gas_price": "0.000100000000000000",
 ```
 
 Now, finally:

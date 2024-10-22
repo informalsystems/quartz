@@ -6,7 +6,7 @@ rm -rf /root/.neutrond/keyring-test &> /dev/null
 neutrond tendermint unsafe-reset-all
 
 # Init configuration files
-neutrond init test --chain-id test-1 --overwrite
+neutrond init test --chain-id testing --overwrite
 
 # Modify default configurations
 sed -i 's/keyring-backend = "os"/keyring-backend = "test"/g' /root/.neutrond/config/client.toml
