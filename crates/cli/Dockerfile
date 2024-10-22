@@ -51,6 +51,6 @@ RUN apt-get remove -y wget && \
 
 # Create an out-ot-tree transfers sample app
 RUN cd / && \
-    quartz init
+    USER=root quartz init
 
 ENTRYPOINT ["quartz", "--mock-sgx", "--app-dir", "/quartz_app", "dev", "--unsafe-trust-latest", "--contract-manifest", "/quartz_app/contracts/Cargo.toml", "--init-msg", "{\"denom\":\"untrn\"}"]
