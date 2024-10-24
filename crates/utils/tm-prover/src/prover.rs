@@ -47,6 +47,7 @@ pub async fn prove(
         verbose: _,
         contract_address,
         storage_key,
+        storage_namespace,
     }: TmProverConfig,
 ) -> Result<ProofOutput> {
     let options = Options {
@@ -115,7 +116,7 @@ pub async fn prove(
     .await?;
 
     let path = WASM_STORE_KEY.to_owned();
-    let data = CwAbciKey::new(contract_address, storage_key, None);
+    let data = CwAbciKey::new(contract_address, storage_key, storage_namespace);
     let result = client
         .abci_query(Some(path), data, Some(proof_height), true)
         .await?;
