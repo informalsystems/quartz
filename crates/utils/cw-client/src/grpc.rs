@@ -89,6 +89,7 @@ impl CwClient for GrpcClient {
         _sender: &str,
         msg: M,
         _fees: &str,
+        _pay_amount: &str,
     ) -> Result<String, Self::Error> {
         let tm_pubkey = self.sk.public_key();
         let sender = tm_pubkey

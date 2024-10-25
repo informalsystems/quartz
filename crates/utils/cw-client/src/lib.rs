@@ -38,6 +38,7 @@ pub trait CwClient {
         sender: &str,
         msg: M,
         fees: &str,
+        pay_amount: &str,
     ) -> Result<String, Self::Error>;
 
     fn deploy<M: ToString>(
