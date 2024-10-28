@@ -112,6 +112,7 @@ Now clone and build the repo:
 ```bash
 git clone ssh://git@github.com/informalsystems/cycles-quartz
 cd cycles-quartz
+git checkout v0.1.0             # or latest release, check `git tag --sort=-v:refname`
 cargo install --path crates/cli
 ```
 
