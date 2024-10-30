@@ -80,7 +80,7 @@ fn query_dcap_verifier(
             .to_string()
     };
 
-    query_contract(deps, dcap_verifier_contract, &query_msg).map_err(|err| {
+    query_contract(deps, dcap_verifier_contract, &query_msg).map_err(|_err| {
         Error::DcapVerificationQueryError(
             serde_json::to_string(&query_msg).expect("cannot fail serde"),
         )
