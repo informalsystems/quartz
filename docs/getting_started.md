@@ -486,10 +486,18 @@ export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6
 export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
 cd examples/transfers
 
+# retrieve the FMSPC from your machine
+quartz print-fmspc
+
+# export it
+export FMSPC=YOUR MACHINE FMSPC HERE  // e.g. 00606A000000
+
+# you might want to update the tcbinfo contract you can follow the steps following [this guide from line 32 ](./tcbinfo_and_verifier.md).
+
 # copy the neutron testnet config file to the default quartz.toml file, so we connect to the right nodes
 cp quartz.neutron_pion-1.toml quartz.toml
 quartz enclave build
-quartz enclave start  --fmspc "00906ED50000" --tcbinfo-contract $TCBINFO_CONTRACT --dcap-verifier-contract $DCAP_CONTRACT --unsafe-trust-latest
+quartz enclave start  --fmspc $FMSPC --tcbinfo-contract $TCBINFO_CONTRACT --dcap-verifier-contract $DCAP_CONTRACT --unsafe-trust-latest
 
 # build and deploy the contracts
 quartz contract build --contract-manifest "contracts/Cargo.toml"
@@ -520,7 +528,7 @@ quartz contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.
 ### Other Testnets With SGX
 
 To setup on another testnet we need to deploy a `quartz-tcbinfo` contract and a
-`quartz-dcap-verifier` contract. However we recommend using the deployed contracts on neutrons public testnet for v0.1.
+`quartz-dcap-verifier` contract. However we recommend using the deployed contracts on neutron public testnet for v0.1.
 
 Instructions can be followed in [this guide](./tcbinfo_and_verifier.md).
 
