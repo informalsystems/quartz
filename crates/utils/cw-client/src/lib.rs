@@ -37,7 +37,6 @@ pub trait CwClient {
         gas: u64,
         sender: &str,
         msg: M,
-        fees: &str,
         pay_amount: &str,
     ) -> Result<String, Self::Error>;
 
