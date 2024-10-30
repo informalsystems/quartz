@@ -158,7 +158,7 @@ impl CwClient for CliClient {
             0 => "auto",
             _ => &gas.to_string(),
         };
-        
+
         let mut command = self.new_command()?;
         let command = command
             .args(["--node", self.url.as_str()])
