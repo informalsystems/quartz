@@ -247,8 +247,6 @@ pub struct DevArgs {
 
     #[command(flatten)]
     pub enclave_build: EnclaveBuildArgs,
-
-   
 }
 
 pub trait ToFigment {

@@ -63,9 +63,9 @@ async fn dev_driver(
 
     // Validate SGX configuration if not in mock mode
     if !config.mock_sgx {
-    config.sgx_config.validate().map_err(|e| eyre!(e))?;
+        config.sgx_config.validate().map_err(|e| eyre!(e))?;
     }
-    
+
     // Shutdown enclave upon interruption
     // Drive
     while let Some(dev) = rx.recv().await {

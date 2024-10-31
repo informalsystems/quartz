@@ -62,29 +62,6 @@ impl Handler for EnclaveStartRequest {
             let sgx_config = &config.sgx_config;
             sgx_config.validate().map_err(|e| eyre!(e))?;
 
-            let enclave_args: Vec<String> = vec![
-                "--chain-id".to_string(),
-                config.chain_id.to_string(),
-                "--trusted-height".to_string(),
-                trusted_height.to_string(),
-                "--trusted-hash".to_string(),
-                trusted_hash.to_string(),
-                "--node-url".to_string(),
-                config.node_url.to_string(),
-                "--ws-url".to_string(),
-                config.ws_url.to_string(),
-                "--grpc-url".to_string(),
-                config.grpc_url.to_string(),
-                "--tx-sender".to_string(),
-                config.tx_sender.clone(),
-                "--fmspc".to_string(),
-                sgx_config.fmspc.as_ref().unwrap().to_string(),
-                "--tcbinfo-contract".to_string(),
-                sgx_config.tcbinfo_contract.as_ref().unwrap().to_string(),
-                "--dcap-verifier-contract".to_string(),
-                sgx_config.dcap_verifier_contract.as_ref().unwrap().to_string(),
-            ];
-
             if std::env::var("ADMIN_SK").is_err() {
                 return Err(eyre!("ADMIN_SK environment variable is not set"));
             };
@@ -105,9 +82,18 @@ impl Handler for EnclaveStartRequest {
                 &config.chain_id,
                 quartz_dir_canon,
                 &enclave_dir,
-                fmspc,
-                tcbinfo_contract,
-                dcap_verifier_contract,
+                config
+                    .sgx_config
+                    .fmspc
+                    .expect("Missing or out of date FMSPC"),
+                config
+                    .sgx_config
+                    .tcbinfo_contract
+                    .expect("Missing TCBINFO Contract"),
+                config
+                    .sgx_config
+                    .dcap_verifier_contract
+                    .expect("Missing DCAP Verifier"),
                 &config.node_url,
                 &config.ws_url,
                 &config.grpc_url,

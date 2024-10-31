@@ -9,9 +9,6 @@ use crate::{config::Config, handler::utils::helpers::query_latest_height_hash, r
 #[derive(Clone, Debug)]
 pub struct EnclaveStartRequest {
     pub unsafe_trust_latest: bool,
-    pub fmspc: Option<Fmspc>,
-    pub tcbinfo_contract: Option<AccountId>,
-    pub dcap_verifier_contract: Option<AccountId>,
 }
 
 impl From<EnclaveStartRequest> for Request {

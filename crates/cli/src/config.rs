@@ -1,8 +1,7 @@
 use std::path::PathBuf;
-use cosmrs::AccountId;
-use quartz_common::enclave::types::Fmspc;
 
-use cosmrs::tendermint::chain::Id as ChainId;
+use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
+use quartz_common::enclave::types::Fmspc;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
@@ -66,7 +65,6 @@ pub struct Config {
     /// Whether to build for release or debug
     #[serde(default)]
     pub release: bool,
-
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -87,8 +85,6 @@ pub struct SgxConfiguration {
     #[serde(skip)]
     mock_sgx: bool,
 }
-
-
 
 impl Default for SgxConfiguration {
     fn default() -> Self {
@@ -117,12 +113,14 @@ impl SgxConfiguration {
 
     fn check_required_field<T>(&self, field: &Option<T>, field_name: &str) -> Result<(), String> {
         if field.is_none() {
-            return Err(format!("{} is required when not in mock SGX mode", field_name));
+            return Err(format!(
+                "{} is required when not in mock SGX mode",
+                field_name
+            ));
         }
         Ok(())
     }
 }
-
 
 fn default_rpc_addr() -> String {
     "http://127.0.0.1".to_string()
