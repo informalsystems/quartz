@@ -487,17 +487,13 @@ cd examples/transfers
 # retrieve the FMSPC from your machine
 quartz print-fmspc
 
-# export it
-export FMSPC=YOUR MACHINE FMSPC HERE  // e.g. 00606A000000
 # copy and add it to the config on `examples/transfers/quartz.neutron_pion-1.toml`
-
 # copy the neutron testnet config file to the default quartz.toml file
 cp quartz.neutron_pion-1.toml quartz.toml
 
 # you might want to update the tcbinfo contract you can follow the steps following [this guide from line 32 ](./tcbinfo_and_verifier.md).
 
-# copy the neutron testnet config file to the default quartz.toml file, so we connect to the right nodes
-cp quartz.neutron_pion-1.toml quartz.toml
+# now you can build and start the enclave
 quartz enclave build
 quartz enclave start  --unsafe-trust-latest
 
