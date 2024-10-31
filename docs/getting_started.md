@@ -481,8 +481,6 @@ Now everything is installed and ready and we can start running quartz:
 
 ```
 # build and start the enclave
-export TCBINFO_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
-export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf
 export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
 cd examples/transfers
 
@@ -491,13 +489,17 @@ quartz print-fmspc
 
 # export it
 export FMSPC=YOUR MACHINE FMSPC HERE  // e.g. 00606A000000
+# copy and add it to the config on `examples/transfers/quartz.neutron_pion-1.toml`
+
+# copy the neutron testnet config file to the default quartz.toml file
+cp quartz.neutron_pion-1.toml quartz.toml
 
 # you might want to update the tcbinfo contract you can follow the steps following [this guide from line 32 ](./tcbinfo_and_verifier.md).
 
 # copy the neutron testnet config file to the default quartz.toml file, so we connect to the right nodes
 cp quartz.neutron_pion-1.toml quartz.toml
 quartz enclave build
-quartz enclave start  --fmspc $FMSPC --tcbinfo-contract $TCBINFO_CONTRACT --dcap-verifier-contract $DCAP_CONTRACT --unsafe-trust-latest
+quartz enclave start  --unsafe-trust-latest
 
 # build and deploy the contracts
 quartz contract build --contract-manifest "contracts/Cargo.toml"

@@ -12,3 +12,7 @@ enclave_rpc_port = 11090
 trusted_hash = ""
 trusted_height = 0
 release = true
+[sgx_config]
+fmspc = "00606A000000"
+tcbinfo_contract = "neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps"
+dcap_verifier_contract = "neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf"

@@ -13,6 +13,10 @@ pub struct Config {
     #[serde(default)]
     pub mock_sgx: bool,
 
+    /// SGX-specific configuration
+    #[serde(default)]
+    pub sgx_config: SgxConfiguration,
+
     /// Name or address of private key with which to sign
     #[serde(default = "default_tx_sender")]
     pub tx_sender: String,
@@ -60,7 +64,61 @@ pub struct Config {
     /// Whether to build for release or debug
     #[serde(default)]
     pub release: bool,
+
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SgxConfiguration {
+    /// FMSPC (Family-Model-Stepping-Platform-Custom SKU)
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fmspc: Option<Fmspc>,
+
+    /// Address of the TcbInfo contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tcbinfo_contract: Option<AccountId>,
+
+    /// Address of the DCAP verifier contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dcap_verifier_contract: Option<AccountId>,
+
+    /// Internal reference to parent mock_sgx setting
+    #[serde(skip)]
+    mock_sgx: bool,
+}
+
+
+
+
+impl SgxConfiguration {
+    pub fn new(mock_sgx: bool) -> Self {
+        Self {
+            fmspc: None,
+            tcbinfo_contract: None,
+            dcap_verifier_contract: None,
+            mock_sgx,
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), String> {
+        if !self.mock_sgx {
+            self.check_required_field(&self.fmspc, "FMSPC")?;
+            self.check_required_field(&self.tcbinfo_contract, "tcbinfo_contract")?;
+            self.check_required_field(&self.dcap_verifier_contract, "dcap_verifier_contract")?;
+        }
+        Ok(())
+    }
+
+    fn check_required_field<T>(&self, field: &Option<T>, field_name: &str) -> Result<(), String> {
+        if field.is_none() {
+            return Err(format!("{} is required when not in mock SGX mode", field_name));
+        }
+        Ok(())
+    }
+}
+
 
 fn default_rpc_addr() -> String {
     "http://127.0.0.1".to_string()
@@ -102,8 +160,10 @@ fn default_app_dir() -> PathBuf {
 
 impl Default for Config {
     fn default() -> Self {
+        let mock_sgx = false;
         Config {
-            mock_sgx: false,
+            mock_sgx,
+            sgx_config: SgxConfiguration::new(mock_sgx),
             tx_sender: default_tx_sender(),
             chain_id: default_chain_id(),
             node_url: default_node_url(),
@@ -128,5 +188,10 @@ impl AsRef<Config> for Config {
 impl Config {
     pub fn enclave_rpc(&self) -> String {
         format!("{}:{}", self.enclave_rpc_addr, self.enclave_rpc_port)
+    }
+
+    pub fn set_mock_sgx(&mut self, mock_sgx: bool) {
+        self.mock_sgx = mock_sgx;
+        self.sgx_config = SgxConfiguration::new(mock_sgx);
     }
 }
