@@ -82,10 +82,8 @@ impl Handler for EnclaveStartRequest {
                 &config.chain_id,
                 quartz_dir_canon,
                 &enclave_dir,
-                config
-                    .sgx_config
-                    .fmspc
-                    .expect("Missing or out of date FMSPC"),
+                config.sgx_config.get_fmspc()
+                .map_err(|e| eyre!(e))?,
                 config
                     .sgx_config
                     .tcbinfo_contract

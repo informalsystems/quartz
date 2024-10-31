@@ -247,6 +247,21 @@ pub struct DevArgs {
 
     #[command(flatten)]
     pub enclave_build: EnclaveBuildArgs,
+
+    /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fmspc: Option<Fmspc>,
+
+    /// Address of the TcbInfo contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tcbinfo_contract: Option<AccountId>,
+
+    /// Address of the DCAP verifier contract
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dcap_verifier_contract: Option<AccountId>,
 }
 
 pub trait ToFigment {
