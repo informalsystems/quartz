@@ -61,8 +61,12 @@ async fn dev_driver(
     let mut first_contract_message = true;
     let mut contract = String::from("");
 
+    // Validate SGX configuration if not in mock mode
+    if !config.mock_sgx {
+    config.sgx_config.validate().map_err(|e| eyre!(e))?;
+    }
+    
     // Shutdown enclave upon interruption
-
     // Drive
     while let Some(dev) = rx.recv().await {
         match dev {
@@ -167,9 +171,6 @@ fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<()> {
     // In separate process, launch the enclave
     let enclave_start = EnclaveStartRequest {
         unsafe_trust_latest: args.unsafe_trust_latest,
-        fmspc: args.fmspc.clone(),
-        tcbinfo_contract: args.tcbinfo_contract.clone(),
-        dcap_verifier_contract: args.dcap_verifier_contract.clone(),
     };
 
     let config_cpy = config.clone();

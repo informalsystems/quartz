@@ -59,19 +59,31 @@ impl Handler for EnclaveStartRequest {
                     .await?;
             handle_process(enclave_child).await?;
         } else {
-            let Some(fmspc) = self.fmspc else {
-                return Err(eyre!("FMSPC is required if MOCK_SGX isn't set"));
-            };
+            let sgx_config = &config.sgx_config;
+            sgx_config.validate().map_err(|e| eyre!(e))?;
 
-            let Some(tcbinfo_contract) = self.tcbinfo_contract else {
-                return Err(eyre!("tcbinfo_contract is required if MOCK_SGX isn't set"));
-            };
-
-            let Some(dcap_verifier_contract) = self.dcap_verifier_contract else {
-                return Err(eyre!(
-                    "dcap_verifier_contract is required if MOCK_SGX isn't set"
-                ));
-            };
+            let enclave_args: Vec<String> = vec![
+                "--chain-id".to_string(),
+                config.chain_id.to_string(),
+                "--trusted-height".to_string(),
+                trusted_height.to_string(),
+                "--trusted-hash".to_string(),
+                trusted_hash.to_string(),
+                "--node-url".to_string(),
+                config.node_url.to_string(),
+                "--ws-url".to_string(),
+                config.ws_url.to_string(),
+                "--grpc-url".to_string(),
+                config.grpc_url.to_string(),
+                "--tx-sender".to_string(),
+                config.tx_sender.clone(),
+                "--fmspc".to_string(),
+                sgx_config.fmspc.as_ref().unwrap().to_string(),
+                "--tcbinfo-contract".to_string(),
+                sgx_config.tcbinfo_contract.as_ref().unwrap().to_string(),
+                "--dcap-verifier-contract".to_string(),
+                sgx_config.dcap_verifier_contract.as_ref().unwrap().to_string(),
+            ];
 
             if std::env::var("ADMIN_SK").is_err() {
                 return Err(eyre!("ADMIN_SK environment variable is not set"));
