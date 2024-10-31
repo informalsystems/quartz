@@ -69,9 +69,13 @@ pub struct Config {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SgxConfiguration {
-    /// FMSPC (Family-Model-Stepping-Platform-Custom SKU)
+    /// FMSPC (Family-Model-Stepping-Platform-Custom SKU) as hex string
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub fmspc_hex: Option<String>,
+
+    #[serde(skip)]
     pub fmspc: Option<Fmspc>,
+
 
     /// Address of the TcbInfo contract
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -104,7 +108,18 @@ impl SgxConfiguration {
 
     pub fn validate(&self) -> Result<(), String> {
         if !self.mock_sgx {
-            self.check_required_field(&self.fmspc, "FMSPC")?;
+            if let Some(fmspc_hex) = &self.fmspc_hex {
+                // Convert hex string to bytes
+                let fmspc_bytes = hex::decode(fmspc_hex)
+                    .map_err(|e| format!("Invalid FMSPC hex string: {}", e))?;
+                if fmspc_bytes.len() != 6 {
+                    return Err("FMSPC must be 6 bytes long".to_string());
+                }
+                // Convert to array
+                let fmspc: [u8; 6] = fmspc_bytes.try_into()
+                    .map_err(|_| "Failed to convert FMSPC bytes to array".to_string())?;
+                self.fmspc = Some(fmspc);
+            }
             self.check_required_field(&self.tcbinfo_contract, "tcbinfo_contract")?;
             self.check_required_field(&self.dcap_verifier_contract, "dcap_verifier_contract")?;
         }
