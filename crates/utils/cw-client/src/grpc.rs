@@ -88,7 +88,7 @@ impl CwClient for GrpcClient {
         gas: u64,
         _sender: &str,
         msg: M,
-        _fees: &str,
+        _pay_amount: &str,
     ) -> Result<String, Self::Error> {
         let tm_pubkey = self.sk.public_key();
         let sender = tm_pubkey
@@ -257,7 +257,7 @@ mod tests {
                 2000000,
                 "/* unused since we're getting the account from the sk */",
                 json!([]),
-                "11000untrn",
+                "0untrn",
             )
             .await?;
         println!("{}", tx_hash);
