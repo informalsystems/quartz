@@ -42,9 +42,11 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String> {
 
     info!("Running SessionCreate");
 
-    let res: serde_json::Value = RelayMessage::SessionCreate
-        .run_relay(config.enclave_rpc())
-        .await?;
+    let res: serde_json::Value = RelayMessage::SessionCreate {
+        contract: args.contract.clone(),
+    }
+    .run_relay(config.enclave_rpc())
+    .await?;
 
     let output: WasmdTxResponse = serde_json::from_str(
         cw_client
@@ -54,7 +56,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String> {
                 2000000,
                 &config.tx_sender,
                 json!(res),
-                "11000untrn",
+                "0untrn"
             )
             .await
             .map_err(|err| eyre!(Box::new(err)))?// TODO: change
@@ -104,7 +106,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String> {
                 2000000,
                 &config.tx_sender,
                 json!(res),
-                "11000untrn",
+                "0untrn"
             )
             .await
             .map_err(|err| eyre!(Box::new(err)))? // todo change

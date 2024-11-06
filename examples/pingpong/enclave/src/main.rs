@@ -13,9 +13,9 @@
 )]
 
 pub mod cli;
+pub mod ping_pong_server;
 pub mod proto;
 pub mod state;
-pub mod transfers_server;
 pub mod wslistener;
 
 use std::{
@@ -25,6 +25,7 @@ use std::{
 
 use clap::Parser;
 use cli::Cli;
+use ping_pong_server::{PingPongService, PongOp};
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
@@ -33,7 +34,6 @@ use quartz_common::{
     },
 };
 use tokio::sync::mpsc;
-use transfers_server::{TransfersOp, TransfersService};
 
 use crate::wslistener::WsListener;
 
@@ -86,8 +86,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         admin_sk,
     };
 
+    let sk = Arc::new(Mutex::new(None));
+
     // Event queue
-    let (tx, mut rx) = mpsc::channel::<TransfersOp<DefaultAttestor>>(1);
+    let (tx, mut rx) = mpsc::channel::<PongOp<DefaultAttestor>>(1);
     // Consumer task: dequeue and process events
     tokio::spawn(async move {
         while let Some(op) = rx.recv().await {
@@ -97,19 +99,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let contract = Arc::new(Mutex::new(None));
-    let sk = Arc::new(Mutex::new(None));
-
-    QuartzServer::new(
-        config.clone(),
-        contract.clone(),
-        sk.clone(),
-        attestor.clone(),
-        ws_config,
-    )
-    .add_service(TransfersService::new(config, sk, contract, attestor, tx))
-    .serve(args.rpc_addr)
-    .await?;
+    QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
+        .add_service(PingPongService::new(config, sk, attestor, tx))
+        .serve(args.rpc_addr)
+        .await?;
 
     Ok(())
 }

@@ -12,6 +12,15 @@ pub type Hash = [u8; 32];
 pub type Height = u64;
 pub type TrustThreshold = (u64, u64);
 
+pub const CONFIG_KEY: &str = "quartz_config";
+pub const SESSION_KEY: &str = "quartz_session";
+pub const EPOCH_COUNTER_KEY: &str = "epoch_counter";
+pub const SEQUENCE_NUM_KEY: &str = "quartz_seq_num";
+pub const CONFIG: Item<RawConfig> = Item::new(CONFIG_KEY);
+pub const SESSION: Item<Session> = Item::new(SESSION_KEY);
+pub const EPOCH_COUNTER: Item<Uint64> = Item::new(EPOCH_COUNTER_KEY);
+pub const SEQUENCE_NUM: Item<Uint64> = Item::new(SEQUENCE_NUM_KEY);
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Config {
     mr_enclave: MrEnclave,
@@ -247,9 +256,3 @@ impl Session {
         self.nonce.to_array().expect("correct by construction")
     }
 }
-
-pub const SEQUENCE_NUM_KEY: &str = "quartz_seq_num";
-pub const CONFIG: Item<RawConfig> = Item::new("quartz_config");
-pub const SESSION: Item<Session> = Item::new("quartz_session");
-pub const EPOCH_COUNTER: Item<Uint64> = Item::new("epoch_counter");
-pub const SEQUENCE_NUM: Item<Uint64> = Item::new(SEQUENCE_NUM_KEY);
