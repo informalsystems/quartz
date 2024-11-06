@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, str::FromStr};
 
 use anyhow::{anyhow, Error, Result};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
-use cosmwasm_std::{Addr, HexBinary};
+use cosmwasm_std::{Addr, HexBinary, Uint64};
 use cw_client::{CwClient, GrpcClient};
 use futures_util::StreamExt;
 use quartz_common::{
@@ -189,7 +189,7 @@ where
         .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
 
-    let seq_num = cw_client
+    let seq_num: Uint64 = cw_client
         .query_raw(contract, SEQUENCE_NUM_KEY.to_string())
         .await
         .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
@@ -198,7 +198,7 @@ where
     let update_contents = UpdateRequestMessage {
         state,
         requests,
-        seq_num,
+        seq_num: seq_num.into(),
     };
 
     // Wait 2 blocks
