@@ -36,7 +36,7 @@ pub enum ExecuteMsg<RA = RawDefaultAttestation> {
     ClearTextTransferRequest(execute::ClearTextTransferRequestMsg),
     // ciphertext
     TransferRequest(SequencedMsgSansHandler<execute::TransferRequestMsg>),
-    QueryRequest(SequencedMsgSansHandler<execute::QueryRequestMsg>),
+    QueryRequest(execute::QueryRequestMsg),
 
     // Enclave msgs
     Update(AttestedMsg<execute::UpdateMsg, RA>),

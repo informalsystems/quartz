@@ -53,10 +53,7 @@ pub fn execute(
         ExecuteMsg::Deposit => deposit(deps, env, info),
         ExecuteMsg::Withdraw => withdraw(deps, env, info),
         ExecuteMsg::ClearTextTransferRequest(_) => unimplemented!(),
-        ExecuteMsg::QueryRequest(msg) => {
-            let _ = msg.clone().handle_raw(deps.branch(), &env, &info)?;
-            query_balance(deps, env, info, msg.0 .0)
-        }
+        ExecuteMsg::QueryRequest(msg) => query_balance(deps, env, info, msg),
 
         // Cipher user msgs
         ExecuteMsg::TransferRequest(msg) => {
