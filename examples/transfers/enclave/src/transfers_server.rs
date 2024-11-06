@@ -134,7 +134,7 @@ pub struct TransfersService<A: Attestor> {
     attestor: A,
     pub queue_producer: Sender<TransfersOp<A>>,
     tx: Option<Sender<CoreMsg>>,
-    seq_num: u64,
+    seq_num: Arc<Mutex<u64>>,
 }
 
 impl<A> TransfersService<A>
@@ -155,7 +155,7 @@ where
             attestor,
             queue_producer,
             tx: None,
-            seq_num: 0,
+            seq_num: Arc::new(Mutex::new(0)),
         }
     }
 }
@@ -212,26 +212,18 @@ where
         // Instantiate empty withdrawals map to include in response (Update message to smart contract)
         let mut withdrawals_response: Vec<(Addr, Uint128)> = Vec::<(Addr, Uint128)>::new();
 
-        // make sure number of pending requests are equal to the diff b/w on-chain v/s in-mem seq num
         let pending_sequenced_requests = message
             .requests
             .iter()
             .filter(|req| matches!(req, TransfersRequest::Transfer(_)))
             .count();
 
-        if message.seq_num < self.seq_num {
-            return Err(Status::failed_precondition("replay attempted"));
-        }
-
-        let seq_num_diff = message.seq_num - self.seq_num;
-        if seq_num_diff != pending_sequenced_requests as u64 {
-            return Err(Status::failed_precondition("seq_num_diff mismatch"));
-        }
-
         // Loop through requests, match on cases, and apply changes to state
         for req in message.requests {
             match req {
                 TransfersRequest::Transfer(ciphertext) => {
+                    self.ensure_seq_num_consistency(message.seq_num, pending_sequenced_requests)?;
+
                     // Decrypt transfer ciphertext into cleartext struct (acquires lock on enclave sk to do so)
                     let transfer: ClearTextTransferRequestMsg = {
                         let sk_lock = self
@@ -377,6 +369,35 @@ where
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(QueryResponse { message }))
+    }
+}
+
+impl<A> TransfersService<A>
+where
+    A: Attestor + Send + Sync + 'static,
+{
+    fn ensure_seq_num_consistency(
+        &self,
+        seq_num_on_chain: u64,
+        pending_sequenced_requests: usize,
+    ) -> TonicResult<()> {
+        let mut seq_num = self.seq_num.lock().unwrap();
+
+        if seq_num_on_chain < *seq_num {
+            return Err(Status::failed_precondition("replay attempted"));
+        }
+
+        // make sure number of pending requests are equal to the diff b/w on-chain v/s in-mem seq num
+        let seq_num_diff = seq_num_on_chain - *seq_num;
+        if seq_num_diff != pending_sequenced_requests as u64 {
+            return Err(Status::failed_precondition(&format!(
+                "seq_num_diff mismatch: num({seq_num_diff}) v/s diff({pending_sequenced_requests})"
+            )));
+        }
+
+        *seq_num = seq_num_on_chain;
+
+        Ok(())
     }
 }
 
