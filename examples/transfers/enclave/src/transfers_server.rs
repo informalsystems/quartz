@@ -48,6 +48,7 @@ pub type RawCipherText = HexBinary;
 pub struct UpdateRequestMessage {
     pub state: HexBinary,
     pub requests: Vec<TransfersRequest>,
+    pub seq_num: u64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -126,6 +127,7 @@ pub struct TransfersService<A: Attestor> {
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
     pub queue_producer: Sender<TransfersOp<A>>,
+    seq_num: Arc<Mutex<u64>>,
 }
 
 impl<A> TransfersService<A>
@@ -145,6 +147,7 @@ where
             sk,
             attestor,
             queue_producer,
+            seq_num: Arc::new(Mutex::new(0)),
         }
     }
 }
@@ -198,13 +201,22 @@ where
         };
 
         let requests_len = message.requests.len() as u32;
+
         // Instantiate empty withdrawals map to include in response (Update message to smart contract)
         let mut withdrawals_response: Vec<(Addr, Uint128)> = Vec::<(Addr, Uint128)>::new();
+
+        let pending_sequenced_requests = message
+            .requests
+            .iter()
+            .filter(|req| matches!(req, TransfersRequest::Transfer(_)))
+            .count();
 
         // Loop through requests, match on cases, and apply changes to state
         for req in message.requests {
             match req {
                 TransfersRequest::Transfer(ciphertext) => {
+                    self.ensure_seq_num_consistency(message.seq_num, pending_sequenced_requests)?;
+
                     // Decrypt transfer ciphertext into cleartext struct (acquires lock on enclave sk to do so)
                     let transfer: ClearTextTransferRequestMsg = {
                         let sk_lock = self
@@ -350,6 +362,35 @@ where
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(QueryResponse { message }))
+    }
+}
+
+impl<A> TransfersService<A>
+where
+    A: Attestor + Send + Sync + 'static,
+{
+    fn ensure_seq_num_consistency(
+        &self,
+        seq_num_on_chain: u64,
+        pending_sequenced_requests: usize,
+    ) -> TonicResult<()> {
+        let mut seq_num = self.seq_num.lock().unwrap();
+
+        if seq_num_on_chain < *seq_num {
+            return Err(Status::failed_precondition("replay attempted"));
+        }
+
+        // make sure number of pending requests are equal to the diff b/w on-chain v/s in-mem seq num
+        let seq_num_diff = seq_num_on_chain - *seq_num;
+        if seq_num_diff != pending_sequenced_requests as u64 {
+            return Err(Status::failed_precondition(&format!(
+                "seq_num_diff mismatch: num({seq_num_diff}) v/s diff({pending_sequenced_requests})"
+            )));
+        }
+
+        *seq_num = seq_num_on_chain;
+
+        Ok(())
     }
 }
 
