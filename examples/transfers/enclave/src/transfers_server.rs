@@ -14,7 +14,7 @@ use quartz_common::{
     },
     enclave::{
         attestor::Attestor,
-        server::{AppService, CoreMsg, IntoServer, ProofOfPublication, WsListenerConfig},
+        server::{IntoServer, ProofOfPublication, WsListenerConfig},
     },
 };
 use serde::{Deserialize, Serialize};
@@ -39,12 +39,6 @@ impl<A: Attestor> IntoServer for TransfersService<A> {
 
     fn into_server(self) -> Self::Server {
         SettlementServer::new(self)
-    }
-}
-
-impl<A: Attestor> AppService for TransfersService<A> {
-    fn accept_channel(&mut self, tx: Sender<CoreMsg>) {
-        self.tx = Some(tx);
     }
 }
 
@@ -133,7 +127,6 @@ pub struct TransfersService<A: Attestor> {
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
     pub queue_producer: Sender<TransfersOp<A>>,
-    tx: Option<Sender<CoreMsg>>,
     seq_num: Arc<Mutex<u64>>,
 }
 
@@ -154,7 +147,6 @@ where
             sk,
             attestor,
             queue_producer,
-            tx: None,
             seq_num: Arc::new(Mutex::new(0)),
         }
     }
@@ -209,6 +201,7 @@ where
         };
 
         let requests_len = message.requests.len() as u32;
+
         // Instantiate empty withdrawals map to include in response (Update message to smart contract)
         let mut withdrawals_response: Vec<(Addr, Uint128)> = Vec::<(Addr, Uint128)>::new();
 
