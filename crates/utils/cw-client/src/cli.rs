@@ -106,7 +106,7 @@ impl CwClient for CliClient {
         Ok(query_result)
     }
 
-    fn query_raw<R: DeserializeOwned + Default>(
+    async fn query_raw<R: DeserializeOwned + Default>(
         &self,
         contract: &Self::Address,
         query: Self::RawQuery,
@@ -152,16 +152,23 @@ impl CwClient for CliClient {
         gas: u64,
         sender: &str,
         msg: M,
-        fees: &str,
+        pay_amount: &str,
     ) -> Result<String, Self::Error> {
+        let gas_amount = match gas {
+            0 => "auto",
+            _ => &gas.to_string(),
+        };
+
         let mut command = self.new_command()?;
         let command = command
             .args(["--node", self.url.as_str()])
             .args(["--chain-id", chain_id.as_ref()])
             .args(["tx", "wasm"])
             .args(["execute", contract.as_ref(), &msg.to_string()])
-            .args(["--gas", &gas.to_string()])
-            .args(["--fees", fees])
+            .args(["--amount", pay_amount])
+            .args(["--gas", gas_amount])
+            .args(["--gas-adjustment", "1.3"])
+            .args(["--gas-prices", "0.025untrn"])
             .args(["--from", sender])
             .args(["--output", "json"])
             .arg("-y");

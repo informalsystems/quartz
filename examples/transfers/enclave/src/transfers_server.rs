@@ -21,7 +21,10 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tokio::sync::mpsc::Sender;
 use tonic::{Request, Response, Result as TonicResult, Status};
-use transfers_contract::msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest};
+use transfers_contract::{
+    msg::execute::{ClearTextTransferRequestMsg, Request as TransfersRequest},
+    state::REQUESTS_KEY,
+};
 
 use crate::{
     proto::{
@@ -45,6 +48,7 @@ pub type RawCipherText = HexBinary;
 pub struct UpdateRequestMessage {
     pub state: HexBinary,
     pub requests: Vec<TransfersRequest>,
+    pub seq_num: u64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -119,9 +123,11 @@ pub struct TransfersOp<A: Attestor> {
 #[derive(Clone, Debug)]
 pub struct TransfersService<A: Attestor> {
     config: Config,
+    contract: Arc<Mutex<Option<AccountId>>>,
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
     pub queue_producer: Sender<TransfersOp<A>>,
+    seq_num: Arc<Mutex<u64>>,
 }
 
 impl<A> TransfersService<A>
@@ -130,15 +136,18 @@ where
 {
     pub fn new(
         config: Config,
+        contract: Arc<Mutex<Option<AccountId>>>,
         sk: Arc<Mutex<Option<SigningKey>>>,
         attestor: A,
         queue_producer: Sender<TransfersOp<A>>,
     ) -> Self {
         Self {
             config,
+            contract,
             sk,
             attestor,
             queue_producer,
+            seq_num: Arc::new(Mutex::new(0)),
         }
     }
 }
@@ -155,8 +164,15 @@ where
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
 
+        let contract = self.contract.lock().unwrap().clone();
+
         let (proof_value, message) = message
-            .verify(self.config.light_client_opts())
+            .verify(
+                self.config.light_client_opts(),
+                contract.expect("contract not set"),
+                REQUESTS_KEY.to_string(),
+                None,
+            )
             .map_err(Status::failed_precondition)?;
 
         let proof_value_matches_msg =
@@ -185,13 +201,22 @@ where
         };
 
         let requests_len = message.requests.len() as u32;
+
         // Instantiate empty withdrawals map to include in response (Update message to smart contract)
         let mut withdrawals_response: Vec<(Addr, Uint128)> = Vec::<(Addr, Uint128)>::new();
+
+        let pending_sequenced_requests = message
+            .requests
+            .iter()
+            .filter(|req| matches!(req, TransfersRequest::Transfer(_)))
+            .count();
 
         // Loop through requests, match on cases, and apply changes to state
         for req in message.requests {
             match req {
                 TransfersRequest::Transfer(ciphertext) => {
+                    self.ensure_seq_num_consistency(message.seq_num, pending_sequenced_requests)?;
+
                     // Decrypt transfer ciphertext into cleartext struct (acquires lock on enclave sk to do so)
                     let transfer: ClearTextTransferRequestMsg = {
                         let sk_lock = self
@@ -337,6 +362,35 @@ where
             serde_json::to_string(&attested_msg).map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(QueryResponse { message }))
+    }
+}
+
+impl<A> TransfersService<A>
+where
+    A: Attestor + Send + Sync + 'static,
+{
+    fn ensure_seq_num_consistency(
+        &self,
+        seq_num_on_chain: u64,
+        pending_sequenced_requests: usize,
+    ) -> TonicResult<()> {
+        let mut seq_num = self.seq_num.lock().unwrap();
+
+        if seq_num_on_chain < *seq_num {
+            return Err(Status::failed_precondition("replay attempted"));
+        }
+
+        // make sure number of pending requests are equal to the diff b/w on-chain v/s in-mem seq num
+        let seq_num_diff = seq_num_on_chain - *seq_num;
+        if seq_num_diff != pending_sequenced_requests as u64 {
+            return Err(Status::failed_precondition(&format!(
+                "seq_num_diff mismatch: num({seq_num_diff}) v/s diff({pending_sequenced_requests})"
+            )));
+        }
+
+        *seq_num = seq_num_on_chain;
+
+        Ok(())
     }
 }
 

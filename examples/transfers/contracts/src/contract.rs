@@ -56,7 +56,10 @@ pub fn execute(
         ExecuteMsg::QueryRequest(msg) => query_balance(deps, env, info, msg),
 
         // Cipher user msgs
-        ExecuteMsg::TransferRequest(msg) => transfer_request(deps, env, info, msg),
+        ExecuteMsg::TransferRequest(msg) => {
+            let _ = msg.clone().handle_raw(deps.branch(), &env, &info)?;
+            transfer_request(deps, env, info, msg.0 .0)
+        }
 
         // Enclave msgs
         ExecuteMsg::Update(attested_msg) => {

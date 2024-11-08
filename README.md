@@ -57,6 +57,8 @@ The current code contains known bugs and security vulnerabilities and APIs are s
 - [Future Work][future_work] - Roadmap and future work for security, flexibility, and
   more
 
+For support, join our [telegram channel](https://t.co/XfHOqt7oA1).
+
 ## This Repo
 
 Quartz provides developers three main tools:

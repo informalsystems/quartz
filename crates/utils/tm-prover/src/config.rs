@@ -87,6 +87,7 @@ impl Default for Config {
                 .parse()
                 .unwrap(),
             storage_key: String::default(),
+            storage_namespace: None,
         }
     }
 }
@@ -141,4 +142,9 @@ pub struct Config {
     /// Storage key of the state item for which proofs must be retrieved
     #[clap(long)]
     pub storage_key: String,
+
+    /// Storage namespace of the state item for which proofs must be retrieved
+    /// (only makes sense when dealing with maps)
+    #[clap(long)]
+    pub storage_namespace: Option<String>,
 }

@@ -22,7 +22,7 @@ pub trait CwClient {
         query: Self::Query,
     ) -> Result<R, Self::Error>;
 
-    fn query_raw<R: DeserializeOwned + Default>(
+    async fn query_raw<R: DeserializeOwned + Default>(
         &self,
         contract: &Self::Address,
         query: Self::RawQuery,
@@ -37,7 +37,7 @@ pub trait CwClient {
         gas: u64,
         sender: &str,
         msg: M,
-        fees: &str,
+        pay_amount: &str,
     ) -> Result<String, Self::Error>;
 
     fn deploy<M: ToString>(
