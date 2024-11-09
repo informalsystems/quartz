@@ -1,66 +1,34 @@
-## Foundry
+# Quartz Solidity
+A Solidity project for the Quartz contract, utilizing Foundry for testing and deployment. This contract integrates with the DCAP attestation system on the Sepolia testnet, providing secure attestation and session management.
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+## Prerequisites
+Foundry: Install Foundry by running:
+```bash
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
 ```
 
-### Test
-
-```shell
-$ forge test
+Environment Variables: Set up a .env file in the project root with your private key and Sepolia RPC URL (alchemy or any other provider):
+```
+PRIVATE_KEY=your_private_key_here
+RPC_URL_SEPOLIA=https://eth-sepolia.alchemyapi.io/v2/YOUR_ALCHEMY_API_KEY
 ```
 
-### Format
+## Testing
+Run tests on the Sepolia testnet using Foundry. This command forks the Sepolia network, allowing tests to run against real contract data.
+This is so we can easily use the deployed attestation contract on sepolia, and not deploy everything ourselves. It does not require Sepolia ETH, as it forks the blockchain state at that block.
 
-```shell
-$ forge fmt
+> Note - the tests take about 45 seconds to run on a 2024 Macbook Pro.
+
+```bash
+source .env
+forge test --fork-url $RPC_URL_SEPOLIA --fork-block-number 7040108
 ```
 
-### Gas Snapshots
+## Project Structure
+- src/: Contains the Quartz contract source code.
+- script/: Deployment scripts using Foundry’s forge script.
+- test/: Test files for Quartz contract functions and features.
 
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+## License
+This project is licensed under the Apache License 2.0.
