@@ -18,8 +18,6 @@ RPC_URL_SEPOLIA=https://eth-sepolia.alchemyapi.io/v2/YOUR_ALCHEMY_API_KEY
 Run tests on the Sepolia testnet using Foundry. This command forks the Sepolia network, allowing tests to run against real contract data.
 This is so we can easily use the deployed attestation contract on sepolia, and not deploy everything ourselves. It does not require Sepolia ETH, as it forks the blockchain state at that block.
 
-> Note - the tests take about 45 seconds to run on a 2024 Macbook Pro.
-
 ```bash
 source .env
 forge test --fork-url $RPC_URL_SEPOLIA --fork-block-number 7040108
