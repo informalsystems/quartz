@@ -48,7 +48,6 @@ contract Quartz {
         }
     }
 
-
     /**
      * @notice Initializes the Quartz contract with the config, attests it's from a DCAP enclave,
      * and emits an event for the host to listen to
@@ -74,15 +73,9 @@ contract Quartz {
      * Emits a {PubKeySet} event upon successful setting of the public key
      * Reverts with an error message if `verifyAndAttestOnChain` fails to verify the attestation
      */
-    function setSessionPubKey(bytes32 _pubKey, bytes memory _quote) external {
-        (bool success, bytes memory output) = attest.verifyAndAttestOnChain(_quote);
-        if (success) {
-            enclavePubKey = _pubKey;
-            emit PubKeySet(enclavePubKey);
-        } else {
-            string memory errorMessage = _getRevertMessage(output);
-            revert(errorMessage);
-        }
+    function setSessionPubKey(bytes32 _pubKey, bytes memory _quote) external onlyEnclave(_quote) {
+        enclavePubKey = _pubKey;
+        emit PubKeySet(enclavePubKey);
     }
 
     // TODO - Implement sequence number incrementing... but I assume we should have the transfers or ping pong app do this
