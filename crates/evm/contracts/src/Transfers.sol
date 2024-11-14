@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./Quartz.sol";
-import "./IERC20.sol";
+import "./openzeppelin/IERC20.sol";
 
 /**
  * @title Transfers
@@ -31,13 +31,13 @@ contract Transfers is Quartz {
     /// Only certain params are used for each request type, to allow for the struct
     /// to represent all types of requests, as rust can (Vec<Request> can hold all types)
     struct Request {
-        RequestType requestType;
+        Action action;
         address user; // Used for Withdraw and Deposit
         uint256 amount; // Used for Deposit
         bytes32 ciphertext; // Used for Transfer type (encrypted data)
     }
 
-    enum RequestType {
+    enum Action {
         DEPOSIT,
         WITHDRAW,
         TRANSFER
@@ -57,7 +57,7 @@ contract Transfers is Quartz {
 
     // TODO - nat spec this
     mapping(address => bytes) public encryptedBalances;
-    Request[] public requests;
+    Request[] private requests;
     bytes public encryptedState;
 
     /**
@@ -77,10 +77,10 @@ contract Transfers is Quartz {
      */
     function deposit(uint256 amount) external {
         require(token.transferFrom(msg.sender, address(this), amount), "Transfer failed");
-        sequenceNum++;
-        requests.push(Request(RequestType.DEPOSIT, msg.sender, amount, bytes32(0)));
+        requests.push(Request(Action.DEPOSIT, msg.sender, amount, bytes32(0)));
         emit Deposit(msg.sender, amount);
         emit UpdateRequestMessage(encryptedState, requests, sequenceNum);
+        sequenceNum++;
     }
 
     /**
@@ -88,10 +88,10 @@ contract Transfers is Quartz {
      * UpdateRequestMessage(), and then call update() to process the withdrawal.
      */
     function withdraw() external {
-        sequenceNum++;
-        requests.push(Request(RequestType.WITHDRAW, msg.sender, 0, bytes32(0)));
+        requests.push(Request(Action.WITHDRAW, msg.sender, 0, bytes32(0)));
         emit WithdrawRequest(msg.sender);
         emit UpdateRequestMessage(encryptedState, requests, sequenceNum);
+        sequenceNum++;
     }
 
     /**
@@ -100,10 +100,10 @@ contract Transfers is Quartz {
      * @param ciphertext The encrypted transfer data (encrypted by the enclave pub key)
      */
     function transferRequest(bytes32 ciphertext) external {
-        sequenceNum++;
-        requests.push(Request(RequestType.TRANSFER, msg.sender, 0, ciphertext));
+        requests.push(Request(Action.TRANSFER, msg.sender, 0, ciphertext));
         emit TransferRequest(msg.sender, ciphertext);
         emit UpdateRequestMessage(encryptedState, requests, sequenceNum);
+        sequenceNum++;
     }
 
     /**
@@ -161,5 +161,15 @@ contract Transfers is Quartz {
     {
         encryptedBalances[user] = encryptedBalance;
         emit EncryptedBalanceStored(user, encryptedBalance);
+    }
+
+    function getRequest(uint256 index) external view returns (Transfers.Request memory) {
+        return requests[index];
+    }
+
+    /// @notice Returns the entire list of requests
+    /// @return All requests stored in the contract
+    function getAllRequests() public view returns (Request[] memory) {
+        return requests;
     }
 }
