@@ -40,7 +40,7 @@ contract Quartz {
      * @param _quote The attestation quote used to verify the caller's enclave status.
      */
     modifier onlyEnclave(bytes memory _quote) {
-        (bool success, bytes memory output) = attest.verifyAndAttestOnChain(_quote);
+        (bool success, bytes memory output) = IAttestation(config.attestation).verifyAndAttestOnChain(_quote);
         if (success) {
             _;
         } else {
@@ -61,8 +61,7 @@ contract Quartz {
      * Emits a {SessionCreated} event upon successful verification.
      */
     constructor(Config memory _config, bytes memory _quote) {
-        attest = IAttestation(_config.attestation);
-        (bool success, bytes memory output) = attest.verifyAndAttestOnChain(_quote);
+        (bool success, bytes memory output) = IAttestation(_config.attestation).verifyAndAttestOnChain(_quote);
         if (success) {
             config = _config;
             emit SessionCreated(address(this));
