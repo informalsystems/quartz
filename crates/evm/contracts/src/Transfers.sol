@@ -48,7 +48,7 @@ contract Transfers is Quartz {
     event WithdrawRequest(address indexed user);
     event TransferRequest(address indexed sender, bytes32 ciphertext);
     event QueryRequestMessage(address indexed user, bytes ephemeralPubkey);
-    event UpdateRequestMessage(bytes newEncryptedState, Request[] requests, uint256 sequenceNum);
+    event UpdateRequestMessage(uint256 indexed sequenceNum, bytes newEncryptedState, Transfers.Request[] requests);
 
     // Enclave initiated events
     event WithdrawResponse(address indexed user, uint256 amount);
@@ -79,7 +79,7 @@ contract Transfers is Quartz {
         require(token.transferFrom(msg.sender, address(this), amount), "Transfer failed");
         requests.push(Request(Action.DEPOSIT, msg.sender, amount, bytes32(0)));
         emit Deposit(msg.sender, amount);
-        emit UpdateRequestMessage(encryptedState, requests, sequenceNum);
+        emit UpdateRequestMessage(sequenceNum, encryptedState, requests);
         sequenceNum++;
     }
 
@@ -90,7 +90,7 @@ contract Transfers is Quartz {
     function withdraw() external {
         requests.push(Request(Action.WITHDRAW, msg.sender, 0, bytes32(0)));
         emit WithdrawRequest(msg.sender);
-        emit UpdateRequestMessage(encryptedState, requests, sequenceNum);
+        emit UpdateRequestMessage(sequenceNum, encryptedState, requests);
         sequenceNum++;
     }
 
@@ -102,7 +102,7 @@ contract Transfers is Quartz {
     function transferRequest(bytes32 ciphertext) external {
         requests.push(Request(Action.TRANSFER, msg.sender, 0, ciphertext));
         emit TransferRequest(msg.sender, ciphertext);
-        emit UpdateRequestMessage(encryptedState, requests, sequenceNum);
+        emit UpdateRequestMessage(sequenceNum, encryptedState, requests);
         sequenceNum++;
     }
 
