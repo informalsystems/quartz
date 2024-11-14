@@ -67,13 +67,10 @@ contract TransfersTest is Test {
         vm.expectEmit(true, false, false, true);
         emit Deposit(user1, depositAmount);
         vm.expectEmit(true, false, false, true);
-        emit UpdateRequestMessage(0, transfers.encryptedState(), requests);
+        emit UpdateRequestMessage(seqBefore, transfers.encryptedState(), requests);
 
-        // User makes a deposit
         vm.prank(user1);
         transfers.deposit(depositAmount);
-
-
 
         // Veryify it worked as intended
         Transfers.Request memory request = transfers.getRequest(0);
@@ -87,44 +84,56 @@ contract TransfersTest is Test {
 
     }
 
-//     function testWithdraw() public {
-//         uint256 seqBefore = transfers.sequenceNum();
-//         uint256 balanceBefore = token.balanceOf(address(transfers));
+    function testWithdraw() public {
+        uint256 seqBefore = transfers.sequenceNum();
+        uint256 balanceBefore = token.balanceOf(address(transfers));
 
-//         // User makes a withdrawal request
-//         vm.prank(user1);
-//         transfers.withdraw();
+        Transfers.Request[] memory requests = new Transfers.Request[](1);
+        requests[0] = Transfers.Request(Transfers.Action.WITHDRAW, user1, 0, bytes32(0));
 
-//         Transfers.Request memory request = transfers.getRequest(0);
-//         assertEq(balanceBefore, token.balanceOf(address(transfers))); // Balance shouldn't change yet
-//         // assertEq(request.requestType, Transfers.RequestType.WITHDRAW); // TODO - fix
-//         assertEq(request.user, user1);
-//         assertEq(request.amount, 0);
-//         assertEq(request.ciphertext, bytes32(0));
-//         assertEq(seqBefore + 1, transfers.sequenceNum());
+        vm.expectEmit(true, false, false, false);
+        emit WithdrawRequest(user1);
+        vm.expectEmit(true, false, false, true);
+        emit UpdateRequestMessage(seqBefore, transfers.encryptedState(), requests);
 
-//         // Check that the events were emitted as expected
-//         vm.expectEmit(true, true, false, true);
-//         emit WithdrawRequest(user1);
-//         vm.expectEmit(true, true, false, true);
-//         emit UpdateRequestMessage(transfers.encryptedState(), transfers.getAllRequests(), transfers.sequenceNum());
-// }
+        // User makes a withdrawal request
+        vm.prank(user1);
+        transfers.withdraw();
+
+        Transfers.Request memory request = transfers.getRequest(0);
+        assertEq(balanceBefore, token.balanceOf(address(transfers))); // Balance shouldn't change yet
+        // assertEq(request.requestType, Transfers.RequestType.WITHDRAW); // TODO - fix
+        assertEq(request.user, user1);
+        assertEq(request.amount, 0);
+        assertEq(request.ciphertext, bytes32(0));
+        assertEq(seqBefore + 1, transfers.sequenceNum());
+}
 
 
-    // function testTransferRequest() public {
-    //     bytes32 ciphertext = enclaveHelper.encryptData("Transfer request data", enclave);
+    function testTransferRequest() public {
+        bytes32 ciphertext = keccak256(abi.encodePacked("Encrypted transfer data"));
+        uint256 seqBefore = transfers.sequenceNum();
 
-    //     vm.prank(user1);
-    //     transfers.transferRequest(ciphertext);
+        Transfers.Request[] memory requests = new Transfers.Request[](1);
+        requests[0] = Transfers.Request(Transfers.Action.TRANSFER, user1, 0, ciphertext);
 
-    //     Transfers.Request memory request = transfers.requests(0);
-    //     assertEq(request.requestType, Transfers.RequestType.TRANSFER);
-    //     assertEq(request.user, user1);
-    //     assertEq(request.ciphertext, ciphertext);
+        vm.expectEmit(true, false, false, true);
+        emit TransferRequest(user1, ciphertext);
+        vm.expectEmit(true, false, false, true);
+        emit UpdateRequestMessage(seqBefore, transfers.encryptedState(), requests);
 
-    //     vm.expectEmit(true, true, true, true);
-    //     emit transfers.TransferRequest(user1, ciphertext);
-    // }
+        // User makes a transfer request
+        vm.prank(user1);
+        transfers.transferRequest(ciphertext);
+
+        // Verify that the request was stored correctly
+        Transfers.Request memory request = transfers.getRequest(0);
+        assertEq(request.user, user1);
+        // assertEq(request.requestType, Transfers.RequestType.TRANSFER); // TODO - fix
+        assertEq(request.amount, 0);
+        assertEq(request.ciphertext, ciphertext);
+        assertEq(seqBefore + 1, transfers.sequenceNum());
+    }
 
     // function testUpdate() public {
     //     // User1 deposits 50 tokens
