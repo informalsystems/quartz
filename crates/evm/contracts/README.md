@@ -20,7 +20,7 @@ This is so we can easily use the deployed attestation contract on sepolia, and n
 
 ```bash
 source .env
-forge test --fork-url $RPC_URL_SEPOLIA --fork-block-number 7040108
+forge test --fork-url $RPC_URL_SEPOLIA
 ```
 
 ## Project Structure
@@ -30,3 +30,19 @@ forge test --fork-url $RPC_URL_SEPOLIA --fork-block-number 7040108
 
 ## License
 This project is licensed under the Apache License 2.0.
+
+## Temporary quartz documentation
+Just keeping this here so I can make notes, and add this to the overall docs when I am done
+
+```bash
+# get sepolia forked
+source .env
+anvil --fork-url $RPC_URL_SEPOLIA
+
+# deploy CYC test token
+forge script script/DeployMockERC20.s.sol:DeployMockERC20 --fork-url $SEPOLIA_FORK_URL --private-key $SEPOLIA_PRIV_KEY --broadcast
+
+# deploy transfers app
+
+
+```

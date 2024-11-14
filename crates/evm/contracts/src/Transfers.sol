@@ -25,7 +25,6 @@ import "./openzeppelin/IERC20.sol";
  */
 contract Transfers is Quartz {
     IERC20 public token;
-    address public owner;
 
     /// @dev Struct to represent a request, with a type indicator and associated data
     /// Only certain params are used for each request type, to allow for the struct
@@ -68,7 +67,6 @@ contract Transfers is Quartz {
      */
     constructor(Config memory _config, bytes memory _quote, address _token) Quartz(_config, _quote) {
         token = IERC20(_token);
-        owner = msg.sender;
     }
 
     /**
