@@ -34,6 +34,21 @@ contract Quartz {
     event PubKeySet(bytes32 indexed enclavePubKey);
 
     /**
+     * @dev Modifier that verifies the caller's authenticity through an enclave-attested quote.
+     * Reverts with a specific error message if attestation fails.
+     * @param _quote The attestation quote used to verify the caller's enclave status.
+     */
+    modifier onlyEnclave(bytes memory _quote) {
+        (bool success, bytes memory output) = attest.verifyAndAttestOnChain(_quote);
+        if (success) {
+            _;
+        } else {
+            string memory errorMessage = _getRevertMessage(output);
+            revert(errorMessage);
+        }
+    }
+
+    /**
      * @notice Initializes the Quartz contract with the config, attests it's from a DCAP enclave,
      * and emits an event for the host to listen to
      * @dev On failure the contract will not deploy, and the user will lose the gas. The constructor
@@ -42,18 +57,11 @@ contract Quartz {
      * @param _config The configuration object for the light client
      * @param _quote The DCAP attestation quote provided by the enclave
      * Emits a {SessionCreated} event upon successful verification.
-     * Reverts with an error message if `verifyAndAttestOnChain` fails.
+     * Reverts as per onlyEnclave()
      */
-    constructor(Config memory _config, bytes memory _quote) {
+    constructor(Config memory _config, bytes memory _quote) onlyEnclave(_quote) {
         config = _config;
-        (bool success, bytes memory output) = attest.verifyAndAttestOnChain(_quote);
-
-        if (success) {
-            emit SessionCreated(address(this));
-        } else {
-            string memory errorMessage = _getRevertMessage(output);
-            revert(errorMessage);
-        }
+        emit SessionCreated(address(this));
     }
 
     /**
@@ -65,15 +73,9 @@ contract Quartz {
      * Emits a {PubKeySet} event upon successful setting of the public key
      * Reverts with an error message if `verifyAndAttestOnChain` fails to verify the attestation
      */
-    function setSessionPubKey(bytes32 _pubKey, bytes memory _quote) external {
-        (bool success, bytes memory output) = attest.verifyAndAttestOnChain(_quote);
-        if (success) {
-            enclavePubKey = _pubKey;
-            emit PubKeySet(enclavePubKey);
-        } else {
-            string memory errorMessage = _getRevertMessage(output);
-            revert(errorMessage);
-        }
+    function setSessionPubKey(bytes32 _pubKey, bytes memory _quote) external onlyEnclave(_quote) {
+        enclavePubKey = _pubKey;
+        emit PubKeySet(enclavePubKey);
     }
 
     // TODO - Implement sequence number incrementing... but I assume we should have the transfers or ping pong app do this
