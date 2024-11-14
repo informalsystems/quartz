@@ -22,8 +22,8 @@ contract Quartz {
         string chainID;
         uint256 trustedHeight;
         bytes32 trustedHash;
-        // etc.....
     }
+    // etc.....
 
     struct Config {
         bytes32 mrEnclave;

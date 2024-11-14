@@ -29,7 +29,11 @@ contract QuartzTest is Test {
             trustedHash: dummyTrustedHash
         });
 
-        dummyConfig = Quartz.Config({mrEnclave: dummyMrEnclave, lightClientOpts: lightClientOpts, attestation: sepoliaAttestation});
+        dummyConfig = Quartz.Config({
+            mrEnclave: dummyMrEnclave,
+            lightClientOpts: lightClientOpts,
+            attestation: sepoliaAttestation
+        });
     }
 
     function testDeployContract_Success() public {

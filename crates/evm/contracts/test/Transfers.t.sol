@@ -3,10 +3,10 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/Transfers.sol";
-import "./MockERC20.sol"; 
+import "./MockERC20.sol";
 
 contract TransfersTest is Test {
- bytes32 dummyMrEnclave = bytes32("dummyMrEnclave");
+    bytes32 dummyMrEnclave = bytes32("dummyMrEnclave");
     string dummyChainID = "dummyChainID";
     uint256 dummyTrustedHeight = 100;
     bytes32 dummyTrustedHash = bytes32("dummyTrustedHash");
@@ -32,16 +32,19 @@ contract TransfersTest is Test {
     event EncryptedBalanceStored(address indexed user, bytes encryptedBalance);
     event StateUpdated(bytes newEncryptedState);
 
-
     function setUp() public {
-       // Set up the dummy LightClientOpts
+        // Set up the dummy LightClientOpts
         Quartz.LightClientOpts memory lightClientOpts = Quartz.LightClientOpts({
             chainID: dummyChainID,
             trustedHeight: dummyTrustedHeight,
             trustedHash: dummyTrustedHash
         });
 
-        dummyConfig = Quartz.Config({mrEnclave: dummyMrEnclave, lightClientOpts: lightClientOpts, attestation: sepoliaAttestation});
+        dummyConfig = Quartz.Config({
+            mrEnclave: dummyMrEnclave,
+            lightClientOpts: lightClientOpts,
+            attestation: sepoliaAttestation
+        });
 
         // Deploy mock token and mint some tokens to users
         token = new MockERC20("Cycles", "CYC");
@@ -79,8 +82,6 @@ contract TransfersTest is Test {
         assertEq(request.amount, depositAmount);
         assertEq(request.ciphertext, bytes32(0));
         assertEq(seqBefore + 1, transfers.sequenceNum());
-
-
     }
 
     function testWithdraw() public {
@@ -106,8 +107,7 @@ contract TransfersTest is Test {
         assertEq(request.amount, 0);
         assertEq(request.ciphertext, bytes32(0));
         assertEq(seqBefore + 1, transfers.sequenceNum());
-}
-
+    }
 
     function testTransferRequest() public {
         bytes32 ciphertext = keccak256(abi.encodePacked("Encrypted transfer data"));
