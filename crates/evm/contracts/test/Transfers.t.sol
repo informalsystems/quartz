@@ -135,47 +135,51 @@ contract TransfersTest is Test {
         assertEq(seqBefore + 1, transfers.sequenceNum());
     }
 
-    // function testUpdate() public {
-    //     // User1 deposits 50 tokens
-    //     uint256 depositAmount = 50 ether;
-    //     token.approve(address(transfers), depositAmount);
-    //     vm.prank(user1);
-    //     transfers.deposit(depositAmount);
+    function testUpdate() public {
+        // Prepare dummy data for the test
+        bytes memory newEncryptedState = abi.encodePacked("Dummy Encrypted State");
+        uint256 amount1 = 10 ether;
+        uint256 amount2 = 20 ether;
 
-    //     // User1 requests withdrawal
-    //     vm.prank(user1);
-    //     transfers.withdraw();
+        vm.prank(user1);
+        token.approve(address(transfers), amount1);
+        vm.prank(user1);
+        transfers.deposit(amount1);
+        vm.prank(user2);
+        token.approve(address(transfers), amount2);
+        vm.prank(user2);
+        transfers.deposit(amount2);
 
-    //     // Enclave processes update with a new encrypted state
-    //     bytes memory newEncryptedState = enclaveHelper.encryptData("Updated State", enclave);
-    //     address;
-    //     withdrawalAddresses[0] = user1;
-    //     uint256;
-    //     withdrawalAmounts[0] = 50 ether;
+        uint256 user1BalanceBefore = token.balanceOf(user1);
+        uint256 user2BalanceBefore = token.balanceOf(user2);
 
-    //     vm.prank(enclave); // Simulate enclave calling update
-    //     transfers.update(newEncryptedState, withdrawalAddresses, withdrawalAmounts, dummyQuote);
+        // Set expected events for state update and withdrawal responses
+        vm.expectEmit(false, false, false, true);
+        emit StateUpdated(newEncryptedState);
+        vm.expectEmit(true, false, false, true);
+        emit WithdrawResponse(user1, amount1);
+        vm.expectEmit(true, false, false, true);
+        emit WithdrawResponse(user2, amount2);
 
-    //     // Validate that the state is updated and events emitted
-    //     assertEq(transfers.encryptedState(), newEncryptedState);
+        // Call update with the prepared data
+        address[] memory withdrawalAddresses = new address[](2);
+        withdrawalAddresses[0] = user1;
+        withdrawalAddresses[1] = user2;
 
-    //     vm.expectEmit(true, true, false, false);
-    //     emit transfers.StateUpdated(newEncryptedState);
+        uint256[] memory withdrawalAmounts = new uint256[](2);
+        withdrawalAmounts[0] = amount1;
+        withdrawalAmounts[1] = amount2;
 
-    //     vm.expectEmit(true, true, true, true);
-    //     emit transfers.WithdrawResponse(user1, 50 ether);
-    // }
+        transfers.update(newEncryptedState, withdrawalAddresses, withdrawalAmounts, dummyQuote);
 
-    // function testStoreEncryptedBalance() public {
-    //     bytes memory encryptedBalance = enclaveHelper.encryptData("Encrypted Balance", enclave);
+        // Verify the contract's encrypted state was updated
+        assertEq(transfers.encryptedState(), newEncryptedState);
 
-    //     vm.prank(enclave);
-    //     transfers.storeEncryptedBalance(user1, encryptedBalance, dummyQuote);
+        // Verify the token balance of each user after withdrawal
+        assertEq(token.balanceOf(user1), user1BalanceBefore + amount1);
+        assertEq(token.balanceOf(user2), user2BalanceBefore + amount2);
 
-    //     // Validate the encrypted balance is stored correctly
-    //     assertEq(transfers.encryptedBalances(user1), encryptedBalance);
-
-    //     vm.expectEmit(true, true, false, true);
-    //     emit transfers.EncryptedBalanceStored(user1, encryptedBalance);
-    // }
+        // Check that all requests were cleared after update
+        assertEq(transfers.getAllRequests().length, 0);
+    }
 }
