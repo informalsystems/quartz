@@ -13,22 +13,23 @@ contract Quartz {
     Config public config;
     bytes32 public enclavePubKey;
     uint256 public sequenceNum;
-    IAttestation attest = IAttestation(0x76A3657F2d6c5C66733e9b69ACaDadCd0B68788b); // Sepolia address - can set in constructor for other networks
+    // IAttestation replaces tcbinfo_contract and dcap_verifier_contract of cosmwasm
+    IAttestation public attest;
     // NOTE - nonce is no longer needed
-
-    struct Config {
-        bytes32 mrEnclave;
-        LightClientOpts lightClientOpts;
-        address pccs; // is both the tcbinfo_contract and dcap_verifier_contract of cosmwasm
-    }
 
     // TODO Shoaib to figure out real values
     struct LightClientOpts {
         string chainID;
         uint256 trustedHeight;
         bytes32 trustedHash;
+        // etc.....
     }
-    // etc.
+
+    struct Config {
+        bytes32 mrEnclave;
+        LightClientOpts lightClientOpts;
+        address attestation;
+    }
 
     event SessionCreated(address indexed quartz);
     event PubKeySet(bytes32 indexed enclavePubKey);
@@ -54,14 +55,21 @@ contract Quartz {
      * @dev On failure the contract will not deploy, and the user will lose the gas. The constructor
      * is equivalent to the start of the handshake, and the session create, as the event emitted
      * can be passed onto the host to share with the enclave
+     * It does not use onlyEnclave() because attest is not yet set
      * @param _config The configuration object for the light client
      * @param _quote The DCAP attestation quote provided by the enclave
      * Emits a {SessionCreated} event upon successful verification.
-     * Reverts as per onlyEnclave()
      */
-    constructor(Config memory _config, bytes memory _quote) onlyEnclave(_quote) {
-        config = _config;
-        emit SessionCreated(address(this));
+    constructor(Config memory _config, bytes memory _quote) {
+        attest = IAttestation(_config.attestation);
+        (bool success, bytes memory output) = attest.verifyAndAttestOnChain(_quote);
+        if (success) {
+            config = _config;
+            emit SessionCreated(address(this));
+        } else {
+            string memory errorMessage = _getRevertMessage(output);
+            revert(errorMessage);
+        }
     }
 
     /**
