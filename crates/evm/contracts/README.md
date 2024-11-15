@@ -43,6 +43,8 @@ anvil --fork-url $RPC_URL_SEPOLIA
 forge script script/DeployMockERC20.s.sol:DeployMockERC20 --fork-url $SEPOLIA_FORK_URL --private-key $SEPOLIA_PRIV_KEY --broadcast
 
 # deploy transfers app
+forge script script/DeployTransfers.s.sol:DeployTransfers --fork-url $SEPOLIA_FORK_URL --private-key $SEPOLIA_PRIV_KEY --broadcast
 
-
+# call into a contract with forge
+cast call 0xD747b295f6F6BC85081fEb484623FE8faAa60aE1 "getAllRequests()" --rpc-url $SEPOLIA_FORK_URL
 ```
