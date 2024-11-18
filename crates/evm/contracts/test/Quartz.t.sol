@@ -38,7 +38,7 @@ contract QuartzTest is Test {
 
     function testDeployContract_Success() public {
         // Deploy the Quartz contract and store the address
-        quartz = new Quartz(dummyConfig, dummyQuote);
+        quartz = new Quartz(dummyConfig, dummyQuote, false);
 
         vm.expectEmit(true, true, false, false);
         emit SessionCreated(address(quartz)); // TODO - this test is failing, but it is working as intended
@@ -55,11 +55,11 @@ contract QuartzTest is Test {
     function testDeployContract_Failure() public {
         // Expect revert due to failed attestation
         vm.expectRevert(); // TODO - maybe test the revert message
-        quartz = new Quartz(dummyConfig, invalidQuote);
+        quartz = new Quartz(dummyConfig, invalidQuote, false);
     }
 
     function testSetSessionPubKey_Success() public {
-        quartz = new Quartz(dummyConfig, dummyQuote);
+        quartz = new Quartz(dummyConfig, dummyQuote, false);
 
         bytes32 dummyPubKey = bytes32("dummyPublicKey");
 
@@ -74,10 +74,41 @@ contract QuartzTest is Test {
     }
 
     function testSetSessionPubKey_Failure() public {
-        quartz = new Quartz(dummyConfig, dummyQuote);
+        quartz = new Quartz(dummyConfig, dummyQuote, false);
 
         // Expect revert due to failed attestation
         vm.expectRevert(); // TODO - maybe test the revert message
         quartz.setSessionPubKey(bytes32("dummyPublicKey"), invalidQuote);
+    }
+
+    function testDeployContractMocked_Success() public {
+        // Deploy the Quartz contract and store the address
+        quartz = new Quartz(dummyConfig, invalidQuote, true);
+
+        vm.expectEmit(true, true, false, false);
+        emit SessionCreated(address(quartz)); // TODO - this test is failing, but it is working as intended
+
+        // Check that the config is stored correctly
+        (bytes32 mrEnclave, Quartz.LightClientOpts memory lightClientOpts, address attest) = quartz.config();
+        assertEq(mrEnclave, dummyConfig.mrEnclave);
+        assertEq(lightClientOpts.chainID, dummyConfig.lightClientOpts.chainID);
+        assertEq(lightClientOpts.trustedHeight, dummyConfig.lightClientOpts.trustedHeight);
+        assertEq(lightClientOpts.trustedHash, dummyConfig.lightClientOpts.trustedHash);
+        assertEq(attest, sepoliaAttestation);
+    }
+
+    function testSetSessionPubKeyMocked_Success() public {
+        quartz = new Quartz(dummyConfig, invalidQuote, true);
+
+        bytes32 dummyPubKey = bytes32("dummyPublicKey");
+
+        vm.expectEmit(true, true, true, true);
+        emit PubKeySet(dummyPubKey);
+
+        // Call setSessionPubKey and check if it succeeds
+        quartz.setSessionPubKey(dummyPubKey, dummyQuote);
+
+        // Verify that the public key is stored
+        assertEq(quartz.enclavePubKey(), dummyPubKey);
     }
 }

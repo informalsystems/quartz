@@ -64,8 +64,11 @@ contract Transfers is Quartz {
      * @param _config The configuration object for Quartz
      * @param _quote The attestation quote for Quartz setup
      * @param _token The ERC20 token used
+     * @param _mockSGX Whether to skip the attestation verification for testing purposes
      */
-    constructor(Config memory _config, bytes memory _quote, address _token) Quartz(_config, _quote) {
+    constructor(Config memory _config, bytes memory _quote, address _token, bool _mockSGX)
+        Quartz(_config, _quote, _mockSGX)
+    {
         token = IERC20(_token);
     }
 

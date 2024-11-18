@@ -3,19 +3,15 @@ pragma solidity ^0.8.13;
 
 import "@automata-dcap/interfaces/IAttestation.sol";
 
-// QUESTION - We do not test that mr_enclave matches yet in cosmwasm. Should we do it here?
-// QUESTION - I guess for the transfers app, or ping pong, they would actually inherit the Quartz contract? Right?
-// this way whenever those functions are called on ping pong, they would increase the sequence number (I assume
-// the handshake does not update the sequence number)
-// QUESTION - Contract address MIGHT be put into the config? (but I dont think that matters on the solidity side as its available globally in the contract)
+// NOTE - We do not test that mr_enclave matches yet in cosmwasm. So we don't do it here yet either.
+// NOTE - nonce is no longer needed
 
 contract Quartz {
     Config public config;
     bytes32 public enclavePubKey;
     uint256 public sequenceNum;
-    // IAttestation replaces tcbinfo_contract and dcap_verifier_contract of cosmwasm
-    IAttestation public attest;
-    // NOTE - nonce is no longer needed
+    bool public mockSGX;
+    IAttestation public attest; // IAttestation replaces tcbinfo_contract and dcap_verifier_contract of cosmwasm
 
     // TODO Shoaib to figure out real values
     struct LightClientOpts {
@@ -37,9 +33,14 @@ contract Quartz {
     /**
      * @dev Modifier that verifies the caller's authenticity through an enclave-attested quote.
      * Reverts with a specific error message if attestation fails.
+     * If mockSGX is enabled, the modifier will not perform any verification.
      * @param _quote The attestation quote used to verify the caller's enclave status.
      */
     modifier onlyEnclave(bytes memory _quote) {
+        if (mockSGX) {
+            _;
+            return;
+        }
         (bool success, bytes memory output) = IAttestation(config.attestation).verifyAndAttestOnChain(_quote);
         if (success) {
             _;
@@ -58,9 +59,16 @@ contract Quartz {
      * It does not use onlyEnclave() because attest is not yet set
      * @param _config The configuration object for the light client
      * @param _quote The DCAP attestation quote provided by the enclave
+     * @param _mockSGX Whether to skip the attestation verification for testing purposes
      * Emits a {SessionCreated} event upon successful verification.
      */
-    constructor(Config memory _config, bytes memory _quote) {
+    constructor(Config memory _config, bytes memory _quote, bool _mockSGX) {
+        if (_mockSGX) {
+            mockSGX = true;
+            config = _config;
+            emit SessionCreated(address(this));
+            return;
+        }
         (bool success, bytes memory output) = IAttestation(_config.attestation).verifyAndAttestOnChain(_quote);
         if (success) {
             config = _config;

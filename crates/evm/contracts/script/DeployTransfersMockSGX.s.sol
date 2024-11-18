@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import "../src/Transfers.sol";
 
-contract DeployTransfers is Script {
+contract DeployTransfersMockSGX is Script {
     function run() external {
         address cycAddress = vm.envAddress("CYC_ADDRESS");
         vm.startBroadcast();
@@ -26,7 +26,7 @@ contract DeployTransfers is Script {
         IERC20 token = IERC20(cycAddress);
 
         // Deploy Transfers contract
-        Transfers transfers = new Transfers(config, attestationQuote, address(token), false);
+        Transfers transfers = new Transfers(config, attestationQuote, address(token), true);
 
         console.log("Transfers contract deployed at:", address(transfers));
 

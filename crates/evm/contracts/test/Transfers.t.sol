@@ -53,7 +53,7 @@ contract TransfersTest is Test {
         token.mint(user2, 500 ether);
 
         // Deploy the Transfers contract
-        transfers = new Transfers(dummyConfig, dummyQuote, address(token));
+        transfers = new Transfers(dummyConfig, dummyQuote, address(token), false);
     }
 
     function testDeposit() public {
