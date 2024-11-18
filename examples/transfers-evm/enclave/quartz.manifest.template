@@ -1,0 +1,79 @@
+# Quartz-based app manifest file
+
+loader.entrypoint = "file:{{ gramine.libos }}"
+libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-app-transfers-enclave"
+
+loader.log_level = "{{ log_level }}"
+
+loader.env.LD_LIBRARY_PATH = "/lib:/usr/local/lib:{{ arch_libdir }}:/usr{{ arch_libdir }}"
+loader.env.HOME = "{{ home }}"
+loader.env.INSIDE_SGX = "1"
+loader.env.TLS = { passthrough = true }
+loader.env.RA_TYPE = { passthrough = true }
+loader.env.RA_TLS_ALLOW_DEBUG_ENCLAVE_INSECURE = { passthrough = true }
+loader.env.RA_TLS_ALLOW_OUTDATED_TCB_INSECURE = { passthrough = true }
+loader.env.RA_TLS_MRENCLAVE = { passthrough = true }
+loader.env.RA_TLS_MRSIGNER = { passthrough = true }
+loader.env.RA_TLS_ISV_SVN = { passthrough = true }
+loader.env.RA_TLS_ISV_PROD_ID = { passthrough = true }
+loader.env.RA_TLS_EPID_API_KEY = { passthrough = true }
+loader.env.MYAPP_DATA = { passthrough = true }
+loader.env.QUARTZ_PORT = { passthrough = true }
+loader.env.SSL_CERT_FILE = { passthrough = true }
+loader.env.ADMIN_SK = { passthrough = true }
+loader.insecure__use_host_env = true
+
+loader.argv = ["quartz-app-transfers-enclave",
+                "--chain-id", "{{ chain_id }}",
+                "--fmspc", "{{ fmspc }}",
+                "--tcbinfo-contract", "{{ tcbinfo_contract }}",
+                "--dcap-verifier-contract", "{{ dcap_verifier_contract }}",
+                "--node-url", "{{ node_url }}",
+                "--ws-url", "{{ ws_url }}",
+                "--grpc-url", "{{ grpc_url }}",
+                "--rpc-addr", "0.0.0.0:11090",
+                "--trusted-height", "{{ trusted_height }}",
+                "--trusted-hash", "{{ trusted_hash }}"]
+
+fs.mounts = [
+  { uri = "file:{{ gramine.runtimedir() }}", path = "/lib" },
+  { uri = "file:{{ arch_libdir }}", path = "{{ arch_libdir }}" },
+  { uri = "file:/usr/{{ arch_libdir }}", path = "/usr{{ arch_libdir }}" },
+  { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
+  { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
+  { uri = "file:/usr/lib/ssl/certs/ca-certificates.crt", path = "/usr/lib/ssl/certs/ca-certificates.crt" },
+]
+
+# sgx.debug = true
+sgx.enclave_size = "512M"
+sgx.max_threads = 16
+sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
+
+sgx.remote_attestation = "{{ ra_type }}"
+sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
+
+sgx.trusted_files = [
+  "file:{{ gramine.libos }}",
+  "file:{{ quartz_dir }}/target/release/",
+  "file:{{ gramine.runtimedir() }}/",
+  "file:{{ arch_libdir }}/",
+  "file:/usr/{{ arch_libdir }}/",
+  "file:/etc/ssl/certs/ca-certificates.crt",
+]
+
+sgx.allowed_files = [
+  "file:/etc/nsswitch.conf",
+  "file:/etc/host.conf",
+  "file:/etc/ethers",
+  "file:/etc/hosts",
+  "file:/etc/group",
+  "file:/etc/passwd",
+  "file:/etc/gai.conf",
+  "file:/etc/ssl/certs/ca-certificates.crt",
+  "file:/usr/lib/ssl/certs/ca-certificates.crt",
+  "file:/etc/sgx_default_qcnl.conf",
+]
+
+sys.insecure__allow_eventfd = true
+sys.enable_sigterm_injection = true
+sys.enable_extra_runtime_domain_names_conf = true

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
-import "./Quartz.sol";
+import "@quartz/src/Quartz.sol";
 import "./openzeppelin/IERC20.sol";
 
 /**

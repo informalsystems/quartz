@@ -1,0 +1,3 @@
+forge-std=lib/forge-std/src
+@automata-dcap=../../../crates/evm/contracts/lib/automata-dcap-attestation/contracts
+@quartz=../../../crates/evm/contracts/

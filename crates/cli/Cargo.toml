@@ -71,3 +71,4 @@ quartz-common = { workspace = true, features = ["full"] }
 quartz-tee-ra = { workspace = true }
 cw-client.workspace = true
 tempfile.workspace = true
+alloy = "0.6.4"
