@@ -13,9 +13,9 @@ use tonic::Status;
 use crate::{
     attestor::Attestor,
     handler::{Handler, A, RA},
+    key_manager::KeyManager,
     kv_store::{ContractKey, ContractKeyName, KvStore, NonceKey, NonceKeyName},
     server::ProofOfPublication,
-    signer::Signer,
     types::SessionSetPubKeyResponse,
     Enclave,
 };
@@ -23,7 +23,7 @@ use crate::{
 impl<E> Handler<E> for RawSessionSetPubKeyRequest
 where
     E: Enclave<Contract = AccountId>,
-    E::Signer: Signer<PubKey = VerifyingKey>,
+    E::KeyManager: KeyManager<PubKey = VerifyingKey>,
 {
     type Error = Status;
     type Response = RawSessionSetPubKeyResponse;
@@ -58,8 +58,11 @@ where
         }
 
         // generate enclave key
-        ctx.signer().keygen();
-        let pk = ctx.signer().pub_key();
+        ctx.key_manager().keygen();
+        let pk = ctx
+            .key_manager()
+            .pub_key()
+            .ok_or_else(|| Status::internal("failed to get public key"))?;
 
         // create `SessionSetPubKey` msg and attest to it
         let msg = SessionSetPubKey::new(nonce, pk);
