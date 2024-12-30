@@ -218,16 +218,9 @@ where
         ..Default::default()
     };
 
-    let proof_output = tokio::task::spawn_blocking(move || {
-        // Create a new runtime inside the blocking thread.
-        let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(async {
-            prove(prover_config)
-                .await
-                .map_err(|report| anyhow!("Tendermint prover failed. Report: {}", report))
-        })
-    })
-    .await??; // Handle both JoinError and your custom error
+    let proof_output = prove(prover_config)
+        .await
+        .map_err(|report| anyhow!("Tendermint prover failed. Report: {}", report))?; // Handle both JoinError and your custom error
 
     // Merge the UpdateRequestMessage with the proof
     let mut proof_json = serde_json::to_value(proof_output)?;
