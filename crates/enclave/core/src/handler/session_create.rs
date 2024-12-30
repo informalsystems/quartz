@@ -22,7 +22,7 @@ impl<E: Enclave> Handler<E> for RawSessionCreateRequest {
     type Error = Status;
     type Response = RawSessionCreateResponse;
 
-    async fn handle(&mut self, ctx: &mut E) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &E) -> Result<Self::Response, Self::Error> {
         // store contract
         let deployed_contract: E::Contract = serde_json::from_str(&self.message)
             .map_err(|e| Status::invalid_argument(e.to_string()))?;

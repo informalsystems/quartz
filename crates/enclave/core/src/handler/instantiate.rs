@@ -17,7 +17,7 @@ impl<E: Enclave> Handler<E> for RawInstantiateRequest {
     type Error = Status;
     type Response = RawInstantiateResponse;
 
-    async fn handle(&mut self, ctx: &mut E) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &E) -> Result<Self::Response, Self::Error> {
         // create `CoreInstantiate` msg and attest to it
         let config = ctx
             .store()
