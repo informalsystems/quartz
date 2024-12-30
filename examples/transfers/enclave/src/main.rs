@@ -40,12 +40,13 @@ use quartz_common::{
         Enclave,
     },
     proto::{
-        core_server::Core, InstantiateRequest, InstantiateResponse, SessionCreateRequest,
-        SessionCreateResponse, SessionSetPubKeyRequest, SessionSetPubKeyResponse,
+        core_server::{Core, CoreServer},
+        InstantiateRequest, InstantiateResponse, SessionCreateRequest, SessionCreateResponse,
+        SessionSetPubKeyRequest, SessionSetPubKeyResponse,
     },
 };
 use tokio::sync::{mpsc, RwLock};
-use tonic::{Request, Response, Status};
+use tonic::{transport::Server, Request, Response, Status};
 use transfers_server::{TransfersOp, TransfersService};
 
 use crate::wslistener::WsListener;
@@ -154,7 +155,7 @@ impl KeyManager for DefaultKeyManager {
 }
 
 #[derive(Clone, Debug, Default)]
-struct DefaultStore {
+struct DefaultKvStore {
     config: Option<Config>,
     contract: Option<AccountId>,
     nonce: Option<Nonce>,
@@ -164,7 +165,7 @@ struct DefaultStore {
 enum StoreError {}
 
 #[async_trait::async_trait]
-impl KvStore<ContractKey<AccountId>, AccountId> for DefaultStore {
+impl KvStore<ContractKey<AccountId>, AccountId> for DefaultKvStore {
     type Error = StoreError;
 
     async fn set(
@@ -185,7 +186,7 @@ impl KvStore<ContractKey<AccountId>, AccountId> for DefaultStore {
 }
 
 #[async_trait::async_trait]
-impl KvStore<NonceKey, Nonce> for DefaultStore {
+impl KvStore<NonceKey, Nonce> for DefaultKvStore {
     type Error = StoreError;
 
     async fn set(&mut self, _key: NonceKey, value: Nonce) -> Result<Option<Nonce>, Self::Error> {
@@ -202,7 +203,7 @@ impl KvStore<NonceKey, Nonce> for DefaultStore {
 }
 
 #[async_trait::async_trait]
-impl KvStore<ConfigKey, Config> for DefaultStore {
+impl KvStore<ConfigKey, Config> for DefaultKvStore {
     type Error = StoreError;
 
     async fn set(&mut self, _key: ConfigKey, value: Config) -> Result<Option<Config>, Self::Error> {
@@ -223,7 +224,7 @@ struct DefaultEnclave<
     A = DefaultAttestor,
     C = DefaultChainClient,
     K = DefaultKeyManager,
-    S = DefaultStore,
+    S = DefaultKvStore,
 > {
     attestor: A,
     chain_client: C,
@@ -334,5 +335,37 @@ where
         request: Request<SessionSetPubKeyRequest>,
     ) -> Result<Response<SessionSetPubKeyResponse>, Status> {
         request.handle(self).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tokio::time::sleep;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_tonic_service() -> Result<(), Box<dyn std::error::Error>> {
+        let enclave = DefaultEnclave {
+            attestor: attestor::MockAttestor::default(),
+            chain_client: DefaultChainClient::default(),
+            key_manager: SharedKeyManager {
+                inner: Arc::new(RwLock::new(DefaultKeyManager::default())),
+            },
+            store: SharedKvStore {
+                inner: Arc::new(RwLock::new(DefaultKvStore::default())),
+            },
+        };
+        let addr = "127.0.0.1:9095".parse().expect("hardcoded correct ip");
+
+        Server::builder()
+            .add_service(CoreServer::new(enclave))
+            .serve_with_shutdown(addr, async {
+                sleep(Duration::from_secs(1)).await;
+                println!("Shutting down...");
+            })
+            .await?;
+
+        Ok(())
     }
 }
