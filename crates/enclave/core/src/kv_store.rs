@@ -17,6 +17,13 @@ pub trait KvStore<K, V> {
 
 pub trait TypedStore<K: ValueForKey>: KvStore<K, <K as ValueForKey>::Value> {}
 
+impl<S, K, V> TypedStore<K> for S
+where
+    S: KvStore<K, V>,
+    K: ValueForKey<Value = V>,
+{
+}
+
 pub trait ValueForKey {
     type Value;
 }
