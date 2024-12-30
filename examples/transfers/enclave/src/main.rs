@@ -33,13 +33,19 @@ use quartz_common::{
     enclave::{
         attestor::{self, Attestor, DefaultAttestor},
         chain_client::ChainClient,
+        handler::Handler,
         key_manager::KeyManager,
         kv_store::{ConfigKey, ContractKey, KvStore, NonceKey, TypedStore},
         server::{QuartzServer, WsListenerConfig},
         Enclave,
     },
+    proto::{
+        core_server::Core, InstantiateRequest, InstantiateResponse, SessionCreateRequest,
+        SessionCreateResponse, SessionSetPubKeyRequest, SessionSetPubKeyResponse,
+    },
 };
 use tokio::sync::{mpsc, RwLock};
+use tonic::{Request, Response, Status};
 use transfers_server::{TransfersOp, TransfersService};
 
 use crate::wslistener::WsListener;
@@ -298,5 +304,35 @@ where
 
     async fn store(&self) -> Self::Store {
         self.store.clone()
+    }
+}
+
+#[async_trait::async_trait]
+impl<A, C, K, S> Core for DefaultEnclave<A, C, K, S>
+where
+    A: Attestor + Clone,
+    C: ChainClient<Contract = AccountId> + Clone,
+    K: KeyManager<PubKey = VerifyingKey> + Clone,
+    S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
+{
+    async fn instantiate(
+        &self,
+        request: Request<InstantiateRequest>,
+    ) -> Result<Response<InstantiateResponse>, Status> {
+        request.handle(self).await
+    }
+
+    async fn session_create(
+        &self,
+        request: Request<SessionCreateRequest>,
+    ) -> Result<Response<SessionCreateResponse>, Status> {
+        request.handle(self).await
+    }
+
+    async fn session_set_pub_key(
+        &self,
+        request: Request<SessionSetPubKeyRequest>,
+    ) -> Result<Response<SessionSetPubKeyResponse>, Status> {
+        request.handle(self).await
     }
 }
