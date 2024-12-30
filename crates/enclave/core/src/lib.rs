@@ -30,7 +30,7 @@ pub mod kv_store;
 pub mod server;
 pub mod types;
 
-pub trait Enclave {
+pub trait Enclave: Send + Sync {
     type Attestor: Attestor;
     type ChainClient: ChainClient<Contract = Self::Contract>;
     type Contract: DeserializeOwned + Clone + ToString;

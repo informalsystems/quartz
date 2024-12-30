@@ -22,6 +22,7 @@ use crate::{
     Enclave,
 };
 
+#[async_trait::async_trait]
 impl<E> Handler<E> for RawSessionSetPubKeyRequest
 where
     E: Enclave<Contract = AccountId>,
@@ -30,7 +31,7 @@ where
     type Error = Status;
     type Response = RawSessionSetPubKeyResponse;
 
-    fn handle(&mut self, ctx: &mut E) -> Result<Self::Response, Self::Error> {
+    async fn handle(&mut self, ctx: &mut E) -> Result<Self::Response, Self::Error> {
         // verify proof of publication
         let proof: ProofOfPublication<Option<()>> = serde_json::from_str(&self.message)
             .map_err(|e| Status::invalid_argument(e.to_string()))?;

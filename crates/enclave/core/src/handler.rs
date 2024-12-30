@@ -7,9 +7,10 @@ pub mod instantiate;
 pub mod session_create;
 pub mod session_set_pubkey;
 
+#[async_trait::async_trait]
 pub trait Handler<Context> {
     type Error;
     type Response;
 
-    fn handle(&mut self, ctx: &mut Context) -> Result<Self::Response, Self::Error>;
+    async fn handle(&mut self, ctx: &mut Context) -> Result<Self::Response, Self::Error>;
 }

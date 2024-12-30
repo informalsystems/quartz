@@ -12,11 +12,12 @@ use crate::{
     Enclave,
 };
 
+#[async_trait::async_trait]
 impl<E: Enclave> Handler<E> for RawInstantiateRequest {
     type Error = Status;
     type Response = RawInstantiateResponse;
 
-    fn handle(&mut self, ctx: &mut E) -> Result<Self::Response, Self::Error> {
+    async fn handle(&mut self, ctx: &mut E) -> Result<Self::Response, Self::Error> {
         // create `CoreInstantiate` msg and attest to it
         let config = ctx
             .store()

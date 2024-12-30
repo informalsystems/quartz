@@ -1,4 +1,4 @@
-pub trait KeyManager {
+pub trait KeyManager: Send + Sync {
     type PubKey;
 
     fn keygen(&mut self);

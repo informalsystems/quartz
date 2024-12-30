@@ -5,7 +5,7 @@ use std::{
 
 use quartz_contract_core::state::{Config, Nonce};
 
-pub trait KvStore<K, V> {
+pub trait KvStore<K, V>: Send + Sync {
     type Error: ToString;
 
     fn set(&mut self, key: K, value: V) -> Result<Option<V>, Self::Error>;
