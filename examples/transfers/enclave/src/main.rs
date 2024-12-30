@@ -19,7 +19,7 @@ pub mod transfers_server;
 pub mod wslistener;
 
 use std::{
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, RwLock},
     time::Duration,
 };
 
@@ -217,36 +217,92 @@ struct DefaultEnclave<
 > {
     attestor: A,
     chain_client: C,
-    key_manager: K,
-    store: S,
+    key_manager: SharedKeyManager<K>,
+    store: SharedKvStore<S>,
+}
+
+#[derive(Clone, Debug)]
+struct SharedKeyManager<K> {
+    inner: Arc<RwLock<K>>,
+}
+
+impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
+    type PubKey = K::PubKey;
+
+    fn keygen(&mut self) {
+        self.inner
+            .write()
+            .expect("shared key-manager write error")
+            .keygen()
+    }
+
+    fn pub_key(&self) -> Option<Self::PubKey> {
+        self.inner
+            .read()
+            .expect("shared key-manager read error")
+            .pub_key()
+    }
+}
+
+#[derive(Clone, Debug)]
+struct SharedKvStore<S> {
+    inner: Arc<RwLock<S>>,
+}
+
+impl<S, K, V> KvStore<K, V> for SharedKvStore<S>
+where
+    S: KvStore<K, V>,
+{
+    type Error = S::Error;
+
+    fn set(&mut self, key: K, value: V) -> Result<Option<V>, Self::Error> {
+        self.inner
+            .write()
+            .expect("shared kv-store write error")
+            .set(key, value)
+    }
+
+    fn get(&self, key: K) -> Result<Option<V>, Self::Error> {
+        self.inner
+            .read()
+            .expect("shared kv-store read error")
+            .get(key)
+    }
+
+    fn delete(&mut self, key: K) -> Result<(), Self::Error> {
+        self.inner
+            .write()
+            .expect("shared kv-store write error")
+            .delete(key)
+    }
 }
 
 impl<A, C, K, S> Enclave for DefaultEnclave<A, C, K, S>
 where
-    A: Attestor,
-    C: ChainClient<Contract = AccountId>,
-    K: KeyManager,
-    S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey>,
+    A: Attestor + Clone,
+    C: ChainClient<Contract = AccountId> + Clone,
+    K: KeyManager + Clone,
+    S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
 {
     type Attestor = A;
     type ChainClient = C;
     type Contract = AccountId;
-    type KeyManager = K;
-    type Store = S;
+    type KeyManager = SharedKeyManager<K>;
+    type Store = SharedKvStore<S>;
 
     fn attestor(&self) -> Self::Attestor {
-        todo!()
+        self.attestor.clone()
     }
 
     fn chain_client(&self) -> Self::ChainClient {
-        todo!()
+        self.chain_client.clone()
     }
 
     fn key_manager(&self) -> Self::KeyManager {
-        todo!()
+        self.key_manager.clone()
     }
 
     fn store(&self) -> Self::Store {
-        todo!()
+        self.store.clone()
     }
 }
