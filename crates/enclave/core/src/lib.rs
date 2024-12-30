@@ -31,7 +31,7 @@ pub mod server;
 pub mod types;
 
 #[async_trait::async_trait]
-pub trait Enclave: Send + Sync {
+pub trait Enclave: Send + Sync + 'static {
     type Attestor: Attestor;
     type ChainClient: ChainClient<Contract = Self::Contract>;
     type Contract: DeserializeOwned + Clone + ToString + Send + Sync;

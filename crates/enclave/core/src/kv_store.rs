@@ -6,7 +6,7 @@ use std::{
 use quartz_contract_core::state::{Config, Nonce};
 
 #[async_trait::async_trait]
-pub trait KvStore<K, V>: Send + Sync {
+pub trait KvStore<K, V>: Send + Sync + 'static {
     type Error: ToString;
 
     async fn set(&mut self, key: K, value: V) -> Result<Option<V>, Self::Error>;
