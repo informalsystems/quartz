@@ -14,7 +14,9 @@ use crate::{
     attestor::Attestor,
     handler::{Handler, A, RA},
     key_manager::KeyManager,
-    kv_store::{ContractKey, ContractKeyName, KvStore, NonceKey, NonceKeyName},
+    kv_store::{
+        ConfigKey, ConfigKeyName, ContractKey, ContractKeyName, KvStore, NonceKey, NonceKeyName,
+    },
     server::ProofOfPublication,
     types::SessionSetPubKeyResponse,
     Enclave,
@@ -37,9 +39,14 @@ where
             .get(ContractKey::new(ContractKeyName))
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("contract not found"))?;
+        let config = ctx
+            .store()
+            .get(ConfigKey::new(ConfigKeyName))
+            .map_err(|e| Status::internal(e.to_string()))?
+            .ok_or_else(|| Status::not_found("config not found"))?;
         let (value, _msg) = proof
             .verify(
-                ctx.config().light_client_opts(),
+                config.light_client_opts(),
                 contract,
                 SESSION_KEY.to_string(),
                 None,

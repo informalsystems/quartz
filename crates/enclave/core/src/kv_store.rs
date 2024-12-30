@@ -3,7 +3,7 @@ use std::{
     marker::PhantomData,
 };
 
-use quartz_contract_core::state::Nonce;
+use quartz_contract_core::state::{Config, Nonce};
 
 pub trait KvStore<K, V> {
     type Error: ToString;
@@ -57,6 +57,8 @@ impl<K, V> ValueForKey for TypedKey<K, V> {
 
 pub type ContractKey<C> = TypedKey<ContractKeyName, C>;
 pub type NonceKey = TypedKey<NonceKeyName, Nonce>;
+pub type ConfigKey = TypedKey<ConfigKeyName, Config>;
 
 pub struct ContractKeyName;
 pub struct NonceKeyName;
+pub struct ConfigKeyName;

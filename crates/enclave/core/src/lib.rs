@@ -12,14 +12,13 @@
     unused_qualifications
 )]
 
-use quartz_contract_core::state::Config;
 use serde::de::DeserializeOwned;
 
 use crate::{
     attestor::Attestor,
     chain_client::ChainClient,
     key_manager::KeyManager,
-    kv_store::{ContractKey, NonceKey, TypedStore},
+    kv_store::{ConfigKey, ContractKey, NonceKey, TypedStore},
 };
 
 pub mod attestor;
@@ -36,10 +35,11 @@ pub trait Enclave {
     type ChainClient: ChainClient<Contract = Self::Contract>;
     type Contract: DeserializeOwned + Clone + ToString;
     type KeyManager: KeyManager;
-    type Store: TypedStore<ContractKey<Self::Contract>> + TypedStore<NonceKey>;
+    type Store: TypedStore<ContractKey<Self::Contract>>
+        + TypedStore<NonceKey>
+        + TypedStore<ConfigKey>;
 
     fn attestor(&self) -> Self::Attestor;
-    fn config(&self) -> Config;
     fn chain_client(&self) -> Self::ChainClient;
     fn key_manager(&self) -> Self::KeyManager;
     fn store(&self) -> Self::Store;
