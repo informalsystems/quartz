@@ -25,11 +25,18 @@ use std::{
 
 use clap::Parser;
 use cli::Cli;
+use cosmrs::AccountId;
+use displaydoc::Display;
+use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::{
-    contract::state::{Config, LightClientOpts},
+    contract::state::{Config, LightClientOpts, Nonce},
     enclave::{
         attestor::{self, Attestor, DefaultAttestor},
+        chain_client::ChainClient,
+        key_manager::KeyManager,
+        kv_store::{ConfigKey, ContractKey, KvStore, NonceKey, TypedStore},
         server::{QuartzServer, WsListenerConfig},
+        Enclave,
     },
 };
 use tokio::sync::mpsc;
@@ -112,4 +119,134 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     Ok(())
+}
+
+#[derive(Clone, Debug, Default)]
+struct DefaultChainClient;
+
+impl ChainClient for DefaultChainClient {
+    const CHAIN_ID: &'static str = "pion-1";
+    type Contract = AccountId;
+}
+
+#[derive(Clone, Default)]
+struct DefaultKeyManager {
+    sk: Option<SigningKey>,
+}
+
+impl KeyManager for DefaultKeyManager {
+    type PubKey = VerifyingKey;
+
+    fn keygen(&mut self) {
+        self.sk = Some(SigningKey::random(&mut rand::thread_rng()));
+    }
+
+    fn pub_key(&self) -> Option<Self::PubKey> {
+        self.sk.clone().map(|sk| VerifyingKey::from(&sk))
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct DefaultStore {
+    config: Option<Config>,
+    contract: Option<AccountId>,
+    nonce: Option<Nonce>,
+}
+
+#[derive(Debug, Display)]
+enum StoreError {}
+
+impl KvStore<ContractKey<AccountId>, AccountId> for DefaultStore {
+    type Error = StoreError;
+
+    fn set(
+        &mut self,
+        _key: ContractKey<AccountId>,
+        value: AccountId,
+    ) -> Result<Option<AccountId>, Self::Error> {
+        Ok(self.contract.replace(value))
+    }
+
+    fn get(&self, _key: ContractKey<AccountId>) -> Result<Option<AccountId>, Self::Error> {
+        Ok(self.contract.clone().take())
+    }
+
+    fn delete(&mut self, _key: ContractKey<AccountId>) -> Result<(), Self::Error> {
+        unimplemented!()
+    }
+}
+
+impl KvStore<NonceKey, Nonce> for DefaultStore {
+    type Error = StoreError;
+
+    fn set(&mut self, _key: NonceKey, value: Nonce) -> Result<Option<Nonce>, Self::Error> {
+        Ok(self.nonce.replace(value))
+    }
+
+    fn get(&self, _key: NonceKey) -> Result<Option<Nonce>, Self::Error> {
+        Ok(self.nonce.clone().take())
+    }
+
+    fn delete(&mut self, _key: NonceKey) -> Result<(), Self::Error> {
+        unimplemented!()
+    }
+}
+
+impl KvStore<ConfigKey, Config> for DefaultStore {
+    type Error = StoreError;
+
+    fn set(&mut self, _key: ConfigKey, value: Config) -> Result<Option<Config>, Self::Error> {
+        Ok(self.config.replace(value))
+    }
+
+    fn get(&self, _key: ConfigKey) -> Result<Option<Config>, Self::Error> {
+        Ok(self.config.clone().take())
+    }
+
+    fn delete(&mut self, _key: ConfigKey) -> Result<(), Self::Error> {
+        unimplemented!()
+    }
+}
+
+#[derive(Clone, Debug)]
+struct DefaultEnclave<
+    A = DefaultAttestor,
+    C = DefaultChainClient,
+    K = DefaultKeyManager,
+    S = DefaultStore,
+> {
+    attestor: A,
+    chain_client: C,
+    key_manager: K,
+    store: S,
+}
+
+impl<A, C, K, S> Enclave for DefaultEnclave<A, C, K, S>
+where
+    A: Attestor,
+    C: ChainClient<Contract = AccountId>,
+    K: KeyManager,
+    S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey>,
+{
+    type Attestor = A;
+    type ChainClient = C;
+    type Contract = AccountId;
+    type KeyManager = K;
+    type Store = S;
+
+    fn attestor(&self) -> Self::Attestor {
+        todo!()
+    }
+
+    fn chain_client(&self) -> Self::ChainClient {
+        todo!()
+    }
+
+    fn key_manager(&self) -> Self::KeyManager {
+        todo!()
+    }
+
+    fn store(&self) -> Self::Store {
+        todo!()
+    }
 }
