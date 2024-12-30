@@ -28,7 +28,9 @@ impl<E: Enclave> Handler<E> for RawSessionCreateRequest {
             .map_err(|e| Status::invalid_argument(e.to_string()))?;
         let prev_contract = ctx
             .store()
+            .await
             .set(ContractKey::new(ContractKeyName), deployed_contract.clone())
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
         if prev_contract.is_some() {
             return Err(Status::already_exists(
@@ -40,7 +42,9 @@ impl<E: Enclave> Handler<E> for RawSessionCreateRequest {
         let nonce = rand::thread_rng().gen::<Nonce>();
         let prev_nonce = ctx
             .store()
+            .await
             .set(NonceKey::new(NonceKeyName), nonce)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
         if prev_nonce.is_some() {
             return Err(Status::already_exists("nonce already exists".to_string()));
@@ -50,6 +54,7 @@ impl<E: Enclave> Handler<E> for RawSessionCreateRequest {
         let msg = SessionCreate::new(nonce, deployed_contract.to_string());
         let attestation = ctx
             .attestor()
+            .await
             .attestation(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
         let attested_msg = Attested::new(msg, attestation);

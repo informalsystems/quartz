@@ -37,12 +37,16 @@ where
             .map_err(|e| Status::invalid_argument(e.to_string()))?;
         let contract = ctx
             .store()
+            .await
             .get(ContractKey::new(ContractKeyName))
+            .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("contract not found"))?;
         let config = ctx
             .store()
+            .await
             .get(ConfigKey::new(ConfigKeyName))
+            .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("config not found"))?;
         let (value, _msg) = proof
@@ -58,7 +62,9 @@ where
         let session: Session = serde_json::from_slice(&value).unwrap();
         let nonce = ctx
             .store()
+            .await
             .get(NonceKey::new(NonceKeyName))
+            .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("nonce not found"))?;
         if session.nonce() != nonce {
@@ -66,16 +72,19 @@ where
         }
 
         // generate enclave key
-        ctx.key_manager().keygen();
+        ctx.key_manager().await.keygen().await;
         let pk = ctx
             .key_manager()
+            .await
             .pub_key()
+            .await
             .ok_or_else(|| Status::internal("failed to get public key"))?;
 
         // create `SessionSetPubKey` msg and attest to it
         let msg = SessionSetPubKey::new(nonce, pk);
         let attestation = ctx
             .attestor()
+            .await
             .attestation(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
         let attested_msg = Attested::new(msg, attestation);

@@ -21,12 +21,15 @@ impl<E: Enclave> Handler<E> for RawInstantiateRequest {
         // create `CoreInstantiate` msg and attest to it
         let config = ctx
             .store()
+            .await
             .get(ConfigKey::new(ConfigKeyName))
+            .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("config not found"))?;
         let msg = CoreInstantiate::new(config);
         let attestation = ctx
             .attestor()
+            .await
             .attestation(msg.clone())
             .map_err(|e| Status::internal(e.to_string()))?;
         let attested_msg = Attested::new(msg, attestation);

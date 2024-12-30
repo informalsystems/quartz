@@ -30,17 +30,18 @@ pub mod kv_store;
 pub mod server;
 pub mod types;
 
+#[async_trait::async_trait]
 pub trait Enclave: Send + Sync {
     type Attestor: Attestor;
     type ChainClient: ChainClient<Contract = Self::Contract>;
-    type Contract: DeserializeOwned + Clone + ToString;
+    type Contract: DeserializeOwned + Clone + ToString + Send + Sync;
     type KeyManager: KeyManager;
     type Store: TypedStore<ContractKey<Self::Contract>>
         + TypedStore<NonceKey>
         + TypedStore<ConfigKey>;
 
-    fn attestor(&self) -> Self::Attestor;
-    fn chain_client(&self) -> Self::ChainClient;
-    fn key_manager(&self) -> Self::KeyManager;
-    fn store(&self) -> Self::Store;
+    async fn attestor(&self) -> Self::Attestor;
+    async fn chain_client(&self) -> Self::ChainClient;
+    async fn key_manager(&self) -> Self::KeyManager;
+    async fn store(&self) -> Self::Store;
 }

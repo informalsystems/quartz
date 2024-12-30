@@ -5,14 +5,15 @@ use std::{
 
 use quartz_contract_core::state::{Config, Nonce};
 
+#[async_trait::async_trait]
 pub trait KvStore<K, V>: Send + Sync {
     type Error: ToString;
 
-    fn set(&mut self, key: K, value: V) -> Result<Option<V>, Self::Error>;
+    async fn set(&mut self, key: K, value: V) -> Result<Option<V>, Self::Error>;
 
-    fn get(&self, key: K) -> Result<Option<V>, Self::Error>;
+    async fn get(&self, key: K) -> Result<Option<V>, Self::Error>;
 
-    fn delete(&mut self, key: K) -> Result<(), Self::Error>;
+    async fn delete(&mut self, key: K) -> Result<(), Self::Error>;
 }
 
 pub trait TypedStore<K: ValueForKey>: KvStore<K, <K as ValueForKey>::Value> {}

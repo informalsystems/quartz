@@ -19,7 +19,7 @@ pub mod transfers_server;
 pub mod wslistener;
 
 use std::{
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, Mutex},
     time::Duration,
 };
 
@@ -39,7 +39,7 @@ use quartz_common::{
         Enclave,
     },
 };
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, RwLock};
 use transfers_server::{TransfersOp, TransfersService};
 
 use crate::wslistener::WsListener;
@@ -134,14 +134,15 @@ struct DefaultKeyManager {
     sk: Option<SigningKey>,
 }
 
+#[async_trait::async_trait]
 impl KeyManager for DefaultKeyManager {
     type PubKey = VerifyingKey;
 
-    fn keygen(&mut self) {
+    async fn keygen(&mut self) {
         self.sk = Some(SigningKey::random(&mut rand::thread_rng()));
     }
 
-    fn pub_key(&self) -> Option<Self::PubKey> {
+    async fn pub_key(&self) -> Option<Self::PubKey> {
         self.sk.clone().map(|sk| VerifyingKey::from(&sk))
     }
 }
@@ -156,10 +157,11 @@ struct DefaultStore {
 #[derive(Debug, Display)]
 enum StoreError {}
 
+#[async_trait::async_trait]
 impl KvStore<ContractKey<AccountId>, AccountId> for DefaultStore {
     type Error = StoreError;
 
-    fn set(
+    async fn set(
         &mut self,
         _key: ContractKey<AccountId>,
         value: AccountId,
@@ -167,43 +169,45 @@ impl KvStore<ContractKey<AccountId>, AccountId> for DefaultStore {
         Ok(self.contract.replace(value))
     }
 
-    fn get(&self, _key: ContractKey<AccountId>) -> Result<Option<AccountId>, Self::Error> {
+    async fn get(&self, _key: ContractKey<AccountId>) -> Result<Option<AccountId>, Self::Error> {
         Ok(self.contract.clone().take())
     }
 
-    fn delete(&mut self, _key: ContractKey<AccountId>) -> Result<(), Self::Error> {
+    async fn delete(&mut self, _key: ContractKey<AccountId>) -> Result<(), Self::Error> {
         unimplemented!()
     }
 }
 
+#[async_trait::async_trait]
 impl KvStore<NonceKey, Nonce> for DefaultStore {
     type Error = StoreError;
 
-    fn set(&mut self, _key: NonceKey, value: Nonce) -> Result<Option<Nonce>, Self::Error> {
+    async fn set(&mut self, _key: NonceKey, value: Nonce) -> Result<Option<Nonce>, Self::Error> {
         Ok(self.nonce.replace(value))
     }
 
-    fn get(&self, _key: NonceKey) -> Result<Option<Nonce>, Self::Error> {
+    async fn get(&self, _key: NonceKey) -> Result<Option<Nonce>, Self::Error> {
         Ok(self.nonce.clone().take())
     }
 
-    fn delete(&mut self, _key: NonceKey) -> Result<(), Self::Error> {
+    async fn delete(&mut self, _key: NonceKey) -> Result<(), Self::Error> {
         unimplemented!()
     }
 }
 
+#[async_trait::async_trait]
 impl KvStore<ConfigKey, Config> for DefaultStore {
     type Error = StoreError;
 
-    fn set(&mut self, _key: ConfigKey, value: Config) -> Result<Option<Config>, Self::Error> {
+    async fn set(&mut self, _key: ConfigKey, value: Config) -> Result<Option<Config>, Self::Error> {
         Ok(self.config.replace(value))
     }
 
-    fn get(&self, _key: ConfigKey) -> Result<Option<Config>, Self::Error> {
+    async fn get(&self, _key: ConfigKey) -> Result<Option<Config>, Self::Error> {
         Ok(self.config.clone().take())
     }
 
-    fn delete(&mut self, _key: ConfigKey) -> Result<(), Self::Error> {
+    async fn delete(&mut self, _key: ConfigKey) -> Result<(), Self::Error> {
         unimplemented!()
     }
 }
@@ -226,21 +230,16 @@ struct SharedKeyManager<K> {
     inner: Arc<RwLock<K>>,
 }
 
+#[async_trait::async_trait]
 impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
     type PubKey = K::PubKey;
 
-    fn keygen(&mut self) {
-        self.inner
-            .write()
-            .expect("shared key-manager write error")
-            .keygen()
+    async fn keygen(&mut self) {
+        self.inner.write().await.keygen().await
     }
 
-    fn pub_key(&self) -> Option<Self::PubKey> {
-        self.inner
-            .read()
-            .expect("shared key-manager read error")
-            .pub_key()
+    async fn pub_key(&self) -> Option<Self::PubKey> {
+        self.inner.read().await.pub_key().await
     }
 }
 
@@ -249,34 +248,29 @@ struct SharedKvStore<S> {
     inner: Arc<RwLock<S>>,
 }
 
+#[async_trait::async_trait]
 impl<S, K, V> KvStore<K, V> for SharedKvStore<S>
 where
     S: KvStore<K, V>,
+    K: Send + Sync + 'static,
+    V: Send + Sync + 'static,
 {
     type Error = S::Error;
 
-    fn set(&mut self, key: K, value: V) -> Result<Option<V>, Self::Error> {
-        self.inner
-            .write()
-            .expect("shared kv-store write error")
-            .set(key, value)
+    async fn set(&mut self, key: K, value: V) -> Result<Option<V>, Self::Error> {
+        self.inner.write().await.set(key, value).await
     }
 
-    fn get(&self, key: K) -> Result<Option<V>, Self::Error> {
-        self.inner
-            .read()
-            .expect("shared kv-store read error")
-            .get(key)
+    async fn get(&self, key: K) -> Result<Option<V>, Self::Error> {
+        self.inner.read().await.get(key).await
     }
 
-    fn delete(&mut self, key: K) -> Result<(), Self::Error> {
-        self.inner
-            .write()
-            .expect("shared kv-store write error")
-            .delete(key)
+    async fn delete(&mut self, key: K) -> Result<(), Self::Error> {
+        self.inner.write().await.delete(key).await
     }
 }
 
+#[async_trait::async_trait]
 impl<A, C, K, S> Enclave for DefaultEnclave<A, C, K, S>
 where
     A: Attestor + Clone,
@@ -290,19 +284,19 @@ where
     type KeyManager = SharedKeyManager<K>;
     type Store = SharedKvStore<S>;
 
-    fn attestor(&self) -> Self::Attestor {
+    async fn attestor(&self) -> Self::Attestor {
         self.attestor.clone()
     }
 
-    fn chain_client(&self) -> Self::ChainClient {
+    async fn chain_client(&self) -> Self::ChainClient {
         self.chain_client.clone()
     }
 
-    fn key_manager(&self) -> Self::KeyManager {
+    async fn key_manager(&self) -> Self::KeyManager {
         self.key_manager.clone()
     }
 
-    fn store(&self) -> Self::Store {
+    async fn store(&self) -> Self::Store {
         self.store.clone()
     }
 }
