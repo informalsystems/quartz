@@ -29,6 +29,7 @@ pub trait ValueForKey {
     type Value;
 }
 
+#[derive(Clone, Debug)]
 pub struct TypedKey<K, V> {
     key: K,
     _phantom: PhantomData<V>,
@@ -60,6 +61,11 @@ pub type ContractKey<C> = TypedKey<ContractKeyName, C>;
 pub type NonceKey = TypedKey<NonceKeyName, Nonce>;
 pub type ConfigKey = TypedKey<ConfigKeyName, Config>;
 
+#[derive(Clone, Debug)]
 pub struct ContractKeyName;
+
+#[derive(Clone, Debug)]
 pub struct NonceKeyName;
+
+#[derive(Clone, Debug)]
 pub struct ConfigKeyName;
