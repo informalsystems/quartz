@@ -8,7 +8,6 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     attestor::Attestor,
-    chain_client::ChainClient,
     handler::Handler,
     key_manager::KeyManager,
     kv_store::{ConfigKey, ContractKey, NonceKey, TypedStore},
@@ -16,10 +15,9 @@ use crate::{
 };
 
 #[async_trait::async_trait]
-impl<A, C, K, S> Core for DefaultEnclave<A, C, K, S>
+impl<A, K, S> Core for DefaultEnclave<A, K, S>
 where
     A: Attestor + Clone,
-    C: ChainClient<Contract = AccountId> + Clone,
     K: KeyManager<PubKey = VerifyingKey> + Clone,
     S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
 {

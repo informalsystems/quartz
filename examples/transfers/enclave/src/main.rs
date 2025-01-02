@@ -31,7 +31,6 @@ use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{self, Attestor, DefaultAttestor},
-        chain_client::ChainClient,
         handler::Handler,
         key_manager::KeyManager,
         kv_store::{ConfigKey, ContractKey, NonceKey, TypedStore},
@@ -128,10 +127,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[tonic::async_trait]
-impl<A, C, K, S> Settlement for DefaultEnclave<A, C, K, S>
+impl<A, K, S> Settlement for DefaultEnclave<A, K, S>
 where
     A: Attestor + Clone,
-    C: ChainClient<Contract = AccountId> + Clone,
     K: KeyManager<PubKey = VerifyingKey> + Clone,
     S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
 {
@@ -174,7 +172,6 @@ impl<E: Enclave> Handler<E> for QueryRequest {
 mod tests {
     use quartz_common::{
         enclave::{
-            chain_client::default::DefaultChainClient,
             key_manager::{default::DefaultKeyManager, shared::SharedKeyManager},
             kv_store::{default::DefaultKvStore, shared::SharedKvStore},
         },
@@ -190,7 +187,6 @@ mod tests {
     async fn test_tonic_service() -> Result<(), Box<dyn std::error::Error>> {
         let enclave = DefaultEnclave {
             attestor: attestor::MockAttestor,
-            chain_client: DefaultChainClient,
             key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
             store: SharedKvStore::wrapping(DefaultKvStore::default()),
         };
