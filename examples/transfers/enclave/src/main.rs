@@ -32,12 +32,14 @@ use quartz_common::{
     enclave::{
         attestor::{self, Attestor, DefaultAttestor},
         handler::Handler,
+        host::Host,
         key_manager::KeyManager,
         kv_store::{ConfigKey, ContractKey, NonceKey, TypedStore},
         server::{QuartzServer, WsListenerConfig},
         DefaultEnclave, Enclave,
     },
 };
+use tendermint_rpc::event::Event as TmEvent;
 use tokio::sync::mpsc;
 use tonic::{Request, Response, Status};
 use transfers_server::{TransfersOp, TransfersService};
@@ -168,10 +170,101 @@ impl<E: Enclave> Handler<E> for QueryRequest {
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum EnclaveRequest {
+    Update(UpdateRequest),
+    Query(QueryRequest),
+}
+
+#[derive(Clone, Debug)]
+pub enum EnclaveResponse {
+    Update(UpdateResponse),
+    Query(QueryResponse),
+}
+
+#[async_trait::async_trait]
+impl<E: Enclave> Handler<E> for EnclaveRequest {
+    type Error = Status;
+    type Response = EnclaveResponse;
+
+    async fn handle(self, ctx: &E) -> Result<Self::Response, Self::Error> {
+        match self {
+            EnclaveRequest::Update(request) => {
+                request.handle(ctx).await.map(EnclaveResponse::Update)
+            }
+            EnclaveRequest::Query(request) => request.handle(ctx).await.map(EnclaveResponse::Query),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct TransferEvent {
+    pub contract: AccountId,
+}
+
+impl TryFrom<TmEvent> for TransferEvent {
+    type Error = ();
+
+    fn try_from(_value: TmEvent) -> Result<Self, Self::Error> {
+        todo!()
+    }
+}
+
+#[async_trait::async_trait]
+impl<H> Handler<H> for TransferEvent
+where
+    H: Host,
+    H::Enclave: Enclave,
+{
+    type Error = Status;
+    type Response = UpdateRequest;
+
+    async fn handle(self, _ctx: &H) -> Result<Self::Response, Self::Error> {
+        // create request -
+        //   - query contract state
+        //   - query sequence number
+        //   - generate proof-of-publication
+        todo!()
+    }
+}
+
+pub enum EnclaveEvent {
+    Transfer(TransferEvent),
+}
+
+impl TryFrom<TmEvent> for EnclaveEvent {
+    type Error = ();
+
+    fn try_from(_value: TmEvent) -> Result<Self, Self::Error> {
+        if let Ok(event) = TransferEvent::try_from(_value) {
+            Ok(Self::Transfer(event))
+        } else {
+            Err(())
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl<H> Handler<H> for EnclaveEvent
+where
+    H: Host,
+    H::Enclave: Enclave,
+{
+    type Error = Status;
+    type Response = EnclaveRequest;
+
+    async fn handle(self, ctx: &H) -> Result<Self::Response, Self::Error> {
+        match self {
+            EnclaveEvent::Transfer(event) => event.handle(ctx).await.map(EnclaveRequest::Update),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use quartz_common::{
         enclave::{
+            host::DefaultHost,
             key_manager::{default::DefaultKeyManager, shared::SharedKeyManager},
             kv_store::{default::DefaultKvStore, shared::SharedKvStore},
         },
@@ -194,12 +287,19 @@ mod tests {
 
         Server::builder()
             .add_service(CoreServer::new(enclave.clone()))
-            .add_service(SettlementServer::new(enclave))
+            .add_service(SettlementServer::new(enclave.clone()))
             .serve_with_shutdown(addr, async {
                 sleep(Duration::from_secs(10)).await;
                 println!("Shutting down...");
             })
             .await?;
+
+        let host = DefaultHost::<_, EnclaveRequest>::new(enclave);
+        host.enclave_call(EnclaveRequest::Query(QueryRequest {
+            message: "".to_string(),
+        }))
+        .await
+        .expect("");
 
         Ok(())
     }
