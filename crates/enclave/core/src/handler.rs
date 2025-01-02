@@ -29,6 +29,6 @@ where
     async fn handle(self, ctx: &C) -> Result<Self::Response, Self::Error> {
         let request = self.into_inner();
         let response = request.handle(ctx).await?;
-        Ok(Response::new(response.into()))
+        Ok(Response::new(response))
     }
 }

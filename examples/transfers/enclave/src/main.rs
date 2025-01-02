@@ -31,30 +31,23 @@ use cosmrs::AccountId;
 use displaydoc::Display;
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::{
-    contract::{
-        msg::execute::{attested::Attested, session_create::SessionCreate},
-        state::{Config, LightClientOpts, Nonce},
-    },
+    contract::state::{Config, LightClientOpts, Nonce},
     enclave::{
         attestor::{self, Attestor, DefaultAttestor},
         chain_client::ChainClient,
-        handler::{Handler, A, RA},
+        handler::Handler,
         key_manager::KeyManager,
-        kv_store::{
-            ConfigKey, ContractKey, ContractKeyName, KvStore, NonceKey, NonceKeyName, TypedStore,
-        },
+        kv_store::{ConfigKey, ContractKey, KvStore, NonceKey, TypedStore},
         server::{QuartzServer, WsListenerConfig},
         Enclave,
     },
     proto::{
-        core_server::{Core, CoreServer},
-        InstantiateRequest, InstantiateResponse, SessionCreateRequest, SessionCreateResponse,
-        SessionSetPubKeyRequest, SessionSetPubKeyResponse,
+        core_server::Core, InstantiateRequest, InstantiateResponse, SessionCreateRequest,
+        SessionCreateResponse, SessionSetPubKeyRequest, SessionSetPubKeyResponse,
     },
 };
-use rand::Rng;
 use tokio::sync::{mpsc, oneshot, RwLock};
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::{Request, Response, Status};
 use transfers_server::{TransfersOp, TransfersService};
 
 use crate::{
@@ -142,7 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[derive(Clone, Debug, Default)]
-struct DefaultChainClient;
+pub struct DefaultChainClient;
 
 impl ChainClient for DefaultChainClient {
     const CHAIN_ID: &'static str = "pion-1";
@@ -150,7 +143,7 @@ impl ChainClient for DefaultChainClient {
 }
 
 #[derive(Clone, Default)]
-struct DefaultKeyManager {
+pub struct DefaultKeyManager {
     sk: Option<SigningKey>,
 }
 
@@ -168,14 +161,14 @@ impl KeyManager for DefaultKeyManager {
 }
 
 #[derive(Clone, Debug, Default)]
-struct DefaultKvStore {
+pub struct DefaultKvStore {
     config: Option<Config>,
     contract: Option<AccountId>,
     nonce: Option<Nonce>,
 }
 
 #[derive(Debug, Display)]
-enum StoreError {}
+pub enum StoreError {}
 
 #[async_trait::async_trait]
 impl KvStore<ContractKey<AccountId>, AccountId> for DefaultKvStore {
@@ -233,12 +226,12 @@ impl KvStore<ConfigKey, Config> for DefaultKvStore {
 }
 
 #[derive(Clone, Debug, Default)]
-struct BincodeKvStore {
+pub struct BincodeKvStore {
     map: HashMap<String, Vec<u8>>,
 }
 
 #[derive(Debug, Display)]
-enum BincodeError {
+pub enum BincodeError {
     /// encode error: {0}
     Encode(bincode::error::EncodeError),
     /// decode error: {0}
@@ -272,7 +265,7 @@ where
         Ok(self
             .map
             .get(&key)
-            .map(|v| bincode::decode_from_slice(&v, bincode::config::standard()))
+            .map(|v| bincode::decode_from_slice(v, bincode::config::standard()))
             .transpose()
             .map_err(BincodeError::Decode)?
             .map(|(v, _)| v))
@@ -286,7 +279,7 @@ where
 }
 
 #[derive(Clone, Debug)]
-struct DefaultEnclave<
+pub struct DefaultEnclave<
     A = DefaultAttestor,
     C = DefaultChainClient,
     K = DefaultKeyManager,
@@ -299,7 +292,7 @@ struct DefaultEnclave<
 }
 
 #[derive(Clone, Debug)]
-struct SharedKeyManager<K> {
+pub struct SharedKeyManager<K> {
     inner: Arc<RwLock<K>>,
 }
 
@@ -317,7 +310,7 @@ impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
 }
 
 #[derive(Clone, Debug)]
-struct SharedKvStore<S> {
+pub struct SharedKvStore<S> {
     inner: Arc<RwLock<S>>,
 }
 
@@ -344,14 +337,14 @@ where
 }
 
 #[derive(Clone, Debug)]
-enum KvStoreAction<K, V> {
+pub enum KvStoreAction<K, V> {
     Set(K, V),
     Get(K),
     Delete(K),
 }
 
 #[derive(Clone, Debug)]
-enum KvStoreActionResult<V> {
+pub enum KvStoreActionResult<V> {
     Set(Option<V>),
     Get(Option<V>),
     Delete,
@@ -359,13 +352,15 @@ enum KvStoreActionResult<V> {
 }
 
 #[derive(Debug)]
-struct KvStoreRequest<K, V> {
+#[allow(unused)]
+pub struct KvStoreRequest<K, V> {
     action: KvStoreAction<K, V>,
     resp_tx: oneshot::Sender<KvStoreActionResult<V>>,
 }
 
 #[derive(Clone, Debug)]
-struct MpscKvStore<S, K, V> {
+#[allow(unused)]
+pub struct MpscKvStore<S, K, V> {
     req_tx: mpsc::Sender<KvStoreRequest<K, V>>,
     _phantom: PhantomData<S>,
 }
@@ -537,7 +532,9 @@ impl<E: Enclave> Handler<E> for QueryRequest {
 
 #[cfg(test)]
 mod tests {
+    use quartz_common::proto::core_server::CoreServer;
     use tokio::time::sleep;
+    use tonic::transport::Server;
 
     use super::*;
     use crate::proto::settlement_server::SettlementServer;
@@ -545,8 +542,8 @@ mod tests {
     #[tokio::test]
     async fn test_tonic_service() -> Result<(), Box<dyn std::error::Error>> {
         let enclave = DefaultEnclave {
-            attestor: attestor::MockAttestor::default(),
-            chain_client: DefaultChainClient::default(),
+            attestor: attestor::MockAttestor,
+            chain_client: DefaultChainClient,
             key_manager: SharedKeyManager {
                 inner: Arc::new(RwLock::new(DefaultKeyManager::default())),
             },
