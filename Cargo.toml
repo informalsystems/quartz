@@ -23,6 +23,7 @@ authors = ["Informal Systems <hello@informal.systems>"]
 # external
 anyhow = { version = "1.0.86", features = ["std", "backtrace"] }
 async-trait = { version = "0.1.79", default-features = false }
+bincode = { version = "2.0.0-rc.3", default-features = false, features = ["alloc"] }
 bip32 = { version = "0.5.1", default-features = false, features = [
     "alloc",
     "secp256k1",
