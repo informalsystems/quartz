@@ -31,13 +31,18 @@ use cosmrs::AccountId;
 use displaydoc::Display;
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::{
-    contract::state::{Config, LightClientOpts, Nonce},
+    contract::{
+        msg::execute::{attested::Attested, session_create::SessionCreate},
+        state::{Config, LightClientOpts, Nonce},
+    },
     enclave::{
         attestor::{self, Attestor, DefaultAttestor},
         chain_client::ChainClient,
-        handler::Handler,
+        handler::{Handler, A, RA},
         key_manager::KeyManager,
-        kv_store::{ConfigKey, ContractKey, KvStore, NonceKey, TypedStore},
+        kv_store::{
+            ConfigKey, ContractKey, ContractKeyName, KvStore, NonceKey, NonceKeyName, TypedStore,
+        },
         server::{QuartzServer, WsListenerConfig},
         Enclave,
     },
@@ -47,11 +52,17 @@ use quartz_common::{
         SessionSetPubKeyRequest, SessionSetPubKeyResponse,
     },
 };
+use rand::Rng;
 use tokio::sync::{mpsc, oneshot, RwLock};
 use tonic::{transport::Server, Request, Response, Status};
 use transfers_server::{TransfersOp, TransfersService};
 
-use crate::wslistener::WsListener;
+use crate::{
+    proto::{
+        settlement_server::Settlement, QueryRequest, QueryResponse, UpdateRequest, UpdateResponse,
+    },
+    wslistener::WsListener,
+};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -481,11 +492,55 @@ where
     }
 }
 
+#[tonic::async_trait]
+impl<A, C, K, S> Settlement for DefaultEnclave<A, C, K, S>
+where
+    A: Attestor + Clone,
+    C: ChainClient<Contract = AccountId> + Clone,
+    K: KeyManager<PubKey = VerifyingKey> + Clone,
+    S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
+{
+    async fn run(
+        &self,
+        request: Request<UpdateRequest>,
+    ) -> Result<Response<UpdateResponse>, Status> {
+        request.handle(self).await
+    }
+
+    async fn query(
+        &self,
+        request: Request<QueryRequest>,
+    ) -> Result<Response<QueryResponse>, Status> {
+        request.handle(self).await
+    }
+}
+
+#[async_trait::async_trait]
+impl<E: Enclave> Handler<E> for UpdateRequest {
+    type Error = Status;
+    type Response = UpdateResponse;
+
+    async fn handle(self, _ctx: &E) -> Result<Self::Response, Self::Error> {
+        todo!()
+    }
+}
+
+#[async_trait::async_trait]
+impl<E: Enclave> Handler<E> for QueryRequest {
+    type Error = Status;
+    type Response = QueryResponse;
+
+    async fn handle(self, _ctx: &E) -> Result<Self::Response, Self::Error> {
+        todo!()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use tokio::time::sleep;
 
     use super::*;
+    use crate::proto::settlement_server::SettlementServer;
 
     #[tokio::test]
     async fn test_tonic_service() -> Result<(), Box<dyn std::error::Error>> {
@@ -502,7 +557,8 @@ mod tests {
         let addr = "127.0.0.1:9095".parse().expect("hardcoded correct ip");
 
         Server::builder()
-            .add_service(CoreServer::new(enclave))
+            .add_service(CoreServer::new(enclave.clone()))
+            .add_service(SettlementServer::new(enclave))
             .serve_with_shutdown(addr, async {
                 sleep(Duration::from_secs(1)).await;
                 println!("Shutting down...");
