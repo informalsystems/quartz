@@ -27,6 +27,7 @@ pub mod chain_client;
 pub mod error;
 pub mod grpc;
 pub mod handler;
+pub mod host;
 pub mod key_manager;
 pub mod kv_store;
 pub mod server;
