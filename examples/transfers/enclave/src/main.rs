@@ -13,7 +13,10 @@
 )]
 
 pub mod cli;
+pub mod event;
+pub mod grpc;
 pub mod proto;
+pub mod request;
 pub mod state;
 pub mod transfers_server;
 pub mod wslistener;
@@ -23,43 +26,19 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{anyhow, Error as AnyhowError};
 use clap::Parser;
 use cli::Cli;
-use cosmrs::AccountId;
-use cosmwasm_std::{Addr, HexBinary, Uint64};
-use k256::ecdsa::VerifyingKey;
 use quartz_common::{
-    contract::state::{Config, LightClientOpts, SEQUENCE_NUM_KEY},
+    contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{self, Attestor, DefaultAttestor},
-        chain_client::ChainClient,
-        handler::Handler,
-        host::Host,
-        key_manager::KeyManager,
-        kv_store::{ConfigKey, ContractKey, NonceKey, TypedStore},
         server::{QuartzServer, WsListenerConfig},
-        DefaultEnclave, Enclave,
     },
 };
-use serde_json::json;
-use tendermint_rpc::event::Event as TmEvent;
 use tokio::sync::mpsc;
-use tonic::{Request, Response, Status};
-use tracing::info;
-use transfers_contract::msg::{
-    execute::Request as TransferRequest,
-    QueryMsg::{GetRequests, GetState},
-};
 use transfers_server::{TransfersOp, TransfersService};
 
-use crate::{
-    proto::{
-        settlement_server::Settlement, QueryRequest, QueryResponse, UpdateRequest, UpdateResponse,
-    },
-    transfers_server::{QueryRequestMessage, UpdateRequestMessage},
-    wslistener::WsListener,
-};
+use crate::wslistener::WsListener;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -138,302 +117,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[tonic::async_trait]
-impl<A, K, S> Settlement for DefaultEnclave<A, K, S>
-where
-    A: Attestor + Clone,
-    K: KeyManager<PubKey = VerifyingKey> + Clone,
-    S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
-{
-    async fn run(
-        &self,
-        request: Request<UpdateRequest>,
-    ) -> Result<Response<UpdateResponse>, Status> {
-        request.handle(self).await
-    }
-
-    async fn query(
-        &self,
-        request: Request<QueryRequest>,
-    ) -> Result<Response<QueryResponse>, Status> {
-        request.handle(self).await
-    }
-}
-
-#[async_trait::async_trait]
-impl<E: Enclave> Handler<E> for UpdateRequest {
-    type Error = Status;
-    type Response = UpdateResponse;
-
-    async fn handle(self, _ctx: &E) -> Result<Self::Response, Self::Error> {
-        todo!()
-    }
-}
-
-#[async_trait::async_trait]
-impl<E: Enclave> Handler<E> for QueryRequest {
-    type Error = Status;
-    type Response = QueryResponse;
-
-    async fn handle(self, _ctx: &E) -> Result<Self::Response, Self::Error> {
-        todo!()
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum EnclaveRequest {
-    Update(UpdateRequest),
-    Query(QueryRequest),
-}
-
-#[derive(Clone, Debug)]
-pub enum EnclaveResponse {
-    Update(UpdateResponse),
-    Query(QueryResponse),
-}
-
-#[async_trait::async_trait]
-impl<E: Enclave> Handler<E> for EnclaveRequest {
-    type Error = Status;
-    type Response = EnclaveResponse;
-
-    async fn handle(self, ctx: &E) -> Result<Self::Response, Self::Error> {
-        match self {
-            EnclaveRequest::Update(request) => {
-                request.handle(ctx).await.map(EnclaveResponse::Update)
-            }
-            EnclaveRequest::Query(request) => request.handle(ctx).await.map(EnclaveResponse::Query),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct TransferEvent {
-    pub contract: AccountId,
-}
-
-impl TryFrom<TmEvent> for TransferEvent {
-    type Error = AnyhowError;
-
-    fn try_from(event: TmEvent) -> Result<Self, Self::Error> {
-        let Some(events) = &event.events else {
-            return Err(anyhow!("no events in tx"));
-        };
-
-        if !events.keys().any(|k| k.starts_with("wasm-transfer.action")) {
-            return Err(anyhow!("irrelevant event"));
-        };
-
-        let contract = events
-            .get("execute._contract_address")
-            .ok_or_else(|| anyhow!("missing execute._contract_address in events"))?
-            .first()
-            .ok_or_else(|| anyhow!("execute._contract_address is empty"))?
-            .parse::<AccountId>()
-            .map_err(|e| anyhow!("failed to parse contract address: {}", e))?;
-
-        Ok(TransferEvent { contract })
-    }
-}
-
-#[async_trait::async_trait]
-impl<C> Handler<C> for TransferEvent
-where
-    C: ChainClient<Contract = AccountId>,
-{
-    type Error = AnyhowError;
-    type Response = UpdateRequest;
-
-    async fn handle(self, ctx: &C) -> Result<Self::Response, Self::Error> {
-        let contract = self.contract;
-
-        // Query contract state
-        let requests: Vec<TransferRequest> = ctx
-            .query_contract(&contract, json!(GetRequests {}).to_string())
-            .await
-            .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-
-        let state: HexBinary = ctx
-            .query_contract(&contract, json!(GetState {}).to_string())
-            .await
-            .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-
-        let seq_num: Uint64 = ctx
-            .query_contract(&contract, SEQUENCE_NUM_KEY.to_string())
-            .await
-            .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-
-        // Request body contents
-        let update_contents = UpdateRequestMessage {
-            state,
-            requests,
-            seq_num: seq_num.into(),
-        };
-
-        // Wait 2 blocks
-        info!("Waiting 2 blocks for light client proof");
-        ctx.wait_for_blocks(2)
-            .await
-            .map_err(|e| anyhow!("Problem waiting for proof: {}", e))?;
-
-        // Call tm prover with trusted hash and height
-        let proof = ctx
-            .existence_proof(&contract, "requests")
-            .await
-            .map_err(|e| anyhow!("Problem getting existence proof: {}", e))?;
-
-        // Merge the UpdateRequestMessage with the proof
-        let mut proof_json = serde_json::to_value(proof)?;
-        proof_json["msg"] = serde_json::to_value(&update_contents)?;
-
-        // Build final request object
-        let request = UpdateRequest {
-            message: json!(proof_json).to_string(),
-        };
-
-        Ok(request)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct QueryEvent {
-    pub contract: AccountId,
-    pub sender: String,
-    pub ephemeral_pubkey: String,
-}
-
-impl TryFrom<TmEvent> for QueryEvent {
-    type Error = AnyhowError;
-
-    fn try_from(event: TmEvent) -> Result<Self, Self::Error> {
-        let Some(events) = &event.events else {
-            return Err(anyhow!("no events in tx"));
-        };
-
-        if !events.keys().any(|k| k.starts_with("wasm-transfer.action")) {
-            return Err(anyhow!("irrelevant event"));
-        };
-
-        let contract = events
-            .get("execute._contract_address")
-            .ok_or_else(|| anyhow!("missing execute._contract_address in events"))?
-            .first()
-            .ok_or_else(|| anyhow!("execute._contract_address is empty"))?
-            .parse::<AccountId>()
-            .map_err(|e| anyhow!("failed to parse contract address: {}", e))?;
-
-        let sender = events
-            .get("message.sender")
-            .ok_or_else(|| anyhow!("Missing message.sender in events"))?
-            .first()
-            .ok_or_else(|| anyhow!("execute.sender is empty"))?
-            .to_owned();
-
-        let ephemeral_pubkey = events
-            .get("wasm-query_balance.emphemeral_pubkey")
-            .ok_or_else(|| anyhow!("Missing wasm-query_balance.emphemeral_pubkey in events"))?
-            .first()
-            .ok_or_else(|| anyhow!("execute.query_balance.emphemeral_pubkey is empty"))?
-            .to_owned();
-
-        Ok(QueryEvent {
-            contract,
-            sender,
-            ephemeral_pubkey,
-        })
-    }
-}
-
-#[async_trait::async_trait]
-impl<C> Handler<C> for QueryEvent
-where
-    C: ChainClient<Contract = AccountId>,
-{
-    type Error = AnyhowError;
-    type Response = QueryRequest;
-
-    async fn handle(self, ctx: &C) -> Result<Self::Response, Self::Error> {
-        let QueryEvent {
-            contract,
-            sender,
-            ephemeral_pubkey,
-        } = self;
-
-        // Query contract state
-        let state: HexBinary = ctx
-            .query_contract(&contract, json!(GetState {}).to_string())
-            .await
-            .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-
-        // Build request
-        let update_contents = QueryRequestMessage {
-            state,
-            address: Addr::unchecked(sender), // sender comes from TX event, therefore is checked
-            ephemeral_pubkey: HexBinary::from_hex(&ephemeral_pubkey)?,
-        };
-
-        // Send QueryRequestMessage to enclave over tonic gRPC client
-        let request = QueryRequest {
-            message: json!(update_contents).to_string(),
-        };
-
-        Ok(request)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum EnclaveEvent {
-    Transfer(TransferEvent),
-    Query(QueryEvent),
-}
-
-impl TryFrom<TmEvent> for EnclaveEvent {
-    type Error = ();
-
-    fn try_from(value: TmEvent) -> Result<Self, Self::Error> {
-        if let Ok(event) = TransferEvent::try_from(value.clone()) {
-            Ok(Self::Transfer(event))
-        } else if let Ok(event) = QueryEvent::try_from(value) {
-            Ok(Self::Query(event))
-        } else {
-            Err(())
-        }
-    }
-}
-
-#[async_trait::async_trait]
-impl<C> Handler<C> for EnclaveEvent
-where
-    C: ChainClient<Contract = AccountId>,
-{
-    type Error = AnyhowError;
-    type Response = EnclaveRequest;
-
-    async fn handle(self, ctx: &C) -> Result<Self::Response, Self::Error> {
-        match self {
-            EnclaveEvent::Transfer(event) => event.handle(ctx).await.map(EnclaveRequest::Update),
-            EnclaveEvent::Query(event) => event.handle(ctx).await.map(EnclaveRequest::Query),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     use cosmrs::crypto::secp256k1::SigningKey;
     use quartz_common::{
         enclave::{
+            attestor,
             chain_client::default::DefaultChainClient,
-            host::DefaultHost,
+            host::{DefaultHost, Host},
             key_manager::{default::DefaultKeyManager, shared::SharedKeyManager},
             kv_store::{default::DefaultKvStore, shared::SharedKvStore},
+            DefaultEnclave,
         },
         proto::core_server::CoreServer,
     };
     use tokio::time::sleep;
     use tonic::transport::Server;
 
-    use super::*;
-    use crate::proto::settlement_server::SettlementServer;
+    use crate::{
+        event::EnclaveEvent, proto::settlement_server::SettlementServer, request::EnclaveRequest,
+    };
 
     #[tokio::test]
     async fn test_tonic_service() -> Result<(), Box<dyn std::error::Error>> {
