@@ -23,6 +23,7 @@ use std::{
     time::Duration,
 };
 
+use anyhow::anyhow;
 use clap::Parser;
 use cli::Cli;
 use cosmrs::AccountId;
@@ -204,10 +205,26 @@ pub struct TransferEvent {
 }
 
 impl TryFrom<TmEvent> for TransferEvent {
-    type Error = ();
+    type Error = anyhow::Error;
 
-    fn try_from(_value: TmEvent) -> Result<Self, Self::Error> {
-        todo!()
+    fn try_from(event: TmEvent) -> Result<Self, Self::Error> {
+        let Some(events) = &event.events else {
+            return Err(anyhow!("no events in tx"));
+        };
+
+        if !events.keys().any(|k| k.starts_with("wasm-transfer.action")) {
+            return Err(anyhow!("irrelevant event"));
+        };
+
+        let contract = events
+            .get("execute._contract_address")
+            .ok_or_else(|| anyhow!("missing execute._contract_address in events"))?
+            .first()
+            .ok_or_else(|| anyhow!("execute._contract_address is empty"))?
+            .parse::<AccountId>()
+            .map_err(|e| anyhow!("failed to parse contract address: {}", e))?;
+
+        Ok(TransferEvent { contract })
     }
 }
 
@@ -236,10 +253,44 @@ pub struct QueryEvent {
 }
 
 impl TryFrom<TmEvent> for QueryEvent {
-    type Error = ();
+    type Error = anyhow::Error;
 
-    fn try_from(_value: TmEvent) -> Result<Self, Self::Error> {
-        todo!()
+    fn try_from(event: TmEvent) -> Result<Self, Self::Error> {
+        let Some(events) = &event.events else {
+            return Err(anyhow!("no events in tx"));
+        };
+
+        if !events.keys().any(|k| k.starts_with("wasm-transfer.action")) {
+            return Err(anyhow!("irrelevant event"));
+        };
+
+        let contract = events
+            .get("execute._contract_address")
+            .ok_or_else(|| anyhow!("missing execute._contract_address in events"))?
+            .first()
+            .ok_or_else(|| anyhow!("execute._contract_address is empty"))?
+            .parse::<AccountId>()
+            .map_err(|e| anyhow!("failed to parse contract address: {}", e))?;
+
+        let sender = events
+            .get("message.sender")
+            .ok_or_else(|| anyhow!("Missing message.sender in events"))?
+            .first()
+            .ok_or_else(|| anyhow!("execute.sender is empty"))?
+            .to_owned();
+
+        let ephemeral_pubkey = events
+            .get("wasm-query_balance.emphemeral_pubkey")
+            .ok_or_else(|| anyhow!("Missing wasm-query_balance.emphemeral_pubkey in events"))?
+            .first()
+            .ok_or_else(|| anyhow!("execute.query_balance.emphemeral_pubkey is empty"))?
+            .to_owned();
+
+        Ok(QueryEvent {
+            contract,
+            sender,
+            ephemeral_pubkey,
+        })
     }
 }
 
