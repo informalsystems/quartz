@@ -4,7 +4,7 @@ use quartz_proto::quartz::{
     InstantiateRequest, InstantiateResponse, SessionCreateRequest, SessionCreateResponse,
     SessionSetPubKeyRequest, SessionSetPubKeyResponse,
 };
-use tonic::{Request, Response, Status};
+use tonic::Status;
 
 use crate::{attestor::Attestor, key_manager::KeyManager, Enclave};
 
@@ -21,22 +21,6 @@ pub trait Handler<Context>: Send + Sync + 'static {
     type Response;
 
     async fn handle(self, ctx: &Context) -> Result<Self::Response, Self::Error>;
-}
-
-#[async_trait::async_trait]
-impl<T, C> Handler<C> for Request<T>
-where
-    T: Handler<C>,
-    C: Send + Sync,
-{
-    type Error = T::Error;
-    type Response = Response<T::Response>;
-
-    async fn handle(self, ctx: &C) -> Result<Self::Response, Self::Error> {
-        let request = self.into_inner();
-        let response = request.handle(ctx).await?;
-        Ok(Response::new(response))
-    }
 }
 
 #[derive(Clone, Debug)]

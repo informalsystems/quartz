@@ -15,6 +15,22 @@ use crate::{
 };
 
 #[async_trait::async_trait]
+impl<T, C> Handler<C> for Request<T>
+where
+    T: Handler<C>,
+    C: Send + Sync,
+{
+    type Error = T::Error;
+    type Response = Response<T::Response>;
+
+    async fn handle(self, ctx: &C) -> Result<Self::Response, Self::Error> {
+        let request = self.into_inner();
+        let response = request.handle(ctx).await?;
+        Ok(Response::new(response))
+    }
+}
+
+#[async_trait::async_trait]
 impl<A, K, S> Core for DefaultEnclave<A, K, S>
 where
     A: Attestor + Clone,
