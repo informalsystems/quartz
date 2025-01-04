@@ -2730,6 +2730,7 @@ dependencies = [
  "color-eyre",
  "cosmrs",
  "cosmwasm-std",
+ "cw-client",
  "displaydoc",
  "ecies",
  "futures-util",
