@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 
+use anyhow::anyhow;
 use futures_util::StreamExt;
 use reqwest::Url;
 use tendermint_rpc::{
@@ -52,13 +53,13 @@ where
     E: Enclave,
     C: ChainClient,
     R: Handler<E, Error = Status>,
-    EV: Handler<C, Response = R, Error = Status>,
-    EV: TryFrom<TmEvent, Error = ()>,
+    EV: Handler<C, Response = R, Error = anyhow::Error>,
+    EV: TryFrom<TmEvent>,
     <EV as TryFrom<TmEvent>>::Error: Send + Sync + 'static,
 {
     type ChainClient = C;
     type Enclave = E;
-    type Error = Status;
+    type Error = anyhow::Error;
     type Event = EV;
     type Request = R;
 
@@ -66,7 +67,10 @@ where
         &self,
         request: Self::Request,
     ) -> Result<Response<Self::Request, Self::Enclave>, Self::Error> {
-        request.handle(&self.enclave).await
+        request
+            .handle(&self.enclave)
+            .await
+            .map_err(|e| anyhow!("enclave call failed: {}", e))
     }
 
     async fn serve(self, url: Url) -> Result<(), Self::Error> {
