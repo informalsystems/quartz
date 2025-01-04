@@ -31,6 +31,7 @@ use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{self, Attestor, DefaultAttestor},
+        chain_client::ChainClient,
         handler::Handler,
         host::Host,
         key_manager::KeyManager,
@@ -211,15 +212,14 @@ impl TryFrom<TmEvent> for TransferEvent {
 }
 
 #[async_trait::async_trait]
-impl<H> Handler<H> for TransferEvent
+impl<C> Handler<C> for TransferEvent
 where
-    H: Host,
-    H::Enclave: Enclave,
+    C: ChainClient,
 {
     type Error = Status;
     type Response = UpdateRequest;
 
-    async fn handle(self, _ctx: &H) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, _ctx: &C) -> Result<Self::Response, Self::Error> {
         // create request -
         //   - query contract state
         //   - query sequence number
@@ -228,16 +228,48 @@ where
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct QueryEvent {
+    pub contract: AccountId,
+    pub sender: String,
+    pub ephemeral_pubkey: String,
+}
+
+impl TryFrom<TmEvent> for QueryEvent {
+    type Error = ();
+
+    fn try_from(_value: TmEvent) -> Result<Self, Self::Error> {
+        todo!()
+    }
+}
+
+#[async_trait::async_trait]
+impl<C> Handler<C> for QueryEvent
+where
+    C: ChainClient,
+{
+    type Error = Status;
+    type Response = QueryRequest;
+
+    async fn handle(self, _ctx: &C) -> Result<Self::Response, Self::Error> {
+        todo!()
+    }
+}
+
+#[derive(Clone, Debug)]
 pub enum EnclaveEvent {
     Transfer(TransferEvent),
+    Query(QueryEvent),
 }
 
 impl TryFrom<TmEvent> for EnclaveEvent {
     type Error = ();
 
-    fn try_from(_value: TmEvent) -> Result<Self, Self::Error> {
-        if let Ok(event) = TransferEvent::try_from(_value) {
+    fn try_from(value: TmEvent) -> Result<Self, Self::Error> {
+        if let Ok(event) = TransferEvent::try_from(value.clone()) {
             Ok(Self::Transfer(event))
+        } else if let Ok(event) = QueryEvent::try_from(value) {
+            Ok(Self::Query(event))
         } else {
             Err(())
         }
@@ -245,17 +277,17 @@ impl TryFrom<TmEvent> for EnclaveEvent {
 }
 
 #[async_trait::async_trait]
-impl<H> Handler<H> for EnclaveEvent
+impl<C> Handler<C> for EnclaveEvent
 where
-    H: Host,
-    H::Enclave: Enclave,
+    C: ChainClient,
 {
     type Error = Status;
     type Response = EnclaveRequest;
 
-    async fn handle(self, ctx: &H) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &C) -> Result<Self::Response, Self::Error> {
         match self {
             EnclaveEvent::Transfer(event) => event.handle(ctx).await.map(EnclaveRequest::Update),
+            EnclaveEvent::Query(event) => event.handle(ctx).await.map(EnclaveRequest::Query),
         }
     }
 }
@@ -264,6 +296,7 @@ where
 mod tests {
     use quartz_common::{
         enclave::{
+            chain_client::default::DefaultChainClient,
             host::DefaultHost,
             key_manager::{default::DefaultKeyManager, shared::SharedKeyManager},
             kv_store::{default::DefaultKvStore, shared::SharedKvStore},
@@ -278,13 +311,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_tonic_service() -> Result<(), Box<dyn std::error::Error>> {
+        let addr = "127.0.0.1:9095".parse().expect("hardcoded correct ip");
         let enclave = DefaultEnclave {
             attestor: attestor::MockAttestor,
             key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
             store: SharedKvStore::wrapping(DefaultKvStore::default()),
         };
-        let addr = "127.0.0.1:9095".parse().expect("hardcoded correct ip");
-
         Server::builder()
             .add_service(CoreServer::new(enclave.clone()))
             .add_service(SettlementServer::new(enclave.clone()))
@@ -294,12 +326,14 @@ mod tests {
             })
             .await?;
 
-        let host = DefaultHost::<_, EnclaveRequest>::new(enclave);
-        host.enclave_call(EnclaveRequest::Query(QueryRequest {
-            message: "".to_string(),
-        }))
-        .await
-        .expect("");
+        let ws_url = "ws://127.0.0.1/websocket"
+            .parse()
+            .expect("hardcoded correct URL");
+        let host = DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(
+            enclave,
+            DefaultChainClient::default(),
+        );
+        host.serve(ws_url).await?;
 
         Ok(())
     }
