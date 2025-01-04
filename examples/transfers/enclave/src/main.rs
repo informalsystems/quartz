@@ -23,13 +23,14 @@ use std::{
     time::Duration,
 };
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Error as AnyhowError};
 use clap::Parser;
 use cli::Cli;
 use cosmrs::AccountId;
+use cosmwasm_std::{Addr, HexBinary, Uint64};
 use k256::ecdsa::VerifyingKey;
 use quartz_common::{
-    contract::state::{Config, LightClientOpts},
+    contract::state::{Config, LightClientOpts, SEQUENCE_NUM_KEY},
     enclave::{
         attestor::{self, Attestor, DefaultAttestor},
         chain_client::ChainClient,
@@ -41,15 +42,22 @@ use quartz_common::{
         DefaultEnclave, Enclave,
     },
 };
+use serde_json::json;
 use tendermint_rpc::event::Event as TmEvent;
 use tokio::sync::mpsc;
 use tonic::{Request, Response, Status};
+use tracing::info;
+use transfers_contract::msg::{
+    execute::Request as TransferRequest,
+    QueryMsg::{GetRequests, GetState},
+};
 use transfers_server::{TransfersOp, TransfersService};
 
 use crate::{
     proto::{
         settlement_server::Settlement, QueryRequest, QueryResponse, UpdateRequest, UpdateResponse,
     },
+    transfers_server::{QueryRequestMessage, UpdateRequestMessage},
     wslistener::WsListener,
 };
 
@@ -205,7 +213,7 @@ pub struct TransferEvent {
 }
 
 impl TryFrom<TmEvent> for TransferEvent {
-    type Error = anyhow::Error;
+    type Error = AnyhowError;
 
     fn try_from(event: TmEvent) -> Result<Self, Self::Error> {
         let Some(events) = &event.events else {
@@ -231,17 +239,59 @@ impl TryFrom<TmEvent> for TransferEvent {
 #[async_trait::async_trait]
 impl<C> Handler<C> for TransferEvent
 where
-    C: ChainClient,
+    C: ChainClient<Contract = AccountId>,
 {
-    type Error = Status;
+    type Error = AnyhowError;
     type Response = UpdateRequest;
 
-    async fn handle(self, _ctx: &C) -> Result<Self::Response, Self::Error> {
-        // create request -
-        //   - query contract state
-        //   - query sequence number
-        //   - generate proof-of-publication
-        todo!()
+    async fn handle(self, ctx: &C) -> Result<Self::Response, Self::Error> {
+        let contract = self.contract;
+
+        // Query contract state
+        let requests: Vec<TransferRequest> = ctx
+            .query_contract(&contract, json!(GetRequests {}).to_string())
+            .await
+            .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
+
+        let state: HexBinary = ctx
+            .query_contract(&contract, json!(GetState {}).to_string())
+            .await
+            .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
+
+        let seq_num: Uint64 = ctx
+            .query_contract(&contract, SEQUENCE_NUM_KEY.to_string())
+            .await
+            .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
+
+        // Request body contents
+        let update_contents = UpdateRequestMessage {
+            state,
+            requests,
+            seq_num: seq_num.into(),
+        };
+
+        // Wait 2 blocks
+        info!("Waiting 2 blocks for light client proof");
+        ctx.wait_for_blocks(2)
+            .await
+            .map_err(|e| anyhow!("Problem waiting for proof: {}", e))?;
+
+        // Call tm prover with trusted hash and height
+        let proof = ctx
+            .existence_proof(&contract, "requests")
+            .await
+            .map_err(|e| anyhow!("Problem getting existence proof: {}", e))?;
+
+        // Merge the UpdateRequestMessage with the proof
+        let mut proof_json = serde_json::to_value(proof)?;
+        proof_json["msg"] = serde_json::to_value(&update_contents)?;
+
+        // Build final request object
+        let request = UpdateRequest {
+            message: json!(proof_json).to_string(),
+        };
+
+        Ok(request)
     }
 }
 
@@ -253,7 +303,7 @@ pub struct QueryEvent {
 }
 
 impl TryFrom<TmEvent> for QueryEvent {
-    type Error = anyhow::Error;
+    type Error = AnyhowError;
 
     fn try_from(event: TmEvent) -> Result<Self, Self::Error> {
         let Some(events) = &event.events else {
@@ -297,13 +347,37 @@ impl TryFrom<TmEvent> for QueryEvent {
 #[async_trait::async_trait]
 impl<C> Handler<C> for QueryEvent
 where
-    C: ChainClient,
+    C: ChainClient<Contract = AccountId>,
 {
-    type Error = Status;
+    type Error = AnyhowError;
     type Response = QueryRequest;
 
-    async fn handle(self, _ctx: &C) -> Result<Self::Response, Self::Error> {
-        todo!()
+    async fn handle(self, ctx: &C) -> Result<Self::Response, Self::Error> {
+        let QueryEvent {
+            contract,
+            sender,
+            ephemeral_pubkey,
+        } = self;
+
+        // Query contract state
+        let state: HexBinary = ctx
+            .query_contract(&contract, json!(GetState {}).to_string())
+            .await
+            .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
+
+        // Build request
+        let update_contents = QueryRequestMessage {
+            state,
+            address: Addr::unchecked(sender), // sender comes from TX event, therefore is checked
+            ephemeral_pubkey: HexBinary::from_hex(&ephemeral_pubkey)?,
+        };
+
+        // Send QueryRequestMessage to enclave over tonic gRPC client
+        let request = QueryRequest {
+            message: json!(update_contents).to_string(),
+        };
+
+        Ok(request)
     }
 }
 
@@ -330,9 +404,9 @@ impl TryFrom<TmEvent> for EnclaveEvent {
 #[async_trait::async_trait]
 impl<C> Handler<C> for EnclaveEvent
 where
-    C: ChainClient,
+    C: ChainClient<Contract = AccountId>,
 {
-    type Error = Status;
+    type Error = AnyhowError;
     type Response = EnclaveRequest;
 
     async fn handle(self, ctx: &C) -> Result<Self::Response, Self::Error> {
@@ -345,6 +419,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use cosmrs::crypto::secp256k1::SigningKey;
     use quartz_common::{
         enclave::{
             chain_client::default::DefaultChainClient,
@@ -380,9 +455,12 @@ mod tests {
         let ws_url = "ws://127.0.0.1/websocket"
             .parse()
             .expect("hardcoded correct URL");
+        let chain_grpc_url = "http://127.0.0.1:9090"
+            .parse()
+            .expect("hardcoded correct URL");
         let host = DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(
             enclave,
-            DefaultChainClient::default(),
+            DefaultChainClient::new(SigningKey::random(), chain_grpc_url),
         );
         host.serve(ws_url).await?;
 
