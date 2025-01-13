@@ -47,7 +47,7 @@ impl TryFrom<TmEvent> for TransferEvent {
 #[async_trait::async_trait]
 impl<C> Handler<C> for TransferEvent
 where
-    C: ChainClient<Contract = AccountId>,
+    C: ChainClient<Contract = AccountId, Query = String>,
 {
     type Error = AnyhowError;
     type Response = UpdateRequest;

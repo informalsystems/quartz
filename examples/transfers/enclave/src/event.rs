@@ -18,7 +18,7 @@ pub enum EnclaveEvent {
 }
 
 impl TryFrom<TmEvent> for EnclaveEvent {
-    type Error = ();
+    type Error = AnyhowError;
 
     fn try_from(value: TmEvent) -> Result<Self, Self::Error> {
         if let Ok(event) = TransferEvent::try_from(value.clone()) {
@@ -26,7 +26,7 @@ impl TryFrom<TmEvent> for EnclaveEvent {
         } else if let Ok(event) = QueryEvent::try_from(value) {
             Ok(Self::Query(event))
         } else {
-            Err(())
+            Err(anyhow::anyhow!("unsupported event"))
         }
     }
 }
@@ -34,7 +34,7 @@ impl TryFrom<TmEvent> for EnclaveEvent {
 #[async_trait::async_trait]
 impl<C> Handler<C> for EnclaveEvent
 where
-    C: ChainClient<Contract = AccountId>,
+    C: ChainClient<Contract = AccountId, Query = String>,
 {
     type Error = AnyhowError;
     type Response = EnclaveRequest;

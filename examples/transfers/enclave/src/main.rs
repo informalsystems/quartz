@@ -163,9 +163,10 @@ mod tests {
         let chain_grpc_url = "http://127.0.0.1:9090"
             .parse()
             .expect("hardcoded correct URL");
+        let chain_id = "testing".parse().expect("correct hardcoded chain_id");
         let host = DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(
             enclave,
-            DefaultChainClient::new(SigningKey::random(), chain_grpc_url),
+            DefaultChainClient::new(chain_id, SigningKey::random(), chain_grpc_url),
         );
         host.serve(ws_url).await?;
 

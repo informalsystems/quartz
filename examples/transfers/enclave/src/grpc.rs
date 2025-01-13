@@ -24,13 +24,19 @@ where
         &self,
         request: Request<UpdateRequest>,
     ) -> Result<Response<UpdateResponse>, Status> {
-        request.handle(self).await
+        let response = request.handle(self).await?;
+        Ok(response.map(|r| UpdateResponse {
+            message: serde_json::to_string(&r).unwrap(),
+        }))
     }
 
     async fn query(
         &self,
         request: Request<QueryRequest>,
     ) -> Result<Response<QueryResponse>, Status> {
-        request.handle(self).await
+        let response = request.handle(self).await?;
+        Ok(response.map(|r| QueryResponse {
+            message: serde_json::to_string(&r).unwrap(),
+        }))
     }
 }

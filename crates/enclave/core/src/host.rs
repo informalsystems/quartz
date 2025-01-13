@@ -1,8 +1,10 @@
 use std::marker::PhantomData;
 
 use anyhow::anyhow;
+use cosmrs::AccountId;
 use futures_util::StreamExt;
 use reqwest::Url;
+use serde::Serialize;
 use tendermint_rpc::{
     event::Event as TmEvent,
     query::{EventType, Query},
@@ -10,7 +12,7 @@ use tendermint_rpc::{
 };
 use tonic::Status;
 
-use crate::{chain_client::ChainClient, handler::Handler, Enclave};
+use crate::{chain_client::ChainClient, event::QuartzEvent, handler::Handler, Enclave};
 
 pub type Response<R, E> = <R as Handler<E>>::Response;
 
@@ -51,16 +53,17 @@ impl<E, C, R, EV> DefaultHost<E, C, R, EV> {
 impl<E, C, R, EV> Host for DefaultHost<E, C, R, EV>
 where
     E: Enclave,
-    C: ChainClient,
+    C: ChainClient<Contract = AccountId, Error = anyhow::Error>,
     R: Handler<E, Error = Status>,
+    <R as Handler<E>>::Response: Serialize + Send + Sync + 'static,
     EV: Handler<C, Response = R, Error = anyhow::Error>,
-    EV: TryFrom<TmEvent>,
+    EV: TryFrom<TmEvent, Error = anyhow::Error>,
     <EV as TryFrom<TmEvent>>::Error: Send + Sync + 'static,
 {
     type ChainClient = C;
     type Enclave = E;
     type Error = anyhow::Error;
-    type Event = EV;
+    type Event = QuartzEvent<EV>;
     type Request = R;
 
     async fn enclave_call(
@@ -81,10 +84,16 @@ where
         let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
         while let Some(Ok(event)) = subs.next().await {
             if let Ok(event) = Self::Event::try_from(event) {
-                let request = event.handle(&self.chain_client).await?;
-                let _response = self.enclave_call(request).await?;
+                let contract = event.contract.clone();
 
-                // TODO: send response to chain (in tx)
+                // TODO: check event contract matches stored contract
+                let request = event.handle(&self.chain_client).await?;
+                let response = self.enclave_call(request).await?;
+
+                // TODO: figure out gas config
+                let _output = self.chain_client.send_tx(&contract, response, 0, 0).await?;
+
+                // TODO: logging
             }
         }
 

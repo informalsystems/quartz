@@ -60,7 +60,7 @@ impl TryFrom<TmEvent> for QueryEvent {
 #[async_trait::async_trait]
 impl<C> Handler<C> for QueryEvent
 where
-    C: ChainClient<Contract = AccountId>,
+    C: ChainClient<Contract = AccountId, Query = String>,
 {
     type Error = AnyhowError;
     type Response = QueryRequest;
