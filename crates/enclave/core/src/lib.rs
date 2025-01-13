@@ -24,6 +24,7 @@ use crate::{
 pub mod attestor;
 pub mod chain_client;
 pub mod error;
+pub mod event;
 pub mod grpc;
 pub mod handler;
 pub mod host;
