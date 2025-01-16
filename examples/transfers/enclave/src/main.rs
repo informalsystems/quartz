@@ -21,34 +21,41 @@ pub mod state;
 pub mod transfers_server;
 pub mod wslistener;
 
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::time::Duration;
 
 use clap::Parser;
 use cli::Cli;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
-        attestor::{self, Attestor, DefaultAttestor},
-        server::{QuartzServer, WsListenerConfig},
+        attestor::{self, Attestor},
+        chain_client::default::DefaultChainClient,
+        host::{DefaultHost, Host},
+        DefaultSharedEnclave,
     },
+    proto::core_server::CoreServer,
 };
-use tokio::sync::mpsc;
-use transfers_server::{TransfersOp, TransfersService};
+use tonic::transport::Server;
 
-use crate::wslistener::WsListener;
+use crate::{
+    event::EnclaveEvent, proto::settlement_server::SettlementServer, request::EnclaveRequest,
+};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
-    let admin_sk = std::env::var("ADMIN_SK")
-        .map_err(|_| anyhow::anyhow!("Admin secret key not found in env vars"))?;
+    let sk = {
+        let sk = std::env::var("ADMIN_SK")
+            .map_err(|_| anyhow::anyhow!("Admin secret key not found in env vars"))?;
+        hex::decode(sk)?
+            .as_slice()
+            .try_into()
+            .map_err(|e| anyhow::anyhow!("failed to read/parse sk: {}", e))?
+    };
 
     let light_client_opts = LightClientOpts::new(
-        args.chain_id.clone(),
+        args.chain_id.to_string(),
         args.trusted_height.into(),
         Vec::from(args.trusted_hash)
             .try_into()
@@ -78,104 +85,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.dcap_verifier_contract.map(|c| c.to_string()),
     );
 
-    let ws_config = WsListenerConfig {
-        node_url: args.node_url,
-        ws_url: args.ws_url,
-        grpc_url: args.grpc_url,
-        tx_sender: args.tx_sender,
-        trusted_hash: args.trusted_hash,
-        trusted_height: args.trusted_height,
-        chain_id: args.chain_id,
-        admin_sk,
-    };
+    let enclave = DefaultSharedEnclave::shared(attestor, config, ());
 
-    // Event queue
-    let (tx, mut rx) = mpsc::channel::<TransfersOp<DefaultAttestor>>(1);
-    // Consumer task: dequeue and process events
-    tokio::spawn(async move {
-        while let Some(op) = rx.recv().await {
-            if let Err(e) = op.client.process(op.event, op.config).await {
-                println!("Error processing queued event: {}", e);
-            }
-        }
-    });
+    let host = DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(
+        enclave.clone(),
+        DefaultChainClient::new(args.chain_id, sk, args.grpc_url),
+    );
 
-    let contract = Arc::new(Mutex::new(None));
-    let sk = Arc::new(Mutex::new(None));
+    Server::builder()
+        .add_service(CoreServer::new(enclave.clone()))
+        .add_service(SettlementServer::new(enclave))
+        .serve(args.rpc_addr)
+        .await?;
 
-    QuartzServer::new(
-        config.clone(),
-        contract.clone(),
-        sk.clone(),
-        attestor.clone(),
-        ws_config,
-    )
-    .add_service(TransfersService::new(config, sk, contract, attestor, tx))
-    .serve(args.rpc_addr)
-    .await?;
+    host.serve(args.ws_url).await?;
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use std::time::Duration;
-
-    use cosmrs::crypto::secp256k1::SigningKey;
-    use quartz_common::{
-        enclave::{
-            attestor,
-            chain_client::default::DefaultChainClient,
-            host::{DefaultHost, Host},
-            key_manager::{default::DefaultKeyManager, shared::SharedKeyManager},
-            kv_store::{default::DefaultKvStore, shared::SharedKvStore},
-            DefaultEnclave,
-        },
-        proto::core_server::CoreServer,
-    };
-    use tokio::time::sleep;
-    use tonic::transport::Server;
-
-    use crate::{
-        event::EnclaveEvent, proto::settlement_server::SettlementServer, request::EnclaveRequest,
-    };
-
-    #[tokio::test]
-    async fn test_tonic_service() -> Result<(), Box<dyn std::error::Error>> {
-        let enclave = DefaultEnclave {
-            attestor: attestor::MockAttestor,
-            key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
-            store: SharedKvStore::wrapping(DefaultKvStore::default()),
-            ctx: (),
-        };
-
-        let host = {
-            let chain_grpc_url = "http://127.0.0.1:9090"
-                .parse()
-                .expect("hardcoded correct URL");
-            let chain_id = "testing".parse().expect("correct hardcoded chain_id");
-
-            DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(
-                enclave.clone(),
-                DefaultChainClient::new(chain_id, SigningKey::random(), chain_grpc_url),
-            )
-        };
-
-        let addr = "127.0.0.1:9095".parse().expect("hardcoded correct ip");
-        Server::builder()
-            .add_service(CoreServer::new(enclave.clone()))
-            .add_service(SettlementServer::new(enclave))
-            .serve_with_shutdown(addr, async {
-                sleep(Duration::from_secs(10)).await;
-                println!("Shutting down...");
-            })
-            .await?;
-
-        let ws_url = "ws://127.0.0.1/websocket"
-            .parse()
-            .expect("hardcoded correct URL");
-        host.serve(ws_url).await?;
-
-        Ok(())
-    }
 }
