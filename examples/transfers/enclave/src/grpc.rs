@@ -1,5 +1,5 @@
 use cosmrs::AccountId;
-use k256::ecdsa::VerifyingKey;
+use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::enclave::{
     attestor::Attestor,
     handler::Handler,
@@ -17,7 +17,7 @@ use crate::proto::{
 impl<A, K, S> Settlement for DefaultEnclave<A, K, S>
 where
     A: Attestor + Clone,
-    K: KeyManager<PubKey = VerifyingKey> + Clone,
+    K: KeyManager<PubKey = VerifyingKey, PrivKey = SigningKey> + Clone,
     S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
 {
     async fn run(

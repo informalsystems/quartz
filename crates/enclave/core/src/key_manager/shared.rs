@@ -20,6 +20,7 @@ impl<K> SharedKeyManager<K> {
 #[async_trait::async_trait]
 impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
     type PubKey = K::PubKey;
+    type PrivKey = K::PrivKey;
 
     async fn keygen(&mut self) {
         self.inner.write().await.keygen().await
@@ -27,5 +28,9 @@ impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
 
     async fn pub_key(&self) -> Option<Self::PubKey> {
         self.inner.read().await.pub_key().await
+    }
+
+    async fn priv_key(&self) -> Option<Self::PrivKey> {
+        self.inner.read().await.priv_key().await
     }
 }
