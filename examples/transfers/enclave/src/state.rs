@@ -4,7 +4,7 @@ use anyhow;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Default, Deserialize, Serialize)]
 pub struct State {
     pub state: BTreeMap<Addr, Uint128>,
 }

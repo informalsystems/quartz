@@ -1,6 +1,8 @@
+use cosmrs::AccountId;
+use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::{
     contract::msg::execute::attested::{HasUserData, RawMsgSansHandler},
-    enclave::{attestor::Attestor, handler::Handler, Enclave},
+    enclave::{attestor::Attestor, handler::Handler, key_manager::KeyManager, Enclave},
 };
 use tonic::Status;
 use transfers_contract::msg::{AttestedMsg, ExecuteMsg};
@@ -31,7 +33,11 @@ fn attested_msg<T: HasUserData + Clone, A: Attestor>(
 }
 
 #[async_trait::async_trait]
-impl<E: Enclave> Handler<E> for EnclaveRequest {
+impl<E: Enclave> Handler<E> for EnclaveRequest
+where
+    E: Enclave<Contract = AccountId>,
+    E::KeyManager: KeyManager<PubKey = VerifyingKey, PrivKey = SigningKey>,
+{
     type Error = Status;
     type Response = ExecuteMsg<<E::Attestor as Attestor>::RawAttestation>;
 
