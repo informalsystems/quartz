@@ -7,7 +7,7 @@ use quartz_common::enclave::{
     handler::Handler,
     key_manager::KeyManager,
     kv_store::{ConfigKey, ConfigKeyName, ContractKey, ContractKeyName, KvStore},
-    server::ProofOfPublication,
+    proof_of_publication::ProofOfPublication,
     DefaultSharedEnclave, Enclave,
 };
 use tonic::Status;

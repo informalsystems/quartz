@@ -17,7 +17,7 @@ use crate::{
     kv_store::{
         ConfigKey, ConfigKeyName, ContractKey, ContractKeyName, KvStore, NonceKey, NonceKeyName,
     },
-    server::ProofOfPublication,
+    proof_of_publication::ProofOfPublication,
     types::SessionSetPubKeyResponse,
     Enclave,
 };

@@ -27,14 +27,13 @@ use crate::{
 
 pub mod attestor;
 pub mod chain_client;
-pub mod error;
 pub mod event;
 pub mod grpc;
 pub mod handler;
 pub mod host;
 pub mod key_manager;
 pub mod kv_store;
-pub mod server;
+pub mod proof_of_publication;
 pub mod types;
 
 pub type DefaultSharedEnclave<C> = DefaultEnclave<
