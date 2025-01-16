@@ -1,8 +1,9 @@
-use cosmrs::AccountId;
 use cosmwasm_std::Uint128;
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
-use quartz_common::enclave::{handler::Handler, key_manager::KeyManager, Enclave};
+use quartz_common::enclave::{
+    handler::Handler, key_manager::KeyManager, DefaultSharedEnclave, Enclave,
+};
 use tonic::Status;
 use transfers_contract::msg::execute;
 
@@ -13,15 +14,11 @@ use crate::{
 };
 
 #[async_trait::async_trait]
-impl<E: Enclave> Handler<E> for QueryRequest
-where
-    E: Enclave<Contract = AccountId>,
-    E::KeyManager: KeyManager<PubKey = VerifyingKey, PrivKey = SigningKey>,
-{
+impl Handler<DefaultSharedEnclave> for QueryRequest {
     type Error = Status;
     type Response = execute::QueryResponseMsg;
 
-    async fn handle(self, ctx: &E) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &DefaultSharedEnclave) -> Result<Self::Response, Self::Error> {
         let message: QueryRequestMessage = {
             let message: String = self.message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?

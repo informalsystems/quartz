@@ -1,12 +1,4 @@
-use cosmrs::AccountId;
-use k256::ecdsa::{SigningKey, VerifyingKey};
-use quartz_common::enclave::{
-    attestor::Attestor,
-    handler::Handler,
-    key_manager::KeyManager,
-    kv_store::{ConfigKey, ContractKey, NonceKey, TypedStore},
-    DefaultEnclave,
-};
+use quartz_common::enclave::{handler::Handler, DefaultSharedEnclave};
 use tonic::{Request, Response, Status};
 
 use crate::proto::{
@@ -14,12 +6,7 @@ use crate::proto::{
 };
 
 #[tonic::async_trait]
-impl<A, K, S> Settlement for DefaultEnclave<A, K, S>
-where
-    A: Attestor + Clone,
-    K: KeyManager<PubKey = VerifyingKey, PrivKey = SigningKey> + Clone,
-    S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
-{
+impl Settlement for DefaultSharedEnclave {
     async fn run(
         &self,
         request: Request<UpdateRequest>,

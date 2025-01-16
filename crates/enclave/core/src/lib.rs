@@ -17,8 +17,11 @@ use serde::de::DeserializeOwned;
 
 use crate::{
     attestor::{Attestor, DefaultAttestor},
-    key_manager::{default::DefaultKeyManager, KeyManager},
-    kv_store::{default::DefaultKvStore, ConfigKey, ContractKey, NonceKey, TypedStore},
+    key_manager::{default::DefaultKeyManager, shared::SharedKeyManager, KeyManager},
+    kv_store::{
+        default::DefaultKvStore, shared::SharedKvStore, ConfigKey, ContractKey, NonceKey,
+        TypedStore,
+    },
 };
 
 pub mod attestor;
@@ -32,6 +35,12 @@ pub mod key_manager;
 pub mod kv_store;
 pub mod server;
 pub mod types;
+
+pub type DefaultSharedEnclave = DefaultEnclave<
+    DefaultAttestor,
+    SharedKeyManager<DefaultKeyManager>,
+    SharedKvStore<DefaultKvStore>,
+>;
 
 #[async_trait::async_trait]
 pub trait Enclave: Send + Sync + 'static {

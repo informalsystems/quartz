@@ -1,8 +1,6 @@
-use cosmrs::AccountId;
-use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::{
     contract::msg::execute::attested::{HasUserData, RawMsgSansHandler},
-    enclave::{attestor::Attestor, handler::Handler, key_manager::KeyManager, Enclave},
+    enclave::{attestor::Attestor, handler::Handler, DefaultSharedEnclave, Enclave},
 };
 use tonic::Status;
 use transfers_contract::msg::{AttestedMsg, ExecuteMsg};
@@ -33,15 +31,12 @@ fn attested_msg<T: HasUserData + Clone, A: Attestor>(
 }
 
 #[async_trait::async_trait]
-impl<E: Enclave> Handler<E> for EnclaveRequest
-where
-    E: Enclave<Contract = AccountId>,
-    E::KeyManager: KeyManager<PubKey = VerifyingKey, PrivKey = SigningKey>,
-{
+impl Handler<DefaultSharedEnclave> for EnclaveRequest {
     type Error = Status;
-    type Response = ExecuteMsg<<E::Attestor as Attestor>::RawAttestation>;
+    type Response =
+        ExecuteMsg<<<DefaultSharedEnclave as Enclave>::Attestor as Attestor>::RawAttestation>;
 
-    async fn handle(self, ctx: &E) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &DefaultSharedEnclave) -> Result<Self::Response, Self::Error> {
         let attestor = ctx.attestor().await;
         match self {
             EnclaveRequest::Update(request) => request

@@ -1,6 +1,5 @@
 use std::collections::btree_map::Entry;
 
-use cosmrs::AccountId;
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
@@ -9,7 +8,7 @@ use quartz_common::enclave::{
     key_manager::KeyManager,
     kv_store::{ConfigKey, ConfigKeyName, ContractKey, ContractKeyName, KvStore},
     server::ProofOfPublication,
-    Enclave,
+    DefaultSharedEnclave, Enclave,
 };
 use tonic::Status;
 use transfers_contract::{
@@ -27,15 +26,11 @@ use crate::{
 };
 
 #[async_trait::async_trait]
-impl<E: Enclave> Handler<E> for UpdateRequest
-where
-    E: Enclave<Contract = AccountId>,
-    E::KeyManager: KeyManager<PubKey = VerifyingKey, PrivKey = SigningKey>,
-{
+impl Handler<DefaultSharedEnclave> for UpdateRequest {
     type Error = Status;
     type Response = execute::UpdateMsg;
 
-    async fn handle(self, ctx: &E) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &DefaultSharedEnclave) -> Result<Self::Response, Self::Error> {
         // verify proof
         let proof: ProofOfPublication<UpdateRequestMessage> = {
             let message = self.message;
