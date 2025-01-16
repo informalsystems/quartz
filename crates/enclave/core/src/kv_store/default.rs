@@ -11,6 +11,16 @@ pub struct DefaultKvStore {
     nonce: Option<Nonce>,
 }
 
+impl DefaultKvStore {
+    pub fn new(config: Config) -> Self {
+        DefaultKvStore {
+            config: Some(config),
+            contract: None,
+            nonce: None,
+        }
+    }
+}
+
 #[derive(Debug, Display)]
 pub enum StoreError {}
 

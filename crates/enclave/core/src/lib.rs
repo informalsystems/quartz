@@ -13,6 +13,7 @@
 )]
 
 use cosmrs::AccountId;
+use quartz_contract_core::state::Config;
 use serde::de::DeserializeOwned;
 
 use crate::{
@@ -63,6 +64,17 @@ pub struct DefaultEnclave<C, A = DefaultAttestor, K = DefaultKeyManager, S = Def
     pub key_manager: K,
     pub store: S,
     pub ctx: C,
+}
+
+impl<C> DefaultSharedEnclave<C> {
+    pub fn shared(attestor: DefaultAttestor, config: Config, ctx: C) -> DefaultSharedEnclave<C> {
+        DefaultSharedEnclave {
+            attestor,
+            key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
+            store: SharedKvStore::wrapping(DefaultKvStore::new(config)),
+            ctx,
+        }
+    }
 }
 
 #[async_trait::async_trait]
