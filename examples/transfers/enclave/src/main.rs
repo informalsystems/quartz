@@ -142,16 +142,29 @@ mod tests {
 
     #[tokio::test]
     async fn test_tonic_service() -> Result<(), Box<dyn std::error::Error>> {
-        let addr = "127.0.0.1:9095".parse().expect("hardcoded correct ip");
         let enclave = DefaultEnclave {
             attestor: attestor::MockAttestor,
             key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
             store: SharedKvStore::wrapping(DefaultKvStore::default()),
             ctx: (),
         };
+
+        let host = {
+            let chain_grpc_url = "http://127.0.0.1:9090"
+                .parse()
+                .expect("hardcoded correct URL");
+            let chain_id = "testing".parse().expect("correct hardcoded chain_id");
+
+            DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(
+                enclave.clone(),
+                DefaultChainClient::new(chain_id, SigningKey::random(), chain_grpc_url),
+            )
+        };
+
+        let addr = "127.0.0.1:9095".parse().expect("hardcoded correct ip");
         Server::builder()
             .add_service(CoreServer::new(enclave.clone()))
-            .add_service(SettlementServer::new(enclave.clone()))
+            .add_service(SettlementServer::new(enclave))
             .serve_with_shutdown(addr, async {
                 sleep(Duration::from_secs(10)).await;
                 println!("Shutting down...");
@@ -161,14 +174,6 @@ mod tests {
         let ws_url = "ws://127.0.0.1/websocket"
             .parse()
             .expect("hardcoded correct URL");
-        let chain_grpc_url = "http://127.0.0.1:9090"
-            .parse()
-            .expect("hardcoded correct URL");
-        let chain_id = "testing".parse().expect("correct hardcoded chain_id");
-        let host = DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(
-            enclave,
-            DefaultChainClient::new(chain_id, SigningKey::random(), chain_grpc_url),
-        );
         host.serve(ws_url).await?;
 
         Ok(())
