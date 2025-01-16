@@ -87,7 +87,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let host = DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(
         enclave.clone(),
-        DefaultChainClient::new(args.chain_id, sk, args.grpc_url),
+        DefaultChainClient::new(
+            args.chain_id,
+            sk,
+            args.grpc_url,
+            args.node_url,
+            args.ws_url.clone(),
+            args.trusted_height,
+            args.trusted_hash,
+        ),
     );
 
     Server::builder()

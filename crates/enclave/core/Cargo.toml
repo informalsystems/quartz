@@ -55,5 +55,6 @@ cw-client.workspace = true
 quartz-cw-proof.workspace = true
 quartz-contract-core.workspace = true
 quartz-proto.workspace = true
+quartz-tm-prover.workspace = true
 quartz-tee-ra.workspace = true
 quartz-tm-stateless-verifier.workspace = true

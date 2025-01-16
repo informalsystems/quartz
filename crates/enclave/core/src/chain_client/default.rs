@@ -1,22 +1,45 @@
+use anyhow::anyhow;
 use cosmrs::{crypto::secp256k1::SigningKey, AccountId};
 use cw_client::{CwClient, GrpcClient};
+use futures_util::StreamExt;
+use quartz_tm_prover::{
+    config::{Config as TmProverConfig, ProofOutput},
+    prover::prove,
+};
 use reqwest::Url;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
-use tendermint::chain::Id as TmChainId;
+use tendermint::{block::Height, chain::Id as TmChainId, Hash};
+use tendermint_rpc::{query::EventType, SubscriptionClient, WebSocketClient};
 
 use crate::chain_client::ChainClient;
 
 pub struct DefaultChainClient {
     chain_id: TmChainId,
     grpc_client: GrpcClient,
+    node_url: Url,
+    ws_url: Url,
+    trusted_height: Height,
+    trusted_hash: Hash,
 }
 
 impl DefaultChainClient {
-    pub fn new(chain_id: TmChainId, signer: SigningKey, url: Url) -> Self {
+    pub fn new(
+        chain_id: TmChainId,
+        signer: SigningKey,
+        grpc_url: Url,
+        node_url: Url,
+        ws_url: Url,
+        trusted_height: Height,
+        trusted_hash: Hash,
+    ) -> Self {
         DefaultChainClient {
             chain_id,
-            grpc_client: GrpcClient::new(signer, url),
+            grpc_client: GrpcClient::new(signer, grpc_url),
+            node_url,
+            ws_url,
+            trusted_height,
+            trusted_hash,
         }
     }
 }
@@ -25,7 +48,7 @@ impl DefaultChainClient {
 impl ChainClient for DefaultChainClient {
     type Contract = AccountId;
     type Error = anyhow::Error;
-    type Proof = ();
+    type Proof = ProofOutput;
     type Query = String;
     type TxOutput = String;
 
@@ -41,10 +64,32 @@ impl ChainClient for DefaultChainClient {
 
     async fn existence_proof(
         &self,
-        _contract: &Self::Contract,
-        _storage_key: &str,
+        contract: &Self::Contract,
+        storage_key: &str,
     ) -> Result<Self::Proof, Self::Error> {
-        todo!()
+        let prover_config = TmProverConfig {
+            primary: self.node_url.as_str().parse()?,
+            witnesses: self.node_url.as_str().parse()?,
+            trusted_height: self.trusted_height,
+            trusted_hash: self.trusted_hash,
+            verbose: "1".parse()?,
+            contract_address: contract.clone(),
+            storage_key: storage_key.to_string(),
+            chain_id: self.chain_id.to_string(),
+            ..Default::default()
+        };
+
+        let proof_output = tokio::task::spawn_blocking(move || {
+            // Create a new runtime inside the blocking thread.
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async {
+                prove(prover_config)
+                    .await
+                    .map_err(|report| anyhow!("Tendermint prover failed. Report: {}", report))
+            })
+        })
+        .await??; // Handle both JoinError and your custom error
+        Ok(proof_output)
     }
 
     async fn send_tx<T: Serialize + Send + Sync>(
@@ -59,7 +104,30 @@ impl ChainClient for DefaultChainClient {
             .await
     }
 
-    async fn wait_for_blocks(&self, _blocks: u8) -> Result<Self::Proof, Self::Error> {
-        todo!()
+    async fn wait_for_blocks(&self, _blocks: u8) -> Result<(), Self::Error> {
+        let (client, driver) = WebSocketClient::new(self.ws_url.to_string().as_str()).await?;
+
+        let driver_handle = tokio::spawn(async move { driver.run().await });
+
+        // Subscription functionality
+        let mut subs = client.subscribe(EventType::NewBlock.into()).await?;
+
+        // Wait 2 NewBlock events
+        let mut ev_count = 2_i32;
+
+        while let Some(res) = subs.next().await {
+            let _ev = res?;
+            ev_count -= 1;
+            if ev_count == 0 {
+                break;
+            }
+        }
+
+        // Signal to the driver to terminate.
+        client.close()?;
+        // Await the driver's termination to ensure proper connection closure.
+        let _ = driver_handle.await?;
+
+        Ok(())
     }
 }

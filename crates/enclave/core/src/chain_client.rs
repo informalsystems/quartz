@@ -32,5 +32,5 @@ pub trait ChainClient: Send + Sync + 'static {
         fees: u128,
     ) -> Result<Self::TxOutput, Self::Error>;
 
-    async fn wait_for_blocks(&self, blocks: u8) -> Result<Self::Proof, Self::Error>;
+    async fn wait_for_blocks(&self, blocks: u8) -> Result<(), Self::Error>;
 }

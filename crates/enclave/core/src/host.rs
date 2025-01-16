@@ -87,6 +87,7 @@ where
                 let contract = event.contract.clone();
 
                 // TODO: check event contract matches stored contract
+                // TODO: ensure seq num consistency here?
                 let request = event.handle(&self.chain_client).await?;
                 let response = self.enclave_call(request).await?;
 

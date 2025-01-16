@@ -2741,6 +2741,7 @@ dependencies = [
  "quartz-cw-proof",
  "quartz-proto",
  "quartz-tee-ra",
+ "quartz-tm-prover",
  "quartz-tm-stateless-verifier",
  "rand",
  "reqwest 0.12.8",
