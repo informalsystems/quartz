@@ -36,7 +36,8 @@ pub mod kv_store;
 pub mod server;
 pub mod types;
 
-pub type DefaultSharedEnclave = DefaultEnclave<
+pub type DefaultSharedEnclave<C> = DefaultEnclave<
+    C,
     DefaultAttestor,
     SharedKeyManager<DefaultKeyManager>,
     SharedKvStore<DefaultKvStore>,
@@ -57,15 +58,17 @@ pub trait Enclave: Send + Sync + 'static {
 }
 
 #[derive(Clone, Debug)]
-pub struct DefaultEnclave<A = DefaultAttestor, K = DefaultKeyManager, S = DefaultKvStore> {
+pub struct DefaultEnclave<C, A = DefaultAttestor, K = DefaultKeyManager, S = DefaultKvStore> {
     pub attestor: A,
     pub key_manager: K,
     pub store: S,
+    pub ctx: C,
 }
 
 #[async_trait::async_trait]
-impl<A, K, S> Enclave for DefaultEnclave<A, K, S>
+impl<C, A, K, S> Enclave for DefaultEnclave<C, A, K, S>
 where
+    C: Send + Sync + 'static,
     A: Attestor + Clone,
     K: KeyManager + Clone,
     S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,

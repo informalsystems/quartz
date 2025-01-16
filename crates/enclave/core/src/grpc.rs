@@ -31,8 +31,9 @@ where
 }
 
 #[async_trait::async_trait]
-impl<A, K, S> Core for DefaultEnclave<A, K, S>
+impl<C, A, K, S> Core for DefaultEnclave<C, A, K, S>
 where
+    C: Send + Sync + 'static,
     A: Attestor + Clone,
     K: KeyManager<PubKey = VerifyingKey> + Clone,
     S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,

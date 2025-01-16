@@ -6,7 +6,7 @@ use crate::proto::{
 };
 
 #[tonic::async_trait]
-impl Settlement for DefaultSharedEnclave {
+impl Settlement for DefaultSharedEnclave<()> {
     async fn run(
         &self,
         request: Request<UpdateRequest>,

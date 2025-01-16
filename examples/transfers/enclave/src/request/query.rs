@@ -14,11 +14,11 @@ use crate::{
 };
 
 #[async_trait::async_trait]
-impl Handler<DefaultSharedEnclave> for QueryRequest {
+impl Handler<DefaultSharedEnclave<()>> for QueryRequest {
     type Error = Status;
     type Response = execute::QueryResponseMsg;
 
-    async fn handle(self, ctx: &DefaultSharedEnclave) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &DefaultSharedEnclave<()>) -> Result<Self::Response, Self::Error> {
         let message: QueryRequestMessage = {
             let message: String = self.message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?

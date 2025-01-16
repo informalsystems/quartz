@@ -31,12 +31,12 @@ fn attested_msg<T: HasUserData + Clone, A: Attestor>(
 }
 
 #[async_trait::async_trait]
-impl Handler<DefaultSharedEnclave> for EnclaveRequest {
+impl Handler<DefaultSharedEnclave<()>> for EnclaveRequest {
     type Error = Status;
     type Response =
-        ExecuteMsg<<<DefaultSharedEnclave as Enclave>::Attestor as Attestor>::RawAttestation>;
+        ExecuteMsg<<<DefaultSharedEnclave<()> as Enclave>::Attestor as Attestor>::RawAttestation>;
 
-    async fn handle(self, ctx: &DefaultSharedEnclave) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &DefaultSharedEnclave<()>) -> Result<Self::Response, Self::Error> {
         let attestor = ctx.attestor().await;
         match self {
             EnclaveRequest::Update(request) => request

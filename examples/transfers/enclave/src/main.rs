@@ -147,6 +147,7 @@ mod tests {
             attestor: attestor::MockAttestor,
             key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
             store: SharedKvStore::wrapping(DefaultKvStore::default()),
+            ctx: (),
         };
         Server::builder()
             .add_service(CoreServer::new(enclave.clone()))

@@ -26,11 +26,11 @@ use crate::{
 };
 
 #[async_trait::async_trait]
-impl Handler<DefaultSharedEnclave> for UpdateRequest {
+impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
     type Error = Status;
     type Response = execute::UpdateMsg;
 
-    async fn handle(self, ctx: &DefaultSharedEnclave) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &DefaultSharedEnclave<()>) -> Result<Self::Response, Self::Error> {
         // verify proof
         let proof: ProofOfPublication<UpdateRequestMessage> = {
             let message = self.message;
