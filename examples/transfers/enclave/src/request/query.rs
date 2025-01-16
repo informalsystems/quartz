@@ -1,17 +1,24 @@
-use cosmwasm_std::{HexBinary, Uint128};
+use cosmwasm_std::{Addr, HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::enclave::{
     handler::Handler, key_manager::KeyManager, DefaultSharedEnclave, Enclave,
 };
+use serde::{Deserialize, Serialize};
 use tonic::Status;
 use transfers_contract::msg::execute;
 
 use crate::{
-    event::query::QueryRequestMessage,
     proto::QueryRequest,
     state::{Balance, State},
 };
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct QueryRequestMessage {
+    pub state: HexBinary,
+    pub address: Addr,
+    pub ephemeral_pubkey: HexBinary,
+}
 
 #[async_trait::async_trait]
 impl Handler<DefaultSharedEnclave<()>> for QueryRequest {

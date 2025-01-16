@@ -2,19 +2,11 @@ use anyhow::{anyhow, Error as AnyhowError};
 use cosmrs::AccountId;
 use cosmwasm_std::{Addr, HexBinary};
 use quartz_common::enclave::{chain_client::ChainClient, handler::Handler};
-use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tendermint_rpc::event::Event as TmEvent;
 use transfers_contract::msg::QueryMsg::GetState;
 
-use crate::proto::QueryRequest;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct QueryRequestMessage {
-    pub state: HexBinary,
-    pub address: Addr,
-    pub ephemeral_pubkey: HexBinary,
-}
+use crate::{proto::QueryRequest, request::query::QueryRequestMessage};
 
 #[derive(Clone, Debug)]
 pub struct QueryEvent {

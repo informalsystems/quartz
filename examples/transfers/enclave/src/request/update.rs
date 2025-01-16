@@ -10,21 +10,26 @@ use quartz_common::enclave::{
     proof_of_publication::ProofOfPublication,
     DefaultSharedEnclave, Enclave,
 };
+use serde::{Deserialize, Serialize};
 use tonic::Status;
 use transfers_contract::{
-    msg::{
-        execute,
-        execute::{ClearTextTransferRequestMsg, Request as TransfersRequest},
-    },
+    msg::execute::{ClearTextTransferRequestMsg, Request as TransferRequest, UpdateMsg},
     state::REQUESTS_KEY,
 };
 
-use crate::{event::transfer::UpdateRequestMessage, proto::UpdateRequest, state::State};
+use crate::{proto::UpdateRequest, state::State};
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateRequestMessage {
+    pub state: HexBinary,
+    pub requests: Vec<TransferRequest>,
+    pub seq_num: u64,
+}
 
 #[async_trait::async_trait]
 impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
     type Error = Status;
-    type Response = execute::UpdateMsg;
+    type Response = UpdateMsg;
 
     async fn handle(self, ctx: &DefaultSharedEnclave<()>) -> Result<Self::Response, Self::Error> {
         // verify proof
@@ -89,7 +94,7 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
         // Loop through requests, match on cases, and apply changes to state
         for req in message.requests {
             match req {
-                TransfersRequest::Transfer(ciphertext) => {
+                TransferRequest::Transfer(ciphertext) => {
                     // TODO: ensure_seq_num_consistency(message.seq_num, pending_sequenced_requests)?;
 
                     // Decrypt transfer ciphertext into cleartext struct (acquires lock on enclave sk to do so)
@@ -117,14 +122,14 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
                         // TODO: handle errors
                     }
                 }
-                TransfersRequest::Withdraw(receiver) => {
+                TransferRequest::Withdraw(receiver) => {
                     // If a user with no balance requests withdraw, withdraw request for 0 coins gets processed
                     // TODO: A no-op seems like a bad design choice in a privacy system
                     if let Some(withdraw_bal) = state.state.remove(&receiver) {
                         withdrawals_response.push((receiver, withdraw_bal));
                     }
                 }
-                TransfersRequest::Deposit(sender, amount) => {
+                TransferRequest::Deposit(sender, amount) => {
                     state
                         .state
                         .entry(sender)
@@ -148,7 +153,7 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
         };
 
         // Prepare message to chain
-        let msg = execute::UpdateMsg {
+        let msg = UpdateMsg {
             ciphertext: state_enc,
             quantity: requests_len,
             withdrawals: withdrawals_response,
