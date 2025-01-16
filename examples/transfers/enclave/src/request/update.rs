@@ -19,11 +19,7 @@ use transfers_contract::{
     state::REQUESTS_KEY,
 };
 
-use crate::{
-    proto::UpdateRequest,
-    state::State,
-    transfers_server::{RawCipherText, UpdateRequestMessage},
-};
+use crate::{event::transfer::UpdateRequestMessage, proto::UpdateRequest, state::State};
 
 #[async_trait::async_trait]
 impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
@@ -179,7 +175,7 @@ fn decrypt_state(sk: &SigningKey, ciphertext: &[u8]) -> Result<State, Status> {
     serde_json::from_slice(&o).map_err(|e| Status::invalid_argument(e.to_string()))
 }
 
-fn encrypt_state(state: State, enclave_pk: VerifyingKey) -> Result<RawCipherText, Status> {
+fn encrypt_state(state: State, enclave_pk: VerifyingKey) -> Result<HexBinary, Status> {
     let serialized_state = serde_json::to_string(&state).expect("infallible serializer");
 
     match encrypt(&enclave_pk.to_sec1_bytes(), serialized_state.as_bytes()) {

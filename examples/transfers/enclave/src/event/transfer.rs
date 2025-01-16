@@ -5,6 +5,7 @@ use quartz_common::{
     contract::state::SEQUENCE_NUM_KEY,
     enclave::{chain_client::ChainClient, handler::Handler},
 };
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tendermint_rpc::event::Event as TmEvent;
 use tracing::info;
@@ -13,7 +14,14 @@ use transfers_contract::msg::{
     QueryMsg::{GetRequests, GetState},
 };
 
-use crate::{proto::UpdateRequest, transfers_server::UpdateRequestMessage};
+use crate::proto::UpdateRequest;
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateRequestMessage {
+    pub state: HexBinary,
+    pub requests: Vec<TransferRequest>,
+    pub seq_num: u64,
+}
 
 #[derive(Clone, Debug)]
 pub struct TransferEvent {

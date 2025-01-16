@@ -18,8 +18,6 @@ pub mod grpc;
 pub mod proto;
 pub mod request;
 pub mod state;
-pub mod transfers_server;
-pub mod wslistener;
 
 use std::time::Duration;
 

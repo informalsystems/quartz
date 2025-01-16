@@ -1,4 +1,4 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{HexBinary, Uint128};
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::enclave::{
@@ -8,9 +8,9 @@ use tonic::Status;
 use transfers_contract::msg::execute;
 
 use crate::{
+    event::query::QueryRequestMessage,
     proto::QueryRequest,
-    state::{RawBalance, State},
-    transfers_server::{QueryRequestMessage, RawCipherText},
+    state::{Balance, State},
 };
 
 #[async_trait::async_trait]
@@ -39,8 +39,8 @@ impl Handler<DefaultSharedEnclave<()>> for QueryRequest {
         };
 
         let bal = match state.state.get(&message.address) {
-            Some(balance) => RawBalance { balance: *balance },
-            None => RawBalance {
+            Some(balance) => Balance { balance: *balance },
+            None => Balance {
                 balance: Uint128::new(0),
             },
         };
@@ -71,10 +71,7 @@ fn decrypt_state(sk: &SigningKey, ciphertext: &[u8]) -> Result<State, Status> {
     serde_json::from_slice(&o).map_err(|e| Status::invalid_argument(e.to_string()))
 }
 
-fn encrypt_balance(
-    balance: RawBalance,
-    ephemeral_pk: VerifyingKey,
-) -> Result<RawCipherText, Status> {
+fn encrypt_balance(balance: Balance, ephemeral_pk: VerifyingKey) -> Result<HexBinary, Status> {
     let serialized_balance = serde_json::to_string(&balance).expect("infallible serializer");
 
     match encrypt(&ephemeral_pk.to_sec1_bytes(), serialized_balance.as_bytes()) {
