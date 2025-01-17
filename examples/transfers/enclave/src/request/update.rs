@@ -91,8 +91,6 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
         for req in message.requests {
             match req {
                 TransferRequest::Transfer(ciphertext) => {
-                    // TODO: ensure_seq_num_consistency(message.seq_num, pending_sequenced_requests)?;
-
                     // Decrypt transfer ciphertext into cleartext struct (acquires lock on enclave sk to do so)
                     let transfer: ClearTextTransferRequestMsg = {
                         let sk = ctx
@@ -115,7 +113,6 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
                                 .and_modify(|bal| *bal += transfer.amount)
                                 .or_insert(transfer.amount);
                         }
-                        // TODO: handle errors
                     }
                 }
                 TransferRequest::Withdraw(receiver) => {
@@ -136,7 +133,6 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
         }
 
         // Encrypt state
-        // Gets lock on PrivKey, generates PubKey to encrypt with
         let state_enc = {
             let pk = ctx
                 .key_manager()

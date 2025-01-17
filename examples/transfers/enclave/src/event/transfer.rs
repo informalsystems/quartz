@@ -58,12 +58,10 @@ where
             .query_contract(&contract, json!(GetRequests {}).to_string())
             .await
             .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-
         let state: HexBinary = ctx
             .query_contract(&contract, json!(GetState {}).to_string())
             .await
             .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
-
         let seq_num: Uint64 = ctx
             .query_contract(&contract, SEQUENCE_NUM_KEY.to_string())
             .await

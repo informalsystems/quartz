@@ -32,9 +32,7 @@ impl TryFrom<TmEvent> for QueryEvent {
         let contract = first_event_with_key(events, "execute._contract_address")?
             .parse::<AccountId>()
             .map_err(|e| anyhow!("failed to parse contract address: {}", e))?;
-
         let sender = first_event_with_key(events, "message.sender")?.to_owned();
-
         let ephemeral_pubkey =
             first_event_with_key(events, "wasm-query_balance.emphemeral_pubkey")?.to_owned();
 

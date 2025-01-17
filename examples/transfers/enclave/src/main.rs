@@ -82,28 +82,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.tcbinfo_contract.map(|c| c.to_string()),
         args.dcap_verifier_contract.map(|c| c.to_string()),
     );
+    let chain_client = DefaultChainClient::new(
+        args.chain_id,
+        sk,
+        args.grpc_url,
+        args.node_url,
+        args.ws_url.clone(),
+        args.trusted_height,
+        args.trusted_hash,
+    );
 
     let enclave = DefaultSharedEnclave::shared(attestor, config, ());
-
-    let host = DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(
-        enclave.clone(),
-        DefaultChainClient::new(
-            args.chain_id,
-            sk,
-            args.grpc_url,
-            args.node_url,
-            args.ws_url.clone(),
-            args.trusted_height,
-            args.trusted_hash,
-        ),
-    );
+    let host =
+        DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(enclave.clone(), chain_client);
 
     Server::builder()
         .add_service(CoreServer::new(enclave.clone()))
         .add_service(SettlementServer::new(enclave))
         .serve(args.rpc_addr)
         .await?;
-
     host.serve(args.ws_url).await?;
 
     Ok(())
