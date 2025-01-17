@@ -1,6 +1,5 @@
 use cosmwasm_std::{Addr, HexBinary, Uint128};
-use ecies::{decrypt, encrypt};
-use k256::ecdsa::{SigningKey, VerifyingKey};
+use k256::ecdsa::VerifyingKey;
 use quartz_common::enclave::{
     handler::Handler, key_manager::KeyManager, DefaultSharedEnclave, Enclave,
 };
@@ -10,6 +9,7 @@ use transfers_contract::msg::execute;
 
 use crate::{
     proto::QueryRequest,
+    request::{decrypt_state, encrypt_balance},
     state::{Balance, State},
 };
 
@@ -69,20 +69,5 @@ impl Handler<DefaultSharedEnclave<()>> for QueryRequest {
         };
 
         Ok(msg)
-    }
-}
-
-fn decrypt_state(sk: &SigningKey, ciphertext: &[u8]) -> Result<State, Status> {
-    let o =
-        decrypt(&sk.to_bytes(), ciphertext).map_err(|e| Status::invalid_argument(e.to_string()))?;
-    serde_json::from_slice(&o).map_err(|e| Status::invalid_argument(e.to_string()))
-}
-
-fn encrypt_balance(balance: Balance, ephemeral_pk: VerifyingKey) -> Result<HexBinary, Status> {
-    let serialized_balance = serde_json::to_string(&balance).expect("infallible serializer");
-
-    match encrypt(&ephemeral_pk.to_sec1_bytes(), serialized_balance.as_bytes()) {
-        Ok(encrypted_balance) => Ok(encrypted_balance.into()),
-        Err(e) => Err(Status::internal(format!("Encryption error: {}", e))),
     }
 }

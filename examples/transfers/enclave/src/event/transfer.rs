@@ -13,7 +13,9 @@ use transfers_contract::msg::{
     QueryMsg::{GetRequests, GetState},
 };
 
-use crate::{proto::UpdateRequest, request::update::UpdateRequestMessage};
+use crate::{
+    event::first_event_with_key, proto::UpdateRequest, request::update::UpdateRequestMessage,
+};
 
 #[derive(Clone, Debug)]
 pub struct TransferEvent {
@@ -32,11 +34,7 @@ impl TryFrom<TmEvent> for TransferEvent {
             return Err(anyhow!("irrelevant event"));
         };
 
-        let contract = events
-            .get("execute._contract_address")
-            .ok_or_else(|| anyhow!("missing execute._contract_address in events"))?
-            .first()
-            .ok_or_else(|| anyhow!("execute._contract_address is empty"))?
+        let contract = first_event_with_key(events, "execute._contract_address")?
             .parse::<AccountId>()
             .map_err(|e| anyhow!("failed to parse contract address: {}", e))?;
 

@@ -1,4 +1,6 @@
-use anyhow::Error as AnyhowError;
+use std::collections::BTreeMap;
+
+use anyhow::{anyhow, Error as AnyhowError};
 use cosmrs::AccountId;
 use quartz_common::enclave::{chain_client::ChainClient, handler::Handler};
 use tendermint_rpc::event::Event as TmEvent;
@@ -45,4 +47,15 @@ where
             EnclaveEvent::Query(event) => event.handle(ctx).await.map(EnclaveRequest::Query),
         }
     }
+}
+
+fn first_event_with_key<'a>(
+    events: &'a BTreeMap<String, Vec<String>>,
+    key: &str,
+) -> Result<&'a String, AnyhowError> {
+    events
+        .get(key)
+        .ok_or_else(|| anyhow!("missing execute._contract_address in events"))?
+        .first()
+        .ok_or_else(|| anyhow!("execute._contract_address is empty"))
 }

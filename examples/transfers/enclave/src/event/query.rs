@@ -6,7 +6,9 @@ use serde_json::json;
 use tendermint_rpc::event::Event as TmEvent;
 use transfers_contract::msg::QueryMsg::GetState;
 
-use crate::{proto::QueryRequest, request::query::QueryRequestMessage};
+use crate::{
+    event::first_event_with_key, proto::QueryRequest, request::query::QueryRequestMessage,
+};
 
 #[derive(Clone, Debug)]
 pub struct QueryEvent {
@@ -27,27 +29,14 @@ impl TryFrom<TmEvent> for QueryEvent {
             return Err(anyhow!("irrelevant event"));
         };
 
-        let contract = events
-            .get("execute._contract_address")
-            .ok_or_else(|| anyhow!("missing execute._contract_address in events"))?
-            .first()
-            .ok_or_else(|| anyhow!("execute._contract_address is empty"))?
+        let contract = first_event_with_key(events, "execute._contract_address")?
             .parse::<AccountId>()
             .map_err(|e| anyhow!("failed to parse contract address: {}", e))?;
 
-        let sender = events
-            .get("message.sender")
-            .ok_or_else(|| anyhow!("Missing message.sender in events"))?
-            .first()
-            .ok_or_else(|| anyhow!("execute.sender is empty"))?
-            .to_owned();
+        let sender = first_event_with_key(events, "message.sender")?.to_owned();
 
-        let ephemeral_pubkey = events
-            .get("wasm-query_balance.emphemeral_pubkey")
-            .ok_or_else(|| anyhow!("Missing wasm-query_balance.emphemeral_pubkey in events"))?
-            .first()
-            .ok_or_else(|| anyhow!("execute.query_balance.emphemeral_pubkey is empty"))?
-            .to_owned();
+        let ephemeral_pubkey =
+            first_event_with_key(events, "wasm-query_balance.emphemeral_pubkey")?.to_owned();
 
         Ok(QueryEvent {
             contract,

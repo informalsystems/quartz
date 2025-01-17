@@ -1,11 +1,17 @@
+use cosmwasm_std::HexBinary;
+use ecies::{decrypt, encrypt};
+use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::{
     contract::msg::execute::attested::{HasUserData, RawMsgSansHandler},
     enclave::{attestor::Attestor, handler::Handler, DefaultSharedEnclave, Enclave},
 };
 use tonic::Status;
-use transfers_contract::msg::{AttestedMsg, ExecuteMsg};
+use transfers_contract::msg::{execute::ClearTextTransferRequestMsg, AttestedMsg, ExecuteMsg};
 
-use crate::proto::{QueryRequest, UpdateRequest};
+use crate::{
+    proto::{QueryRequest, UpdateRequest},
+    state::{Balance, State},
+};
 
 pub mod query;
 pub mod update;
@@ -50,5 +56,40 @@ impl Handler<DefaultSharedEnclave<()>> for EnclaveRequest {
                 .map(|msg| attested_msg(msg, attestor))?
                 .map(ExecuteMsg::QueryResponse),
         }
+    }
+}
+
+fn decrypt_transfer(
+    sk: &SigningKey,
+    ciphertext: &HexBinary,
+) -> Result<ClearTextTransferRequestMsg, Status> {
+    let o =
+        decrypt(&sk.to_bytes(), ciphertext).map_err(|e| Status::invalid_argument(e.to_string()))?;
+
+    serde_json::from_slice(&o)
+        .map_err(|e| Status::internal(format!("Could not deserialize transfer {}", e)))
+}
+
+fn decrypt_state(sk: &SigningKey, ciphertext: &[u8]) -> Result<State, Status> {
+    let o =
+        decrypt(&sk.to_bytes(), ciphertext).map_err(|e| Status::invalid_argument(e.to_string()))?;
+    serde_json::from_slice(&o).map_err(|e| Status::invalid_argument(e.to_string()))
+}
+
+fn encrypt_state(state: State, enclave_pk: VerifyingKey) -> Result<HexBinary, Status> {
+    let serialized_state = serde_json::to_string(&state).expect("infallible serializer");
+
+    match encrypt(&enclave_pk.to_sec1_bytes(), serialized_state.as_bytes()) {
+        Ok(encrypted_state) => Ok(encrypted_state.into()),
+        Err(e) => Err(Status::internal(format!("Encryption error: {}", e))),
+    }
+}
+
+fn encrypt_balance(balance: Balance, ephemeral_pk: VerifyingKey) -> Result<HexBinary, Status> {
+    let serialized_balance = serde_json::to_string(&balance).expect("infallible serializer");
+
+    match encrypt(&ephemeral_pk.to_sec1_bytes(), serialized_balance.as_bytes()) {
+        Ok(encrypted_balance) => Ok(encrypted_balance.into()),
+        Err(e) => Err(Status::internal(format!("Encryption error: {}", e))),
     }
 }

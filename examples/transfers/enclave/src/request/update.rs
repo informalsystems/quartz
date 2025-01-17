@@ -1,8 +1,6 @@
 use std::collections::btree_map::Entry;
 
 use cosmwasm_std::{Addr, HexBinary, Uint128};
-use ecies::{decrypt, encrypt};
-use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::enclave::{
     handler::Handler,
     key_manager::KeyManager,
@@ -17,7 +15,11 @@ use transfers_contract::{
     state::REQUESTS_KEY,
 };
 
-use crate::{proto::UpdateRequest, state::State};
+use crate::{
+    proto::UpdateRequest,
+    request::{decrypt_state, decrypt_transfer, encrypt_state},
+    state::State,
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateRequestMessage {
@@ -84,12 +86,6 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
 
         // Instantiate empty withdrawals map to include in response (Update message to smart contract)
         let mut withdrawals_response: Vec<(Addr, Uint128)> = Vec::<(Addr, Uint128)>::new();
-
-        // let pending_sequenced_requests = message
-        //     .requests
-        //     .iter()
-        //     .filter(|req| matches!(req, TransfersRequest::Transfer(_)))
-        //     .count();
 
         // Loop through requests, match on cases, and apply changes to state
         for req in message.requests {
@@ -162,51 +158,3 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
         Ok(msg)
     }
 }
-
-fn decrypt_transfer(
-    sk: &SigningKey,
-    ciphertext: &HexBinary,
-) -> Result<ClearTextTransferRequestMsg, Status> {
-    let o =
-        decrypt(&sk.to_bytes(), ciphertext).map_err(|e| Status::invalid_argument(e.to_string()))?;
-
-    serde_json::from_slice(&o)
-        .map_err(|e| Status::internal(format!("Could not deserialize transfer {}", e)))
-}
-
-fn decrypt_state(sk: &SigningKey, ciphertext: &[u8]) -> Result<State, Status> {
-    let o =
-        decrypt(&sk.to_bytes(), ciphertext).map_err(|e| Status::invalid_argument(e.to_string()))?;
-    serde_json::from_slice(&o).map_err(|e| Status::invalid_argument(e.to_string()))
-}
-
-fn encrypt_state(state: State, enclave_pk: VerifyingKey) -> Result<HexBinary, Status> {
-    let serialized_state = serde_json::to_string(&state).expect("infallible serializer");
-
-    match encrypt(&enclave_pk.to_sec1_bytes(), serialized_state.as_bytes()) {
-        Ok(encrypted_state) => Ok(encrypted_state.into()),
-        Err(e) => Err(Status::internal(format!("Encryption error: {}", e))),
-    }
-}
-
-// fn ensure_seq_num_consistency(
-//     seq_num_in_store: &mut u64,
-//     seq_num_on_chain: u64,
-//     pending_sequenced_requests: usize,
-// ) -> Result<(), Status> {
-//     if seq_num_on_chain < *seq_num_in_store {
-//         return Err(Status::failed_precondition("replay attempted"));
-//     }
-//
-//     // make sure number of pending requests are equal to the diff b/w on-chain v/s in-mem seq num
-//     let seq_num_diff = seq_num_on_chain - *seq_num_in_store;
-//     if seq_num_diff != pending_sequenced_requests as u64 {
-//         return Err(Status::failed_precondition(format!(
-//             "seq_num_diff mismatch: num({seq_num_diff}) v/s diff({pending_sequenced_requests})"
-//         )));
-//     }
-//
-//     *seq_num_in_store = seq_num_on_chain;
-//
-//     Ok(())
-// }
