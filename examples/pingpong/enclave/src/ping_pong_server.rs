@@ -1,10 +1,13 @@
 use std::sync::{Arc, Mutex};
 
-use ping_pong_contract::msg::execute::{Ping, Pong};
 use cosmrs::AccountId;
 use cosmwasm_std::HexBinary;
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::SigningKey;
+use ping_pong_contract::{
+    msg::execute::{Ping, Pong},
+    state::PINGS_KEY,
+};
 use quartz_common::{
     contract::{msg::execute::attested::RawAttested, state::Config},
     enclave::{
@@ -45,6 +48,7 @@ pub struct PongOp<A: Attestor> {
 #[derive(Clone, Debug)]
 pub struct PingPongService<A: Attestor> {
     config: Config,
+    contract: Arc<Mutex<Option<AccountId>>>,
     sk: Arc<Mutex<Option<SigningKey>>>,
     attestor: A,
     pub queue_producer: Sender<PongOp<A>>,
@@ -56,12 +60,14 @@ where
 {
     pub fn new(
         config: Config,
+        contract: Arc<Mutex<Option<AccountId>>>,
         sk: Arc<Mutex<Option<SigningKey>>>,
         attestor: A,
         queue_producer: Sender<PongOp<A>>,
     ) -> Self {
         Self {
             config,
+            contract,
             sk,
             attestor,
             queue_producer,
@@ -81,8 +87,14 @@ where
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
 
+        let contract = self.contract.lock().unwrap().clone();
         let (proof_value, ping) = message
-            .verify(self.config.light_client_opts())
+            .verify(
+                self.config.light_client_opts(),
+                contract.expect("contract not set"),
+                PINGS_KEY.to_string(),
+                None,
+            )
             .map_err(Status::failed_precondition)?;
 
         // Verify that the ping.message contents match the value of the storage proof

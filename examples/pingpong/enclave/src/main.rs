@@ -18,10 +18,7 @@ pub mod proto;
 pub mod state;
 pub mod wslistener;
 
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::sync::{Arc, Mutex};
 
 use clap::Parser;
 use cli::Cli;
@@ -69,7 +66,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = Config::new(
         attestor.mr_enclave()?,
-        Duration::from_secs(30 * 24 * 60),
         light_client_opts,
         args.tcbinfo_contract.map(|c| c.to_string()),
         args.dcap_verifier_contract.map(|c| c.to_string()),
@@ -86,6 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         admin_sk,
     };
 
+    let contract = Arc::new(Mutex::new(None));
     let sk = Arc::new(Mutex::new(None));
 
     // Event queue
@@ -99,10 +96,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    QuartzServer::new(config.clone(), sk.clone(), attestor.clone(), ws_config)
-        .add_service(PingPongService::new(config, sk, attestor, tx))
-        .serve(args.rpc_addr)
-        .await?;
+    QuartzServer::new(
+        config.clone(),
+        contract.clone(),
+        sk.clone(),
+        attestor.clone(),
+        ws_config,
+    )
+    .add_service(PingPongService::new(config, sk, contract, attestor, tx))
+    .serve(args.rpc_addr)
+    .await?;
 
     Ok(())
 }
