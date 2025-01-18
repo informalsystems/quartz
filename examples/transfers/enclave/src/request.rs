@@ -2,7 +2,7 @@ use cosmwasm_std::HexBinary;
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
 use quartz_common::{
-    contract::msg::execute::attested::{HasUserData, RawMsgSansHandler},
+    contract::msg::execute::attested::{HasUserData, RawNoop},
     enclave::{
         attestor::{Attestor, DefaultAttestor},
         handler::Handler,
@@ -35,7 +35,7 @@ fn attested_msg<T: HasUserData + Clone, A: Attestor>(
         .map_err(|e| Status::internal(e.to_string()))?;
 
     Ok(AttestedMsg {
-        msg: RawMsgSansHandler(msg),
+        msg: RawNoop(msg),
         attestation: attestation.into(),
     })
 }

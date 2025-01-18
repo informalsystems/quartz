@@ -1,14 +1,14 @@
 use cosmwasm_schema::cw_serde;
 use quartz_common::contract::{
     msg::execute::{
-        attested::{RawAttested, RawDefaultAttestation, RawMsgSansHandler},
+        attested::{RawAttested, RawDefaultAttestation, RawNoop},
         sequenced::RawSequenced,
     },
     prelude::*,
 };
 
-pub type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawMsgSansHandler<M>, RA>;
-pub type SequencedMsg<M> = RawSequenced<RawMsgSansHandler<M>>;
+pub type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawNoop<M>, RA>;
+pub type SequencedMsg<M> = RawSequenced<RawNoop<M>>;
 
 #[cw_serde]
 pub struct InstantiateMsg<RA = RawDefaultAttestation> {
