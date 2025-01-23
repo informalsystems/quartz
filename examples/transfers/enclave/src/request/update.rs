@@ -4,7 +4,6 @@ use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_common::enclave::{
     handler::Handler,
     key_manager::KeyManager,
-    kv_store::{ConfigKey, ConfigKeyName, ContractKey, ContractKeyName, KvStore},
     proof_of_publication::ProofOfPublication,
     DefaultSharedEnclave, Enclave,
 };
@@ -40,16 +39,12 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
         let contract = ctx
-            .store()
-            .await
-            .get(ContractKey::new(ContractKeyName))
+            .get_contract()
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("contract not found"))?;
         let config = ctx
-            .store()
-            .await
-            .get(ConfigKey::new(ConfigKeyName))
+            .get_config()
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("config not found"))?;

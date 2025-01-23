@@ -14,9 +14,6 @@ use crate::{
     attestor::Attestor,
     handler::{Handler, A, RA},
     key_manager::KeyManager,
-    kv_store::{
-        ConfigKey, ConfigKeyName, ContractKey, ContractKeyName, KvStore, NonceKey, NonceKeyName,
-    },
     proof_of_publication::ProofOfPublication,
     types::SessionSetPubKeyResponse,
     Enclave,
@@ -36,16 +33,12 @@ where
         let proof: ProofOfPublication<Option<()>> = serde_json::from_str(&self.message)
             .map_err(|e| Status::invalid_argument(e.to_string()))?;
         let contract = ctx
-            .store()
-            .await
-            .get(ContractKey::new(ContractKeyName))
+            .get_contract()
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("contract not found"))?;
         let config = ctx
-            .store()
-            .await
-            .get(ConfigKey::new(ConfigKeyName))
+            .get_config()
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("config not found"))?;
@@ -61,9 +54,7 @@ where
         // make sure session nonce matches what we have locally
         let session: Session = serde_json::from_slice(&value).unwrap();
         let nonce = ctx
-            .store()
-            .await
-            .get(NonceKey::new(NonceKeyName))
+            .get_nonce()
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("nonce not found"))?;

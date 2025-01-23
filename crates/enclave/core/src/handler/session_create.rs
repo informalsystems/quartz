@@ -12,7 +12,6 @@ use tonic::Status;
 use crate::{
     attestor::Attestor,
     handler::{Handler, A, RA},
-    kv_store::{ContractKey, ContractKeyName, KvStore, NonceKey, NonceKeyName},
     types::SessionCreateResponse,
     Enclave,
 };
@@ -27,9 +26,7 @@ impl<E: Enclave> Handler<E> for RawSessionCreateRequest {
         let deployed_contract: E::Contract = serde_json::from_str(&self.message)
             .map_err(|e| Status::invalid_argument(e.to_string()))?;
         let prev_contract = ctx
-            .store()
-            .await
-            .set(ContractKey::new(ContractKeyName), deployed_contract.clone())
+            .set_contract(deployed_contract.clone())
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
         if prev_contract.is_some() {
@@ -41,9 +38,7 @@ impl<E: Enclave> Handler<E> for RawSessionCreateRequest {
         // generate nonce and store it
         let nonce = rand::thread_rng().gen::<Nonce>();
         let prev_nonce = ctx
-            .store()
-            .await
-            .set(NonceKey::new(NonceKeyName), nonce)
+            .set_nonce(nonce)
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
         if prev_nonce.is_some() {

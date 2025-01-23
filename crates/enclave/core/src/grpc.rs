@@ -1,4 +1,3 @@
-use cosmrs::AccountId;
 use k256::ecdsa::VerifyingKey;
 use quartz_proto::quartz::{
     core_server::Core, InstantiateRequest, InstantiateResponse, SessionCreateRequest,
@@ -6,13 +5,7 @@ use quartz_proto::quartz::{
 };
 use tonic::{Request, Response, Status};
 
-use crate::{
-    attestor::Attestor,
-    handler::Handler,
-    key_manager::KeyManager,
-    kv_store::{ConfigKey, ContractKey, NonceKey, TypedStore},
-    DefaultEnclave,
-};
+use crate::{attestor::Attestor, handler::Handler, key_manager::KeyManager, DefaultEnclave};
 
 #[async_trait::async_trait]
 impl<T, C> Handler<C> for Request<T>
@@ -31,12 +24,11 @@ where
 }
 
 #[async_trait::async_trait]
-impl<C, A, K, S> Core for DefaultEnclave<C, A, K, S>
+impl<C, A, K> Core for DefaultEnclave<C, A, K>
 where
     C: Send + Sync + 'static,
     A: Attestor + Clone,
     K: KeyManager<PubKey = VerifyingKey> + Clone,
-    S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
 {
     async fn instantiate(
         &self,
