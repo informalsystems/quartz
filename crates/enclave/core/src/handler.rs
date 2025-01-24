@@ -6,7 +6,7 @@ use quartz_proto::quartz::{
 };
 use tonic::Status;
 
-use crate::{attestor::Attestor, key_manager::KeyManager, Enclave};
+use crate::{attestor::Attestor, key_manager::KeyManager, store::Store, Enclave};
 
 pub type A<E> = <<E as Enclave>::Attestor as Attestor>::Attestation;
 pub type RA<E> = <<E as Enclave>::Attestor as Attestor>::RawAttestation;
@@ -40,8 +40,9 @@ pub enum CoreEnclaveResponse {
 #[async_trait::async_trait]
 impl<E: Enclave> Handler<E> for CoreEnclaveRequest
 where
-    E: Enclave<Contract = AccountId>,
+    E: Enclave,
     E::KeyManager: KeyManager<PubKey = VerifyingKey>,
+    E::Store: Store<Contract = AccountId>,
 {
     type Error = Status;
     type Response = CoreEnclaveResponse;

@@ -14,10 +14,8 @@ use crate::{
     attestor::Attestor,
     handler::{Handler, A, RA},
     key_manager::KeyManager,
-    kv_store::{
-        ConfigKey, ConfigKeyName, ContractKey, ContractKeyName, KvStore, NonceKey, NonceKeyName,
-    },
     proof_of_publication::ProofOfPublication,
+    store::Store,
     types::SessionSetPubKeyResponse,
     Enclave,
 };
@@ -25,8 +23,9 @@ use crate::{
 #[async_trait::async_trait]
 impl<E> Handler<E> for RawSessionSetPubKeyRequest
 where
-    E: Enclave<Contract = AccountId>,
+    E: Enclave,
     E::KeyManager: KeyManager<PubKey = VerifyingKey>,
+    E::Store: Store<Contract = AccountId>,
 {
     type Error = Status;
     type Response = RawSessionSetPubKeyResponse;
@@ -38,14 +37,14 @@ where
         let contract = ctx
             .store()
             .await
-            .get(ContractKey::new(ContractKeyName))
+            .get_contract()
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("contract not found"))?;
         let config = ctx
             .store()
             .await
-            .get(ConfigKey::new(ConfigKeyName))
+            .get_config()
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("config not found"))?;
@@ -63,7 +62,7 @@ where
         let nonce = ctx
             .store()
             .await
-            .get(NonceKey::new(NonceKeyName))
+            .get_nonce()
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("nonce not found"))?;

@@ -4,7 +4,6 @@ use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_common::enclave::{
     handler::Handler,
     key_manager::KeyManager,
-    kv_store::{ConfigKey, ConfigKeyName, ContractKey, ContractKeyName, KvStore},
     proof_of_publication::ProofOfPublication,
     DefaultSharedEnclave, Enclave,
 };
@@ -14,7 +13,7 @@ use transfers_contract::{
     msg::execute::{ClearTextTransferRequestMsg, Request as TransferRequest, UpdateMsg},
     state::REQUESTS_KEY,
 };
-
+use quartz_common::enclave::store::Store;
 use crate::{
     proto::UpdateRequest,
     request::{decrypt_state, decrypt_transfer, encrypt_state},
@@ -42,14 +41,14 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
         let contract = ctx
             .store()
             .await
-            .get(ContractKey::new(ContractKeyName))
+            .get_contract()
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("contract not found"))?;
         let config = ctx
             .store()
             .await
-            .get(ConfigKey::new(ConfigKeyName))
+            .get_config()
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("config not found"))?;

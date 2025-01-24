@@ -7,11 +7,7 @@ use quartz_proto::quartz::{
 use tonic::{Request, Response, Status};
 
 use crate::{
-    attestor::Attestor,
-    handler::Handler,
-    key_manager::KeyManager,
-    kv_store::{ConfigKey, ContractKey, NonceKey, TypedStore},
-    DefaultEnclave,
+    attestor::Attestor, handler::Handler, key_manager::KeyManager, store::Store, DefaultEnclave,
 };
 
 #[async_trait::async_trait]
@@ -36,7 +32,7 @@ where
     C: Send + Sync + 'static,
     A: Attestor + Clone,
     K: KeyManager<PubKey = VerifyingKey> + Clone,
-    S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
+    S: Store<Contract = AccountId> + Clone,
 {
     async fn instantiate(
         &self,

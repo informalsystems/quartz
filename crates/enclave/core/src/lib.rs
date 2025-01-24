@@ -14,15 +14,11 @@
 
 use cosmrs::AccountId;
 use quartz_contract_core::state::Config;
-use serde::de::DeserializeOwned;
 
 use crate::{
     attestor::{Attestor, DefaultAttestor},
     key_manager::{default::DefaultKeyManager, shared::SharedKeyManager, KeyManager},
-    kv_store::{
-        default::DefaultKvStore, shared::SharedKvStore, ConfigKey, ContractKey, NonceKey,
-        TypedStore,
-    },
+    store::{default::DefaultStore, shared::SharedStore, Store},
 };
 
 pub mod attestor;
@@ -32,25 +28,22 @@ pub mod grpc;
 pub mod handler;
 pub mod host;
 pub mod key_manager;
-pub mod kv_store;
 pub mod proof_of_publication;
+pub mod store;
 pub mod types;
 
 pub type DefaultSharedEnclave<C> = DefaultEnclave<
     C,
     DefaultAttestor,
     SharedKeyManager<DefaultKeyManager>,
-    SharedKvStore<DefaultKvStore>,
+    SharedStore<DefaultStore>,
 >;
 
 #[async_trait::async_trait]
 pub trait Enclave: Send + Sync + 'static {
     type Attestor: Attestor;
-    type Contract: DeserializeOwned + Clone + ToString + Send + Sync;
     type KeyManager: KeyManager;
-    type Store: TypedStore<ContractKey<Self::Contract>>
-        + TypedStore<NonceKey>
-        + TypedStore<ConfigKey>;
+    type Store: Store;
 
     async fn attestor(&self) -> Self::Attestor;
     async fn key_manager(&self) -> Self::KeyManager;
@@ -58,7 +51,7 @@ pub trait Enclave: Send + Sync + 'static {
 }
 
 #[derive(Clone, Debug)]
-pub struct DefaultEnclave<C, A = DefaultAttestor, K = DefaultKeyManager, S = DefaultKvStore> {
+pub struct DefaultEnclave<C, A = DefaultAttestor, K = DefaultKeyManager, S = DefaultStore> {
     pub attestor: A,
     pub key_manager: K,
     pub store: S,
@@ -70,7 +63,7 @@ impl<C> DefaultSharedEnclave<C> {
         DefaultSharedEnclave {
             attestor,
             key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
-            store: SharedKvStore::wrapping(DefaultKvStore::new(config)),
+            store: SharedStore::wrapping(DefaultStore::new(config)),
             ctx,
         }
     }
@@ -82,10 +75,9 @@ where
     C: Send + Sync + 'static,
     A: Attestor + Clone,
     K: KeyManager + Clone,
-    S: TypedStore<ContractKey<AccountId>> + TypedStore<NonceKey> + TypedStore<ConfigKey> + Clone,
+    S: Store<Contract = AccountId> + Clone,
 {
     type Attestor = A;
-    type Contract = AccountId;
     type KeyManager = K;
     type Store = S;
 
