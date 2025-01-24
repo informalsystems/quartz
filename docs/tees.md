@@ -2,7 +2,7 @@
 
 ## Why TEEs?
 
-TEEs allow you to do things that cryptography alone doesnt - like verifiable
+TEEs allow you to do things that cryptography alone doesn't - like verifiable
 data deletion, decentralized front-end hosting, collusion resistance, etc.
 
 They also let you overcome current deficiencies and inefficiencies in
