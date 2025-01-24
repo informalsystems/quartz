@@ -7,6 +7,7 @@ use tonic::Status;
 use crate::{
     attestor::Attestor,
     handler::{Handler, A, RA},
+    kv_store::{ConfigKey, ConfigKeyName, KvStore},
     types::InstantiateResponse,
     Enclave,
 };
@@ -19,7 +20,9 @@ impl<E: Enclave> Handler<E> for RawInstantiateRequest {
     async fn handle(self, ctx: &E) -> Result<Self::Response, Self::Error> {
         // create `CoreInstantiate` msg and attest to it
         let config = ctx
-            .get_config()
+            .store()
+            .await
+            .get(ConfigKey::new(ConfigKeyName))
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("config not found"))?;
