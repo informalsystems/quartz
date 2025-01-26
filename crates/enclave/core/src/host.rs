@@ -12,7 +12,9 @@ use tendermint_rpc::{
 };
 use tonic::Status;
 
-use crate::{chain_client::ChainClient, event::QuartzEvent, handler::Handler, Enclave};
+use crate::{
+    chain_client::ChainClient, event::QuartzEvent, handler::Handler, store::Store, Enclave,
+};
 
 pub type Response<R, E> = <R as Handler<E>>::Response;
 
@@ -59,6 +61,7 @@ where
 impl<E, C, R, EV, GF> Host for DefaultHost<E, C, R, EV, GF>
 where
     E: Enclave,
+    <E as Enclave>::Store: Store<Contract = AccountId>,
     C: ChainClient<Contract = AccountId, Error = anyhow::Error>,
     R: Handler<E, Error = Status>,
     <R as Handler<E>>::Response: Serialize + Send + Sync + 'static,
@@ -85,15 +88,27 @@ where
 
     async fn serve(self, url: Url) -> Result<(), Self::Error> {
         let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
-
         let driver_handle = tokio::spawn(async move { driver.run().await });
 
         let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
         while let Some(Ok(event)) = subs.next().await {
             if let Ok(event) = Self::Event::try_from(event) {
+                // Make sure the contract in the event is the same as the paired contract.
+                // This check is not really required since the proof-of-publication check will check
+                // if there is a mismatch anyway, but it allows us to short-circuit here.
                 let contract = event.contract.clone();
+                let expected_contract = self
+                    .enclave
+                    .store()
+                    .await
+                    .get_contract()
+                    .await
+                    .map_err(|_| anyhow!("contract read failure"))?
+                    .expect("contract must be set");
+                if contract != expected_contract {
+                    continue;
+                }
 
-                // TODO: check event contract matches stored contract
                 // TODO: ensure seq num consistency here?
                 let request = event.handle(&self.chain_client).await?;
                 let response = self.enclave_call(request).await?;
