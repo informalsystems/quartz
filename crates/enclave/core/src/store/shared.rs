@@ -52,4 +52,12 @@ where
     async fn set_nonce(&mut self, nonce: Nonce) -> Result<Option<Nonce>, Self::Error> {
         self.inner.write().await.set_nonce(nonce).await
     }
+
+    async fn get_seq_num(&self) -> Result<u64, Self::Error> {
+        self.inner.read().await.get_seq_num().await
+    }
+
+    async fn inc_seq_num(&mut self, count: usize) -> Result<u64, Self::Error> {
+        self.inner.write().await.inc_seq_num(count).await
+    }
 }

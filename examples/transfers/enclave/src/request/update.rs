@@ -2,8 +2,11 @@ use std::collections::btree_map::Entry;
 
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_common::enclave::{
-    handler::Handler, key_manager::KeyManager, proof_of_publication::ProofOfPublication,
-    store::Store, DefaultSharedEnclave, Enclave,
+    handler::{ensure_seq_num_consistency, Handler},
+    key_manager::KeyManager,
+    proof_of_publication::ProofOfPublication,
+    store::Store,
+    DefaultSharedEnclave, Enclave,
 };
 use serde::{Deserialize, Serialize};
 use tonic::Status;
@@ -63,6 +66,28 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
             serde_json::to_string(&message.requests).is_ok_and(|s| s.as_bytes() == proof_value);
         if !proof_value_matches_msg {
             return Err(Status::failed_precondition("proof verification"));
+        }
+
+        // ensure sequence number consistency
+        // TODO: move this into the core?
+        let pending_sequenced_requests = message
+            .requests
+            .iter()
+            .filter(|req| matches!(req, TransferRequest::Transfer(_)))
+            .count();
+        if pending_sequenced_requests > 0 {
+            let seq_num = ctx
+                .store()
+                .await
+                .get_seq_num()
+                .await
+                .map_err(|_| Status::internal("store read error"))?;
+            ensure_seq_num_consistency(seq_num, message.seq_num, pending_sequenced_requests)?;
+            ctx.store()
+                .await
+                .inc_seq_num(pending_sequenced_requests)
+                .await
+                .map_err(|_| Status::internal("store read error"))?;
         }
 
         // Decrypt and deserialize the state

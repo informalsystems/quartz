@@ -9,6 +9,7 @@ pub struct DefaultStore {
     config: Option<Config>,
     contract: Option<AccountId>,
     nonce: Option<Nonce>,
+    seq_num: u64,
 }
 
 impl DefaultStore {
@@ -17,6 +18,7 @@ impl DefaultStore {
             config: Some(config),
             contract: None,
             nonce: None,
+            seq_num: 0,
         }
     }
 }
@@ -54,5 +56,15 @@ impl Store for DefaultStore {
 
     async fn set_nonce(&mut self, nonce: Nonce) -> Result<Option<Nonce>, Self::Error> {
         Ok(self.nonce.replace(nonce))
+    }
+
+    async fn get_seq_num(&self) -> Result<u64, Self::Error> {
+        Ok(self.seq_num)
+    }
+
+    async fn inc_seq_num(&mut self, count: usize) -> Result<u64, Self::Error> {
+        let prev_seq_num = self.seq_num;
+        self.seq_num = self.seq_num + (count as u64);
+        Ok(prev_seq_num)
     }
 }

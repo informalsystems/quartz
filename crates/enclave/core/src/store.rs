@@ -17,4 +17,6 @@ pub trait Store: Send + Sync + 'static {
     ) -> Result<Option<Self::Contract>, Self::Error>;
     async fn get_nonce(&self) -> Result<Option<Nonce>, Self::Error>;
     async fn set_nonce(&mut self, nonce: Nonce) -> Result<Option<Nonce>, Self::Error>;
+    async fn get_seq_num(&self) -> Result<u64, Self::Error>;
+    async fn inc_seq_num(&mut self, count: usize) -> Result<u64, Self::Error>;
 }

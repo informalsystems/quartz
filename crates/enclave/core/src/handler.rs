@@ -63,3 +63,23 @@ where
         }
     }
 }
+
+pub fn ensure_seq_num_consistency(
+    seq_num_in_store: u64,
+    seq_num_on_chain: u64,
+    pending_sequenced_requests: usize,
+) -> Result<(), Status> {
+    if seq_num_on_chain < seq_num_in_store {
+        return Err(Status::failed_precondition("replay attempted"));
+    }
+
+    // make sure number of pending requests are equal to the diff b/w on-chain v/s in-mem seq num
+    let seq_num_diff = seq_num_on_chain - seq_num_in_store;
+    if seq_num_diff != pending_sequenced_requests as u64 {
+        return Err(Status::failed_precondition(&format!(
+            "seq_num_diff mismatch: num({seq_num_diff}) v/s diff({pending_sequenced_requests})"
+        )));
+    }
+
+    Ok(())
+}
