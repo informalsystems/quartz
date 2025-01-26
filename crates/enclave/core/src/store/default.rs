@@ -51,7 +51,7 @@ impl Store for DefaultStore {
     }
 
     async fn get_nonce(&self) -> Result<Option<Nonce>, Self::Error> {
-        Ok(self.nonce.clone())
+        Ok(self.nonce)
     }
 
     async fn set_nonce(&mut self, nonce: Nonce) -> Result<Option<Nonce>, Self::Error> {
@@ -64,7 +64,7 @@ impl Store for DefaultStore {
 
     async fn inc_seq_num(&mut self, count: usize) -> Result<u64, Self::Error> {
         let prev_seq_num = self.seq_num;
-        self.seq_num = self.seq_num + (count as u64);
+        self.seq_num += count as u64;
         Ok(prev_seq_num)
     }
 }

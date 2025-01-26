@@ -112,7 +112,7 @@ where
                 // TODO: ensure seq num consistency here?
                 let request = event.handle(&self.chain_client).await?;
                 let response = self.enclave_call(request).await?;
-                let tx_config = (&self.gas_fn)(&response);
+                let tx_config = (self.gas_fn)(&response);
                 let _output = self
                     .chain_client
                     .send_tx(&contract, response, tx_config)
