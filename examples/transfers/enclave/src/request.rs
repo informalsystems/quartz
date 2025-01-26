@@ -20,6 +20,8 @@ use crate::{
 pub mod query;
 pub mod update;
 
+pub type EnclaveResponse = ExecuteMsg<<DefaultAttestor as Attestor>::RawAttestation>;
+
 #[derive(Clone, Debug)]
 pub enum EnclaveRequest {
     Update(UpdateRequest),
@@ -43,7 +45,7 @@ fn attested_msg<T: HasUserData + Clone, A: Attestor>(
 #[async_trait::async_trait]
 impl Handler<DefaultSharedEnclave<()>> for EnclaveRequest {
     type Error = Status;
-    type Response = ExecuteMsg<<DefaultAttestor as Attestor>::RawAttestation>;
+    type Response = EnclaveResponse;
 
     async fn handle(self, ctx: &DefaultSharedEnclave<()>) -> Result<Self::Response, Self::Error> {
         let attestor = ctx.attestor().await;

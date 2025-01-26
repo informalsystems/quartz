@@ -33,24 +33,30 @@ pub trait Host: Send + Sync + 'static + Sized {
 }
 
 #[derive(Clone, Debug)]
-pub struct DefaultHost<E, C, R, EV> {
+pub struct DefaultHost<E, C, R, EV, GF> {
     enclave: E,
     chain_client: C,
+    gas_fn: GF,
     _phantom: PhantomData<(R, EV)>,
 }
 
-impl<E, C, R, EV> DefaultHost<E, C, R, EV> {
-    pub fn new(enclave: E, chain_client: C) -> Self {
+impl<E, C, R, EV, GF> DefaultHost<E, C, R, EV, GF>
+where
+    R: Handler<E>,
+    C: ChainClient,
+{
+    pub fn new(enclave: E, chain_client: C, gas_fn: GF) -> Self {
         Self {
             enclave,
             chain_client,
+            gas_fn,
             _phantom: Default::default(),
         }
     }
 }
 
 #[async_trait::async_trait]
-impl<E, C, R, EV> Host for DefaultHost<E, C, R, EV>
+impl<E, C, R, EV, GF> Host for DefaultHost<E, C, R, EV, GF>
 where
     E: Enclave,
     C: ChainClient<Contract = AccountId, Error = anyhow::Error>,
@@ -59,6 +65,7 @@ where
     EV: Handler<C, Response = R, Error = anyhow::Error>,
     EV: TryFrom<TmEvent, Error = anyhow::Error>,
     <EV as TryFrom<TmEvent>>::Error: Send + Sync + 'static,
+    GF: Fn(&<R as Handler<E>>::Response) -> <C as ChainClient>::TxConfig + Send + Sync + 'static,
 {
     type ChainClient = C;
     type Enclave = E;
@@ -90,10 +97,11 @@ where
                 // TODO: ensure seq num consistency here?
                 let request = event.handle(&self.chain_client).await?;
                 let response = self.enclave_call(request).await?;
-
-                // TODO: figure out gas config
-                let _output = self.chain_client.send_tx(&contract, response, 0, 0).await?;
-
+                let tx_config = (&self.gas_fn)(&response);
+                let _output = self
+                    .chain_client
+                    .send_tx(&contract, response, tx_config)
+                    .await?;
                 // TODO: logging
             }
         }

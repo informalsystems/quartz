@@ -2,10 +2,8 @@ use std::collections::btree_map::Entry;
 
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_common::enclave::{
-    handler::Handler,
-    key_manager::KeyManager,
-    proof_of_publication::ProofOfPublication,
-    DefaultSharedEnclave, Enclave,
+    handler::Handler, key_manager::KeyManager, proof_of_publication::ProofOfPublication,
+    store::Store, DefaultSharedEnclave, Enclave,
 };
 use serde::{Deserialize, Serialize};
 use tonic::Status;
@@ -13,7 +11,7 @@ use transfers_contract::{
     msg::execute::{ClearTextTransferRequestMsg, Request as TransferRequest, UpdateMsg},
     state::REQUESTS_KEY,
 };
-use quartz_common::enclave::store::Store;
+
 use crate::{
     proto::UpdateRequest,
     request::{decrypt_state, decrypt_transfer, encrypt_state},

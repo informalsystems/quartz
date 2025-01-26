@@ -10,6 +10,7 @@ pub trait ChainClient: Send + Sync + 'static {
     type Error: Display + Send + Sync + 'static;
     type Proof: Serialize + Send + Sync + 'static;
     type Query: Serialize + Send + Sync + 'static;
+    type TxConfig: Send + Sync + 'static;
     type TxOutput: Send + Sync + 'static;
 
     async fn query_contract<R: DeserializeOwned + Default>(
@@ -28,8 +29,7 @@ pub trait ChainClient: Send + Sync + 'static {
         &self,
         contract: &Self::Contract,
         tx: T,
-        gas: u64,
-        fees: u128,
+        config: Self::TxConfig,
     ) -> Result<Self::TxOutput, Self::Error>;
 
     async fn wait_for_blocks(&self, blocks: u8) -> Result<(), Self::Error>;

@@ -27,7 +27,7 @@ use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{self, Attestor},
-        chain_client::default::DefaultChainClient,
+        chain_client::default::{DefaultChainClient, DefaultTxConfig},
         host::{DefaultHost, Host},
         DefaultSharedEnclave,
     },
@@ -36,7 +36,9 @@ use quartz_common::{
 use tonic::transport::Server;
 
 use crate::{
-    event::EnclaveEvent, proto::settlement_server::SettlementServer, request::EnclaveRequest,
+    event::EnclaveEvent,
+    proto::settlement_server::SettlementServer,
+    request::{EnclaveRequest, EnclaveResponse},
 };
 
 #[tokio::main(flavor = "current_thread")]
@@ -93,8 +95,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let enclave = DefaultSharedEnclave::shared(attestor, config, ());
-    let host =
-        DefaultHost::<_, _, EnclaveRequest, EnclaveEvent>::new(enclave.clone(), chain_client);
+    let host = DefaultHost::<_, _, EnclaveRequest, EnclaveEvent, _>::new(
+        enclave.clone(),
+        chain_client,
+        gas_fn,
+    );
 
     Server::builder()
         .add_service(CoreServer::new(enclave.clone()))
@@ -104,4 +109,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     host.serve(args.ws_url).await?;
 
     Ok(())
+}
+
+fn gas_fn(response: &EnclaveResponse) -> DefaultTxConfig {
+    if matches!(
+        response,
+        EnclaveResponse::Update(_) | EnclaveResponse::QueryResponse(_)
+    ) {
+        DefaultTxConfig {
+            gas: 2000000,
+            amount: "11000untrn".to_string(),
+        }
+    } else {
+        unreachable!()
+    }
 }

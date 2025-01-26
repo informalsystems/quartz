@@ -50,6 +50,7 @@ impl ChainClient for DefaultChainClient {
     type Error = anyhow::Error;
     type Proof = ProofOutput;
     type Query = String;
+    type TxConfig = DefaultTxConfig;
     type TxOutput = String;
 
     async fn query_contract<R: DeserializeOwned + Default>(
@@ -96,11 +97,17 @@ impl ChainClient for DefaultChainClient {
         &self,
         contract: &Self::Contract,
         tx: T,
-        gas: u64,
-        _fees: u128,
+        config: Self::TxConfig,
     ) -> Result<Self::TxOutput, Self::Error> {
         self.grpc_client
-            .tx_execute(contract, &self.chain_id, gas, "", json!(tx), "")
+            .tx_execute(
+                contract,
+                &self.chain_id,
+                config.gas,
+                "",
+                json!(tx),
+                &config.amount,
+            )
             .await
     }
 
@@ -130,4 +137,9 @@ impl ChainClient for DefaultChainClient {
 
         Ok(())
     }
+}
+
+pub struct DefaultTxConfig {
+    pub gas: u64,
+    pub amount: String,
 }
