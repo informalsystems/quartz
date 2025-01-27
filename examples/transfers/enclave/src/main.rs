@@ -101,11 +101,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         gas_fn,
     );
 
-    Server::builder()
-        .add_service(CoreServer::new(enclave.clone()))
-        .add_service(SettlementServer::new(enclave))
-        .serve(args.rpc_addr)
-        .await?;
+    tokio::spawn(async move {
+        Server::builder()
+            .add_service(CoreServer::new(enclave.clone()))
+            .add_service(SettlementServer::new(enclave))
+            .serve(args.rpc_addr)
+            .await
+    });
     host.serve(args.ws_url).await?;
 
     Ok(())
