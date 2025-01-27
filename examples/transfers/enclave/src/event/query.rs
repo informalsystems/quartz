@@ -1,7 +1,10 @@
 use anyhow::{anyhow, Error as AnyhowError};
 use cosmrs::AccountId;
 use cosmwasm_std::{Addr, HexBinary};
-use quartz_common::enclave::{chain_client::ChainClient, handler::Handler};
+use quartz_common::enclave::{
+    chain_client::{default::Query, ChainClient},
+    handler::Handler,
+};
 use serde_json::json;
 use tendermint_rpc::event::Event as TmEvent;
 use transfers_contract::msg::QueryMsg::GetState;
@@ -47,7 +50,7 @@ impl TryFrom<TmEvent> for QueryEvent {
 #[async_trait::async_trait]
 impl<C> Handler<C> for QueryEvent
 where
-    C: ChainClient<Contract = AccountId, Query = String>,
+    C: ChainClient<Contract = AccountId, Query = Query>,
 {
     type Error = AnyhowError;
     type Response = QueryRequest;
@@ -61,7 +64,7 @@ where
 
         // Query contract state
         let state: HexBinary = ctx
-            .query_contract(&contract, json!(GetState {}).to_string())
+            .query_contract(&contract, json!(GetState {}))
             .await
             .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
 

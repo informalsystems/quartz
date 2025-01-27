@@ -2,7 +2,10 @@ use std::collections::BTreeMap;
 
 use anyhow::{anyhow, Error as AnyhowError};
 use cosmrs::AccountId;
-use quartz_common::enclave::{chain_client::ChainClient, handler::Handler};
+use quartz_common::enclave::{
+    chain_client::{default::Query, ChainClient},
+    handler::Handler,
+};
 use tendermint_rpc::event::Event as TmEvent;
 
 use crate::{
@@ -36,7 +39,7 @@ impl TryFrom<TmEvent> for EnclaveEvent {
 #[async_trait::async_trait]
 impl<C> Handler<C> for EnclaveEvent
 where
-    C: ChainClient<Contract = AccountId, Query = String>,
+    C: ChainClient<Contract = AccountId, Query = Query>,
 {
     type Error = AnyhowError;
     type Response = EnclaveRequest;

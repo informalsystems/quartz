@@ -3,7 +3,10 @@ use cosmrs::AccountId;
 use cosmwasm_std::{HexBinary, Uint64};
 use quartz_common::{
     contract::state::SEQUENCE_NUM_KEY,
-    enclave::{chain_client::ChainClient, handler::Handler},
+    enclave::{
+        chain_client::{default::Query, ChainClient},
+        handler::Handler,
+    },
 };
 use serde_json::json;
 use tendermint_rpc::event::Event as TmEvent;
@@ -45,7 +48,7 @@ impl TryFrom<TmEvent> for TransferEvent {
 #[async_trait::async_trait]
 impl<C> Handler<C> for TransferEvent
 where
-    C: ChainClient<Contract = AccountId, Query = String>,
+    C: ChainClient<Contract = AccountId, Query = Query>,
 {
     type Error = AnyhowError;
     type Response = UpdateRequest;
@@ -55,11 +58,11 @@ where
 
         // Query contract state
         let requests: Vec<TransferRequest> = ctx
-            .query_contract(&contract, json!(GetRequests {}).to_string())
+            .query_contract(&contract, json!(GetRequests {}))
             .await
             .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
         let state: HexBinary = ctx
-            .query_contract(&contract, json!(GetState {}).to_string())
+            .query_contract(&contract, json!(GetState {}))
             .await
             .map_err(|e| anyhow!("Problem querying contract state: {}", e))?;
         let seq_num: Uint64 = ctx

@@ -8,7 +8,7 @@ use quartz_tm_prover::{
 };
 use reqwest::Url;
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
 use tendermint::{block::Height, chain::Id as TmChainId, Hash};
 use tendermint_rpc::{query::EventType, SubscriptionClient, WebSocketClient};
 
@@ -44,23 +44,41 @@ impl DefaultChainClient {
     }
 }
 
+pub enum Query {
+    Json(Value),
+    String(String),
+}
+
+impl From<Value> for Query {
+    fn from(value: Value) -> Self {
+        Self::Json(value)
+    }
+}
+
+impl From<String> for Query {
+    fn from(value: String) -> Self {
+        Self::String(value)
+    }
+}
+
 #[async_trait::async_trait]
 impl ChainClient for DefaultChainClient {
     type Contract = AccountId;
     type Error = anyhow::Error;
     type Proof = ProofOutput;
-    type Query = String;
+    type Query = Query;
     type TxConfig = DefaultTxConfig;
     type TxOutput = String;
 
-    async fn query_contract<R: DeserializeOwned + Default>(
+    async fn query_contract<R: DeserializeOwned + Default + Send>(
         &self,
         contract: &Self::Contract,
-        query: String,
+        query: impl Into<Self::Query> + Send,
     ) -> Result<R, Self::Error> {
-        self.grpc_client
-            .query_raw(contract, query.to_string())
-            .await
+        match query.into() {
+            Query::Json(q) => self.grpc_client.query_smart(contract, q).await,
+            Query::String(q) => self.grpc_client.query_raw(contract, q).await,
+        }
     }
 
     async fn existence_proof(
