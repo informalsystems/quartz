@@ -21,10 +21,6 @@ where
             return Err(anyhow!("no events in tx"));
         };
 
-        if !events.keys().any(|k| k.starts_with("wasm-transfer.action")) {
-            return Err(anyhow!("irrelevant event"));
-        };
-
         let contract = events
             .get("execute._contract_address")
             .ok_or_else(|| anyhow!("missing execute._contract_address in events"))?

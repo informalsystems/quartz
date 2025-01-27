@@ -28,10 +28,6 @@ impl TryFrom<TmEvent> for QueryEvent {
             return Err(anyhow!("no events in tx"));
         };
 
-        if !events.keys().any(|k| k.starts_with("wasm-transfer.action")) {
-            return Err(anyhow!("irrelevant event"));
-        };
-
         let contract = first_event_with_key(events, "execute._contract_address")?
             .parse::<AccountId>()
             .map_err(|e| anyhow!("failed to parse contract address: {}", e))?;
