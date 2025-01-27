@@ -30,6 +30,7 @@ ecies.workspace = true
 futures-util.workspace = true
 hex.workspace = true
 k256.workspace = true
+log.workspace = true
 rand.workspace = true
 reqwest = { workspace = true, features = ["blocking"] }
 serde.workspace = true

@@ -1,8 +1,9 @@
-use std::marker::PhantomData;
+use std::{fmt::Display, marker::PhantomData};
 
 use anyhow::anyhow;
 use cosmrs::AccountId;
 use futures_util::StreamExt;
+use log::{error, info, trace};
 use reqwest::Url;
 use serde::Serialize;
 use tendermint_rpc::{
@@ -63,6 +64,7 @@ where
     E: Enclave,
     <E as Enclave>::Store: Store<Contract = AccountId>,
     C: ChainClient<Contract = AccountId, Error = anyhow::Error>,
+    <C as ChainClient>::TxOutput: Display,
     R: Handler<E, Error = Status>,
     <R as Handler<E>>::Response: Serialize + Send + Sync + 'static,
     EV: Handler<C, Response = R, Error = anyhow::Error>,
@@ -92,33 +94,41 @@ where
 
         let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
         while let Some(Ok(event)) = subs.next().await {
-            if let Ok(event) = Self::Event::try_from(event) {
-                // Make sure the contract in the event is the same as the paired contract.
-                // This check is not really required since the proof-of-publication check will check
-                // if there is a mismatch anyway, but it allows us to short-circuit here.
-                let contract = event.contract.clone();
-                let expected_contract = self
-                    .enclave
-                    .store()
-                    .await
-                    .get_contract()
-                    .await
-                    .map_err(|_| anyhow!("contract read failure"))?
-                    .expect("contract must be set");
-                if contract != expected_contract {
+            trace!("Received event");
+
+            let event = match Self::Event::try_from(event) {
+                Ok(e) => e,
+                Err(e) => {
+                    trace!("Failed to decode event: {e}");
                     continue;
                 }
+            };
 
-                // TODO: ensure seq num consistency here?
-                let request = event.handle(&self.chain_client).await?;
-                let response = self.enclave_call(request).await?;
-                let tx_config = (self.gas_fn)(&response);
-                let _output = self
-                    .chain_client
-                    .send_tx(&contract, response, tx_config)
-                    .await?;
-                // TODO: logging
+            // Make sure the contract in the event is the same as the paired contract.
+            // This check is not really required since the proof-of-publication check will check
+            // if there is a mismatch anyway, but it allows us to short-circuit here.
+            let contract = event.contract.clone();
+            let expected_contract = self
+                .enclave
+                .store()
+                .await
+                .get_contract()
+                .await
+                .map_err(|_| anyhow!("contract read failure"))?
+                .expect("contract must be set");
+            if contract != expected_contract {
+                error!("contract != expected_contract");
+                continue;
             }
+
+            let request = event.handle(&self.chain_client).await?;
+            let response = self.enclave_call(request).await?;
+            let tx_config = (self.gas_fn)(&response);
+            let output = self
+                .chain_client
+                .send_tx(&contract, response, tx_config)
+                .await?;
+            info!("tx output: {output}");
         }
 
         client.close().expect("Failed to close client");
