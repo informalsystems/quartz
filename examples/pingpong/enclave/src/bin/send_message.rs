@@ -1,13 +1,12 @@
 use std::str::FromStr;
 
-use ping_pong_contract::msg::{execute::Ping, ExecuteMsg};
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::HexBinary;
 use cw_client::{CliClient, CwClient};
-use ecies::{decrypt, encrypt};
+use ecies::encrypt;
 use hex;
-use k256::ecdsa::{SigningKey, VerifyingKey};
-use rand_core::OsRng;
+use k256::ecdsa::VerifyingKey;
+use ping_pong_contract::msg::{execute::Ping, ExecuteMsg};
 use reqwest::Url;
 use serde_json::json;
 

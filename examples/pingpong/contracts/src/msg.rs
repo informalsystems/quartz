@@ -1,10 +1,10 @@
 use cosmwasm_schema::cw_serde;
-use quartz_common::contract::{
-    msg::execute::attested::{RawAttested, RawAttestedNoop, RawDefaultAttestation},
+use quartz_contract_core::{
+    msg::execute::attested::{RawAttested, RawDefaultAttestation, RawNoop},
     prelude::*,
 };
 
-pub type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawAttestedNoop<M>, RA>;
+pub type AttestedMsg<M, RA = RawDefaultAttestation> = RawAttested<RawNoop<M>, RA>;
 
 #[cw_serde]
 pub struct InstantiateMsg<RA = RawDefaultAttestation> {
@@ -25,8 +25,7 @@ pub enum ExecuteMsg<RA = RawDefaultAttestation> {
 pub mod execute {
     use cosmwasm_schema::cw_serde;
     use cosmwasm_std::HexBinary;
-    use quartz_common::contract::{msg::execute::attested::HasUserData, state::UserData};
-    use sha2::{Digest, Sha256};
+    use quartz_contract_core_derive::UserData;
 
     #[cw_serde]
     pub struct Ping {
