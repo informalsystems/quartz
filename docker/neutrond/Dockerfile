@@ -1,4 +1,4 @@
-FROM golang:1.22-bullseye
+FROM golang:1.23-bullseye
 
 RUN apt-get update && apt-get install -y jq  && \
     git clone https://github.com/neutron-org/neutron.git /root/neutron && \
