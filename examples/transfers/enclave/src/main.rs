@@ -19,8 +19,6 @@ pub mod proto;
 pub mod request;
 pub mod state;
 
-use std::time::Duration;
-
 use clap::Parser;
 use cli::Cli;
 use quartz_common::{
@@ -79,7 +77,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = Config::new(
         attestor.mr_enclave()?,
-        Duration::from_secs(30 * 24 * 60),
         light_client_opts,
         args.tcbinfo_contract.map(|c| c.to_string()),
         args.dcap_verifier_contract.map(|c| c.to_string()),

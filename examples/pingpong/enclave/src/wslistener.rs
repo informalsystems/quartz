@@ -1,15 +1,15 @@
 use std::{collections::BTreeMap, str::FromStr};
 
 use anyhow::{anyhow, Error, Result};
+use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
+use cw_client::{CwClient, GrpcClient};
+use futures_util::StreamExt;
 use ping_pong_contract::msg::{
     execute::{Ping, Pong},
     AttestedMsg, ExecuteMsg,
 };
-use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
-use cw_client::{CwClient, GrpcClient};
-use futures_util::StreamExt;
 use quartz_common::{
-    contract::msg::execute::attested::{RawAttested, RawAttestedMsgSansHandler},
+    contract::msg::execute::attested::{RawAttested, RawNoop},
     enclave::{
         attestor::Attestor,
         server::{WebSocketHandler, WsListenerConfig},
@@ -187,7 +187,7 @@ where
     // Build on-chain response
     // TODO add non-mock support
     let pong_msg = ExecuteMsg::Pong(AttestedMsg {
-        msg: RawAttestedMsgSansHandler(attested.msg),
+        msg: RawNoop(attested.msg),
         attestation: attested.attestation,
     });
 

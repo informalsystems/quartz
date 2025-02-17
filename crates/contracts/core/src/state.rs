@@ -1,5 +1,3 @@
-use core::time::Duration;
-
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError, Uint64};
 use cw_storage_plus::Item;
@@ -14,17 +12,14 @@ pub type TrustThreshold = (u64, u64);
 
 pub const CONFIG_KEY: &str = "quartz_config";
 pub const SESSION_KEY: &str = "quartz_session";
-pub const EPOCH_COUNTER_KEY: &str = "epoch_counter";
 pub const SEQUENCE_NUM_KEY: &str = "quartz_seq_num";
 pub const CONFIG: Item<RawConfig> = Item::new(CONFIG_KEY);
 pub const SESSION: Item<Session> = Item::new(SESSION_KEY);
-pub const EPOCH_COUNTER: Item<Uint64> = Item::new(EPOCH_COUNTER_KEY);
 pub const SEQUENCE_NUM: Item<Uint64> = Item::new(SEQUENCE_NUM_KEY);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Config {
     mr_enclave: MrEnclave,
-    epoch_duration: Duration,
     light_client_opts: LightClientOpts,
     tcbinfo_contract: Option<String>,
     dcap_verifier_contract: Option<String>,
@@ -33,14 +28,12 @@ pub struct Config {
 impl Config {
     pub fn new(
         mr_enclave: MrEnclave,
-        epoch_duration: Duration,
         light_client_opts: LightClientOpts,
         tcbinfo_contract: Option<String>,
         dcap_verifier_contract: Option<String>,
     ) -> Self {
         Self {
             mr_enclave,
-            epoch_duration,
             light_client_opts,
             tcbinfo_contract,
             dcap_verifier_contract,
@@ -63,7 +56,6 @@ impl Config {
 #[cw_serde]
 pub struct RawConfig {
     mr_enclave: HexBinary,
-    epoch_duration: Duration,
     light_client_opts: RawLightClientOpts,
     tcbinfo_contract: Option<String>,
     dcap_verifier_contract: Option<String>,
@@ -88,7 +80,6 @@ impl TryFrom<RawConfig> for Config {
     fn try_from(value: RawConfig) -> Result<Self, Self::Error> {
         Ok(Self {
             mr_enclave: value.mr_enclave.to_array()?,
-            epoch_duration: value.epoch_duration,
             light_client_opts: value
                 .light_client_opts
                 .try_into()
@@ -103,7 +94,6 @@ impl From<Config> for RawConfig {
     fn from(value: Config) -> Self {
         Self {
             mr_enclave: value.mr_enclave.into(),
-            epoch_duration: value.epoch_duration,
             light_client_opts: value.light_client_opts.into(),
             tcbinfo_contract: value.tcbinfo_contract,
             dcap_verifier_contract: value.dcap_verifier_contract,
