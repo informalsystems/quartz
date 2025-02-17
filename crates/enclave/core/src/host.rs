@@ -32,7 +32,11 @@ pub trait Host: Send + Sync + 'static + Sized {
         request: Self::Request,
     ) -> Result<Response<Self::Request, Self::Enclave>, Self::Error>;
 
-    async fn serve(self, url: Url) -> Result<(), Self::Error>;
+    async fn serve_with_query(self, url: Url, query: Option<Query>) -> Result<(), Self::Error>;
+
+    async fn serve(self, url: Url) -> Result<(), Self::Error> {
+        self.serve_with_query(url, None).await
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -88,11 +92,13 @@ where
             .map_err(|e| anyhow!("enclave call failed: {}", e))
     }
 
-    async fn serve(self, url: Url) -> Result<(), Self::Error> {
+    async fn serve_with_query(self, url: Url, query: Option<Query>) -> Result<(), Self::Error> {
         let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
 
-        let mut subs = client.subscribe(Query::from(EventType::Tx)).await.unwrap();
+        // TODO: default to `Query::from(EventType::Tx).and_eq("wasm._contract_address", contract)`
+        let query = query.unwrap_or(Query::from(EventType::Tx));
+        let mut subs = client.subscribe(query).await.unwrap();
         while let Some(Ok(event)) = subs.next().await {
             trace!("Received event");
 
