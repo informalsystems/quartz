@@ -16,6 +16,10 @@ sed -i 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' /root/.neutr
 sed -i 's/enable = false/enable = true/g' /root/.neutrond/config/app.toml
 sed -i 's/swagger = false/swagger = true/g' /root/.neutrond/config/app.toml
 
+# Changing pruining and empty blocks so our node doesn't grow and cause us to redeploy too often"
+sed -i 's/pruning = "default"/pruning = "everything"/g' /root/.neutrond/config/app.toml
+sed -i 's/create_empty_blocks = true/create_empty_blocks = false/g' /root/.neutrond/config/config.toml
+
 GENESIS_PATH="/root/.neutrond/config/genesis.json"
 
 function set_genesis_param_jq() {
