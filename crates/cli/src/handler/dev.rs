@@ -67,8 +67,6 @@ async fn dev_driver(
     while let Some(dev) = rx.recv().await {
         match dev {
             DevRebuild::Init => {
-                clearscreen::clear()?;
-                println!("{}", BANNER.yellow().bold());
                 info!("{}", "Launching quartz app...".green().bold());
 
                 // Build enclave
@@ -109,8 +107,6 @@ async fn dev_driver(
 
                     continue;
                 }
-                clearscreen::clear()?;
-                println!("{}", BANNER.yellow().bold());
                 info!("{}", "Rebuilding Enclave...".green().bold());
 
                 info!("Waiting 1 second for the enclave to shut down");
@@ -139,8 +135,6 @@ async fn dev_driver(
                     first_contract_message = false;
                     continue;
                 }
-                clearscreen::clear()?;
-                println!("{}", BANNER.yellow().bold());
                 info!("{}", "Rebuilding Contract...".green().bold());
 
                 let res = deploy_and_handshake(None, args, &config).await;
