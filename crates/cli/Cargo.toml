@@ -55,7 +55,6 @@ miette = "7.2.0"
 xxhash-rust = { version = "0.8.12", features = ["xxh3"] }
 toml = "0.8.19"
 figment = { version = "0.10.19", features = ["env", "toml"] }
-clearscreen = "3.0.0"
 cargo_metadata = "0.18.1"
 serde_with = "3.10.0"
 dcap-qvl = "0.1.0"
