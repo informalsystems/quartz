@@ -223,7 +223,7 @@ pub struct EnclaveStartArgs {
     pub chain_id: Option<ChainId>,
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
-    #[arg(long, default_value_t=false)]
+    #[arg(long, default_value_t = false)]
     pub unsafe_trust_latest: bool,
 
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
