@@ -114,7 +114,7 @@ pub struct HandshakeArgs {
     pub contract: AccountId,
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
-    #[arg(long)]
+    #[arg(long, default_value_t = false)]
     pub unsafe_trust_latest: bool,
 
     /// Name or address of private key with which to sign
@@ -159,7 +159,7 @@ pub struct HandshakeArgs {
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct ContractBuildArgs {
     /// Path to Cargo manifest file for CosmWasm contract package
-    #[arg(long)]
+    #[arg(long, default_value = "./contracts/Cargo.toml")]
     pub contract_manifest: PathBuf,
 }
 
@@ -203,7 +203,7 @@ pub struct ContractDeployArgs {
     pub label: String,
 
     /// Path to Cargo manifest file for CosmWasm contract package
-    #[arg(long)]
+    #[arg(long, default_value = "./contracts/Cargo.toml")]
     pub contract_manifest: PathBuf,
 }
 
@@ -223,7 +223,7 @@ pub struct EnclaveStartArgs {
     pub chain_id: Option<ChainId>,
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
-    #[arg(long)]
+    #[arg(long, default_value_t = false)]
     pub unsafe_trust_latest: bool,
 
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU); required if `MOCK_SGX` is not set
@@ -254,7 +254,7 @@ pub struct DevArgs {
     pub watch: bool,
 
     /// Fetch latest trusted hash and height from the chain instead of existing configuration
-    #[arg(long)]
+    #[arg(long, default_value_t = true)]
     pub unsafe_trust_latest: bool,
 
     #[command(flatten)]
