@@ -72,7 +72,6 @@ where
     <R as Handler<E>>::Response: Serialize + Send + Sync + 'static,
     EV: Handler<C, Response = R, Error = anyhow::Error>,
     EV: TryFrom<TmEvent, Error = anyhow::Error>,
-    <EV as TryFrom<TmEvent>>::Error: Send + Sync + 'static,
     GF: Fn(&<R as Handler<E>>::Response) -> <C as ChainClient>::TxConfig + Send + Sync + 'static,
 {
     type ChainClient = C;
