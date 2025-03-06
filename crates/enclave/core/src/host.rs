@@ -13,9 +13,8 @@ use tendermint_rpc::{
 };
 use tonic::Status;
 
-use crate::{
-    chain_client::ChainClient, event::QuartzEvent, handler::Handler, store::Store, Enclave,
-};
+use crate::{chain_client::ChainClient, event::QuartzEvent, handler::Handler, store::Store, DefaultSharedEnclave, Enclave};
+use crate::chain_client::default::DefaultChainClient;
 
 pub type Response<R, E> = <R as Handler<E>>::Response;
 
@@ -40,14 +39,14 @@ pub trait Host: Send + Sync + 'static + Sized {
 }
 
 #[derive(Clone, Debug)]
-pub struct DefaultHost<E, C, R, EV, GF> {
+pub struct DefaultHost<R, EV, GF, E = DefaultSharedEnclave<()>, C = DefaultChainClient> {
     enclave: E,
     chain_client: C,
     gas_fn: GF,
     _phantom: PhantomData<(R, EV)>,
 }
 
-impl<E, C, R, EV, GF> DefaultHost<E, C, R, EV, GF>
+impl<R, EV, GF, E, C> DefaultHost<R, EV, GF, E, C>
 where
     R: Handler<E>,
     C: ChainClient,
@@ -63,7 +62,7 @@ where
 }
 
 #[async_trait::async_trait]
-impl<E, C, R, EV, GF> Host for DefaultHost<E, C, R, EV, GF>
+impl<R, EV, GF, E, C> Host for DefaultHost<R, EV, GF, E, C>
 where
     E: Enclave,
     <E as Enclave>::Store: Store<Contract = AccountId>,
