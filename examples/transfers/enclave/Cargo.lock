@@ -979,26 +979,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw-multi-test"
-version = "2.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b00c3a218ed6abc6f1dd9be8146d4f23d8f41cf4e6d53cdfa71bab4514e1fc3"
-dependencies = [
- "anyhow",
- "bech32",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "cw-utils",
- "itertools 0.14.0",
- "prost",
- "schemars",
- "serde",
- "sha2 0.10.8",
- "thiserror 2.0.11",
-]
-
-[[package]]
 name = "cw-storage-plus"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2076,15 +2056,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "itertools"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
-dependencies = [
- "either",
-]
-
-[[package]]
 name = "itoa"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2780,31 +2751,21 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "base64 0.22.1",
- "bincode",
  "clap",
  "color-eyre",
  "cosmrs",
  "cosmwasm-std",
- "cw-client",
- "cw-multi-test",
- "displaydoc",
  "ecies",
- "futures-util",
  "hex",
  "k256",
  "prost",
  "quartz-common",
- "quartz-tm-prover",
- "rand",
  "reqwest 0.12.12",
  "serde",
  "serde_json",
- "sha2 0.10.8",
  "tendermint",
  "tendermint-light-client",
  "tendermint-rpc",
- "thiserror 1.0.69",
  "tokio",
  "tonic",
  "tonic-build",
