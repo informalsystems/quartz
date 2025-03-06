@@ -13,8 +13,13 @@ use tendermint_rpc::{
 };
 use tonic::Status;
 
-use crate::{chain_client::ChainClient, event::QuartzEvent, handler::Handler, store::Store, DefaultSharedEnclave, Enclave};
-use crate::chain_client::default::DefaultChainClient;
+use crate::{
+    chain_client::{default::DefaultChainClient, ChainClient},
+    event::QuartzEvent,
+    handler::Handler,
+    store::Store,
+    DefaultSharedEnclave, Enclave,
+};
 
 pub type Response<R, E> = <R as Handler<E>>::Response;
 
