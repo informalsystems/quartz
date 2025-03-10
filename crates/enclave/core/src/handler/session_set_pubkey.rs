@@ -70,14 +70,8 @@ where
         }
 
         // generate enclave key
-        ctx.key_manager().await.keygen().await;
         let pk = {
-            let pk = ctx
-                .key_manager()
-                .await
-                .pub_key()
-                .await
-                .ok_or_else(|| Status::internal("failed to get public key"))?;
+            let pk = ctx.key_manager().await.pub_key().await;
             serde_json::to_vec(&pk).expect("pubkey serialization failure")
         };
 

@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, RwLockReadGuard};
 
 use crate::key_manager::KeyManager;
 
 #[derive(Clone, Debug)]
 pub struct SharedKeyManager<K> {
-    inner: Arc<RwLock<K>>,
+    pub inner: Arc<RwLock<K>>,
 }
 
 impl<K> SharedKeyManager<K> {
@@ -15,22 +15,17 @@ impl<K> SharedKeyManager<K> {
             inner: Arc::new(RwLock::new(key_manager)),
         }
     }
+
+    pub async fn read_lock(&self) -> RwLockReadGuard<'_, K> {
+        self.inner.read().await
+    }
 }
 
 #[async_trait::async_trait]
 impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
     type PubKey = K::PubKey;
-    type PrivKey = K::PrivKey;
 
-    async fn keygen(&mut self) {
-        self.inner.write().await.keygen().await
-    }
-
-    async fn pub_key(&self) -> Option<Self::PubKey> {
+    async fn pub_key(&self) -> Self::PubKey {
         self.inner.read().await.pub_key().await
-    }
-
-    async fn priv_key(&self) -> Option<Self::PrivKey> {
-        self.inner.read().await.priv_key().await
     }
 }

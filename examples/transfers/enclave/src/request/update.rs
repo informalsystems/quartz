@@ -94,11 +94,7 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
         let mut state = match &message.state.to_vec()[..] {
             &[0] => State::default(),
             state_bytes => {
-                let sk = ctx
-                    .key_manager
-                    .priv_key()
-                    .await
-                    .ok_or_else(|| Status::internal("failed to get private key"))?;
+                let sk = ctx.key_manager.read_lock().await.sk.clone();
                 decrypt_state(&sk, state_bytes)?
             }
         };
@@ -114,11 +110,7 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
                 TransferRequest::Transfer(ciphertext) => {
                     // Decrypt transfer ciphertext into cleartext struct (acquires lock on enclave sk to do so)
                     let transfer: ClearTextTransferRequestMsg = {
-                        let sk = ctx
-                            .key_manager
-                            .priv_key()
-                            .await
-                            .ok_or_else(|| Status::internal("failed to get private key"))?;
+                        let sk = ctx.key_manager.read_lock().await.sk.clone();
 
                         decrypt_transfer(&sk, &ciphertext)?
                     };
@@ -154,12 +146,7 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
 
         // Encrypt state
         let state_enc = {
-            let pk = ctx
-                .key_manager()
-                .await
-                .pub_key()
-                .await
-                .ok_or_else(|| Status::internal("failed to get public key"))?;
+            let pk = ctx.key_manager().await.pub_key().await;
 
             encrypt_state(state, pk).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
