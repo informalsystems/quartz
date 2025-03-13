@@ -70,10 +70,7 @@ where
         }
 
         // generate enclave key
-        let pk = {
-            let pk = ctx.key_manager().await.pub_key().await;
-            serde_json::to_vec(&pk).expect("pubkey serialization failure")
-        };
+        let pk = ctx.key_manager().await.pub_key().await.into();
 
         // create `SessionSetPubKey` msg and attest to it
         let msg = SessionSetPubKey::new(nonce, pk);

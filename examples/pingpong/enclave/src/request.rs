@@ -8,7 +8,6 @@ use quartz_common::{
     enclave::{
         attestor::{Attestor, DefaultAttestor},
         handler::Handler,
-        key_manager::KeyManager,
         proof_of_publication::ProofOfPublication,
         store::Store,
         DefaultSharedEnclave, Enclave,
@@ -99,12 +98,7 @@ impl Handler<DefaultSharedEnclave<()>> for PingRequest {
         // Perform enclave logic
         // Decrypt the ciphertext using enclave private key
         let decrypted_message: String = {
-            let sk = ctx
-                .key_manager()
-                .await
-                .priv_key()
-                .await
-                .ok_or(Status::internal("Mising private key"))?;
+            let sk = ctx.key_manager().await.read_lock().await.sk.clone();
 
             let msg_bytes = decrypt(&sk.to_bytes(), &ping.message)
                 .map_err(|_| Status::invalid_argument("decryption failed"))?;

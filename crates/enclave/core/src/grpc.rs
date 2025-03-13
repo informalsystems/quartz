@@ -1,5 +1,4 @@
 use cosmrs::AccountId;
-use k256::ecdsa::VerifyingKey;
 use quartz_proto::quartz::{
     core_server::Core, InstantiateRequest, InstantiateResponse, SessionCreateRequest,
     SessionCreateResponse, SessionSetPubKeyRequest, SessionSetPubKeyResponse,
@@ -31,7 +30,7 @@ impl<C, A, K, S> Core for DefaultEnclave<C, A, K, S>
 where
     C: Send + Sync + 'static,
     A: Attestor + Clone,
-    K: KeyManager<PubKey = VerifyingKey> + Clone,
+    K: KeyManager + Clone,
     S: Store<Contract = AccountId> + Clone,
 {
     async fn instantiate(
