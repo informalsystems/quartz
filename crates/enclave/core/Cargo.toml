@@ -24,7 +24,7 @@ async-trait.workspace = true
 displaydoc.workspace = true
 futures-util.workspace = true
 hex.workspace = true
-k256.workspace = true
+k256 = { workspace = true, features = ["pem", "serde"] }
 log.workspace = true
 rand.workspace = true
 reqwest = { workspace = true, features = ["blocking"] }
