@@ -32,7 +32,7 @@ SUBCOMMANDS:
 To install Quartz, ensure you have Rust and Cargo installed. Then run:
 
 ```shell
-cargo install quartz-rs
+cargo install --locked --path .
 ```
 
 ## Usage
