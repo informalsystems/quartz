@@ -32,8 +32,8 @@ pub mod proof_of_publication;
 pub mod store;
 pub mod types;
 
-pub type DefaultSharedEnclave<C> =
-    DefaultEnclave<C, DefaultAttestor, SharedKeyManager<DefaultKeyManager>, DefaultStore>;
+pub type DefaultSharedEnclave<C, K = DefaultKeyManager> =
+    DefaultEnclave<C, DefaultAttestor, SharedKeyManager<K>, DefaultStore>;
 
 #[async_trait::async_trait]
 pub trait Enclave: Send + Sync + 'static {
