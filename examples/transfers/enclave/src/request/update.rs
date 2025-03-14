@@ -148,7 +148,7 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
         let state_enc = {
             let pk = ctx.key_manager().await.pub_key().await;
 
-            encrypt_state(state, pk).map_err(|e| Status::invalid_argument(e.to_string()))?
+            encrypt_state(state, pk.into()).map_err(|e| Status::invalid_argument(e.to_string()))?
         };
 
         // Prepare message to chain

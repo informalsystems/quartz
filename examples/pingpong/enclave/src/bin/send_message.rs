@@ -4,7 +4,6 @@ use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::HexBinary;
 use cw_client::{CliClient, CwClient};
 use ecies::encrypt;
-use hex;
 use k256::ecdsa::VerifyingKey;
 use ping_pong_contract::msg::{execute::Ping, ExecuteMsg};
 use reqwest::Url;

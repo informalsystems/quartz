@@ -24,12 +24,6 @@ authors = ["Informal Systems <hello@informal.systems>"]
 # external
 anyhow = { version = "1.0.86", features = ["std", "backtrace"] }
 async-trait = { version = "0.1.79", default-features = false }
-bincode = { version = "2.0.0-rc.3", default-features = false, features = ["alloc"] }
-bip32 = { version = "0.5.1", default-features = false, features = [
-    "alloc",
-    "secp256k1",
-    "bip39",
-] }
 ciborium = { version = "0.2.2", default-features = false }
 cargo-generate = { version = "0.21.3", default-features = false }
 clap = { version = "4.1.8", default-features = false, features = [
@@ -39,7 +33,6 @@ clap = { version = "4.1.8", default-features = false, features = [
 color-eyre = { version = "0.6.2", default-features = false }
 der = { version = "0.7.9", default-features = false }
 displaydoc = { version = "0.2.4", default-features = false }
-ecies = { version = "0.2.3", default-features = false, features = ["pure"] }
 futures = { version = "0.3.27", default-features = false, features = ["alloc"] }
 futures-util = { version = "0.3.30" }
 hex = { version = "0.4.3", default-features = false }
@@ -53,7 +46,6 @@ num-bigint = { version = "0.4.4", default-features = false }
 p256 = { version = "0.13.2", default-features = false }
 prost = { version = "0.13.1", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["getrandom"] }
-rand_core = { version = "0.6", default-features = false, features = ["std"] }
 reqwest = { version = "0.12.2", default-features = false, features = [
     "json",
     "rustls-tls",
@@ -86,18 +78,15 @@ tonic-build = { version = "0.12.1", default-features = false, features = [
     "prost",
     "transport",
 ] }
-tower = { version = "0.5.0" }
 tracing = { version = "0.1.39", default-features = false }
 tracing-subscriber = { version = "0.3.17", default-features = false, features = [
     "fmt",
 ] }
 urlencoding = { version = "2.1.3", default-features = false }
-uuid = { version = "1.4.1", default-features = false, features = ["serde"] }
 x509-cert = { version = "0.2.5", default-features = false }
 x509-parser = { version = "0.16.0", default-features = false, features = [
     "verify",
 ] }
-zeroize = { version = "1.7.0", default-features = false }
 
 # cosmos
 cosmos-sdk-proto = { version = "0.23.0", default-features = false }

@@ -18,7 +18,7 @@ use crate::{
     event::QuartzEvent,
     handler::Handler,
     store::Store,
-    DefaultSharedEnclave, Enclave,
+    Enclave,
 };
 
 pub type Response<R, E> = <R as Handler<E>>::Response;
@@ -44,7 +44,7 @@ pub trait Host: Send + Sync + 'static + Sized {
 }
 
 #[derive(Clone, Debug)]
-pub struct DefaultHost<R, EV, GF, E = DefaultSharedEnclave<()>, C = DefaultChainClient> {
+pub struct DefaultHost<R, EV, GF, E, C = DefaultChainClient> {
     enclave: E,
     chain_client: C,
     gas_fn: GF,

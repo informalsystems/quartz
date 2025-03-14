@@ -16,7 +16,6 @@ Merkle proofs of CosmWasm contract state. This crate contains proof types and a 
 
 [dependencies]
 # external
-clap.workspace = true
 displaydoc.workspace = true
 prost.workspace = true
 serde.workspace = true
@@ -29,4 +28,3 @@ tendermint.workspace = true
 tendermint-rpc.workspace = true
 
 [dev-dependencies]
-hex.workspace = true

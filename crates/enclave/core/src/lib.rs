@@ -18,7 +18,7 @@ use quartz_contract_core::state::Config;
 use crate::{
     attestor::{Attestor, DefaultAttestor},
     key_manager::{default::DefaultKeyManager, shared::SharedKeyManager, KeyManager},
-    store::{default::DefaultStore, shared::SharedStore, Store},
+    store::{default::DefaultStore, Store},
 };
 
 pub mod attestor;
@@ -32,12 +32,8 @@ pub mod proof_of_publication;
 pub mod store;
 pub mod types;
 
-pub type DefaultSharedEnclave<C> = DefaultEnclave<
-    C,
-    DefaultAttestor,
-    SharedKeyManager<DefaultKeyManager>,
-    SharedStore<DefaultStore>,
->;
+pub type DefaultSharedEnclave<C, K = DefaultKeyManager> =
+    DefaultEnclave<C, DefaultAttestor, SharedKeyManager<K>, DefaultStore>;
 
 #[async_trait::async_trait]
 pub trait Enclave: Send + Sync + 'static {
@@ -47,7 +43,7 @@ pub trait Enclave: Send + Sync + 'static {
 
     async fn attestor(&self) -> Self::Attestor;
     async fn key_manager(&self) -> Self::KeyManager;
-    async fn store(&self) -> Self::Store;
+    async fn store(&self) -> &Self::Store;
 }
 
 #[derive(Clone, Debug)]
@@ -63,7 +59,7 @@ impl<C: Send + Sync + 'static> DefaultSharedEnclave<C> {
         DefaultSharedEnclave {
             attestor,
             key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
-            store: SharedStore::wrapping(DefaultStore::new(config)),
+            store: DefaultStore::new(config),
             ctx,
         }
     }
@@ -101,7 +97,7 @@ where
         self.key_manager.clone()
     }
 
-    async fn store(&self) -> Self::Store {
-        self.store.clone()
+    async fn store(&self) -> &Self::Store {
+        &self.store
     }
 }

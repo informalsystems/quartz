@@ -427,15 +427,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d965446196e3b7decd44aa7ee49e31d630118f90ef12f97900f262eb915c951d"
 
 [[package]]
-name = "bincode"
-version = "2.0.0-rc.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f11ea1a0346b94ef188834a65c068a03aec181c94896d481d7a0a40d85b0ce95"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "bindgen"
 version = "0.66.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2801,7 +2792,6 @@ dependencies = [
  "quartz-tee-ra",
  "serde",
  "serde_json",
- "serde_with",
  "sha2 0.10.8",
  "thiserror 1.0.69",
 ]
@@ -2822,7 +2812,6 @@ dependencies = [
 name = "quartz-cw-proof"
 version = "0.1.0"
 dependencies = [
- "clap",
  "cosmrs",
  "displaydoc",
  "ics23",
@@ -2847,14 +2836,9 @@ version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
- "bincode",
- "clap",
- "color-eyre",
  "cosmrs",
- "cosmwasm-std",
  "cw-client",
  "displaydoc",
- "ecies",
  "futures-util",
  "hex",
  "k256",
@@ -2870,14 +2854,11 @@ dependencies = [
  "reqwest 0.12.12",
  "serde",
  "serde_json",
- "sha2 0.10.8",
  "tendermint",
  "tendermint-light-client",
  "tendermint-rpc",
- "thiserror 1.0.69",
  "tokio",
  "tonic",
- "tower 0.5.2",
  "urlencoding",
 ]
 
@@ -2901,16 +2882,11 @@ dependencies = [
 name = "quartz-tee-ra"
 version = "0.1.0"
 dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
  "der",
  "hex-literal",
  "mc-attestation-verifier",
  "mc-sgx-dcap-types",
- "num-bigint",
  "serde",
- "serde_json",
- "sha2 0.10.8",
  "thiserror 1.0.69",
  "x509-cert",
  "x509-parser",
@@ -2926,7 +2902,6 @@ dependencies = [
  "futures",
  "quartz-cw-proof",
  "serde",
- "serde_json",
  "tendermint",
  "tendermint-light-client",
  "tendermint-light-client-detector",
