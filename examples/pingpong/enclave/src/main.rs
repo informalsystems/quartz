@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let enclave = DefaultSharedEnclave::shared(attestor, config, ());
     let host =
-        DefaultHost::<EnclaveRequest, EnclaveEvent, _>::new(enclave.clone(), chain_client, gas_fn);
+        DefaultHost::<EnclaveRequest, EnclaveEvent, _, _>::new(enclave.clone(), chain_client, gas_fn);
 
     tokio::spawn(async move {
         Server::builder()
