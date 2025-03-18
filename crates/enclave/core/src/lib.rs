@@ -59,6 +59,10 @@ enclave:
 7. The **Host** *sends the response* back to the chain, e.g. via a transaction.
 
 ---
+
+## Usage
+See the app enclaves in the `examples` directory for usage examples.
+
 */
 
 #![doc = include_str!("../README.md")]
