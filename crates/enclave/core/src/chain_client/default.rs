@@ -14,6 +14,11 @@ use tendermint_rpc::{query::EventType, SubscriptionClient, WebSocketClient};
 
 use crate::chain_client::ChainClient;
 
+/// A default, thread-safe Tendermint chain client.
+/// This implementation uses -
+///     - gRPC for sending transactions and running queries
+///     - websocket for waiting for blocks
+///     - tendermint HTTP RPC for generating light client proofs
 pub struct DefaultChainClient {
     chain_id: TmChainId,
     grpc_client: GrpcClient,
