@@ -15,14 +15,32 @@ pub mod instantiate;
 pub mod session_create;
 pub mod session_set_pubkey;
 
+/// A trait representing an asynchronous handler that processes a given context
+/// and produces a response.
+///
+/// The [`Handler`] trait is used to define components that can transform or process
+/// data based on an external context. It is generic over a `Context` type, which represents
+/// the environment or input data required by the handler to produce a response.
 #[async_trait::async_trait]
 pub trait Handler<Context>: Send + Sync + 'static {
+    /// The error type returned by this handler.
     type Error;
+    /// The response type produced by this handler.
     type Response;
 
+    /// Consumes the handler and processes the provided context.
+    ///
+    /// # Parameters
+    ///
+    /// - `ctx`: A reference to the context required to process the request.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the response if successful, or an error otherwise.
     async fn handle(self, ctx: &Context) -> Result<Self::Response, Self::Error>;
 }
 
+/// Core enclave requests AKA handshake requests
 #[derive(Clone, Debug)]
 pub enum CoreEnclaveRequest {
     Instantiate(InstantiateRequest),
@@ -30,6 +48,7 @@ pub enum CoreEnclaveRequest {
     SessionSetPubKey(SessionSetPubKeyRequest),
 }
 
+/// Core enclave responses
 #[derive(Clone, Debug)]
 pub enum CoreEnclaveResponse {
     Instantiate(InstantiateResponse),
