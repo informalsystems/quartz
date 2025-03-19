@@ -14,6 +14,13 @@ use tendermint_light_client::{
     types::{LightBlock, TrustThreshold},
 };
 
+/// A proof of publication for a given message/request.
+///
+/// This structure provides evidence that a message was published on-chain by combining:
+///
+/// - A **light client proof**
+/// - A **Merkle proof**
+/// - The original **message** that is claimed to have been published.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ProofOfPublication<M> {
     light_client_proof: Vec<LightBlock>,

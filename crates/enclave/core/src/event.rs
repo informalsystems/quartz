@@ -4,6 +4,7 @@ use tendermint_rpc::event::Event as TmEvent;
 
 use crate::{chain_client::ChainClient, handler::Handler};
 
+/// An event wrapper used to parse the contract address for internal handling.
 #[derive(Clone, Debug)]
 pub struct QuartzEvent<E> {
     pub contract: AccountId,

@@ -1,3 +1,4 @@
+//! gRPC service implementation for core enclave requests (handshake)
 use cosmrs::AccountId;
 use quartz_proto::quartz::{
     core_server::Core, InstantiateRequest, InstantiateResponse, SessionCreateRequest,
