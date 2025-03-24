@@ -32,6 +32,73 @@ application.
 For background on basic TEE components and how Quartz works, see [How it
 Works][how_it_works].
 
+# System component diagram
+```mermaid
+flowchart LR
+    %% ------------------------
+    %% MAIN DIAGRAM STRUCTURE
+    %% ------------------------
+    subgraph "TEE machine"
+        subgraph "Host (untrusted)"
+            H["Host (impl Host)"]
+            Evt["Event handlers <br/>(impl Handler&lt;ChainClient&gt;)"]
+            CC["ChainClient (impl ChainClient)"]
+        end
+
+        subgraph "Enclave (secure)"
+            En["Enclave (impl Enclave)"]
+            KM["Key manager (impl KeyManager) <br/>e.g. secp256, Penumbra keys, etc."]
+            S["Storage backend (impl Store) <br/>e.g. in-memory, sealed-file, ORAM, etc."]
+            
+            R["Request handlers <br/>(impl Handler&lt;Enclave&gt;)"]
+
+            subgraph "Attestation"
+                Att["Attestor (impl Attestor)"]
+                G["Gramine (Intel SGX libs)"]
+            end
+        end
+    end
+
+    subgraph "Web"
+        BC["Blockchain"]
+        U["User"]
+    end
+
+    %% ------------------------
+    %% CONNECTIONS
+    %% ------------------------
+    U -->|"send_enclave_request(...)"| BC
+    H --> Evt
+    H --> R
+    H <-->|"listen(events)/send_tx(enclave_response)"| BC
+    CC -->|"query(...)"| BC
+    CC -->|"send_tx(...)"| BC
+    En --> Att
+    En --> KM
+    En --> S
+    R --> En
+    Evt --> CC
+    Att -->|"quote/mr_enclave"| G
+
+    %% ------------------------
+    %% STYLE CLASSES
+    %% ------------------------
+    classDef untrusted fill:#ffe6e6,stroke:#c43b3b,stroke-width:1px,color:#4d4d4d
+    classDef secure fill:#e6ffe6,stroke:#3bc43b,stroke-width:1px,color:#4d4d4d
+    classDef web fill:#e6f2ff,stroke:#3b7dc4,stroke-width:1px,color:#4d4d4d
+    classDef special fill:#fff5e6,stroke:#c49b3b,stroke-width:1px,color:#4d4d4d
+    classDef store fill:#f9e6ff,stroke:#a73bc4,stroke-width:1px,color:#4d4d4d
+
+    %% ------------------------
+    %% APPLY CLASSES
+    %% ------------------------
+    class H,Evt,CC,GRPC untrusted
+    class En,KM,R secure
+    class BC,U web
+    class Att,G special
+    class S store
+```
+
 ## Smart Contract Code
 
 A Quartz smart contract must specify:
@@ -101,6 +168,8 @@ work.
 
 The enclave code can then produce a remote attestation of the result, and
 optionally a zero-knowledge proof (ZKP) of execution.
+
+For more details on the API and its usage, refer to the crate-level documentation of the core enclave crate. 
 
 
 [transfers_app]: /examples/transfers
