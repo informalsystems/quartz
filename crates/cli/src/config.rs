@@ -21,7 +21,7 @@ pub struct Config {
     #[serde(default = "default_chain_id")]
     pub chain_id: ChainId,
 
-    /// <host>:<port> to tendermint rpc interface for this chain
+    /// `<host>:<port>` to tendermint rpc interface for this chain
     #[serde(default = "default_node_url")]
     #[serde_as(as = "DisplayFromStr")]
     pub node_url: Url,
