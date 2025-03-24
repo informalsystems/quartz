@@ -127,7 +127,7 @@ pub struct HandshakeArgs {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chain_id: Option<ChainId>,
 
-    /// <host>:<port> to tendermint rpc interface for this chain
+    /// `<host>:<port>` to tendermint rpc interface for this chain
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde_as(as = "Option<DisplayFromStr>")]
@@ -170,7 +170,7 @@ pub struct ContractDeployArgs {
     #[arg(long, default_value = "{}")]
     pub init_msg: String,
 
-    /// <host>:<port> to tendermint rpc interface for this chain
+    /// `<host>:<port>` to tendermint rpc interface for this chain
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde_as(as = "Option<DisplayFromStr>")]

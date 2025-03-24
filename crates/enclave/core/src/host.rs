@@ -29,7 +29,7 @@ pub type Response<R, E> = <R as Handler<E>>::Response;
 /// The host is responsible for:
 /// - Listening for blockchain events via a [`ChainClient`].
 /// - Constructing enclave requests from events by using an event handler.
-/// - Forwarding these requests to the enclave through [`enclave_call`].
+/// - Forwarding these requests to the enclave through [`Host::enclave_call`].
 /// - Relaying responses from the enclave back to the blockchain (typically by sending a transaction).
 ///
 /// This separation ensures that all communication with the enclave is derived from
