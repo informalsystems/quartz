@@ -98,8 +98,8 @@ pub trait HasUserData {
 }
 
 pub fn user_data_json<T: Serialize>(value: &T) -> UserData {
-    use sha2::{Digest, Sha256};
     use serde_json::to_string;
+    use sha2::{Digest, Sha256};
 
     let mut hasher = Sha256::new();
     hasher.update(to_string(value).expect("infallible serializer"));
