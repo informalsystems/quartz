@@ -2661,7 +2661,6 @@ dependencies = [
  "quartz-contract-core",
  "quartz-contract-core-derive",
  "serde_json",
- "sha2 0.10.8",
  "thiserror 1.0.69",
 ]
 

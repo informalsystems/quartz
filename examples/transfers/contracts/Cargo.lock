@@ -1795,7 +1795,6 @@ dependencies = [
  "quartz-contract-core",
  "quartz-contract-core-derive",
  "serde_json",
- "sha2",
  "thiserror",
 ]
 
