@@ -7,6 +7,7 @@ use tokio::sync::RwLock;
 
 use crate::store::Store;
 
+/// A default, thread-safe in-memory store.
 #[derive(Clone, Debug, Default)]
 pub struct DefaultStore {
     config: Arc<RwLock<Option<Config>>>,

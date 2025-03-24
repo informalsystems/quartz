@@ -1,3 +1,4 @@
+//! Core types used in the handshake
 use std::{
     fmt::{Display, Formatter},
     marker::PhantomData,

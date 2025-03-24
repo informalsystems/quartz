@@ -23,26 +23,84 @@ use crate::{
 
 pub type Response<R, E> = <R as Handler<E>>::Response;
 
+/// The `Host` trait defines the untrusted side of the Quartz framework,
+/// acting as the gateway between the blockchain and the trusted enclave.
+///
+/// The host is responsible for:
+/// - Listening for blockchain events via a [`ChainClient`].
+/// - Constructing enclave requests from events by using an event handler.
+/// - Forwarding these requests to the enclave through [`enclave_call`].
+/// - Relaying responses from the enclave back to the blockchain (typically by sending a transaction).
+///
+/// This separation ensures that all communication with the enclave is derived from
+/// on-chain data, thereby providing replay protection and a secure communication channel.
 #[async_trait::async_trait]
 pub trait Host: Send + Sync + 'static + Sized {
+    /// The blockchain client type for interacting with on-chain data.
     type ChainClient: ChainClient;
+    /// The trusted enclave type that processes requests.
     type Enclave: Enclave;
+    /// The error type used for reporting host-level errors.
     type Error: Send + Sync + 'static;
+    /// The event type that, when handled, produces an enclave request.
+    ///
+    /// The associated response from handling an event must be of type `Self::Request`.
     type Event: Handler<Self::ChainClient, Response = Self::Request>;
+    /// The enclave request type that is processed by the enclave.
+    ///
+    /// This type must implement [`Handler`] for `Self::Enclave`.
     type Request: Handler<Self::Enclave>;
 
+    /// Forwards an enclave request to the trusted enclave and returns the corresponding response.
+    ///
+    /// # Parameters
+    ///
+    /// - `request`: An enclave request to be processed by the enclave.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a [`Response`] that wraps the enclave's output, or an error of type `Self::Error`.
     async fn enclave_call(
         &self,
         request: Self::Request,
     ) -> Result<Response<Self::Request, Self::Enclave>, Self::Error>;
 
+    /// Consumes the host and starts an event loop by connecting to the specified URL,
+    /// with an optional query filter for events.
+    ///
+    /// The host listens for blockchain events, transforms them into enclave requests,
+    /// forwards these requests to the enclave, and handles the responses.
+    ///
+    /// # Parameters
+    ///
+    /// - `url`: The URL of the blockchain event endpoint (typically a WebSocket endpoint).
+    /// - `query`: An optional filter for subscribing to specific blockchain events.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating successful processing of events (`Ok(())`) or an error (`Err(Self::Error)`).
     async fn serve_with_query(self, url: Url, query: Option<Query>) -> Result<(), Self::Error>;
 
+    /// A convenience method that starts the event loop without a specific query filter.
     async fn serve(self, url: Url) -> Result<(), Self::Error> {
         self.serve_with_query(url, None).await
     }
 }
 
+/// The default generic implementation of the untrusted host in the Quartz framework.
+///
+/// `DefaultHost` ties together the essential components needed to bridge on-chain events with
+/// enclave requests. It encapsulates an enclave instance, a blockchain client, and a gas
+/// configuration function used to compute transaction settings (such as gas fees) for enclave responses.
+///
+/// This host implementation is responsible for:
+/// - Listening for blockchain events and converting them into enclave requests.
+/// - Forwarding these requests to the enclave via an asynchronous call.
+/// - Sending the enclave’s response back to the blockchain using the provided chain client.
+///
+/// ### Note
+/// This implementation consumes an `Enclave` instance and calls it directly. Therefore, it is
+/// expected to be run inside a TEE.
 #[derive(Clone, Debug)]
 pub struct DefaultHost<R, EV, GF, E, C = DefaultChainClient> {
     enclave: E,
@@ -89,6 +147,7 @@ where
         &self,
         request: Self::Request,
     ) -> Result<Response<Self::Request, Self::Enclave>, Self::Error> {
+        // call the enclave directly with the request
         request
             .handle(&self.enclave)
             .await
@@ -96,15 +155,20 @@ where
     }
 
     async fn serve_with_query(self, url: Url, query: Option<Query>) -> Result<(), Self::Error> {
+        // connect to the websocket client
         let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
 
+        // subscribe to relevant events
         // TODO: default to `Query::from(EventType::Tx).and_eq("wasm._contract_address", contract)`
         let query = query.unwrap_or(Query::from(EventType::Tx));
         let mut subs = client.subscribe(query).await.unwrap();
+
+        // wait and listen for events
         while let Some(Ok(event)) = subs.next().await {
             trace!("Received event");
 
+            // attempt to decode event if relevant
             let event = match Self::Event::try_from(event) {
                 Ok(e) => e,
                 Err(e) => {
@@ -130,8 +194,13 @@ where
                 continue;
             }
 
+            // handle event (through event handler) and generate enclave request
             let request = event.handle(&self.chain_client).await?;
+
+            // call enclave with request and get response
             let response = self.enclave_call(request).await?;
+
+            // submit response to the chain
             let tx_config = (self.gas_fn)(&response);
             let output = self
                 .chain_client

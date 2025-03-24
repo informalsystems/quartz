@@ -2,6 +2,7 @@ use k256::ecdsa::{SigningKey, VerifyingKey};
 
 use crate::key_manager::KeyManager;
 
+/// A default secp256k1 key-manager.
 #[derive(Clone)]
 pub struct DefaultKeyManager {
     pub sk: SigningKey,

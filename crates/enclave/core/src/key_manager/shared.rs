@@ -4,6 +4,7 @@ use tokio::sync::{RwLock, RwLockReadGuard};
 
 use crate::key_manager::KeyManager;
 
+/// A thread-safe wrapper for a key-manager.
 #[derive(Clone, Debug)]
 pub struct SharedKeyManager<K> {
     pub inner: Arc<RwLock<K>>,
