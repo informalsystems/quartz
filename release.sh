@@ -18,7 +18,7 @@ set -e
 # A space-separated list of all the crates we want to publish, in the order in
 # which they must be published. It's important to respect this order, since
 # each subsequent crate depends on one or more of the preceding ones.
-DEFAULT_CRATES="cw-client quartz-dcap-verifier-msgs quartz-tcbinfo-msgs quartz-tee-ra quartz-contract-core quartz-cw-proof quartz-proto quartz-tm-stateless-verifier quartz-enclave-core quartz-common quartz-tm-prover quartz-print-fmspc quartz-dcap-verifier quartz-tcbinfo quartz-rs"
+DEFAULT_CRATES="cw-client quartz-dcap-verifier-msgs quartz-tcbinfo-msgs quartz-tee-ra quartz-contract-core-derive quartz-contract-core quartz-cw-proof quartz-proto quartz-tm-stateless-verifier quartz-tm-prover quartz-enclave-core quartz-common quartz-print-fmspc quartz-dcap-verifier quartz-tcbinfo quartz-rs"
 
 # Allows us to override the crates we want to publish.
 CRATES=${*:-${DEFAULT_CRATES}}
