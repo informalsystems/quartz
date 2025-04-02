@@ -3,7 +3,7 @@ use std::{fmt::Display, marker::PhantomData};
 use anyhow::anyhow;
 use cosmrs::AccountId;
 use futures_util::StreamExt;
-use log::{error, info, trace};
+use log::{error, info, trace, warn};
 use reqwest::Url;
 use serde::Serialize;
 use tendermint_rpc::{
@@ -195,18 +195,33 @@ where
             }
 
             // handle event (through event handler) and generate enclave request
-            let request = event.handle(&self.chain_client).await?;
+            let request = match event.handle(&self.chain_client).await {
+                Ok(r) => r,
+                Err(e) => {
+                    warn!("event handler: {e}");
+                    continue;
+                }
+            };
 
             // call enclave with request and get response
-            let response = self.enclave_call(request).await?;
+            let response = match self.enclave_call(request).await {
+                Ok(r) => r,
+                Err(e) => {
+                    warn!("request handler: {e}");
+                    continue;
+                }
+            };
 
             // submit response to the chain
             let tx_config = (self.gas_fn)(&response);
             let output = self
                 .chain_client
                 .send_tx(&contract, response, tx_config)
-                .await?;
-            info!("tx output: {output}");
+                .await;
+            match output {
+                Ok(o) => info!("tx output: {o}"),
+                Err(e) => warn!("send_tx: {e}"),
+            }
         }
 
         client.close().expect("Failed to close client");
