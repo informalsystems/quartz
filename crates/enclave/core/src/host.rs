@@ -166,7 +166,7 @@ where
 
         // wait and listen for events
         while let Some(Ok(event)) = subs.next().await {
-            trace!("Received event");
+            trace!("Received event: {event:?}");
 
             // attempt to decode event if relevant
             let event = match Self::Event::try_from(event) {
@@ -193,6 +193,8 @@ where
                 error!("contract != expected_contract");
                 continue;
             }
+
+            trace!("Handling request: {request:?}");
 
             // handle event (through event handler) and generate enclave request
             let request = match event.handle(&self.chain_client).await {
