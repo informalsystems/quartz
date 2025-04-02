@@ -1,4 +1,7 @@
-use std::{fmt::Display, marker::PhantomData};
+use std::{
+    fmt::{Debug, Display},
+    marker::PhantomData,
+};
 
 use anyhow::anyhow;
 use cosmrs::AccountId;
@@ -131,7 +134,7 @@ where
     <E as Enclave>::Store: Store<Contract = AccountId>,
     C: ChainClient<Contract = AccountId, Error = anyhow::Error>,
     <C as ChainClient>::TxOutput: Display,
-    R: Handler<E, Error = Status>,
+    R: Handler<E, Error = Status> + Debug,
     <R as Handler<E>>::Response: Serialize + Send + Sync + 'static,
     EV: Handler<C, Response = R, Error = anyhow::Error>,
     EV: TryFrom<TmEvent, Error = anyhow::Error>,
@@ -194,8 +197,6 @@ where
                 continue;
             }
 
-            trace!("Handling request: {request:?}");
-
             // handle event (through event handler) and generate enclave request
             let request = match event.handle(&self.chain_client).await {
                 Ok(r) => r,
@@ -204,6 +205,8 @@ where
                     continue;
                 }
             };
+
+            trace!("Handling request: {request:?}");
 
             // call enclave with request and get response
             let response = match self.enclave_call(request).await {
