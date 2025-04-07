@@ -7,7 +7,12 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
-categories = ["command-line-utilities", "cryptography::cryptocurrencies", "hardware-support", "wasm"]
+categories = [
+  "command-line-utilities",
+  "cryptography::cryptocurrencies",
+  "hardware-support",
+  "wasm",
+]
 keywords = ["cosmos", "cosmwasm", "cycles", "quartz", "sgx"]
 readme = "README.md"
 default-run = "quartz"
@@ -36,7 +41,10 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 hex.workspace = true
 tokio = { workspace = true, features = ["process"] }
 tonic.workspace = true
-reqwest = { workspace = true, default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { workspace = true, default-features = false, features = [
+  "json",
+  "rustls-tls",
+] }
 subtle-encoding.workspace = true
 futures-util = "0.3.30"
 target-lexicon = "0.12.16"
@@ -49,11 +57,20 @@ cargo_metadata = "0.18.1"
 serde_with = "3.10.0"
 dcap-qvl = "0.1.0"
 
+
 # cosmos
 cosmrs.workspace = true
 tendermint.workspace = true
-tendermint-rpc = { workspace = true, features = ["websocket-client", "http-client"] }
+tendermint-rpc = { workspace = true, features = [
+  "websocket-client",
+  "http-client",
+] }
 quartz-tm-prover = { workspace = true }
 quartz-common = { workspace = true, features = ["full"] }
 cw-client.workspace = true
 tempfile.workspace = true
+
+# Pinning (temporarily) transitive `liquid` deps to versions compatible with rustc 1.81.0.
+liquid-core = "=0.26.9"
+liquid-lib = "=0.26.9"
+liquid-derive = "=0.26.8"
