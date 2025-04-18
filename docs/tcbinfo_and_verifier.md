@@ -19,6 +19,7 @@ quartz print-fmspc
 ```bash
 
 export NODE_URL=https://rpc-falcron.pion-1.ntrn.tech
+export NODE_URL=http://164.92.174.243:26657
 
 cargo run -- contract build --contract-manifest "../cosmwasm/packages/tcbinfo/Cargo.toml"
 RES=$(neutrond --node="$NODE_URL" tx wasm store ./target/wasm32-unknown-unknown/release/tcbinfo.wasm --from val1  -y --output json --chain-id "pion-1" --gas-prices 0.0053utrn --gas auto --gas-adjustment 1.3)
@@ -29,7 +30,8 @@ TX_HASH=$(echo $RES | jq -r '.["txhash"]')
 ```bash
 CERT=$(sed ':a;N;$!ba;s/\n/\\n/g' ../cosmwasm/packages/quartz-tee-ra/data/root_ca.pem)
 RES=$(neutrond --node="$NODE_URL" query tx "$TX_HASH" --output json)
-CODE_ID=$(echo $RES | jq -r '.logs[0].events[1].attributes[1].value')
+CODE_ID=$(echo $RES | jq -r '.events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
+
 neutrond --node="$NODE_URL" tx wasm instantiate "$CODE_ID" "{\"root_cert\": \"$CERT\"}" --from "val1" --label "tcbinfo" --chain-id "pion-1" --gas-prices 0.0053untrn --gas auto --gas-adjustment 1.3 -y --no-admin --output json	
 TCB_CONTRACT=$(neutrond --node="$NODE_URL" query wasm list-contract-by-code "$CODE_ID" --output json | jq -r '.contracts[0]')
 ```
@@ -59,9 +61,9 @@ echo "$TCB_ISSUER_CERT"
 4. Store it on our contract (assuming `~/.neutrond/config/client.toml` is pointing to the testnet node) 
 
 ```bash
-export TCB_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
+export TCB_CONTRACT=neutron1wug8sewp6cedgkmrmvhl3lf3tulagm9hnvy8p0rppz9yjw0g4wtqvfcxh2
 
-neutrond --node="$NODE_URL" tx wasm execute "$TCB_CONTRACT" "{\"tcb_info\": $(echo "$TCB_INFO" | jq -Rs .), \"certificate\": \"$TCB_ISSUER_CERT\"}" --from val1 --chain-id pion-1 --gas 800000 --gas-adjustment 1.2  -y 
+neutrond --node="$NODE_URL" tx wasm execute "$TCB_CONTRACT" "{\"tcb_info\": $(echo "$TCB_INFO" | jq -Rs .), \"certificate\": \"$TCB_ISSUER_CERT\"}" --from admin --chain-id testing --gas-prices 0.0053untrn --gas auto --gas-adjustment 1.2  -y 
 neutrond --node="$NODE_URL" query wasm contract-state smart "$TCB_CONTRACT" "{\"get_tcb_info\": {\"fmspc\": \"${FMSPC}\"}}"
 ```
 
@@ -69,7 +71,7 @@ neutrond --node="$NODE_URL" query wasm contract-state smart "$TCB_CONTRACT" "{\"
 
 1. Build the contract
 ```bash
-cargo run -- contract build --contract-manifest "../cosmwasm/packages/quartz-dcap-verifier/Cargo.toml"
+cargo run -- contract build --contract-manifest "dcap-verifier/Cargo.toml"
 ```
 
 2. Optimize the contract
@@ -80,16 +82,16 @@ wasm-opt -Oz ./target/wasm32-unknown-unknown/release/quartz_dcap_verifier.wasm -
 
 3. Store the optimized contract on-chain
 ```bash
-RES=$(wasmd tx wasm store ./target/wasm32-unknown-unknown/release/quartz_dcap_verifier.optimized.wasm --from admin -y --output json --chain-id "testing" --gas-prices 0.0025ucosm --gas auto --gas-adjustment 1.3)
+RES=$(neutrond --node="$NODE_URL" tx wasm store target/wasm32-unknown-unknown/release/quartz_dcap_verifier.optimized.wasm --from admin -y --output json --chain-id "testing" --gas-prices 0.0025untrn --gas auto --gas-adjustment 1.3)
 TX_HASH=$(echo $RES | jq -r '.["txhash"]')
-RES=$(wasmd query tx "$TX_HASH" --output json)
-CODE_ID=$(echo $RES | jq -r '.logs[0].events[1].attributes[1].value')
+RES=$(neutrond --node="$NODE_URL" query tx "$TX_HASH" --output json)
+CODE_ID=$(echo $RES | jq -r '.events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
 ```
 
 4. Instantiate the `quartz-dcap-verifier` contract.
 ```bash
-wasmd tx wasm instantiate "$CODE_ID" null --from "admin" --label "dcap-verifier" --chain-id "testing" --gas-prices 0.0025ucosm --gas auto --gas-adjustment 1.3 -y --no-admin --output json
-DCAP_CONTRACT=$(wasmd query wasm list-contract-by-code "$CODE_ID" --output json | jq -r '.contracts[0]')
+neutrond --node="$NODE_URL" tx wasm instantiate "$CODE_ID" null --from "admin" --label "dcap-verifier" --chain-id "testing" --gas-prices 0.0025untrn --gas auto --gas-adjustment 1.3 -y --no-admin --output json
+DCAP_CONTRACT=$(neutrond --node="$NODE_URL" query wasm list-contract-by-code "$CODE_ID" --output json | jq -r '.contracts[0]')
 ```
 
 ## Quartz setup

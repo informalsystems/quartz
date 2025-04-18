@@ -399,17 +399,21 @@ Once logged in, clone and install Quartz like before (see [installation](#instal
 Below we have provided a long instruction set to get the azure machine setup. We plan on dockerizing all of this after the v0.1 launch, as it is quite complex. You can reach out for the team for help if you get stuck here.
 
 ```bash
-### INSIDE YOUR AZURE SGX MACHINE ###
+### INSIDE YOUR UBUNTU 22.04 AZURE SGX MACHINE ###
 
 # install rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup install 1.79.0
-rustup default 1.79.0
+rustup install 1.81.0
+rustup default 1.81.0
 rustup target add wasm32-unknown-unknown
 
 # install go
 wget https://go.dev/dl/go1.22.2.linux-amd64.tar.gz
-rm -rf /usr/local/go && tar -C /usr/local -xzf go1.22.2.linux-amd64.tar.gz
+
+sudo tar -xf go1.22.2.linux-amd64.tar.gz -C /usr/local 
+
+
+# rm -rf /usr/local/go && tar -C /usr/local -xzf go1.22.2.linux-amd64.tar.gz
 echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
 
 # necessary building packages
@@ -427,16 +431,20 @@ sudo apt-get install ca-certificates
 git clone ssh://git@github.com/informalsystems/cycles-quartz
 cd cycles-quartz
 cargo install --path crates/cli
+cargo install quartz-rs --locked
 quartz --help
 
-# install gramine
+[This is failing due to missing clang]
+
+
+# install gramine - broken
 # Taken from https://gramine.readthedocs.io/en/stable/installation.html#ubuntu-22-04-lts-or-20-04-lts
 sudo curl -fsSLo /usr/share/keyrings/gramine-keyring.gpg https://packages.gramineproject.io/gramine-keyring.gpg
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/gramine-keyring.gpg] https://packages.gramineproject.io/ $(lsb_release -sc) main" \
 | sudo tee /etc/apt/sources.list.d/gramine.list
 
 sudo curl -fsSLo /usr/share/keyrings/intel-sgx-deb.asc https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-sgx-deb.asc] https://download.01.org/intel-sgx/sgx_repo/ubuntu $(lsb_release -sc) main" \
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-sgx-deb.asc] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main" \
 | sudo tee /etc/apt/sources.list.d/intel-sgx.list
 
 sudo apt-get update
@@ -456,10 +464,11 @@ gramine-sgx-gen-private-key
 
 # install neutron and setup accounts
 git clone -b main https://github.com/neutron-org/neutron.git
-cd neutron/
+cd neutron
+git checkout v4.0.1
 make install
 
-neutrond keys add admin --keyring-backend test > ./accounts/val1.txt 2>&1
+neutrond keys add admin --keyring-backend test > ./accounts/admin.txt 2>&1
 
 # install node (needed for pccs)
 sudo apt-get install nodejs=20.10.0-1nodesource1
@@ -486,28 +495,37 @@ export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6
 export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
 cd examples/transfers
 
+# for DO node
+export FMSPC=00606A000000
+export NODE_URL=http://164.92.174.243:26657
+export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
+export TCBINFO_CONTRACT=neutron14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s5c2epq
+export DCAP_CONTRACT=neutron1nc5tatafv6eyq7llkr2gv50ff9e22mnf70qgjlv737ktmt4eswrqcd0mrx
+
+
 # retrieve the FMSPC from your machine
 quartz print-fmspc
 
 # export it
 export FMSPC=YOUR MACHINE FMSPC HERE  // e.g. 00606A000000
-
+export FMSPC=00606A000000
 # you might want to update the tcbinfo contract you can follow the steps following [this guide from line 32 ](./tcbinfo_and_verifier.md).
 
 # copy the neutron testnet config file to the default quartz.toml file, so we connect to the right nodes
 cp quartz.neutron_pion-1.toml quartz.toml
-quartz enclave build
+quartz enclave build --release
 quartz enclave start  --fmspc $FMSPC --tcbinfo-contract $TCBINFO_CONTRACT --dcap-verifier-contract $DCAP_CONTRACT --unsafe-trust-latest
 
 # build and deploy the contracts
 quartz contract build --contract-manifest "contracts/Cargo.toml"
-quartz contract deploy --contract-manifest "contracts/Cargo.toml" --init-msg '{"denom":"untrn"}'
+quartz contract deploy --contract-manifest "contracts/Cargo.toml" --init-msg '{"levels": 16}'
 
 # store the output
 export CONTRACT=<CONTRACT_ADDRESS>
 
 # create the handshake
 quartz handshake --contract $CONTRACT
+
 
 ### ENCLAVE IS SETUP AND RUNNING! CONGRATS!
 ```
@@ -520,6 +538,8 @@ You can use a remote enclave machine by setting the following env var:
 
 ```bash
 QUARTZ_NODE_URL=<YOUR_IP_ADDR>:11090
+QUARTZ_NODE_URL=51.8.81.17:11090
+
 # You can now use that enclave to deploy
 cd examples/transfers
 quartz contract deploy  --contract-manifest "examples/transfers/contracts/Cargo.toml"   --init-msg '{"denom":"untrn"}'
