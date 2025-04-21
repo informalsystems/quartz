@@ -5,7 +5,6 @@ volumes:
 
 services:
   node:
-    container_name: neutron
     healthcheck:
       test:
         [
@@ -14,14 +13,9 @@ services:
           "-f",
           "http://127.0.0.1:1317/cosmos/base/tendermint/v1beta1/blocks/1",
         ]
-      start_period: 30s
-      interval: 10s
-      timeout: 10s
-      retries: 3
+    image: juanenrisley/neutrond:4.2.4
     volumes:
       - data:/root/.neutrond
-    build:
-      context: "./neutrond"
     ports:
       - 1317:1317
       - 9090:9090

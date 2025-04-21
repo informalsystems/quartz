@@ -1,9 +1,6 @@
-FROM golang:1.23-bullseye
-
-RUN apt-get update && apt-get install -y jq  && \
-    git clone https://github.com/neutron-org/neutron.git /root/neutron && \
-    cd /root/neutron && make install-test-binary
+FROM phusion/baseimage:focal-1.2.0
 
 COPY data /root/
+RUN mv /root/neutrond /usr/local/bin
 
 CMD bash /root/entrypoint.sh
