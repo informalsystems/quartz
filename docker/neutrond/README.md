@@ -16,13 +16,22 @@ folder.
 
 **Note: this image is _NOT_ intended to be used in production.**
 
-## Using the image
+## Updating neutrond binary
 
-For running this image you can just use the already prepared [docker-compose.yml](../docker-compose.yml)
-file by simply run at `docker` folder root level:
+We are using a special neutrond binary that allows to run the node in dev mode to be able to work with quartz correctly. To build this binary you need to follow next steps:
 
 ```bash
-docker compose up node
+# Clone the target neutrond version you want to build:
+git clone  --depth 1 --branch v4.2.4 https://github.com/neutron-org/neutron.git /neutron && cd ./neutron
+
+# Build the binary using special build flag:
+make build-static-linux-amd64 BUILD_TAGS=skip_ccv_msg_filter
+
+# It will generate the binary in `neutron/build/neutrond-linux-amd64`, copy that file:
+mv ./build/neutrond-linux-amd64 {PATH_CYCLES_POCKET}/docker/neutrond/data/neutrond
+
+# And now you can rebuild the docker image with new binary
+
 ```
 
 ## Importing the account keys

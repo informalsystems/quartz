@@ -1,9 +1,12 @@
-use std::{fmt::Display, marker::PhantomData};
+use std::{
+    fmt::{Debug, Display},
+    marker::PhantomData,
+};
 
 use anyhow::anyhow;
 use cosmrs::AccountId;
 use futures_util::StreamExt;
-use log::{error, info, trace};
+use log::{error, info, trace, warn};
 use reqwest::Url;
 use serde::Serialize;
 use tendermint_rpc::{
@@ -131,7 +134,7 @@ where
     <E as Enclave>::Store: Store<Contract = AccountId>,
     C: ChainClient<Contract = AccountId, Error = anyhow::Error>,
     <C as ChainClient>::TxOutput: Display,
-    R: Handler<E, Error = Status>,
+    R: Handler<E, Error = Status> + Debug,
     <R as Handler<E>>::Response: Serialize + Send + Sync + 'static,
     EV: Handler<C, Response = R, Error = anyhow::Error>,
     EV: TryFrom<TmEvent, Error = anyhow::Error>,
@@ -166,7 +169,7 @@ where
 
         // wait and listen for events
         while let Some(Ok(event)) = subs.next().await {
-            trace!("Received event");
+            trace!("Received event: {event:?}");
 
             // attempt to decode event if relevant
             let event = match Self::Event::try_from(event) {
@@ -195,18 +198,35 @@ where
             }
 
             // handle event (through event handler) and generate enclave request
-            let request = event.handle(&self.chain_client).await?;
+            let request = match event.handle(&self.chain_client).await {
+                Ok(r) => r,
+                Err(e) => {
+                    warn!("event handler: {e}");
+                    continue;
+                }
+            };
+
+            trace!("Handling request: {request:?}");
 
             // call enclave with request and get response
-            let response = self.enclave_call(request).await?;
+            let response = match self.enclave_call(request).await {
+                Ok(r) => r,
+                Err(e) => {
+                    warn!("request handler: {e}");
+                    continue;
+                }
+            };
 
             // submit response to the chain
             let tx_config = (self.gas_fn)(&response);
             let output = self
                 .chain_client
                 .send_tx(&contract, response, tx_config)
-                .await?;
-            info!("tx output: {output}");
+                .await;
+            match output {
+                Ok(o) => info!("tx output: {o}"),
+                Err(e) => warn!("send_tx: {e}"),
+            }
         }
 
         client.close().expect("Failed to close client");

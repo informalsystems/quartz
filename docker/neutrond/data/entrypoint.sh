@@ -1,5 +1,5 @@
 #!/bin/sh
-set e
+set -e
 
 # Clean previous keys & reset node
 rm -rf /root/.neutrond/keyring-test &> /dev/null
@@ -20,18 +20,10 @@ sed -i 's/swagger = false/swagger = true/g' /root/.neutrond/config/app.toml
 sed -i 's/pruning = "default"/pruning = "everything"/g' /root/.neutrond/config/app.toml
 sed -i 's/create_empty_blocks = true/create_empty_blocks = false/g' /root/.neutrond/config/config.toml
 
-GENESIS_PATH="/root/.neutrond/config/genesis.json"
-
-function set_genesis_param_jq() {
-  param_path=$1
-  param_value=$2
-  jq "${param_path} = ${param_value}" > tmp_genesis_file.json < "$GENESIS_PATH" && mv tmp_genesis_file.json "$GENESIS_PATH"
-}
-
-# feemarket
-set_genesis_param_jq ".app_state.feemarket.params.min_base_gas_price" "\"0.0025\""
-set_genesis_param_jq ".app_state.feemarket.params.fee_denom" "\"untrn\""
-set_genesis_param_jq ".app_state.feemarket.state.base_gas_price" "\"0.0025\""
+# feemarket parameters in genesis.json
+sed -i 's/"min_base_gas_price": "[^"]*"/"min_base_gas_price": "0.0025"/g' /root/.neutrond/config/genesis.json
+sed -i 's/"fee_denom": "[^"]*"/"fee_denom": "untrn"/g' /root/.neutrond/config/genesis.json
+sed -i 's/"base_gas_price": "[^"]*"/"base_gas_price": "0.0025"/g' /root/.neutrond/config/genesis.json
 
 # Import all test accounts
 for filename in /root/accounts/*.txt; do
