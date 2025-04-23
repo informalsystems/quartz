@@ -26,6 +26,7 @@ loader.insecure__use_host_env = true
 loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "{{ chain_id }}",
                 "--fmspc", "{{ fmspc }}",
+                "--pccs-url", "{{ pccs_url }}",
                 "--tcbinfo-contract", "{{ tcbinfo_contract }}",
                 "--dcap-verifier-contract", "{{ dcap_verifier_contract }}",
                 "--node-url", "{{ node_url }}",
