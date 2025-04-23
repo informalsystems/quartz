@@ -21,6 +21,8 @@ use crate::{
     response::{enclave_start::EnclaveStartResponse, Response},
 };
 
+const DEFAULT_PCCS_URL: &str = "https://localhost:8081/sgx/certification/v4/";
+
 #[async_trait]
 impl Handler for EnclaveStartRequest {
     type Response = Response;
@@ -73,6 +75,10 @@ impl Handler for EnclaveStartRequest {
                 ));
             };
 
+            let pccs_url = self
+                .pccs_url
+                .unwrap_or(DEFAULT_PCCS_URL.parse().expect("hardcoded URL"));
+
             if std::env::var("ADMIN_SK").is_err() {
                 return Err(eyre!("ADMIN_SK environment variable is not set"));
             };
@@ -94,6 +100,7 @@ impl Handler for EnclaveStartRequest {
                 quartz_dir_canon,
                 &enclave_dir,
                 fmspc,
+                pccs_url,
                 tcbinfo_contract,
                 dcap_verifier_contract,
                 &config.node_url,
@@ -180,6 +187,7 @@ async fn gramine_manifest(
     quartz_dir: &Path,
     enclave_dir: &Path,
     fmspc: Fmspc,
+    pccs_url: Url,
     tcbinfo_contract: AccountId,
     dcap_verifier_contract: AccountId,
     node_url: &Url,
@@ -208,6 +216,7 @@ async fn gramine_manifest(
         .arg(format!("-Dtrusted_height={}", trusted_height))
         .arg(format!("-Dtrusted_hash={}", trusted_hash))
         .arg(format!("-Dfmspc={}", hex::encode(fmspc)))
+        .arg(format!("-Dpccs_url={}", pccs_url))
         .arg(format!("-Dnode_url={}", node_url))
         .arg(format!("-Dws_url={}", ws_url))
         .arg(format!("-Dgrpc_url={}", grpc_url))

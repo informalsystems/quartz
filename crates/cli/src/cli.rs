@@ -215,6 +215,7 @@ pub struct EnclaveBuildArgs {
     pub release: bool,
 }
 
+#[serde_as]
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct EnclaveStartArgs {
     /// The network chain ID
@@ -230,6 +231,12 @@ pub struct EnclaveStartArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fmspc: Option<Fmspc>,
+
+    /// PCCS URL; required if `MOCK_SGX` is not set
+    #[arg(long)]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pccs_url: Option<Url>,
 
     /// Address of the TcbInfo contract
     #[arg(long)]

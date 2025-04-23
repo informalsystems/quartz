@@ -118,6 +118,7 @@ impl TryFrom<EnclaveCommand> for Request {
             EnclaveCommand::Start(args) => Ok(EnclaveStartRequest {
                 unsafe_trust_latest: args.unsafe_trust_latest,
                 fmspc: args.fmspc,
+                pccs_url: args.pccs_url,
                 tcbinfo_contract: args.tcbinfo_contract,
                 dcap_verifier_contract: args.dcap_verifier_contract,
             }
