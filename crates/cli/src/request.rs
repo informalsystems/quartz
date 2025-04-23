@@ -65,7 +65,9 @@ impl TryFrom<Command> for Request {
                 }
                 .into())
             }
-            Command::PrintFmspc => Ok(Request::PrintFmspc(PrintFmspcRequest)),
+            Command::PrintFmspc(args) => Ok(Request::PrintFmspc(PrintFmspcRequest {
+                pccs_url: args.pccs_url,
+            })),
         }
     }
 }

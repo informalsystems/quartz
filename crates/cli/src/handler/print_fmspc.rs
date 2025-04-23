@@ -145,9 +145,11 @@ impl Handler for PrintFmspcRequest {
         }
 
         let quote = hex::decode(output.stdout)?;
-
+        let url = self
+            .pccs_url
+            .unwrap_or(DEFAULT_PCCS_URL.parse().expect("hardcoded URL"));
         let collateral =
-            get_collateral(DEFAULT_PCCS_URL, &quote, std::time::Duration::from_secs(10))
+            get_collateral(&url.to_string(), &quote, std::time::Duration::from_secs(10))
                 .await
                 .expect("failed to get collateral");
         let tcb_info: serde_json::Value = serde_json::from_str(&collateral.tcb_info)
