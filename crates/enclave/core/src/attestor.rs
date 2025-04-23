@@ -16,7 +16,7 @@ use quartz_contract_core::{
     state::{MrEnclave, UserData},
 };
 use quartz_tee_ra::intel_sgx::dcap::{Collateral, Quote3Error};
-use reqwest::blocking::Client;
+use reqwest::{blocking::Client, Url};
 use serde::Serialize;
 
 use crate::types::Fmspc;
@@ -49,6 +49,7 @@ pub trait Attestor: Send + Sync + 'static {
 #[derive(Clone, PartialEq, Debug)]
 pub struct DcapAttestor {
     pub fmspc: Fmspc,
+    pub pccs_url: Url,
 }
 
 impl Attestor for DcapAttestor {
@@ -72,13 +73,14 @@ impl Attestor for DcapAttestor {
     }
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
-        fn pccs_query_pck() -> Result<(Vec<u8>, String), Box<dyn Error>> {
-            let url = "https://127.0.0.1:8081/sgx/certification/v4/pckcrl?ca=processor";
+        fn pccs_query_pck(mut pccs_url: Url) -> Result<(Vec<u8>, String), Box<dyn Error>> {
+            pccs_url.set_path("pckcrl");
+            pccs_url.set_query(Some("ca=processor"));
 
             let client = Client::builder()
                 .danger_accept_invalid_certs(true) // FIXME(hu55a1n1): required?
                 .build()?;
-            let response = client.get(url).send()?;
+            let response = client.get(pccs_url.as_str()).send()?;
 
             // Parse relevant headers
             let pck_crl_issuer_chain = response
@@ -142,8 +144,8 @@ impl Attestor for DcapAttestor {
         let quote = self.quote(user_data)?;
 
         let collateral = {
-            let (pck_crl, pck_crl_issuer_chain) =
-                pccs_query_pck().map_err(|e| IoError::new(ErrorKind::Other, e.to_string()))?;
+            let (pck_crl, pck_crl_issuer_chain) = pccs_query_pck(self.pccs_url.clone())
+                .map_err(|e| IoError::new(ErrorKind::Other, e.to_string()))?;
             collateral(&self.fmspc.to_string(), pck_crl, pck_crl_issuer_chain)
         };
 
