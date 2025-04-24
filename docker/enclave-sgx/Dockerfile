@@ -54,8 +54,7 @@ RUN gramine-sgx-gen-private-key > /dev/null 2>&1 && \
         -Denclave_dir="/opt/enclave"  \
         -Denclave_executable="/opt/enclave/bin/enclave" \
         -Darch_libdir="/lib/$(gcc -dumpmachine)"  \
-        -Dra_type="epid" \
-        -Dra_client_linkable=1 \
+        -Dra_type="dcap" \
         -Dtrusted_height="${TRUSTED_HEIGHT}"  \
         -Dtrusted_hash="${TRUSTED_HASH}"  \
         -Dgramine_port=11090 \

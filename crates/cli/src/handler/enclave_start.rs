@@ -210,7 +210,6 @@ async fn gramine_manifest(
         .arg(format!("-Dhome={}", home_dir))
         .arg(format!("-Darch_libdir={}", arch_libdir))
         .arg("-Dra_type=dcap")
-        .arg("-Dra_client_linkable=1")
         .arg(format!("-Dchain_id={}", chain_id))
         .arg(format!("-Dquartz_dir={}", quartz_dir.display()))
         .arg(format!("-Dtrusted_height={}", trusted_height))

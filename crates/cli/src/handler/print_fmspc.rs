@@ -92,7 +92,6 @@ impl Handler for PrintFmspcRequest {
             .arg(format!("-Dhome={}", home_dir))
             .arg(format!("-Darch_libdir={}", arch_libdir))
             .arg("-Dra_type=dcap")
-            .arg("-Dra_client_linkable=1")
             .arg(format!(
                 "-Dgen_quote_bin_path={}",
                 gen_quote_bin_path.display()
