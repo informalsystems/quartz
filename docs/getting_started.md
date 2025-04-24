@@ -371,7 +371,7 @@ Now that we've tried the example app on a local testnet with a mocked SGX, it's
 time to use a real testnet and a real SGX core. This guide will walk through how
 to get setup with SGX on Azure, and how to deploy quartz contracts to the
 Neutron testnet using real remote attestations from SGX cores on Azure. Since
-this requires setting up an actual SGX setup, its naturally much more
+this requires setting up an actual SGX setup, it's naturally much more
 complicated.
 
 Real verification of SGX on a CosmWasm network requires two additional global contracts
@@ -387,117 +387,135 @@ testnet at:
 - verifier - `neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf`
 - tcbinfo - `neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps`
 
-To deploy these on your own testnet, see [below](#other-testnets-with-sgx). Although for v0.1, we recommend going with these already deployed contracts.
+To deploy these on your own testnet, see [below](#other-testnets-with-sgx). Although for now, we recommend going with these already deployed contracts.
 
 ### Setting up an Azure machine
 
 To begin, you'll need to deploy an SGX-enabled Azure instance and log in via ssh.
-Follow the [steps Microsoft lays out](https://learn.microsoft.com/en-us/azure/confidential-computing/quick-create-portal) to connect, choose Ubuntu 20.04, then ssh into the machine.
+Follow the [steps Microsoft lays out](https://learn.microsoft.com/en-us/azure/confidential-computing/quick-create-portal) to connect, choose Ubuntu 24.04, then ssh into the machine.
 
 Once logged in, clone and install Quartz like before (see [installation](#installation)). Once you clone the Quartz repo, you'll have to add some things to your azure machine.
 
-Below we have provided a long instruction set to get the azure machine setup. We plan on dockerizing all of this after the v0.1 launch, as it is quite complex. You can reach out for the team for help if you get stuck here.
+Below we have provided a long instruction set to get the azure machine setup. We plan on dockerizing all of this, as it is quite complex. You can reach out for the team for help if you get stuck here.
 
 ```bash
 ### INSIDE YOUR AZURE SGX MACHINE ###
 
-# install rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup install 1.79.0
-rustup default 1.79.0
-rustup target add wasm32-unknown-unknown
+# --- SGX setup ---
 
-# install go
-wget https://go.dev/dl/go1.22.2.linux-amd64.tar.gz
-rm -rf /usr/local/go && tar -C /usr/local -xzf go1.22.2.linux-amd64.tar.gz
-echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
+# update/upgrade 
+sudo apt update
+sudo apt upgrade  # (optional)
+sudo reboot
 
 # necessary building packages
-sudo apt update
-sudo apt upgrade -y
-sudo apt install build-essential
-sudo apt install clang libclang-dev
-export LIBCLANG_PATH=/usr/lib/llvm-10/lib
-sudo apt install pkg-config
-sudo apt install libssl-dev
-sudo apt install protobuf-compiler
-sudo apt-get install ca-certificates
+sudo apt install -y dkms \
+		build-essential \
+		curl \
+		gnupg2 \
+		binutils \
+		clang \
+		libclang-dev \
+		pkg-config \
+		libssl-dev \
+		protobuf-compiler
+		
+# Gramine and DCAP dependencies
+# either build from source or install with apt as follows
+# see https://github.com/gramineproject/gramine/blob/master/packaging/docker/Dockerfile
+export UBUNTU_CODENAME=$(lsb_release -sc)
+sudo curl -fsSLo /usr/share/keyrings/gramine-keyring.gpg https://packages.gramineproject.io/gramine-keyring-${UBUNTU_CODENAME}.gpg \
+    && sudo echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/gramine-keyring.gpg] https://packages.gramineproject.io/ '${UBUNTU_CODENAME}' main' \
+    | sudo tee /etc/apt/sources.list.d/gramine.list
+sudo curl -fsSLo /usr/share/keyrings/intel-sgx-deb.key https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key \
+    && sudo echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/intel-sgx-deb.key] https://download.01.org/intel-sgx/sgx_repo/ubuntu '${UBUNTU_CODENAME}' main' \
+    | sudo tee /etc/apt/sources.list.d/intel-sgx.list
+sudo apt update && \
+    sudo apt install -y gramine \
+    sgx-aesm-service \
+    libsgx-enclave-common \
+    libsgx-aesm-launch-plugin \
+    libsgx-aesm-quote-ex-plugin \
+    libsgx-aesm-ecdsa-plugin \
+    libsgx-dcap-quote-verify \
+    libsgx-dcap-ql \
+    libsgx-dcap-default-qpl \
+    libsgx-dcap-quote-verify \
+    psmisc && \
+    sudo apt clean && \
+    sudo rm -rf /var/lib/apt/lists/* && \
+    sudo apt update
 
-# Clone the repo and install quartz. Reminder - to setup ssh key on azure, or use https
-git clone ssh://git@github.com/informalsystems/cycles-quartz
-cd cycles-quartz
-cargo install --path crates/cli
-quartz --help
+# start aesm (copied from Gramine's Dockerfile)
+cat <<EOF > restart_aesm.md
+#!/bin/sh
+set -e
+killall -q aesm_service || true
+AESM_PATH=/opt/intel/sgx-aesm-service/aesm LD_LIBRARY_PATH=/opt/intel/sgx-aesm-service/aesm exec /opt/intel/sgx-aesm-service/aesm/aesm_service --no-syslog
+EOF
+chmod +x restart_aesm.sh
+sudo ./restart_aesm.sh
 
-# install gramine
-# Taken from https://gramine.readthedocs.io/en/stable/installation.html#ubuntu-22-04-lts-or-20-04-lts
-sudo curl -fsSLo /usr/share/keyrings/gramine-keyring.gpg https://packages.gramineproject.io/gramine-keyring.gpg
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/gramine-keyring.gpg] https://packages.gramineproject.io/ $(lsb_release -sc) main" \
-| sudo tee /etc/apt/sources.list.d/gramine.list
+# --- Quartz setup ---
 
-sudo curl -fsSLo /usr/share/keyrings/intel-sgx-deb.asc https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-sgx-deb.asc] https://download.01.org/intel-sgx/sgx_repo/ubuntu $(lsb_release -sc) main" \
-| sudo tee /etc/apt/sources.list.d/intel-sgx.list
+# install rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+. "$HOME/.cargo/env"
+rustup target add wasm32-unknown-unknown
 
-sudo apt-get update
-sudo apt-get install gramine
+# install go (1.23.4 => because that's what neutron needs)
+wget https://go.dev/dl/go1.23.4.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.23.4.linux-amd64.tar.gz
+echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
+echo "export PATH=\$PATH:~/go/bin" >> ~/.profile
+. ~/.profile
 
-# add attestation dependencies
-# Taken from https://github.com/flashbots/geth-sgx-gramine/tree/main
-sudo apt-key adv --fetch-keys 'https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key'
-sudo add-apt-repository "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu `lsb_release -cs` main"
-sudo apt-get update && sudo apt-get install -y libsgx-dcap-ql
-sudo apt-key adv --fetch-keys 'https://packages.microsoft.com/keys/microsoft.asc'
-sudo apt-add-repository 'https://packages.microsoft.com/ubuntu/20.04/prod main'
-sudo apt-get update && sudo apt-get install -y az-dcap-client
-
-# generate gramine priv key
-gramine-sgx-gen-private-key
-
-# install neutron and setup accounts
+# install neutron 
 git clone -b main https://github.com/neutron-org/neutron.git
 cd neutron/
 make install
+# neutrond version
+# setup neutrond client (see below)
 
-neutrond keys add admin --keyring-backend test > ./accounts/val1.txt 2>&1
+# Clone the repo and install quartz. Reminder - to setup ssh key on azure, or use https
+git clone https://github.com/informalsystems/quartz.git
+cd quartz
+git checkout hu55a1n1/azure-focal-fixes
+cargo install --path crates/cli
+# quartz --help
 
-# install node (needed for pccs)
-sudo apt-get install nodejs=20.10.0-1nodesource1
-
-# install pccs - see appendix 2
-# instructions from https://download.01.org/intel-sgx/latest/linux-latest/docs/Intel_SGX_SW_Installation_Guide_for_Linux.pdf
-# Note - You will be asked a bunch of configuration questions when setting up pcss - for testing, any values will work. In production, please give it careful thought
-sudo apt-get install sgx-dcap-pccs
-sudo systemctl start pccs
-
-# update /etc/sgx_default_qcnl.conf to config in our repo
-sudo cp sgx_default_qcnl.conf /etc/sgx_default_qcnl.conf
-
-# reset pccs
-sudo systemctl restart pccs
+# setup PCCS correctly
+sudo cp examples/transfers/sgx_default_qcnl.conf /etc/sgx_default_qcnl.conf
+sudo ~/restart_aesm.sh
 ```
 
 Now everything is installed and ready and we can start running quartz:
 
 ```
-# build and start the enclave
+# you might want to update the tcbinfo contract you can follow the steps following [this guide from line 32 ](./tcbinfo_and_verifier.md).
+# here we're using the pre-deployed neutron pion-1 testnet contracts
+export PCCS_URL="https://global.acccache.azure.net/sgx/certification/v4/"
 export TCBINFO_CONTRACT=neutron1anj45ushmjntew7zrg5jw2rv0rwfce3nl5d655mzzg8st0qk4wjsds4wps
 export DCAP_CONTRACT=neutron18f3xu4yazfqr48wla9dwr7arn8wfm57qfw8ll6y02qsgmftpft6qfec3uf
 export ADMIN_SK=ffc4d3c9119e9e8263de08c0f6e2368ac5c2dacecfeb393f6813da7d178873d2
+
+# go to the transfers example dir and copy the neutron testnet config file to the default quartz.toml file, so we connect to the right nodes
 cd examples/transfers
+cp quartz.neutron_pion-1.toml quartz.toml
 
 # retrieve the FMSPC from your machine
-quartz print-fmspc
+quartz print-fmspc --pccs-url $PCCS_URL
 
 # export it
-export FMSPC=YOUR MACHINE FMSPC HERE  // e.g. 00606A000000
+export FMSPC=<YOUR MACHINE FMSPC HERE>  # e.g. 00606A000000
 
-# you might want to update the tcbinfo contract you can follow the steps following [this guide from line 32 ](./tcbinfo_and_verifier.md).
-
-# copy the neutron testnet config file to the default quartz.toml file, so we connect to the right nodes
-cp quartz.neutron_pion-1.toml quartz.toml
+# build and start the enclave
 quartz enclave build
-quartz enclave start  --fmspc $FMSPC --tcbinfo-contract $TCBINFO_CONTRACT --dcap-verifier-contract $DCAP_CONTRACT --unsafe-trust-latest
+quartz enclave start --fmspc $FMSPC \
+    --pccs-url $PCCS_URL \
+    --tcbinfo-contract $TCBINFO_CONTRACT \
+    --dcap-verifier-contract $DCAP_CONTRACT \
+    --unsafe-trust-latest
 
 # build and deploy the contracts
 quartz contract build --contract-manifest "contracts/Cargo.toml"
