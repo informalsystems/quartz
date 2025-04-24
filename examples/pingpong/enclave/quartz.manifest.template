@@ -1,6 +1,6 @@
 # Quartz-based app manifest file
 
-loader.entrypoint = "file:{{ gramine.libos }}"
+loader.entrypoint.uri = "file:{{ gramine.libos }}"
 libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-app-transfers-enclave"
 
 loader.log_level = "{{ log_level }}"

@@ -3,7 +3,7 @@
 libos.entrypoint = "{{ gen_quote_bin_path }}"
 
 loader.log_level = "{{ log_level }}"
-loader.entrypoint = "file:{{ gramine.libos }}"
+loader.entrypoint.uri = "file:{{ gramine.libos }}"
 loader.env.LD_LIBRARY_PATH = "/lib:/usr/local/lib:{{ arch_libdir }}:/usr{{ arch_libdir }}"
 loader.env.HOME = "{{ home }}"
 loader.env.INSIDE_SGX = "1"
