@@ -73,8 +73,8 @@ impl Attestor for DcapAttestor {
     }
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
-        fn pccs_query_pck(mut pccs_url: Url) -> Result<(Vec<u8>, String), Box<dyn Error>> {
-            pccs_url.set_path("pckcrl");
+        fn pccs_query_pck(pccs_url: Url) -> Result<(Vec<u8>, String), Box<dyn Error>> {
+            let mut pccs_url = pccs_url.join("pckcrl/").expect("hardcoded URL");
             pccs_url.set_query(Some("ca=processor"));
 
             let client = Client::builder()
