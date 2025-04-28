@@ -3,7 +3,7 @@
 libos.entrypoint = "{{ gen_quote_bin_path }}"
 
 loader.log_level = "{{ log_level }}"
-loader.entrypoint = "file:{{ gramine.libos }}"
+loader.entrypoint.uri = "file:{{ gramine.libos }}"
 loader.env.LD_LIBRARY_PATH = "/lib:/usr/local/lib:{{ arch_libdir }}:/usr{{ arch_libdir }}"
 loader.env.HOME = "{{ home }}"
 loader.env.INSIDE_SGX = "1"
@@ -25,11 +25,10 @@ fs.mounts = [
 ]
 
 sgx.enclave_size = "512M"
-sgx.max_threads = 2
+sgx.max_threads = 4
 sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
 
 sgx.remote_attestation = "{{ ra_type }}"
-sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
 
 sgx.trusted_files = [
   "file:{{ gramine.libos }}",

@@ -81,7 +81,7 @@ pub enum Command {
     Dev(DevArgs),
 
     /// Print the FMSPC of the current platform (SGX only)
-    PrintFmspc,
+    PrintFmspc(PrintFmspcArgs),
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -215,6 +215,7 @@ pub struct EnclaveBuildArgs {
     pub release: bool,
 }
 
+#[serde_as]
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
 pub struct EnclaveStartArgs {
     /// The network chain ID
@@ -230,6 +231,12 @@ pub struct EnclaveStartArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fmspc: Option<Fmspc>,
+
+    /// PCCS URL; required if `MOCK_SGX` is not set
+    #[arg(long)]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pccs_url: Option<Url>,
 
     /// Address of the TcbInfo contract
     #[arg(long)]
@@ -279,6 +286,16 @@ pub struct DevArgs {
     pub dcap_verifier_contract: Option<AccountId>,
 }
 
+#[serde_as]
+#[derive(Debug, Parser, Clone, Serialize, Deserialize)]
+pub struct PrintFmspcArgs {
+    /// PCCS URL
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub pccs_url: Option<Url>,
+}
+
 pub trait ToFigment {
     fn to_figment(&self) -> Figment;
 }
@@ -299,7 +316,7 @@ impl ToFigment for Command {
             Command::Dev(args) => Figment::from(Serialized::defaults(args))
                 .merge(Serialized::defaults(&args.contract_deploy))
                 .merge(Serialized::defaults(&args.enclave_build)),
-            Command::PrintFmspc => Figment::default(),
+            Command::PrintFmspc(args) => Figment::from(Serialized::defaults(args)),
         }
     }
 }

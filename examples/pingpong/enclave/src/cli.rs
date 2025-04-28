@@ -33,6 +33,10 @@ pub struct Cli {
     #[clap(long)]
     pub fmspc: Option<Fmspc>,
 
+    /// PCCS URL (for DCAP)
+    #[clap(long)]
+    pub pccs_url: Option<Url>,
+
     /// TcbInfo contract address
     #[clap(long)]
     pub tcbinfo_contract: Option<AccountId>,
