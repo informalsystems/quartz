@@ -224,3 +224,70 @@ pub fn parse_coin(input: &str) -> anyhow::Result<Coin> {
 
     Ok(Coin { denom, amount })
 }
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use super::*;
+
+    #[test]
+    fn parse_valid_basic() {
+        let coin = parse_coin("11000untrn").unwrap();
+        assert_eq!(coin.amount, 11_000);
+        assert_eq!(coin.denom, Denom::from_str("untrn").unwrap());
+    }
+
+    #[test]
+    fn parse_leading_zeros() {
+        let coin = parse_coin("000123abc").unwrap();
+        assert_eq!(coin.amount, 123);
+        assert_eq!(coin.denom, Denom::from_str("abc").unwrap());
+    }
+
+    #[test]
+    fn parse_zero_amount() {
+        let coin = parse_coin("0xyz").unwrap();
+        assert_eq!(coin.amount, 0);
+        assert_eq!(coin.denom, Denom::from_str("xyz").unwrap());
+    }
+
+    #[test]
+    fn parse_denom_with_digits() {
+        let coin = parse_coin("10token123").unwrap();
+        assert_eq!(coin.amount, 10);
+        assert_eq!(coin.denom, Denom::from_str("token123").unwrap());
+    }
+
+    #[test]
+    fn parse_max_u128_amount() {
+        // u128::MAX = 340282366920938463463374607431768211455
+        let s = "340282366920938463463374607431768211455max";
+        let coin = parse_coin(s).unwrap();
+        assert_eq!(coin.amount, u128::MAX);
+        assert_eq!(coin.denom, Denom::from_str("max").unwrap());
+    }
+
+    #[test]
+    fn error_missing_denom() {
+        assert!(parse_coin("123").is_err());
+    }
+
+    #[test]
+    fn error_missing_amount() {
+        assert!(parse_coin("abc").is_err());
+    }
+
+    #[test]
+    fn error_overflow_amount() {
+        // one more than u128::MAX
+        let s = "340282366920938463463374607431768211456overflow";
+        assert!(parse_coin(s).is_err());
+    }
+
+    #[test]
+    fn error_negative_amount() {
+        // '-' is non-digit at pos 0 → empty amount → parse error
+        assert!(parse_coin("-100untrn").is_err());
+    }
+}
