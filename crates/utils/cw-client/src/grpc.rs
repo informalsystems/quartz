@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, str::FromStr};
 
 use anyhow::anyhow;
 use cosmos_sdk_proto::{
@@ -25,7 +25,7 @@ use cosmrs::{
     tendermint::chain::Id as TmChainId,
     tx,
     tx::{Fee, Msg, SignDoc, SignerInfo},
-    AccountId, Coin,
+    AccountId, Amount, Coin, Denom,
 };
 use reqwest::Url;
 use serde::de::DeserializeOwned;
@@ -100,7 +100,7 @@ impl CwClient for GrpcClient {
         gas: u64,
         _sender: &str,
         msg: M,
-        _pay_amount: &str,
+        pay_amount: &str,
     ) -> Result<String, Self::Error> {
         let tm_pubkey = self.sk.public_key();
         let sender = tm_pubkey
@@ -119,10 +119,7 @@ impl CwClient for GrpcClient {
         let account = account_info(self.url.to_string(), sender.to_string())
             .await
             .map_err(|e| anyhow!("error querying account info: {}", e))?;
-        let amount = Coin {
-            amount: 11000u128,
-            denom: "untrn".parse().expect("hardcoded denom"),
-        };
+        let amount = parse_coin(pay_amount)?;
         let tx_bytes = tx_bytes(
             &self.sk,
             amount,
@@ -214,4 +211,16 @@ pub async fn send_tx(
     });
     let tx_response = client.broadcast_tx(request).await?;
     Ok(tx_response.into_inner())
+}
+
+pub fn parse_coin(input: &str) -> anyhow::Result<Coin> {
+    let split_at = input
+        .find(|c: char| !c.is_ascii_digit())
+        .ok_or(anyhow!("invalid coin format: missing denomination"))?;
+    let (amt_str, denom_str) = input.split_at(split_at);
+
+    let amount: Amount = amt_str.parse()?;
+    let denom: Denom = Denom::from_str(denom_str).map_err(|e| anyhow!("invalid denom: {e}"))?;
+
+    Ok(Coin { denom, amount })
 }
