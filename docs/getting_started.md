@@ -446,12 +446,32 @@ sudo apt update && \
     sudo rm -rf /var/lib/apt/lists/* && \
     sudo apt update
 
-# start aesm (copied from Gramine's Dockerfile)
-cat <<EOF > restart_aesm.md
-#!/bin/sh
+# start aesm (inspired by Gramine's Dockerfile)
+cat <<EOF > restart_aesm.sh
+#!/bin/bash
 set -e
-killall -q aesm_service || true
-AESM_PATH=/opt/intel/sgx-aesm-service/aesm LD_LIBRARY_PATH=/opt/intel/sgx-aesm-service/aesm exec /opt/intel/sgx-aesm-service/aesm/aesm_service --no-syslog
+
+# Kill any existing AESM processes first
+echo "Killing any existing AESM processes..."
+killall -q aesm_service 2>/dev/null || true
+
+# Enable the AESM service so it starts on boot
+echo "Enabling AESM service..."
+sudo systemctl enable aesmd.service
+
+# Stop any running instances from systemd
+echo "Stopping any systemd AESM services..."
+sudo systemctl stop aesmd.service || true
+
+# Restart the service
+echo "Restarting AESM service..."
+sudo systemctl start aesmd.service
+
+# Verify the service is running
+echo "Checking service status..."
+sudo systemctl status aesmd.service | grep "Active"
+
+echo "AESM service has been enabled and restarted"
 EOF
 chmod +x restart_aesm.sh
 sudo ./restart_aesm.sh
