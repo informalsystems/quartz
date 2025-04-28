@@ -1,5 +1,6 @@
 use cosmrs::AccountId;
 use k256::ecdsa::VerifyingKey;
+use log::{debug, error};
 use quartz_proto::quartz::{
     InstantiateRequest, InstantiateResponse, SessionCreateRequest, SessionCreateResponse,
     SessionSetPubKeyRequest, SessionSetPubKeyResponse,
@@ -69,16 +70,21 @@ where
     async fn handle(self, ctx: &E) -> Result<Self::Response, Self::Error> {
         match self {
             CoreEnclaveRequest::Instantiate(req) => {
+                debug!("Handling instantiate request");
                 req.handle(ctx).await.map(CoreEnclaveResponse::Instantiate)
             }
-            CoreEnclaveRequest::SessionCreate(req) => req
-                .handle(ctx)
-                .await
-                .map(CoreEnclaveResponse::SessionCreate),
-            CoreEnclaveRequest::SessionSetPubKey(req) => req
-                .handle(ctx)
-                .await
-                .map(CoreEnclaveResponse::SessionSetPubKey),
+            CoreEnclaveRequest::SessionCreate(req) => {
+                debug!("Handling session create request");
+                req.handle(ctx)
+                    .await
+                    .map(CoreEnclaveResponse::SessionCreate)
+            }
+            CoreEnclaveRequest::SessionSetPubKey(req) => {
+                debug!("Handling session set pubkey request");
+                req.handle(ctx)
+                    .await
+                    .map(CoreEnclaveResponse::SessionSetPubKey)
+            }
         }
     }
 }
@@ -88,17 +94,31 @@ pub fn ensure_seq_num_consistency(
     seq_num_on_chain: u64,
     pending_sequenced_requests: usize,
 ) -> Result<(), Status> {
+    debug!(
+        "Checking sequence number consistency - store: {}, chain: {}, pending: {}",
+        seq_num_in_store, seq_num_on_chain, pending_sequenced_requests
+    );
+
     if seq_num_on_chain < seq_num_in_store {
+        error!(
+            "Replay attempt detected - chain seq num ({}) < store seq num ({})",
+            seq_num_on_chain, seq_num_in_store
+        );
         return Err(Status::failed_precondition("replay attempted"));
     }
 
     // make sure number of pending requests are equal to the diff b/w on-chain v/s in-mem seq num
     let seq_num_diff = seq_num_on_chain - seq_num_in_store;
     if seq_num_diff != pending_sequenced_requests as u64 {
+        error!(
+            "Sequence number mismatch - diff: {}, pending: {}",
+            seq_num_diff, pending_sequenced_requests
+        );
         return Err(Status::failed_precondition(format!(
             "seq_num_diff mismatch: num({seq_num_diff}) v/s diff({pending_sequenced_requests})"
         )));
     }
 
+    debug!("Sequence number consistency check passed");
     Ok(())
 }

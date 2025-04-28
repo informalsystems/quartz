@@ -4,6 +4,7 @@ use std::{
     io::{Error as IoError, ErrorKind, Write},
 };
 
+use log::{debug, error, trace};
 use mc_sgx_dcap_sys_types::sgx_ql_qve_collateral_t;
 use quartz_contract_core::{
     msg::{
@@ -57,6 +58,7 @@ impl Attestor for DcapAttestor {
     type RawAttestation = RawDcapAttestation;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
+        debug!("Generating DCAP quote");
         let user_data = user_data.user_data();
         let mut user_report_data = File::create("/dev/attestation/user_report_data")?;
         user_report_data.write_all(user_data.as_slice())?;
@@ -65,6 +67,7 @@ impl Attestor for DcapAttestor {
     }
 
     fn mr_enclave(&self) -> Result<MrEnclave, Self::Error> {
+        debug!("Retrieving MRENCLAVE");
         let quote = self.quote(NullUserData)?;
         Ok(quote[112..(112 + 32)]
             .try_into()
@@ -72,7 +75,9 @@ impl Attestor for DcapAttestor {
     }
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
+        debug!("Generating DCAP attestation");
         fn pccs_query_pck() -> Result<(Vec<u8>, String), Box<dyn Error>> {
+            trace!("Querying PCCS for PCK certificate");
             let url = "https://127.0.0.1:8081/sgx/certification/v4/pckcrl?ca=processor";
 
             let client = Client::builder()
@@ -142,15 +147,19 @@ impl Attestor for DcapAttestor {
         let quote = self.quote(user_data)?;
 
         let collateral = {
-            let (pck_crl, pck_crl_issuer_chain) =
-                pccs_query_pck().map_err(|e| IoError::new(ErrorKind::Other, e.to_string()))?;
+            let (pck_crl, pck_crl_issuer_chain) = pccs_query_pck().map_err(|e| {
+                error!("Failed to query PCCS: {}", e);
+                IoError::new(ErrorKind::Other, e.to_string())
+            })?;
             collateral(&self.fmspc.to_string(), pck_crl, pck_crl_issuer_chain)
         };
 
+        debug!("Successfully generated DCAP attestation");
         Ok(DcapAttestation::new(
-            quote
-                .try_into()
-                .map_err(|e: Quote3Error| IoError::other(e.to_string()))?,
+            quote.try_into().map_err(|e: Quote3Error| {
+                error!("Failed to convert quote: {}", e);
+                IoError::other(e.to_string())
+            })?,
             collateral,
         ))
     }
@@ -167,15 +176,18 @@ impl Attestor for MockAttestor {
     type RawAttestation = RawMockAttestation;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
+        debug!("Generating mock quote");
         let user_data = user_data.user_data();
         Ok(user_data.to_vec())
     }
 
     fn mr_enclave(&self) -> Result<MrEnclave, Self::Error> {
+        debug!("Retrieving mock MRENCLAVE");
         Ok(Default::default())
     }
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
+        debug!("Generating mock attestation");
         Ok(MockAttestation(user_data.user_data()))
     }
 }
