@@ -80,7 +80,6 @@ See the app enclaves in the `examples` directory for usage examples.
 )]
 
 use cosmrs::AccountId;
-use log::{debug, trace, warn};
 use quartz_contract_core::state::Config;
 
 use crate::{
@@ -169,7 +168,6 @@ impl<C: Send + Sync + 'static> DefaultSharedEnclave<C> {
         self,
         key_manager: K,
     ) -> DefaultEnclave<C, <Self as Enclave>::Attestor, K, <Self as Enclave>::Store> {
-        debug!("Updating enclave with new key manager");
         DefaultEnclave {
             attestor: self.attestor,
             key_manager,
@@ -192,17 +190,14 @@ where
     type Store = S;
 
     async fn attestor(&self) -> Self::Attestor {
-        trace!("Retrieving enclave attestor");
         self.attestor.clone()
     }
 
     async fn key_manager(&self) -> Self::KeyManager {
-        trace!("Retrieving enclave key manager");
         self.key_manager.clone()
     }
 
     async fn store(&self) -> &Self::Store {
-        trace!("Retrieving enclave store");
         &self.store
     }
 }

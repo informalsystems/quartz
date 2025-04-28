@@ -2,7 +2,6 @@ use anyhow::anyhow;
 use cosmrs::{crypto::secp256k1::SigningKey, AccountId};
 use cw_client::{CwClient, GrpcClient};
 use futures_util::StreamExt;
-use log::{debug, error, info, trace};
 use quartz_tm_prover::{
     config::{Config as TmProverConfig, ProofOutput},
     prover::prove,
@@ -39,7 +38,6 @@ impl DefaultChainClient {
         trusted_height: Height,
         trusted_hash: Hash,
     ) -> Self {
-        info!("Creating new default chain client for chain ID: {chain_id}");
         DefaultChainClient {
             chain_id,
             grpc_client: GrpcClient::new(signer, grpc_url),
@@ -82,16 +80,9 @@ impl ChainClient for DefaultChainClient {
         contract: &Self::Contract,
         query: impl Into<Self::Query> + Send,
     ) -> Result<R, Self::Error> {
-        debug!("Querying contract: {contract}");
         match query.into() {
-            Query::Json(q) => {
-                trace!("Executing JSON query");
-                self.grpc_client.query_smart(contract, q).await
-            }
-            Query::String(q) => {
-                trace!("Executing raw query");
-                self.grpc_client.query_raw(contract, q).await
-            }
+            Query::Json(q) => self.grpc_client.query_smart(contract, q).await,
+            Query::String(q) => self.grpc_client.query_raw(contract, q).await,
         }
     }
 
@@ -100,8 +91,6 @@ impl ChainClient for DefaultChainClient {
         contract: &Self::Contract,
         storage_key: &str,
     ) -> Result<Self::Proof, Self::Error> {
-        debug!("Generating existence proof for contract {contract} with storage key {storage_key}");
-
         let prover_config = TmProverConfig {
             primary: self.node_url.as_str().parse()?,
             witnesses: self.node_url.as_str().parse()?,
@@ -115,14 +104,12 @@ impl ChainClient for DefaultChainClient {
         };
 
         let proof_output = tokio::task::spawn_blocking(move || {
-            trace!("Spawning blocking task for proof generation");
             // Create a new runtime inside the blocking thread.
             let rt = tokio::runtime::Runtime::new()?;
             rt.block_on(async {
-                prove(prover_config).await.map_err(|report| {
-                    error!("Tendermint prover failed: {}", report);
-                    anyhow!("Tendermint prover failed. Report: {}", report)
-                })
+                prove(prover_config)
+                    .await
+                    .map_err(|report| anyhow!("Tendermint prover failed. Report: {}", report))
             })
         })
         .await??; // Handle both JoinError and your custom error
@@ -135,10 +122,6 @@ impl ChainClient for DefaultChainClient {
         tx: T,
         config: Self::TxConfig,
     ) -> Result<Self::TxOutput, Self::Error> {
-        debug!(
-            "Sending transaction to contract {contract} with gas {}",
-            config.gas
-        );
         self.grpc_client
             .tx_execute(
                 contract,
@@ -151,8 +134,7 @@ impl ChainClient for DefaultChainClient {
             .await
     }
 
-    async fn wait_for_blocks(&self, blocks: u8) -> Result<(), Self::Error> {
-        debug!("Waiting for {} blocks", blocks);
+    async fn wait_for_blocks(&self, _blocks: u8) -> Result<(), Self::Error> {
         let (client, driver) = WebSocketClient::new(self.ws_url.to_string().as_str()).await?;
 
         let driver_handle = tokio::spawn(async move { driver.run().await });
@@ -166,7 +148,6 @@ impl ChainClient for DefaultChainClient {
         while let Some(res) = subs.next().await {
             let _ev = res?;
             ev_count -= 1;
-            trace!("Received new block event, {} remaining", ev_count);
             if ev_count == 0 {
                 break;
             }

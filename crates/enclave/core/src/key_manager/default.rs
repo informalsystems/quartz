@@ -1,5 +1,4 @@
 use k256::ecdsa::{SigningKey, VerifyingKey};
-use log::{debug, info};
 
 use crate::key_manager::KeyManager;
 
@@ -11,7 +10,6 @@ pub struct DefaultKeyManager {
 
 impl Default for DefaultKeyManager {
     fn default() -> Self {
-        info!("Creating new default key manager with random signing key");
         Self {
             sk: SigningKey::random(&mut rand::thread_rng()),
         }
@@ -23,7 +21,6 @@ impl KeyManager for DefaultKeyManager {
     type PubKey = PubKey;
 
     async fn pub_key(&self) -> Self::PubKey {
-        debug!("Retrieving public key from key manager");
         PubKey(self.sk.clone().into())
     }
 }
