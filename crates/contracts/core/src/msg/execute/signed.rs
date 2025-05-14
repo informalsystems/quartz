@@ -1,9 +1,8 @@
-use crate::error::Error;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError};
 use decaf377_rdsa::{Signature, SpendAuth, VerificationKey};
 
-use crate::msg::HasDomainType;
+use crate::{error::Error, msg::HasDomainType};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Signed<M, S> {
