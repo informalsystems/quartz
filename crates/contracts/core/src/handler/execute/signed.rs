@@ -3,14 +3,13 @@ use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use crate::{
     error::Error,
     handler::Handler,
-    msg::execute::signed::{Signed, Verifier},
-    state::SESSION,
+    msg::execute::signed::{Auth, MsgVeifier, Signed},
 };
 
-impl<M, S> Handler for Signed<M, S>
+impl<M, A, P, S> Handler for Signed<M, A>
 where
-    M: Handler + AsRef<[u8]>,
-    S: Verifier,
+    M: Handler + MsgVeifier<PubKey = P, Sig = S>,
+    A: Auth<P, S>,
 {
     fn handle(
         self,
@@ -18,10 +17,9 @@ where
         env: &Env,
         info: &MessageInfo,
     ) -> Result<Response, Error> {
-        let session = SESSION.load(deps.storage).map_err(Error::Std)?;
-        let pub_key = session.pub_key().ok_or(Error::MissingSessionPublicKey)?;
-        let (msg, sig) = self.into_tuple();
-        sig.verify(pub_key, &msg)?;
+        let (msg, auth) = self.into_tuple();
+        let pub_key = auth.pub_key(deps.as_ref())?;
+        msg.verify(pub_key, auth.sig())?;
         Handler::handle(msg, deps.branch(), env, info)
     }
 }
