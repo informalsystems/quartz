@@ -23,8 +23,6 @@ pub enum Error {
     DcapVerificationQueryError(String),
     #[error("contract address mismatch")]
     ContractAddrMismatch,
-    #[error("invalid session due to missing public key")]
-    MissingSessionPublicKey,
 }
 
 impl From<K256Error> for Error {

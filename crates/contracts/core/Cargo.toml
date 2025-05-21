@@ -40,8 +40,5 @@ quartz-dcap-verifier-msgs.workspace = true
 quartz-tee-ra.workspace = true
 quartz-tcbinfo-msgs.workspace = true
 
-# fork
-decaf377-rdsa = { git = "https://github.com/dangush/decaf377-rdsa.git", default-features = false }
-
 [dev-dependencies]
 serde_json.workspace = true

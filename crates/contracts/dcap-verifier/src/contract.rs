@@ -57,7 +57,7 @@ pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 to_json_binary(&())
             } else {
                 Err(StdError::generic_err(
-                    Error::Dcap(verification_output).to_string(),
+                    Error::Dcap(Box::new(verification_output)).to_string(),
                 ))
             }
         }

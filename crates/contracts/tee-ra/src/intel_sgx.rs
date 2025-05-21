@@ -9,5 +9,5 @@ pub enum Error {
     #[error("Specified MRENCLAVE does not match the report")]
     MrEnclaveMismatch,
     #[error("DCAP specific error: {0:?}")]
-    Dcap(dcap::VerificationOutput<dcap::DcapVerifierOutput>),
+    Dcap(Box<dcap::VerificationOutput<dcap::DcapVerifierOutput>>),
 }
