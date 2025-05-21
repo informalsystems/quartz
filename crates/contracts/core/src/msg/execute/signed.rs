@@ -1,14 +1,12 @@
 use std::fmt::Debug;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Deps, HexBinary, StdError};
+use cosmwasm_std::StdError;
 
 use super::attested::Noop;
-use crate::{error::Error, msg::HasDomainType, state::SESSION};
+use crate::{error::Error, msg::HasDomainType};
 
 pub type AnySigned<M, P, S> = Signed<M, AnyAuth<P, S>>;
-pub type EnclaveSigned<M, S> = Signed<M, EnclaveAuth<S>>;
-pub type UserSigned<M, P, S> = Signed<M, UserAuth<P, S>>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Signed<M, A> {
@@ -87,89 +85,33 @@ pub trait MsgVerifier {
     type PubKey;
     type Sig;
 
-    fn verify(&self, pub_key: Self::PubKey, sig: Self::Sig) -> Result<(), Error>;
-}
-
-pub trait Auth<P, S> {
-    fn pub_key(&self, deps: Deps<'_>) -> Result<P, Error>;
-    fn sig(self) -> S;
+    fn verify(&self, pub_key: &Self::PubKey, sig: &Self::Sig) -> Result<(), Error>;
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum AnyAuth<P, S> {
-    Enclave(EnclaveAuth<S>),
-    User(UserAuth<P, S>),
-}
-
-impl<P, S> Auth<P, S> for AnyAuth<P, S>
-where
-    P: TryFrom<HexBinary> + Clone,
-    <P as TryFrom<HexBinary>>::Error: Debug,
-{
-    fn pub_key(&self, deps: Deps<'_>) -> Result<P, Error> {
-        match self {
-            Self::Enclave(e) => e.pub_key(deps),
-            Self::User(u) => u.pub_key(deps),
-        }
-    }
-
-    fn sig(self) -> S {
-        match self {
-            Self::Enclave(e) => Auth::<P, S>::sig(e),
-            Self::User(u) => u.sig(),
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct EnclaveAuth<S> {
-    pub sig: S,
-}
-
-impl<S> EnclaveAuth<S> {
-    pub fn new(sig: S) -> Self {
-        Self { sig }
-    }
-}
-
-impl<P, S> Auth<P, S> for EnclaveAuth<S>
-where
-    P: TryFrom<HexBinary>,
-    <P as TryFrom<HexBinary>>::Error: Debug,
-{
-    fn pub_key(&self, deps: Deps<'_>) -> Result<P, Error> {
-        let session = SESSION.load(deps.storage).map_err(Error::Std)?;
-        let raw_pub_key = session.pub_key().ok_or(Error::MissingSessionPublicKey)?;
-        let pub_key = raw_pub_key
-            .try_into()
-            .map_err(|e| StdError::generic_err(format!("{e:?}")))?;
-        Ok(pub_key)
-    }
-
-    fn sig(self) -> S {
-        self.sig
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct UserAuth<P, S> {
+pub struct AnyAuth<P, S> {
     pub pub_key: P,
     pub sig: S,
 }
 
-impl<P, S> UserAuth<P, S> {
+impl<P, S> AnyAuth<P, S> {
     pub fn new(pub_key: P, sig: S) -> Self {
         Self { pub_key, sig }
     }
 }
 
-impl<P: Clone, S> Auth<P, S> for UserAuth<P, S> {
-    fn pub_key(&self, _deps: Deps<'_>) -> Result<P, Error> {
-        Ok(self.pub_key.clone())
+pub trait Auth<P, S> {
+    fn pub_key(&self) -> &P;
+    fn sig(&self) -> &S;
+}
+
+impl<P, S> Auth<P, S> for AnyAuth<P, S> {
+    fn pub_key(&self) -> &P {
+        &self.pub_key
     }
 
-    fn sig(self) -> S {
-        self.sig
+    fn sig(&self) -> &S {
+        &self.sig
     }
 }
 
@@ -177,7 +119,7 @@ impl<M: MsgVerifier> MsgVerifier for Noop<M> {
     type PubKey = M::PubKey;
     type Sig = M::Sig;
 
-    fn verify(&self, pub_key: Self::PubKey, sig: Self::Sig) -> Result<(), Error> {
+    fn verify(&self, pub_key: &Self::PubKey, sig: &Self::Sig) -> Result<(), Error> {
         self.0.verify(pub_key, sig)
     }
 }

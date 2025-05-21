@@ -18,7 +18,7 @@ where
         info: &MessageInfo,
     ) -> Result<Response, Error> {
         let (msg, auth) = self.into_tuple();
-        let pub_key = auth.pub_key(deps.as_ref())?;
+        let pub_key = auth.pub_key();
         msg.verify(pub_key, auth.sig())?;
         Handler::handle(msg, deps.branch(), env, info)
     }
