@@ -3,12 +3,12 @@ use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use crate::{
     error::Error,
     handler::Handler,
-    msg::execute::signed::{Auth, MsgVeifier, Signed},
+    msg::execute::signed::{Auth, MsgVerifier, Signed},
 };
 
 impl<M, A, P, S> Handler for Signed<M, A>
 where
-    M: Handler + MsgVeifier<PubKey = P, Sig = S>,
+    M: Handler + MsgVerifier<PubKey = P, Sig = S>,
     A: Auth<P, S>,
 {
     fn handle(

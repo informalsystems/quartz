@@ -83,7 +83,7 @@ where
     }
 }
 
-pub trait MsgVeifier {
+pub trait MsgVerifier {
     type PubKey;
     type Sig;
 
@@ -173,7 +173,7 @@ impl<P: Clone, S> Auth<P, S> for UserAuth<P, S> {
     }
 }
 
-impl<M: MsgVeifier> MsgVeifier for Noop<M> {
+impl<M: MsgVerifier> MsgVerifier for Noop<M> {
     type PubKey = M::PubKey;
     type Sig = M::Sig;
 
