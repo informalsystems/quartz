@@ -244,4 +244,8 @@ impl Session {
     pub fn nonce(&self) -> Nonce {
         self.nonce.to_array().expect("correct by construction")
     }
+
+    pub fn pub_key(self) -> Option<HexBinary> {
+        self.pub_key
+    }
 }

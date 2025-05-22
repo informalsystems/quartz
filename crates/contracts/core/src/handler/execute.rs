@@ -2,6 +2,7 @@ pub mod attested;
 pub mod sequenced;
 pub mod session_create;
 pub mod session_set_pub_key;
+pub mod signed;
 
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
