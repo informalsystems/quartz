@@ -79,6 +79,8 @@ See the app enclaves in the `examples` directory for usage examples.
     unused_qualifications
 )]
 
+use std::path::PathBuf;
+
 use cosmrs::AccountId;
 use log::{debug, trace, warn};
 use quartz_contract_core::state::Config;
@@ -86,11 +88,13 @@ use tokio::sync::mpsc;
 
 use crate::{
     attestor::{Attestor, DefaultAttestor},
+    backup_restore::{Backup, Export, Import},
     key_manager::{default::DefaultKeyManager, shared::SharedKeyManager, KeyManager},
     store::{default::DefaultStore, Store},
 };
 
 pub mod attestor;
+pub mod backup_restore;
 pub mod chain_client;
 pub mod event;
 pub mod grpc;
@@ -226,5 +230,27 @@ where
     async fn store(&self) -> &Self::Store {
         trace!("Retrieving enclave store");
         &self.store
+    }
+}
+
+#[async_trait::async_trait]
+impl<C, A, K, S> Backup for DefaultEnclave<C, A, K, S>
+where
+    C: Send + Sync + 'static,
+    A: Attestor + Clone,
+    K: KeyManager + Clone,
+    S: Store<Contract = AccountId> + Clone,
+{
+    type Config = PathBuf;
+    type Error = ();
+
+    async fn backup(&self, config: Self::Config) {
+        trace!("Backing up to {config:?}");
+        todo!()
+    }
+
+    fn try_restore(&self, config: Self::Config) -> Result<bool, Self::Error> {
+        trace!("Restoring from {config:?}");
+        todo!()
     }
 }
