@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.trusted_hash,
     );
 
-    let enclave = DefaultSharedEnclave::shared(attestor, config, ());
+    let (enclave, _notifier_rx) = DefaultSharedEnclave::shared(attestor, config, ());
     let host = DefaultHost::<EnclaveRequest, EnclaveEvent, _, _>::new(
         enclave.clone(),
         chain_client,

@@ -82,6 +82,7 @@ See the app enclaves in the `examples` directory for usage examples.
 use cosmrs::AccountId;
 use log::{debug, trace, warn};
 use quartz_contract_core::state::Config;
+use tokio::sync::mpsc;
 
 use crate::{
     attestor::{Attestor, DefaultAttestor},
@@ -144,6 +145,13 @@ pub trait Enclave: Send + Sync + 'static {
     async fn store(&self) -> &Self::Store;
 }
 
+/// Notification the enclave may emit.
+#[derive(Debug, Clone)]
+pub enum Notification {
+    /// Fired once the enclave finishes its remote-attestation handshake.
+    HandshakeComplete,
+}
+
 /// The default generic implementation of the [`Enclave`] trait for convenience.
 /// Includes a generic context for additional application-specific data or configuration.
 #[derive(Clone, Debug)]
@@ -152,16 +160,29 @@ pub struct DefaultEnclave<C, A = DefaultAttestor, K = DefaultKeyManager, S = Def
     pub key_manager: K,
     pub store: S,
     pub ctx: C,
+
+    /// Internal event notifier
+    pub(crate) notifier_tx: mpsc::Sender<Notification>,
 }
 
 impl<C: Send + Sync + 'static> DefaultSharedEnclave<C> {
-    pub fn shared(attestor: DefaultAttestor, config: Config, ctx: C) -> DefaultSharedEnclave<C> {
-        DefaultSharedEnclave {
-            attestor,
-            key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
-            store: DefaultStore::new(config),
-            ctx,
-        }
+    pub fn shared(
+        attestor: DefaultAttestor,
+        config: Config,
+        ctx: C,
+    ) -> (DefaultSharedEnclave<C>, mpsc::Receiver<Notification>) {
+        let (notifier_tx, notifier_rx) = mpsc::channel(10); // ← NEW
+
+        (
+            DefaultSharedEnclave {
+                attestor,
+                key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
+                store: DefaultStore::new(config),
+                ctx,
+                notifier_tx,
+            },
+            notifier_rx,
+        )
     }
 
     /// Consumes a `DefaultEnclave` and returns another one with the specified key-manager.
@@ -175,6 +196,7 @@ impl<C: Send + Sync + 'static> DefaultSharedEnclave<C> {
             key_manager,
             store: self.store,
             ctx: self.ctx,
+            notifier_tx: self.notifier_tx,
         }
     }
 }
