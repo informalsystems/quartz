@@ -1,6 +1,7 @@
 use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
+    path::PathBuf,
 };
 
 use anyhow::anyhow;
@@ -14,14 +15,16 @@ use tendermint_rpc::{
     query::{EventType, Query},
     SubscriptionClient, WebSocketClient,
 };
+use tokio::sync::mpsc::Receiver;
 use tonic::Status;
 
 use crate::{
+    backup_restore::Backup,
     chain_client::{default::DefaultChainClient, ChainClient},
     event::QuartzEvent,
     handler::Handler,
     store::Store,
-    Enclave,
+    Enclave, Notification,
 };
 
 pub type Response<R, E> = <R as Handler<E>>::Response;
@@ -104,11 +107,12 @@ pub trait Host: Send + Sync + 'static + Sized {
 /// ### Note
 /// This implementation consumes an `Enclave` instance and calls it directly. Therefore, it is
 /// expected to be run inside a TEE.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct DefaultHost<R, EV, GF, E, C = DefaultChainClient> {
     enclave: E,
     chain_client: C,
     gas_fn: GF,
+    notifier_rx: Receiver<Notification>,
     _phantom: PhantomData<(R, EV)>,
 }
 
@@ -117,11 +121,17 @@ where
     R: Handler<E>,
     C: ChainClient,
 {
-    pub fn new(enclave: E, chain_client: C, gas_fn: GF) -> Self {
+    pub fn new(
+        enclave: E,
+        chain_client: C,
+        gas_fn: GF,
+        notifier_rx: Receiver<Notification>,
+    ) -> Self {
         Self {
             enclave,
             chain_client,
             gas_fn,
+            notifier_rx,
             _phantom: Default::default(),
         }
     }
@@ -130,7 +140,7 @@ where
 #[async_trait::async_trait]
 impl<R, EV, GF, E, C> Host for DefaultHost<R, EV, GF, E, C>
 where
-    E: Enclave,
+    E: Enclave + Backup<Config = PathBuf>,
     <E as Enclave>::Store: Store<Contract = AccountId>,
     C: ChainClient<Contract = AccountId, Error = anyhow::Error>,
     <C as ChainClient>::TxOutput: Display,
@@ -157,10 +167,17 @@ where
             .map_err(|e| anyhow!("enclave call failed: {}", e))
     }
 
-    async fn serve_with_query(self, url: Url, query: Option<Query>) -> Result<(), Self::Error> {
+    async fn serve_with_query(mut self, url: Url, query: Option<Query>) -> Result<(), Self::Error> {
         // connect to the websocket client
         let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
+
+        // wait for handshake
+        while let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
+            // FIXME(hu55a1n1): need configurable path
+            self.enclave.backup(PathBuf::default()).await;
+            break;
+        }
 
         // subscribe to relevant events
         // TODO: default to `Query::from(EventType::Tx).and_eq("wasm._contract_address", contract)`
