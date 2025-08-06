@@ -13,3 +13,13 @@ pub trait Backup {
     /// Must return `Ok(false)` if previous backup did not exist.
     fn try_restore(&self, config: Self::Config) -> Result<bool, Self::Error>;
 }
+
+#[async_trait::async_trait]
+pub trait Export {
+    async fn export(&self) -> Vec<u8>;
+}
+
+#[async_trait::async_trait]
+pub trait Import {
+    async fn import(self, data: Vec<u8>);
+}
