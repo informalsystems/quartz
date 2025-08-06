@@ -164,9 +164,7 @@ pub struct DefaultEnclave<C, A = DefaultAttestor, K = DefaultKeyManager, S = Def
     pub key_manager: K,
     pub store: S,
     pub ctx: C,
-
-    /// Internal event notifier
-    pub(crate) notifier_tx: mpsc::Sender<Notification>,
+    pub notifier_tx: mpsc::Sender<Notification>,
 }
 
 impl<C: Send + Sync + 'static> DefaultSharedEnclave<C> {
