@@ -1,15 +1,22 @@
-use std::sync::Arc;
+use std::{convert::Infallible, sync::Arc};
 
 use cosmrs::AccountId;
 use displaydoc::Display;
 use log::{debug, info, trace};
 use quartz_contract_core::state::{Config, Nonce};
+use serde::{Deserialize, Serialize};
+use serde_json::Error;
 use tokio::sync::RwLock;
 
-use crate::store::Store;
+use crate::{
+    backup_restore::{Export, Import},
+    key_manager::default::DefaultKeyManager,
+    store::Store,
+};
 
 /// A default, thread-safe in-memory store.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(into = "StoreDTO", try_from = "StoreDTO")]
 pub struct DefaultStore {
     config: Arc<RwLock<Option<Config>>>,
     contract: Arc<RwLock<Option<AccountId>>>,
@@ -86,5 +93,53 @@ impl Store for DefaultStore {
             *seq_num
         );
         Ok(prev_seq_num)
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct StoreDTO {
+    config: Option<Config>,
+    contract: Option<AccountId>,
+    nonce: Option<Nonce>,
+    seq_num: u64,
+}
+
+impl From<DefaultStore> for StoreDTO {
+    fn from(src: DefaultStore) -> Self {
+        StoreDTO {
+            config: src.config.blocking_read().clone(),
+            contract: src.contract.blocking_read().clone(),
+            nonce: src.nonce.blocking_read().clone(),
+            seq_num: *src.seq_num.blocking_read(),
+        }
+    }
+}
+
+impl TryFrom<StoreDTO> for DefaultStore {
+    type Error = Infallible;
+
+    fn try_from(dto: StoreDTO) -> Result<Self, Self::Error> {
+        Ok(Self {
+            config: Arc::new(RwLock::new(dto.config)),
+            contract: Arc::new(RwLock::new(dto.contract)),
+            nonce: Arc::new(RwLock::new(dto.nonce)),
+            seq_num: Arc::new(RwLock::new(dto.seq_num)),
+        })
+    }
+}
+
+#[async_trait::async_trait]
+impl Import for DefaultStore {
+    type Error = Error;
+
+    async fn import(self, data: Vec<u8>) -> Result<Self, Self::Error> {
+        serde_json::from_slice(data.as_slice())
+    }
+}
+
+#[async_trait::async_trait]
+impl Export for DefaultStore {
+    async fn export(&self) -> Vec<u8> {
+        serde_json::to_vec(&self).expect("infallible store serializer")
     }
 }

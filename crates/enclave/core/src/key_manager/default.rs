@@ -1,7 +1,10 @@
-use k256::ecdsa::{SigningKey, VerifyingKey};
+use k256::ecdsa::{Error, SigningKey, VerifyingKey};
 use log::{debug, info};
 
-use crate::key_manager::KeyManager;
+use crate::{
+    backup_restore::{Export, Import},
+    key_manager::KeyManager,
+};
 
 /// A default secp256k1 key-manager.
 #[derive(Clone)]
@@ -40,5 +43,22 @@ impl From<PubKey> for Vec<u8> {
 impl From<PubKey> for VerifyingKey {
     fn from(value: PubKey) -> Self {
         value.0
+    }
+}
+
+#[async_trait::async_trait]
+impl Import for DefaultKeyManager {
+    type Error = Error;
+
+    async fn import(self, data: Vec<u8>) -> Result<Self, Self::Error> {
+        let sk = SigningKey::from_slice(&data)?;
+        Ok(Self { sk })
+    }
+}
+
+#[async_trait::async_trait]
+impl Export for DefaultKeyManager {
+    async fn export(&self) -> Vec<u8> {
+        self.sk.to_bytes().to_vec()
     }
 }
