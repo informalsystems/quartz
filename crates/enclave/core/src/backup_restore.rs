@@ -29,6 +29,10 @@ pub trait Export {
 /// Import bytes as a type. Analogous to deserialization.
 /// `Export` and `Import` implementations must be bijective.
 #[async_trait::async_trait]
-pub trait Import {
-    async fn import(self, data: Vec<u8>);
+pub trait Import: Sized {
+    /// The error type returned by import ops.
+    type Error;
+
+    /// Import bytes as `Self`
+    async fn import(self, data: Vec<u8>) -> Result<Self, Self::Error>;
 }
