@@ -140,7 +140,7 @@ where
 #[async_trait::async_trait]
 impl<R, EV, GF, E, C> Host for DefaultHost<R, EV, GF, E, C>
 where
-    E: Enclave + Backup<Config = PathBuf>,
+    E: Enclave + Backup<Config = PathBuf, Error = anyhow::Error>,
     <E as Enclave>::Store: Store<Contract = AccountId>,
     C: ChainClient<Contract = AccountId, Error = anyhow::Error>,
     <C as ChainClient>::TxOutput: Display,
@@ -175,7 +175,7 @@ where
         // wait for handshake
         while let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
             // FIXME(hu55a1n1): need configurable path
-            self.enclave.backup(PathBuf::default()).await;
+            self.enclave.backup(PathBuf::default()).await?;
             break;
         }
 

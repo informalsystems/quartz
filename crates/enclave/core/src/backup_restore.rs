@@ -6,12 +6,11 @@ pub trait Backup {
     /// The backup Config type specified by `Host`. (may include sealed file location)
     type Config;
     /// The error type returned by backup and restore ops.
-    type Error;
+    type Error: Send + Sync;
 
     /// Persist the current state based on the specified config.
     /// Ideally implemented as a bunch of exports (see `Export` trait).
-    /// Must panic on failure.
-    async fn backup(&self, config: Self::Config);
+    async fn backup(&self, config: Self::Config) -> Result<(), Self::Error>;
 
     /// Restore the backed-up state based on the specified config.
     /// Ideally implemented as a bunch of imports (see `Import` trait).
@@ -23,8 +22,11 @@ pub trait Backup {
 /// Must panic on failure.
 #[async_trait::async_trait]
 pub trait Export {
+    /// The error type returned by export ops.
+    type Error: Send + Sync + Debug;
+
     /// Export `self` (and the data it represents) as bytes
-    async fn export(&self) -> Vec<u8>;
+    async fn export(&self) -> Result<Vec<u8>, Self::Error>;
 }
 
 /// Import bytes as a type. Analogous to deserialization.

@@ -254,22 +254,34 @@ where
     type Config = PathBuf;
     type Error = anyhow::Error;
 
-    async fn backup(&self, config: Self::Config) {
+    async fn backup(&self, config: Self::Config) -> Result<(), Self::Error> {
         trace!("Backing up to {config:?}");
 
+        let exported_store = self
+            .store
+            .export()
+            .await
+            .map_err(|e| anyhow!("store export failed: {e:?}"))?;
+        let exported_key_manager = self
+            .key_manager
+            .export()
+            .await
+            .map_err(|e| anyhow!("key-manager export failed: {e:?}"))?;
         let backup = DefaultBackup {
-            store: self.store.export().await,
-            key_manager: self.key_manager.export().await,
+            store: exported_store,
+            key_manager: exported_key_manager,
         };
         let backup_ser = serde_json::to_vec(&backup).expect("infallible serializer");
 
         let mut sealed_file = File::create(config)
             .await
-            .expect("backup file creation cannot fail");
+            .map_err(|e| anyhow!("backup file creation failed: {e:?}"))?;
         sealed_file
             .write_all(backup_ser.as_slice())
             .await
-            .expect("backup writes cannot fail");
+            .map_err(|e| anyhow!("backup writes failed: {e:?}"))?;
+
+        Ok(())
     }
 
     async fn try_restore(&mut self, config: Self::Config) -> Result<(), Self::Error> {

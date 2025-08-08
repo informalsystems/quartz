@@ -138,7 +138,9 @@ impl Import for DefaultStore {
 
 #[async_trait::async_trait]
 impl Export for DefaultStore {
-    async fn export(&self) -> Vec<u8> {
-        serde_json::to_vec(&self).expect("infallible store serializer")
+    type Error = Error;
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
+        serde_json::to_vec(&self)
     }
 }

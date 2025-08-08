@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use anyhow::anyhow;
 use tokio::sync::{RwLock, RwLockReadGuard};
 
 use crate::{
@@ -37,17 +36,19 @@ impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
 
 #[async_trait::async_trait]
 impl<K: KeyManager + Import + Default> Import for SharedKeyManager<K> {
-    type Error = anyhow::Error;
+    type Error = K::Error;
 
     async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
-        let km = K::import(data).await.map_err(|e| anyhow!("{:?}", e))?;
+        let km = K::import(data).await?;
         Ok(Self::wrapping(km))
     }
 }
 
 #[async_trait::async_trait]
 impl<K: KeyManager + Export> Export for SharedKeyManager<K> {
-    async fn export(&self) -> Vec<u8> {
+    type Error = K::Error;
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
         let guard = self.inner.read().await;
         guard.export().await
     }

@@ -58,7 +58,9 @@ impl Import for DefaultKeyManager {
 
 #[async_trait::async_trait]
 impl Export for DefaultKeyManager {
-    async fn export(&self) -> Vec<u8> {
-        self.sk.to_bytes().to_vec()
+    type Error = Error;
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
+        Ok(self.sk.to_bytes().to_vec())
     }
 }
