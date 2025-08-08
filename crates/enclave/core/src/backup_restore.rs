@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 /// Rudimentary backup and restore functionality
 #[async_trait::async_trait]
 pub trait Backup {
@@ -31,7 +33,7 @@ pub trait Export {
 #[async_trait::async_trait]
 pub trait Import: Sized {
     /// The error type returned by import ops.
-    type Error;
+    type Error: Send + Sync + Debug;
 
     /// Import bytes as `Self`
     async fn import(self, data: Vec<u8>) -> Result<Self, Self::Error>;
