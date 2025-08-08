@@ -43,6 +43,7 @@ fs.mounts = [
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
   { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
   { uri = "file:/usr/lib/ssl/certs/ca-certificates.crt", path = "/usr/lib/ssl/certs/ca-certificates.crt" },
+  { type = "encrypted", uri = "file:{{ quartz_dir }}/sealed/", path = "/sealed/", key_name = "_sgx_mrenclave" },
 ]
 
 # sgx.debug = true
