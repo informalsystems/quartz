@@ -111,10 +111,10 @@ tendermint-rpc = { version = "=0.38.1", default-features = false, features = [
 ] }
 
 # mobilecoin
-mc-sgx-core-types = { version = "0.11.0", default-features = false }
-mc-sgx-dcap-types = { version = "0.11.0", default-features = false }
-mc-sgx-dcap-sys-types = { version = "0.11.0", default-features = false }
-mc-attestation-verifier = { version = "0.4.3", default-features = false }
+mc-sgx-core-types = { version = "=0.11.0", default-features = false }
+mc-sgx-dcap-types = { version = "=0.11.0", default-features = false }
+mc-sgx-dcap-sys-types = { version = "=0.11.0", default-features = false }
+mc-attestation-verifier = { version = "=0.4.3", default-features = false }
 
 # quartz
 quartz-cw-proof = { version = "0.2.0", path = "crates/enclave/cw-proof", default-features = false }
