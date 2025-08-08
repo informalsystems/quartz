@@ -1,4 +1,4 @@
-use std::{convert::Infallible, sync::Arc};
+use std::sync::Arc;
 
 use cosmrs::AccountId;
 use displaydoc::Display;
@@ -14,8 +14,7 @@ use crate::{
 };
 
 /// A default, thread-safe in-memory store.
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-#[serde(into = "StoreDTO", try_from = "StoreDTO")]
+#[derive(Clone, Debug, Default)]
 pub struct DefaultStore {
     config: Arc<RwLock<Option<Config>>>,
     contract: Arc<RwLock<Option<AccountId>>>,
@@ -102,22 +101,13 @@ struct StoreDTO {
     nonce: Option<Nonce>,
     seq_num: u64,
 }
+#[async_trait::async_trait]
+impl Import for DefaultStore {
+    type Error = Error;
 
-impl From<DefaultStore> for StoreDTO {
-    fn from(src: DefaultStore) -> Self {
-        StoreDTO {
-            config: src.config.blocking_read().clone(),
-            contract: src.contract.blocking_read().clone(),
-            nonce: *src.nonce.blocking_read(),
-            seq_num: *src.seq_num.blocking_read(),
-        }
-    }
-}
+    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
+        let dto: StoreDTO = serde_json::from_slice(&data)?;
 
-impl TryFrom<StoreDTO> for DefaultStore {
-    type Error = Infallible;
-
-    fn try_from(dto: StoreDTO) -> Result<Self, Self::Error> {
         Ok(Self {
             config: Arc::new(RwLock::new(dto.config)),
             contract: Arc::new(RwLock::new(dto.contract)),
@@ -128,19 +118,17 @@ impl TryFrom<StoreDTO> for DefaultStore {
 }
 
 #[async_trait::async_trait]
-impl Import for DefaultStore {
-    type Error = Error;
-
-    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
-        serde_json::from_slice(data.as_slice())
-    }
-}
-
-#[async_trait::async_trait]
 impl Export for DefaultStore {
     type Error = Error;
 
     async fn export(&self) -> Result<Vec<u8>, Self::Error> {
-        serde_json::to_vec(&self)
+        let dto = StoreDTO {
+            config: self.config.read().await.clone(),
+            contract: self.contract.read().await.clone(),
+            nonce: *self.nonce.read().await,
+            seq_num: *self.seq_num.read().await,
+        };
+
+        Ok(serde_json::to_vec(&dto)?)
     }
 }
