@@ -19,26 +19,20 @@ pub mod proto;
 pub mod request;
 pub mod state;
 
-use std::path::PathBuf;
-
 use clap::Parser;
 use cli::Cli;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{self, Attestor},
-        backup_restore::Backup,
         chain_client::default::{DefaultChainClient, DefaultTxConfig},
         host::{DefaultHost, Host},
-        DefaultSharedEnclave, Notification,
+        DefaultSharedEnclave,
     },
-    proto::core_server::CoreServer,
 };
-use tonic::transport::Server;
 
 use crate::{
     event::EnclaveEvent,
-    proto::settlement_server::SettlementServer,
     request::{EnclaveRequest, EnclaveResponse},
 };
 
@@ -95,35 +89,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.trusted_hash,
     );
 
-    let (mut enclave, notifier_rx) = DefaultSharedEnclave::shared(attestor, config, ());
-    let restore_err = enclave.try_restore(PathBuf::default()).await.is_err();
+    let (enclave, notifier_rx) = DefaultSharedEnclave::shared(attestor, config, ());
 
     let host = DefaultHost::<EnclaveRequest, EnclaveEvent, _, _>::new(
-        enclave.clone(),
+        enclave,
         chain_client,
         gas_fn,
         notifier_rx,
     );
 
-    host.serve(args.ws_url).await?;
-
-    if restore_err {
-        // run handshake if restore failed (i.e. this is a fresh start)
-        tokio::spawn(async move {
-            Server::builder()
-                .add_service(CoreServer::new(enclave.clone()))
-                .add_service(SettlementServer::new(enclave))
-                .serve(args.rpc_addr)
-                .await
-        });
-    } else {
-        // if restored from a previous backup - manually notify host of handshake completion
-        enclave
-            .notifier_tx
-            .send(Notification::HandshakeComplete)
-            .await
-            .expect("Receiver half of the channel must NOT be closed");
-    }
+    host.serve(args.ws_url, args.rpc_addr).await?;
 
     Ok(())
 }

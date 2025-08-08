@@ -302,6 +302,12 @@ where
         self.store = imported_store;
         self.key_manager = imported_key_manager;
 
+        // if restored from a previous backup - manually notify host of handshake completion
+        self.notifier_tx
+            .send(Notification::HandshakeComplete)
+            .await
+            .expect("Receiver half of the channel must NOT be closed");
+
         Ok(())
     }
 }

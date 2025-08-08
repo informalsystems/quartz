@@ -1,6 +1,7 @@
 use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
+    net::SocketAddr,
     path::PathBuf,
 };
 
@@ -8,6 +9,7 @@ use anyhow::anyhow;
 use cosmrs::AccountId;
 use futures_util::StreamExt;
 use log::{error, info, trace, warn};
+use quartz_proto::quartz::core_server::{Core, CoreServer};
 use reqwest::Url;
 use serde::Serialize;
 use tendermint_rpc::{
@@ -16,7 +18,7 @@ use tendermint_rpc::{
     SubscriptionClient, WebSocketClient,
 };
 use tokio::sync::mpsc::Receiver;
-use tonic::Status;
+use tonic::{transport::Server, Status};
 
 use crate::{
     backup_restore::Backup,
@@ -85,11 +87,16 @@ pub trait Host: Send + Sync + 'static + Sized {
     /// # Returns
     ///
     /// A `Result` indicating successful processing of events (`Ok(())`) or an error (`Err(Self::Error)`).
-    async fn serve_with_query(self, url: Url, query: Option<Query>) -> Result<(), Self::Error>;
+    async fn serve_with_query(
+        self,
+        url: Url,
+        rpc_addr: SocketAddr,
+        query: Option<Query>,
+    ) -> Result<(), Self::Error>;
 
     /// A convenience method that starts the event loop without a specific query filter.
-    async fn serve(self, url: Url) -> Result<(), Self::Error> {
-        self.serve_with_query(url, None).await
+    async fn serve(self, url: Url, rpc_addr: SocketAddr) -> Result<(), Self::Error> {
+        self.serve_with_query(url, rpc_addr, None).await
     }
 }
 
@@ -140,7 +147,7 @@ where
 #[async_trait::async_trait]
 impl<R, EV, GF, E, C> Host for DefaultHost<R, EV, GF, E, C>
 where
-    E: Enclave + Backup<Config = PathBuf, Error = anyhow::Error>,
+    E: Enclave + Backup<Config = PathBuf, Error = anyhow::Error> + Clone + Core,
     <E as Enclave>::Store: Store<Contract = AccountId>,
     C: ChainClient<Contract = AccountId, Error = anyhow::Error>,
     <C as ChainClient>::TxOutput: Display,
@@ -167,10 +174,27 @@ where
             .map_err(|e| anyhow!("enclave call failed: {}", e))
     }
 
-    async fn serve_with_query(mut self, url: Url, query: Option<Query>) -> Result<(), Self::Error> {
+    async fn serve_with_query(
+        mut self,
+        url: Url,
+        rpc_addr: SocketAddr,
+        query: Option<Query>,
+    ) -> Result<(), Self::Error> {
         // connect to the websocket client
         let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
+
+        let restore_err = self.enclave.try_restore(PathBuf::default()).await.is_err();
+        if restore_err {
+            // run handshake if restore failed (i.e. this is a fresh start)
+            let enclave = self.enclave.clone();
+            tokio::spawn(async move {
+                Server::builder()
+                    .add_service(CoreServer::new(enclave))
+                    .serve(rpc_addr)
+                    .await
+            });
+        }
 
         // wait for handshake
         if let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
