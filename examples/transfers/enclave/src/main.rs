@@ -97,9 +97,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let (mut enclave, notifier_rx) = DefaultSharedEnclave::shared(attestor, config, ());
-    let restored = enclave.try_restore(PathBuf::default())
+    let restore_err = enclave.try_restore(PathBuf::default())
         .await
-        .map_err(|e| anyhow::anyhow!("Failed to restore backup: {e:?}"))?;
+        .is_err();
 
     let host = DefaultHost::<EnclaveRequest, EnclaveEvent, _, _>::new(
         enclave.clone(),
@@ -110,8 +110,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     host.serve(args.ws_url).await?;
 
-    if !restored {
-        // run handshake if this is a fresh start
+    if restore_err {
+        // run handshake if restore failed (i.e. this is a fresh start)
         tokio::spawn(async move {
             Server::builder()
                 .add_service(CoreServer::new(enclave.clone()))

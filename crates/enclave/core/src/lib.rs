@@ -272,7 +272,7 @@ where
             .expect("backup writes cannot fail");
     }
 
-    async fn try_restore(&mut self, config: Self::Config) -> Result<bool, Self::Error> {
+    async fn try_restore(&mut self, config: Self::Config) -> Result<(), Self::Error> {
         trace!("Restoring from {config:?}");
 
         let mut sealed_file = File::open(config).await?;
@@ -290,6 +290,6 @@ where
         self.store = imported_store;
         self.key_manager = imported_key_manager;
 
-        Ok(true)
+        Ok(())
     }
 }
