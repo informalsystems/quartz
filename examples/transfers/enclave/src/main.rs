@@ -96,7 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.trusted_hash,
     );
 
-    let (enclave, notifier_rx) = DefaultSharedEnclave::shared(attestor, config, ());
+    let (mut enclave, notifier_rx) = DefaultSharedEnclave::shared(attestor, config, ());
     let restored = enclave.try_restore(PathBuf::default())
         .await
         .map_err(|e| anyhow::anyhow!("Failed to restore backup: {e:?}"))?;

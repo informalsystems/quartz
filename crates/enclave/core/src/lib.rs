@@ -272,7 +272,7 @@ where
             .expect("backup writes cannot fail");
     }
 
-    async fn try_restore(&self, config: Self::Config) -> Result<bool, Self::Error> {
+    async fn try_restore(&mut self, config: Self::Config) -> Result<bool, Self::Error> {
         trace!("Restoring from {config:?}");
 
         let mut sealed_file = File::open(config).await?;
@@ -280,19 +280,16 @@ where
         sealed_file.read_to_end(&mut backup_ser).await?;
         let backup: DefaultBackup = serde_json::from_slice(&backup_ser)?;
 
-        let imported_store = self
-            .store
-            .clone()
-            .import(backup.store)
+        let imported_store = S::import(backup.store)
             .await
             .map_err(|e| anyhow!("store import failed: {e:?}"))?;
-        let imported_key_manager = self
-            .store
-            .clone()
-            .import(backup.key_manager)
+        let imported_key_manager = K::import(backup.key_manager)
             .await
             .map_err(|e| anyhow!("key-manager import failed: {e:?}"))?;
 
-        todo!()
+        self.store = imported_store;
+        self.key_manager = imported_key_manager;
+
+        Ok(true)
     }
 }
