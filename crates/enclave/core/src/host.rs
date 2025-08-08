@@ -173,10 +173,9 @@ where
         let driver_handle = tokio::spawn(async move { driver.run().await });
 
         // wait for handshake
-        while let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
+        if let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
             // FIXME(hu55a1n1): need configurable path
             self.enclave.backup(PathBuf::default()).await?;
-            break;
         }
 
         // subscribe to relevant events

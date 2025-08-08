@@ -23,15 +23,14 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use cli::Cli;
-use quartz_common::enclave::backup_restore::Backup;
-use quartz_common::enclave::Notification;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{self, Attestor},
+        backup_restore::Backup,
         chain_client::default::{DefaultChainClient, DefaultTxConfig},
         host::{DefaultHost, Host},
-        DefaultSharedEnclave,
+        DefaultSharedEnclave, Notification,
     },
     proto::core_server::CoreServer,
 };
@@ -97,9 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let (mut enclave, notifier_rx) = DefaultSharedEnclave::shared(attestor, config, ());
-    let restore_err = enclave.try_restore(PathBuf::default())
-        .await
-        .is_err();
+    let restore_err = enclave.try_restore(PathBuf::default()).await.is_err();
 
     let host = DefaultHost::<EnclaveRequest, EnclaveEvent, _, _>::new(
         enclave.clone(),

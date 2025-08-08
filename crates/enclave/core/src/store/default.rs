@@ -108,7 +108,7 @@ impl From<DefaultStore> for StoreDTO {
         StoreDTO {
             config: src.config.blocking_read().clone(),
             contract: src.contract.blocking_read().clone(),
-            nonce: src.nonce.blocking_read().clone(),
+            nonce: *src.nonce.blocking_read(),
             seq_num: *src.seq_num.blocking_read(),
         }
     }
