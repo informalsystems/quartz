@@ -81,10 +81,16 @@ See the app enclaves in the `examples` directory for usage examples.
 
 use std::path::PathBuf;
 
+use anyhow::anyhow;
 use cosmrs::AccountId;
 use log::{debug, trace, warn};
 use quartz_contract_core::state::Config;
-use tokio::sync::mpsc;
+use serde::{Deserialize, Serialize};
+use tokio::{
+    fs::File,
+    io::{AsyncReadExt, AsyncWriteExt},
+    sync::mpsc,
+};
 
 use crate::{
     attestor::{Attestor, DefaultAttestor},
@@ -231,24 +237,62 @@ where
     }
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DefaultBackup {
+    store: Vec<u8>,
+    key_manager: Vec<u8>,
+}
+
 #[async_trait::async_trait]
 impl<C, A, K, S> Backup for DefaultEnclave<C, A, K, S>
 where
     C: Send + Sync + 'static,
     A: Attestor + Clone,
-    K: KeyManager + Clone,
-    S: Store<Contract = AccountId> + Clone,
+    K: KeyManager + Clone + Export + Import,
+    S: Store<Contract = AccountId> + Clone + Export + Import,
 {
     type Config = PathBuf;
-    type Error = ();
+    type Error = anyhow::Error;
 
     async fn backup(&self, config: Self::Config) {
         trace!("Backing up to {config:?}");
-        todo!()
+
+        let backup = DefaultBackup {
+            store: self.store.export().await,
+            key_manager: self.key_manager.export().await,
+        };
+        let backup_ser = serde_json::to_vec(&backup).expect("infallible serializer");
+
+        let mut sealed_file = File::create(config)
+            .await
+            .expect("backup file creation cannot fail");
+        sealed_file
+            .write_all(backup_ser.as_slice())
+            .await
+            .expect("backup writes cannot fail");
     }
 
-    fn try_restore(&self, config: Self::Config) -> Result<bool, Self::Error> {
+    async fn try_restore(&self, config: Self::Config) -> Result<bool, Self::Error> {
         trace!("Restoring from {config:?}");
+
+        let mut sealed_file = File::open(config).await?;
+        let mut backup_ser = vec![];
+        sealed_file.read_to_end(&mut backup_ser).await?;
+        let backup: DefaultBackup = serde_json::from_slice(&backup_ser)?;
+
+        let imported_store = self
+            .store
+            .clone()
+            .import(backup.store)
+            .await
+            .map_err(|e| anyhow!("store import failed: {e:?}"))?;
+        let imported_key_manager = self
+            .store
+            .clone()
+            .import(backup.key_manager)
+            .await
+            .map_err(|e| anyhow!("key-manager import failed: {e:?}"))?;
+
         todo!()
     }
 }
