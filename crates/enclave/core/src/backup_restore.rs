@@ -14,7 +14,7 @@ pub trait Backup {
     /// Restore the backed-up state based on the specified config.
     /// Ideally implemented as a bunch of imports (see `Import` trait).
     /// Must return `Ok(false)` if previous backup did not exist.
-    fn try_restore(&self, config: Self::Config) -> Result<bool, Self::Error>;
+    async fn try_restore(&self, config: Self::Config) -> Result<bool, Self::Error>;
 }
 
 /// Export a type (and its contained data) as bytes. Analogous to serialization.
