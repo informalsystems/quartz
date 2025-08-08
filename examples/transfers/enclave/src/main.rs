@@ -95,6 +95,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         enclave,
         chain_client,
         gas_fn,
+        args.backup_path,
         notifier_rx,
     );
 

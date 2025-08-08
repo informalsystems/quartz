@@ -119,6 +119,7 @@ pub struct DefaultHost<R, EV, GF, E, C = DefaultChainClient> {
     enclave: E,
     chain_client: C,
     gas_fn: GF,
+    backup_path: PathBuf,
     notifier_rx: Receiver<Notification>,
     _phantom: PhantomData<(R, EV)>,
 }
@@ -132,12 +133,14 @@ where
         enclave: E,
         chain_client: C,
         gas_fn: GF,
+        backup_path: PathBuf,
         notifier_rx: Receiver<Notification>,
     ) -> Self {
         Self {
             enclave,
             chain_client,
             gas_fn,
+            backup_path,
             notifier_rx,
             _phantom: Default::default(),
         }
@@ -184,7 +187,11 @@ where
         let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
 
-        let restore_err = self.enclave.try_restore(PathBuf::default()).await.is_err();
+        let restore_err = self
+            .enclave
+            .try_restore(self.backup_path.clone())
+            .await
+            .is_err();
         if restore_err {
             // run handshake if restore failed (i.e. this is a fresh start)
             let enclave = self.enclave.clone();
@@ -199,7 +206,7 @@ where
         // wait for handshake
         if let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
             // FIXME(hu55a1n1): need configurable path
-            self.enclave.backup(PathBuf::default()).await?;
+            self.enclave.backup(self.backup_path.clone()).await?;
         }
 
         // subscribe to relevant events
