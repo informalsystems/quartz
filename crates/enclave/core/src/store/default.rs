@@ -10,7 +10,6 @@ use tokio::sync::RwLock;
 
 use crate::{
     backup_restore::{Export, Import},
-    key_manager::default::DefaultKeyManager,
     store::Store,
 };
 
