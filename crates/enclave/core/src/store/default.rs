@@ -131,7 +131,7 @@ impl TryFrom<StoreDTO> for DefaultStore {
 impl Import for DefaultStore {
     type Error = Error;
 
-    async fn import(self, data: Vec<u8>) -> Result<Self, Self::Error> {
+    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
         serde_json::from_slice(data.as_slice())
     }
 }

@@ -50,7 +50,7 @@ impl From<PubKey> for VerifyingKey {
 impl Import for DefaultKeyManager {
     type Error = Error;
 
-    async fn import(self, data: Vec<u8>) -> Result<Self, Self::Error> {
+    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
         let sk = SigningKey::from_slice(&data)?;
         Ok(Self { sk })
     }

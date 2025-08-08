@@ -39,18 +39,9 @@ impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
 impl<K: KeyManager + Import + Default> Import for SharedKeyManager<K> {
     type Error = anyhow::Error;
 
-    async fn import(mut self, data: Vec<u8>) -> Result<Self, Self::Error> {
-        {
-            // Get a write-guard, move the old value out, run its `import`,
-            // then store the new value back and keep using the same wrapper.
-            let mut guard = self.inner.write().await;
-
-            let old_k: K = std::mem::take(&mut *guard);
-            let new_k = old_k.import(data).await.map_err(|e| anyhow!("{:?}", e))?;
-
-            *guard = new_k;
-        }
-        Ok(self)
+    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
+        let km = K::import(data).await.map_err(|e| anyhow!("{:?}", e))?;
+        Ok(Self::wrapping(km))
     }
 }
 

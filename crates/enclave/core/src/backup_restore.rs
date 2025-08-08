@@ -35,6 +35,6 @@ pub trait Import: Sized {
     /// The error type returned by import ops.
     type Error: Send + Sync + Debug;
 
-    /// Import bytes as `Self`
-    async fn import(self, data: Vec<u8>) -> Result<Self, Self::Error>;
+    /// Import bytes as `Self`.
+    async fn import(data: Vec<u8>) -> Result<Self, Self::Error>;
 }
