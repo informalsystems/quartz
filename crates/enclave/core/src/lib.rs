@@ -241,13 +241,15 @@ where
 pub struct DefaultBackup {
     store: Vec<u8>,
     key_manager: Vec<u8>,
+    attestor: Vec<u8>,
+    ctx: Vec<u8>,
 }
 
 #[async_trait::async_trait]
 impl<C, A, K, S> Backup for DefaultEnclave<C, A, K, S>
 where
-    C: Send + Sync + 'static,
-    A: Attestor + Clone,
+    C: Send + Sync + 'static + Export + Import,
+    A: Attestor + Clone + Export + Import,
     K: KeyManager + Clone + Export + Import,
     S: Store<Contract = AccountId> + Clone + Export + Import,
 {
@@ -267,9 +269,21 @@ where
             .export()
             .await
             .map_err(|e| anyhow!("key-manager export failed: {e:?}"))?;
+        let exported_attestor = self
+            .attestor
+            .export()
+            .await
+            .map_err(|e| anyhow!("attestor export failed: {e:?}"))?;
+        let exported_ctx = self
+            .ctx
+            .export()
+            .await
+            .map_err(|e| anyhow!("ctx export failed: {e:?}"))?;
         let backup = DefaultBackup {
             store: exported_store,
             key_manager: exported_key_manager,
+            attestor: exported_attestor,
+            ctx: exported_ctx,
         };
         let backup_ser = serde_json::to_vec(&backup).expect("infallible serializer");
 
@@ -298,9 +312,17 @@ where
         let imported_key_manager = K::import(backup.key_manager)
             .await
             .map_err(|e| anyhow!("key-manager import failed: {e:?}"))?;
+        let imported_attestor = A::import(backup.attestor)
+            .await
+            .map_err(|e| anyhow!("attestor import failed: {e:?}"))?;
+        let imported_ctx = C::import(backup.ctx)
+            .await
+            .map_err(|e| anyhow!("ctx import failed: {e:?}"))?;
 
         self.store = imported_store;
         self.key_manager = imported_key_manager;
+        self.attestor = imported_attestor;
+        self.ctx = imported_ctx;
 
         // if restored from a previous backup - manually notify host of handshake completion
         self.notifier_tx
