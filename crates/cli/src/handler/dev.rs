@@ -89,7 +89,6 @@ async fn dev_driver(
                 let restored = spawn_enclave_start(args, &config)?;
                 if restored {
                     info!("{}", "Skipping handshake...".green().bold());
-                    info!("{}", "Enclave is listening for requests...".green().bold());
                     continue;
                 }
 
@@ -124,7 +123,6 @@ async fn dev_driver(
                 let restored = spawn_enclave_start(args, &config)?;
                 if restored {
                     info!("{}", "Skipping handshake...".green().bold());
-                    info!("{}", "Enclave is listening for requests...".green().bold());
                     continue;
                 }
 
