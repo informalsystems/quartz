@@ -14,7 +14,6 @@
 
 pub mod cli;
 pub mod event;
-pub mod grpc;
 pub mod proto;
 pub mod request;
 pub mod state;
