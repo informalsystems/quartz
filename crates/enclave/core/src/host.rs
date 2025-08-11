@@ -214,6 +214,8 @@ where
         let query = query.unwrap_or(Query::from(EventType::Tx));
         let mut subs = client.subscribe(query).await.unwrap();
 
+        info!("enclave ready...");
+
         // wait and listen for events
         while let Some(Ok(event)) = subs.next().await {
             trace!("Received event: {event:?}");
