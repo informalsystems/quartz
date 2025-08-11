@@ -18,9 +18,14 @@ use quartz_contract_core::{
 };
 use quartz_tee_ra::intel_sgx::dcap::{Collateral, Quote3Error};
 use reqwest::{blocking::Client, Url};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use serde_json::Error as SerdeError;
+use serde_with::{serde_as, DisplayFromStr};
 
-use crate::types::Fmspc;
+use crate::{
+    backup_restore::{Export, Import},
+    types::Fmspc,
+};
 
 #[cfg(not(feature = "mock-sgx"))]
 pub type DefaultAttestor = DcapAttestor;
@@ -47,9 +52,11 @@ pub trait Attestor: Send + Sync + 'static {
 }
 
 /// An `Attestor` for generating DCAP attestations for Gramine based enclaves.
-#[derive(Clone, PartialEq, Debug)]
+#[serde_as]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct DcapAttestor {
     pub fmspc: Fmspc,
+    #[serde_as(as = "DisplayFromStr")]
     pub pccs_url: Url,
 }
 
@@ -169,6 +176,24 @@ impl Attestor for DcapAttestor {
     }
 }
 
+#[async_trait::async_trait]
+impl Import for DcapAttestor {
+    type Error = SerdeError;
+
+    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
+        serde_json::from_slice(&data)
+    }
+}
+
+#[async_trait::async_trait]
+impl Export for DcapAttestor {
+    type Error = SerdeError;
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
+        serde_json::to_vec(self)
+    }
+}
+
 /// A mock `Attestor` that creates a quote consisting of just the user report data. (only meant for
 /// testing purposes)
 #[derive(Clone, PartialEq, Debug, Default)]
@@ -193,6 +218,24 @@ impl Attestor for MockAttestor {
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
         debug!("Generating mock attestation");
         Ok(MockAttestation(user_data.user_data()))
+    }
+}
+
+#[async_trait::async_trait]
+impl Import for MockAttestor {
+    type Error = ();
+
+    async fn import(_data: Vec<u8>) -> Result<Self, Self::Error> {
+        Ok(MockAttestor)
+    }
+}
+
+#[async_trait::async_trait]
+impl Export for MockAttestor {
+    type Error = ();
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
+        Ok(vec![])
     }
 }
 
