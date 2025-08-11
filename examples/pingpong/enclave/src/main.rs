@@ -28,13 +28,10 @@ use quartz_common::{
         host::{DefaultHost, Host},
         DefaultSharedEnclave,
     },
-    proto::core_server::CoreServer,
 };
-use tonic::transport::Server;
 
 use crate::{
     event::EnclaveEvent,
-    proto::ping_pong_server::PingPongServer,
     request::{EnclaveRequest, EnclaveResponse},
 };
 
@@ -91,21 +88,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.trusted_hash,
     );
 
-    let enclave = DefaultSharedEnclave::shared(attestor, config, ());
+    let (enclave, notifier_rx) = DefaultSharedEnclave::shared(attestor, config, ());
+
     let host = DefaultHost::<EnclaveRequest, EnclaveEvent, _, _>::new(
-        enclave.clone(),
+        enclave,
         chain_client,
         gas_fn,
+        args.backup_path,
+        notifier_rx,
     );
 
-    tokio::spawn(async move {
-        Server::builder()
-            .add_service(CoreServer::new(enclave.clone()))
-            .add_service(PingPongServer::new(enclave))
-            .serve(args.rpc_addr)
-            .await
-    });
-    host.serve(args.ws_url).await?;
+    host.serve(args.ws_url, args.rpc_addr).await?;
 
     Ok(())
 }
