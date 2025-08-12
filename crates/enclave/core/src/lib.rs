@@ -248,7 +248,7 @@ pub struct DefaultBackup {
 #[async_trait::async_trait]
 impl<C, A, K, S> Backup for DefaultEnclave<C, A, K, S>
 where
-    C: Send + Sync + 'static + Export + Import,
+    C: Send + Sync + Export + Import,
     A: Attestor + Clone + Export + Import,
     K: KeyManager + Clone + Export + Import,
     S: Store<Contract = AccountId> + Clone + Export + Import,

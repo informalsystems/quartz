@@ -35,7 +35,7 @@ impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
 }
 
 #[async_trait::async_trait]
-impl<K: KeyManager + Import + Default> Import for SharedKeyManager<K> {
+impl<K: KeyManager + Import> Import for SharedKeyManager<K> {
     type Error = K::Error;
 
     async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
