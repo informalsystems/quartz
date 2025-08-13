@@ -1,7 +1,7 @@
 use std::{
     error::Error,
     fs::{read, File},
-    io::{Error as IoError, ErrorKind, Write},
+    io::{Error as IoError, Write},
 };
 
 use log::{debug, error, trace};
@@ -160,7 +160,7 @@ impl Attestor for DcapAttestor {
             let (pck_crl, pck_crl_issuer_chain) =
                 pccs_query_pck(self.pccs_url.clone()).map_err(|e| {
                     error!("Failed to query PCCS: {}", e);
-                    IoError::new(ErrorKind::Other, e.to_string())
+                    IoError::other(e.to_string())
                 })?;
             collateral(&self.fmspc.to_string(), pck_crl, pck_crl_issuer_chain)
         };

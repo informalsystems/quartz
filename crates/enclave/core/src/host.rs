@@ -187,10 +187,7 @@ where
         let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
 
-        let restore_res = self
-            .enclave
-            .try_restore(self.backup_path.clone())
-            .await;
+        let restore_res = self.enclave.try_restore(self.backup_path.clone()).await;
         if let Err(e) = restore_res {
             error!("failed to restore from backup: {e}");
 

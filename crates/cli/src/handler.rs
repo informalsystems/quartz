@@ -36,6 +36,5 @@ impl Handler for Request {
             Request::Dev(request) => request.handle(config).await,
             Request::PrintFmspc(request) => request.handle(config).await,
         }
-        .map(Into::into)
     }
 }
