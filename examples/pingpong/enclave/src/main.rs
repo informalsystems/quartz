@@ -36,6 +36,8 @@ use crate::{
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+
     let args = Cli::parse();
 
     let sk = {

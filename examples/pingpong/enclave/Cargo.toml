@@ -20,12 +20,12 @@ clap = { version = "4.1.8", default-features = false, features = [
 ] }
 color-eyre = { version = "0.6.2", default-features = false }
 ecies = { version = "0.2.3", default-features = false, features = ["pure"] }
+env_logger = { version = "0.11", default-features = false }
 hex = { version = "0.4.3", default-features = false }
 k256 = { version = "0.13.2", default-features = false, features = [
   "ecdsa",
   "alloc",
 ] }
-prost = { version = "0.13.1", default-features = false }
 serde = { version = "1.0.203", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.94", default-features = false, features = [
   "alloc",
@@ -61,12 +61,6 @@ quartz-common = { version = "0.2.0", features = ["full"] }
 
 [dev-dependencies]
 cw-multi-test = "2.1.0"
-
-[build-dependencies]
-tonic-build = { version = "0.12.1", default-features = false, features = [
-  "prost",
-  "transport",
-] }
 
 [patch.crates-io]
 cw-client = { path = "../../../crates/utils/cw-client" }
