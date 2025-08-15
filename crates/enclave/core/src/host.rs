@@ -19,6 +19,7 @@ use tendermint_rpc::{
 };
 use tokio::sync::mpsc::Receiver;
 use tonic::{transport::Server, Status};
+use tonic_health::server::health_reporter;
 
 use crate::{
     backup_restore::Backup,
@@ -183,6 +184,9 @@ where
         rpc_addr: SocketAddr,
         query: Option<Query>,
     ) -> Result<(), Self::Error> {
+        let (mut health_reporter, health_service) = health_reporter();
+        health_reporter.set_not_serving::<CoreServer<E>>().await;
+
         // connect to the websocket client
         let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
@@ -195,6 +199,7 @@ where
             let enclave = self.enclave.clone();
             tokio::spawn(async move {
                 Server::builder()
+                    .add_service(health_service)
                     .add_service(CoreServer::new(enclave))
                     .serve(rpc_addr)
                     .await
@@ -212,6 +217,8 @@ where
         let mut subs = client.subscribe(query).await.unwrap();
 
         info!("enclave ready...");
+
+        health_reporter.set_serving::<CoreServer<E>>().await;
 
         // wait and listen for events
         while let Some(Ok(event)) = subs.next().await {
