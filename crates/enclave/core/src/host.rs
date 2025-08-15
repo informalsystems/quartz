@@ -203,7 +203,6 @@ where
 
         // wait for handshake
         if let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
-            // FIXME(hu55a1n1): need configurable path
             self.enclave.backup(self.backup_path.clone()).await?;
         }
 
