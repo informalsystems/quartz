@@ -194,17 +194,17 @@ where
         let restore_res = self.enclave.try_restore(self.backup_path.clone()).await;
         if let Err(e) = restore_res {
             error!("failed to restore from backup: {e}");
-
-            // run handshake if restore failed (i.e. this is a fresh start)
-            let enclave = self.enclave.clone();
-            tokio::spawn(async move {
-                Server::builder()
-                    .add_service(health_service)
-                    .add_service(CoreServer::new(enclave))
-                    .serve(rpc_addr)
-                    .await
-            });
         }
+
+        // start core grpc service
+        let enclave = self.enclave.clone();
+        tokio::spawn(async move {
+            Server::builder()
+                .add_service(health_service)
+                .add_service(CoreServer::new(enclave))
+                .serve(rpc_addr)
+                .await
+        });
 
         // wait for handshake
         if let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
