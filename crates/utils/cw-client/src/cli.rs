@@ -215,6 +215,7 @@ impl CwClient for CliClient {
         &self,
         chain_id: &Id,
         sender: &str,
+        admin: Option<&str>,
         code_id: u64,
         init_msg: M,
         label: &str,

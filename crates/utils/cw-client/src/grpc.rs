@@ -155,6 +155,7 @@ impl CwClient for GrpcClient {
         &self,
         _chain_id: &TmChainId,
         _sender: &str,
+        _admin: Option<&str>,
         _code_id: u64,
         _init_msg: M,
         _label: &str,
