@@ -221,19 +221,24 @@ impl CwClient for CliClient {
         label: &str,
     ) -> Result<String, Self::Error> {
         let mut command = self.new_command()?;
-        let command = command
+        let mut command = command
             .args(["--node", self.url.as_str()])
             .args(["tx", "wasm", "instantiate"])
             .args([&code_id.to_string(), &init_msg.to_string()])
             .args(["--label", label])
             .args(["--from", sender])
-            .arg("--no-admin")
             .args(["--chain-id", chain_id.as_ref()])
             .args(["--gas-prices", &self.gas_price])
             .args(["--gas", "auto"])
             .args(["--gas-adjustment", "1.3"])
             .args(["-o", "json"])
             .arg("-y");
+
+        if let Some(admin) = admin {
+            command = command.args(["--admin", admin]);
+        } else {
+            command = command.arg("--no-admin");
+        }
 
         let output = command.output()?;
 
