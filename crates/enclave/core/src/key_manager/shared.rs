@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use tokio::sync::{RwLock, RwLockReadGuard};
 
-use crate::key_manager::KeyManager;
+use crate::{
+    backup_restore::{Export, Import},
+    key_manager::KeyManager,
+};
 
 /// A thread-safe wrapper for a key-manager.
 #[derive(Clone, Debug)]
@@ -28,5 +31,25 @@ impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
 
     async fn pub_key(&self) -> Self::PubKey {
         self.inner.read().await.pub_key().await
+    }
+}
+
+#[async_trait::async_trait]
+impl<K: KeyManager + Import> Import for SharedKeyManager<K> {
+    type Error = K::Error;
+
+    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
+        let km = K::import(data).await?;
+        Ok(Self::wrapping(km))
+    }
+}
+
+#[async_trait::async_trait]
+impl<K: KeyManager + Export> Export for SharedKeyManager<K> {
+    type Error = K::Error;
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
+        let guard = self.inner.read().await;
+        guard.export().await
     }
 }

@@ -1,12 +1,15 @@
 use std::{
     fmt::{Debug, Display},
     marker::PhantomData,
+    net::SocketAddr,
+    path::PathBuf,
 };
 
 use anyhow::anyhow;
 use cosmrs::AccountId;
 use futures_util::StreamExt;
 use log::{error, info, trace, warn};
+use quartz_proto::quartz::core_server::{Core, CoreServer};
 use reqwest::Url;
 use serde::Serialize;
 use tendermint_rpc::{
@@ -14,14 +17,16 @@ use tendermint_rpc::{
     query::{EventType, Query},
     SubscriptionClient, WebSocketClient,
 };
-use tonic::Status;
+use tokio::sync::mpsc::Receiver;
+use tonic::{transport::Server, Status};
 
 use crate::{
+    backup_restore::Backup,
     chain_client::{default::DefaultChainClient, ChainClient},
     event::QuartzEvent,
     handler::Handler,
     store::Store,
-    Enclave,
+    Enclave, Notification,
 };
 
 pub type Response<R, E> = <R as Handler<E>>::Response;
@@ -82,11 +87,16 @@ pub trait Host: Send + Sync + 'static + Sized {
     /// # Returns
     ///
     /// A `Result` indicating successful processing of events (`Ok(())`) or an error (`Err(Self::Error)`).
-    async fn serve_with_query(self, url: Url, query: Option<Query>) -> Result<(), Self::Error>;
+    async fn serve_with_query(
+        self,
+        url: Url,
+        rpc_addr: SocketAddr,
+        query: Option<Query>,
+    ) -> Result<(), Self::Error>;
 
     /// A convenience method that starts the event loop without a specific query filter.
-    async fn serve(self, url: Url) -> Result<(), Self::Error> {
-        self.serve_with_query(url, None).await
+    async fn serve(self, url: Url, rpc_addr: SocketAddr) -> Result<(), Self::Error> {
+        self.serve_with_query(url, rpc_addr, None).await
     }
 }
 
@@ -104,11 +114,13 @@ pub trait Host: Send + Sync + 'static + Sized {
 /// ### Note
 /// This implementation consumes an `Enclave` instance and calls it directly. Therefore, it is
 /// expected to be run inside a TEE.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct DefaultHost<R, EV, GF, E, C = DefaultChainClient> {
     enclave: E,
     chain_client: C,
     gas_fn: GF,
+    backup_path: PathBuf,
+    notifier_rx: Receiver<Notification>,
     _phantom: PhantomData<(R, EV)>,
 }
 
@@ -117,11 +129,19 @@ where
     R: Handler<E>,
     C: ChainClient,
 {
-    pub fn new(enclave: E, chain_client: C, gas_fn: GF) -> Self {
+    pub fn new(
+        enclave: E,
+        chain_client: C,
+        gas_fn: GF,
+        backup_path: PathBuf,
+        notifier_rx: Receiver<Notification>,
+    ) -> Self {
         Self {
             enclave,
             chain_client,
             gas_fn,
+            backup_path,
+            notifier_rx,
             _phantom: Default::default(),
         }
     }
@@ -130,7 +150,7 @@ where
 #[async_trait::async_trait]
 impl<R, EV, GF, E, C> Host for DefaultHost<R, EV, GF, E, C>
 where
-    E: Enclave,
+    E: Enclave + Backup<Config = PathBuf, Error = anyhow::Error> + Clone + Core,
     <E as Enclave>::Store: Store<Contract = AccountId>,
     C: ChainClient<Contract = AccountId, Error = anyhow::Error>,
     <C as ChainClient>::TxOutput: Display,
@@ -157,15 +177,41 @@ where
             .map_err(|e| anyhow!("enclave call failed: {}", e))
     }
 
-    async fn serve_with_query(self, url: Url, query: Option<Query>) -> Result<(), Self::Error> {
+    async fn serve_with_query(
+        mut self,
+        url: Url,
+        rpc_addr: SocketAddr,
+        query: Option<Query>,
+    ) -> Result<(), Self::Error> {
         // connect to the websocket client
         let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
         let driver_handle = tokio::spawn(async move { driver.run().await });
+
+        let restore_res = self.enclave.try_restore(self.backup_path.clone()).await;
+        if let Err(e) = restore_res {
+            error!("failed to restore from backup: {e}");
+
+            // run handshake if restore failed (i.e. this is a fresh start)
+            let enclave = self.enclave.clone();
+            tokio::spawn(async move {
+                Server::builder()
+                    .add_service(CoreServer::new(enclave))
+                    .serve(rpc_addr)
+                    .await
+            });
+        }
+
+        // wait for handshake
+        if let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
+            self.enclave.backup(self.backup_path.clone()).await?;
+        }
 
         // subscribe to relevant events
         // TODO: default to `Query::from(EventType::Tx).and_eq("wasm._contract_address", contract)`
         let query = query.unwrap_or(Query::from(EventType::Tx));
         let mut subs = client.subscribe(query).await.unwrap();
+
+        info!("enclave ready...");
 
         // wait and listen for events
         while let Some(Ok(event)) = subs.next().await {

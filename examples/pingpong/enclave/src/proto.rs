@@ -1,3 +1,9 @@
-#![allow(clippy::unwrap_used, unused_qualifications)]
+#[derive(Clone, Debug, PartialEq)]
+pub struct PingRequest {
+    pub message: String,
+}
 
-include!(concat!("prost/", "pingpong.rs"));
+#[derive(Clone, Debug, PartialEq)]
+pub struct PongResponse {
+    pub message: String,
+}

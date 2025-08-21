@@ -1,7 +1,7 @@
 use std::{
     error::Error,
     fs::{read, File},
-    io::{Error as IoError, ErrorKind, Write},
+    io::{Error as IoError, Write},
 };
 
 use log::{debug, error, trace};
@@ -18,9 +18,14 @@ use quartz_contract_core::{
 };
 use quartz_tee_ra::intel_sgx::dcap::{Collateral, Quote3Error};
 use reqwest::{blocking::Client, Url};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use serde_json::Error as SerdeError;
+use serde_with::{serde_as, DisplayFromStr};
 
-use crate::types::Fmspc;
+use crate::{
+    backup_restore::{Export, Import},
+    types::Fmspc,
+};
 
 #[cfg(not(feature = "mock-sgx"))]
 pub type DefaultAttestor = DcapAttestor;
@@ -47,9 +52,11 @@ pub trait Attestor: Send + Sync + 'static {
 }
 
 /// An `Attestor` for generating DCAP attestations for Gramine based enclaves.
-#[derive(Clone, PartialEq, Debug)]
+#[serde_as]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct DcapAttestor {
     pub fmspc: Fmspc,
+    #[serde_as(as = "DisplayFromStr")]
     pub pccs_url: Url,
 }
 
@@ -153,7 +160,7 @@ impl Attestor for DcapAttestor {
             let (pck_crl, pck_crl_issuer_chain) =
                 pccs_query_pck(self.pccs_url.clone()).map_err(|e| {
                     error!("Failed to query PCCS: {}", e);
-                    IoError::new(ErrorKind::Other, e.to_string())
+                    IoError::other(e.to_string())
                 })?;
             collateral(&self.fmspc.to_string(), pck_crl, pck_crl_issuer_chain)
         };
@@ -166,6 +173,24 @@ impl Attestor for DcapAttestor {
             })?,
             collateral,
         ))
+    }
+}
+
+#[async_trait::async_trait]
+impl Import for DcapAttestor {
+    type Error = SerdeError;
+
+    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
+        serde_json::from_slice(&data)
+    }
+}
+
+#[async_trait::async_trait]
+impl Export for DcapAttestor {
+    type Error = SerdeError;
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
+        serde_json::to_vec(self)
     }
 }
 
@@ -193,6 +218,24 @@ impl Attestor for MockAttestor {
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
         debug!("Generating mock attestation");
         Ok(MockAttestation(user_data.user_data()))
+    }
+}
+
+#[async_trait::async_trait]
+impl Import for MockAttestor {
+    type Error = ();
+
+    async fn import(_data: Vec<u8>) -> Result<Self, Self::Error> {
+        Ok(MockAttestor)
+    }
+}
+
+#[async_trait::async_trait]
+impl Export for MockAttestor {
+    type Error = ();
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
+        Ok(vec![])
     }
 }
 

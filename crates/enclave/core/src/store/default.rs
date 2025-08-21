@@ -4,9 +4,14 @@ use cosmrs::AccountId;
 use displaydoc::Display;
 use log::{debug, info, trace};
 use quartz_contract_core::state::{Config, Nonce};
+use serde::{Deserialize, Serialize};
+use serde_json::Error;
 use tokio::sync::RwLock;
 
-use crate::store::Store;
+use crate::{
+    backup_restore::{Export, Import},
+    store::Store,
+};
 
 /// A default, thread-safe in-memory store.
 #[derive(Clone, Debug, Default)]
@@ -86,5 +91,44 @@ impl Store for DefaultStore {
             *seq_num
         );
         Ok(prev_seq_num)
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct StoreDTO {
+    config: Option<Config>,
+    contract: Option<AccountId>,
+    nonce: Option<Nonce>,
+    seq_num: u64,
+}
+#[async_trait::async_trait]
+impl Import for DefaultStore {
+    type Error = Error;
+
+    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
+        let dto: StoreDTO = serde_json::from_slice(&data)?;
+
+        Ok(Self {
+            config: Arc::new(RwLock::new(dto.config)),
+            contract: Arc::new(RwLock::new(dto.contract)),
+            nonce: Arc::new(RwLock::new(dto.nonce)),
+            seq_num: Arc::new(RwLock::new(dto.seq_num)),
+        })
+    }
+}
+
+#[async_trait::async_trait]
+impl Export for DefaultStore {
+    type Error = Error;
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
+        let dto = StoreDTO {
+            config: self.config.read().await.clone(),
+            contract: self.contract.read().await.clone(),
+            nonce: *self.nonce.read().await,
+            seq_num: *self.seq_num.read().await,
+        };
+
+        Ok(serde_json::to_vec(&dto)?)
     }
 }

@@ -79,17 +79,28 @@ See the app enclaves in the `examples` directory for usage examples.
     unused_qualifications
 )]
 
+use std::path::PathBuf;
+
+use anyhow::anyhow;
 use cosmrs::AccountId;
 use log::{debug, trace, warn};
 use quartz_contract_core::state::Config;
+use serde::{Deserialize, Serialize};
+use tokio::{
+    fs::File,
+    io::{AsyncReadExt, AsyncWriteExt},
+    sync::mpsc,
+};
 
 use crate::{
     attestor::{Attestor, DefaultAttestor},
+    backup_restore::{Backup, Export, Import},
     key_manager::{default::DefaultKeyManager, shared::SharedKeyManager, KeyManager},
     store::{default::DefaultStore, Store},
 };
 
 pub mod attestor;
+pub mod backup_restore;
 pub mod chain_client;
 pub mod event;
 pub mod grpc;
@@ -144,6 +155,13 @@ pub trait Enclave: Send + Sync + 'static {
     async fn store(&self) -> &Self::Store;
 }
 
+/// Notification the enclave may emit.
+#[derive(Debug, Clone)]
+pub enum Notification {
+    /// Fired once the enclave finishes its remote-attestation handshake.
+    HandshakeComplete,
+}
+
 /// The default generic implementation of the [`Enclave`] trait for convenience.
 /// Includes a generic context for additional application-specific data or configuration.
 #[derive(Clone, Debug)]
@@ -152,16 +170,27 @@ pub struct DefaultEnclave<C, A = DefaultAttestor, K = DefaultKeyManager, S = Def
     pub key_manager: K,
     pub store: S,
     pub ctx: C,
+    pub notifier_tx: mpsc::Sender<Notification>,
 }
 
 impl<C: Send + Sync + 'static> DefaultSharedEnclave<C> {
-    pub fn shared(attestor: DefaultAttestor, config: Config, ctx: C) -> DefaultSharedEnclave<C> {
-        DefaultSharedEnclave {
-            attestor,
-            key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
-            store: DefaultStore::new(config),
-            ctx,
-        }
+    pub fn shared(
+        attestor: DefaultAttestor,
+        config: Config,
+        ctx: C,
+    ) -> (DefaultSharedEnclave<C>, mpsc::Receiver<Notification>) {
+        let (notifier_tx, notifier_rx) = mpsc::channel(10); // ← NEW
+
+        (
+            DefaultSharedEnclave {
+                attestor,
+                key_manager: SharedKeyManager::wrapping(DefaultKeyManager::default()),
+                store: DefaultStore::new(config),
+                ctx,
+                notifier_tx,
+            },
+            notifier_rx,
+        )
     }
 
     /// Consumes a `DefaultEnclave` and returns another one with the specified key-manager.
@@ -175,6 +204,7 @@ impl<C: Send + Sync + 'static> DefaultSharedEnclave<C> {
             key_manager,
             store: self.store,
             ctx: self.ctx,
+            notifier_tx: self.notifier_tx,
         }
     }
 }
@@ -204,5 +234,102 @@ where
     async fn store(&self) -> &Self::Store {
         trace!("Retrieving enclave store");
         &self.store
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DefaultBackup {
+    store: Vec<u8>,
+    key_manager: Vec<u8>,
+    attestor: Vec<u8>,
+    ctx: Vec<u8>,
+}
+
+#[async_trait::async_trait]
+impl<C, A, K, S> Backup for DefaultEnclave<C, A, K, S>
+where
+    C: Send + Sync + Export + Import,
+    A: Attestor + Clone + Export + Import,
+    K: KeyManager + Clone + Export + Import,
+    S: Store<Contract = AccountId> + Clone + Export + Import,
+{
+    type Config = PathBuf;
+    type Error = anyhow::Error;
+
+    async fn backup(&self, config: Self::Config) -> Result<(), Self::Error> {
+        trace!("Backing up to {config:?}");
+
+        let exported_store = self
+            .store
+            .export()
+            .await
+            .map_err(|e| anyhow!("store export failed: {e:?}"))?;
+        let exported_key_manager = self
+            .key_manager
+            .export()
+            .await
+            .map_err(|e| anyhow!("key-manager export failed: {e:?}"))?;
+        let exported_attestor = self
+            .attestor
+            .export()
+            .await
+            .map_err(|e| anyhow!("attestor export failed: {e:?}"))?;
+        let exported_ctx = self
+            .ctx
+            .export()
+            .await
+            .map_err(|e| anyhow!("ctx export failed: {e:?}"))?;
+        let backup = DefaultBackup {
+            store: exported_store,
+            key_manager: exported_key_manager,
+            attestor: exported_attestor,
+            ctx: exported_ctx,
+        };
+        let backup_ser = serde_json::to_vec(&backup).expect("infallible serializer");
+
+        let mut sealed_file = File::create(config)
+            .await
+            .map_err(|e| anyhow!("backup file creation failed: {e:?}"))?;
+        sealed_file
+            .write_all(backup_ser.as_slice())
+            .await
+            .map_err(|e| anyhow!("backup writes failed: {e:?}"))?;
+
+        Ok(())
+    }
+
+    async fn try_restore(&mut self, config: Self::Config) -> Result<(), Self::Error> {
+        trace!("Restoring from {config:?}");
+
+        let mut sealed_file = File::open(config).await?;
+        let mut backup_ser = vec![];
+        sealed_file.read_to_end(&mut backup_ser).await?;
+        let backup: DefaultBackup = serde_json::from_slice(&backup_ser)?;
+
+        let imported_store = S::import(backup.store)
+            .await
+            .map_err(|e| anyhow!("store import failed: {e:?}"))?;
+        let imported_key_manager = K::import(backup.key_manager)
+            .await
+            .map_err(|e| anyhow!("key-manager import failed: {e:?}"))?;
+        let imported_attestor = A::import(backup.attestor)
+            .await
+            .map_err(|e| anyhow!("attestor import failed: {e:?}"))?;
+        let imported_ctx = C::import(backup.ctx)
+            .await
+            .map_err(|e| anyhow!("ctx import failed: {e:?}"))?;
+
+        self.store = imported_store;
+        self.key_manager = imported_key_manager;
+        self.attestor = imported_attestor;
+        self.ctx = imported_ctx;
+
+        // if restored from a previous backup - manually notify host of handshake completion
+        self.notifier_tx
+            .send(Notification::HandshakeComplete)
+            .await
+            .expect("Receiver half of the channel must NOT be closed");
+
+        Ok(())
     }
 }

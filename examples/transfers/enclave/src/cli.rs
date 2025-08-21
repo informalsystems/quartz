@@ -1,4 +1,4 @@
-use std::{env, net::SocketAddr};
+use std::{env, net::SocketAddr, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
@@ -80,6 +80,9 @@ pub struct Cli {
 
     #[clap(long, default_value = "admin")]
     pub tx_sender: String,
+
+    #[clap(long, default_value = "sealed/quartz.backup")]
+    pub backup_path: PathBuf,
 }
 
 fn default_rpc_addr() -> SocketAddr {

@@ -1,6 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError, Uint64};
 use cw_storage_plus::Item;
+use serde::{Deserialize, Serialize};
 
 pub type MrEnclave = [u8; 32];
 pub type Nonce = [u8; 32];
@@ -16,7 +17,7 @@ pub const CONFIG: Item<RawConfig> = Item::new(CONFIG_KEY);
 pub const SESSION: Item<Session> = Item::new(SESSION_KEY);
 pub const SEQUENCE_NUM: Item<Uint64> = Item::new(SEQUENCE_NUM_KEY);
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     mr_enclave: MrEnclave,
     light_client_opts: LightClientOpts,
@@ -100,7 +101,7 @@ impl From<Config> for RawConfig {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LightClientOpts {
     chain_id: String,
     trusted_height: Height,

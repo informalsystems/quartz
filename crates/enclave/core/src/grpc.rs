@@ -8,6 +8,7 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     attestor::Attestor, handler::Handler, key_manager::KeyManager, store::Store, DefaultEnclave,
+    Notification,
 };
 
 #[async_trait::async_trait]
@@ -52,6 +53,13 @@ where
         &self,
         request: Request<SessionSetPubKeyRequest>,
     ) -> Result<Response<SessionSetPubKeyResponse>, Status> {
-        request.handle(self).await
+        let response = request.handle(self).await?;
+
+        self.notifier_tx
+            .send(Notification::HandshakeComplete)
+            .await
+            .expect("Receiver half of the channel must NOT be closed");
+
+        Ok(response)
     }
 }
