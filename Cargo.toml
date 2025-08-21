@@ -42,7 +42,6 @@ k256 = { version = "0.13.2", default-features = false, features = [
     "alloc",
 ] }
 log = { version = "0.4.25", default-features = false }
-num-bigint = { version = "0.4.4", default-features = false }
 p256 = { version = "0.13.2", default-features = false }
 prost = { version = "0.13.1", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["getrandom"] }
