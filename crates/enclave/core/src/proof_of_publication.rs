@@ -9,6 +9,7 @@ use quartz_cw_proof::proof::{
 };
 use quartz_tm_stateless_verifier::make_provider;
 use serde::{Deserialize, Serialize};
+use tendermint::{block::Height, Hash};
 use tendermint_light_client::{
     light_client::Options,
     types::{LightBlock, TrustThreshold},
@@ -32,6 +33,8 @@ impl<M> ProofOfPublication<M> {
     pub fn verify(
         self,
         light_client_opts: &LightClientOpts,
+        trusted_height: Height,
+        trusted_hash: Hash,
         contract_address: AccountId,
         storage_key: String,
         storage_namespace: Option<String>,
@@ -55,12 +58,8 @@ impl<M> ProofOfPublication<M> {
 
         let primary_block = make_provider(
             light_client_opts.chain_id(),
-            light_client_opts.trusted_height().try_into().unwrap(),
-            light_client_opts
-                .trusted_hash()
-                .to_vec()
-                .try_into()
-                .unwrap(),
+            trusted_height,
+            trusted_hash,
             self.light_client_proof,
             options,
         )

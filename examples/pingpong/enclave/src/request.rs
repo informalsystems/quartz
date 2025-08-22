@@ -80,9 +80,17 @@ impl Handler<DefaultSharedEnclave<()>> for PingRequest {
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("config not found"))?;
+        let (trusted_height, trusted_hash) = ctx
+            .store()
+            .await
+            .get_trusted_height_hash()
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
         let (proof_value, ping) = proof
             .verify(
                 config.light_client_opts(),
+                trusted_height,
+                trusted_hash,
                 contract,
                 PINGS_KEY.to_string(),
                 None,
