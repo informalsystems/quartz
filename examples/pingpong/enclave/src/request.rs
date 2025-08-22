@@ -86,6 +86,8 @@ impl Handler<DefaultSharedEnclave<()>> for PingRequest {
             .get_trusted_height_hash()
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
+        let (target_height, target_hash) = proof.target_height_hash();
+
         let (proof_value, ping) = proof
             .verify(
                 config.light_client_opts(),
@@ -102,6 +104,13 @@ impl Handler<DefaultSharedEnclave<()>> for PingRequest {
         if !proof_value_matches_msg {
             return Err(Status::failed_precondition("proof verification"));
         }
+
+        // update trusted height and hash
+        ctx.store()
+            .await
+            .set_trusted_height_hash(target_height, target_hash)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         // Perform enclave logic
         // Decrypt the ciphertext using enclave private key

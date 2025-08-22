@@ -54,6 +54,8 @@ where
             .get_trusted_height_hash()
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
+        let (target_height, target_hash) = proof.target_height_hash();
+
         let (value, _msg) = proof
             .verify(
                 config.light_client_opts(),
@@ -64,6 +66,13 @@ where
                 None,
             )
             .map_err(Status::failed_precondition)?;
+
+        // update trusted height and hash
+        ctx.store()
+            .await
+            .set_trusted_height_hash(target_height, target_hash)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         // make sure session nonce matches what we have locally
         let session: Session = serde_json::from_slice(&value).unwrap();

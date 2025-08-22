@@ -85,4 +85,12 @@ impl<M> ProofOfPublication<M> {
 
         Ok((proof.value, self.msg))
     }
+
+    pub fn target_height_hash(&self) -> (Height, Hash) {
+        let proof_last_block = self.light_client_proof.last().unwrap();
+        let target_height = proof_last_block.height();
+        let target_hash = proof_last_block.signed_header.header().hash();
+
+        (target_height, target_hash)
+    }
 }
