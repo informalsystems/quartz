@@ -1,6 +1,6 @@
 # Quartz-based app manifest file
 
-loader.entrypoint = "file:{{ gramine.libos }}"
+loader.entrypoint.uri = "file:{{ gramine.libos }}"
 libos.entrypoint = "{{ quartz_dir }}/target/release/quartz-app-transfers-enclave"
 
 loader.log_level = "{{ log_level }}"
@@ -26,6 +26,7 @@ loader.insecure__use_host_env = true
 loader.argv = ["quartz-app-transfers-enclave",
                 "--chain-id", "{{ chain_id }}",
                 "--fmspc", "{{ fmspc }}",
+                "--pccs-url", "{{ pccs_url }}",
                 "--tcbinfo-contract", "{{ tcbinfo_contract }}",
                 "--dcap-verifier-contract", "{{ dcap_verifier_contract }}",
                 "--node-url", "{{ node_url }}",
@@ -42,6 +43,7 @@ fs.mounts = [
   { uri = "file:{{ quartz_dir }}", path = "{{ quartz_dir }}" },
   { uri = "file:/etc/ssl/certs/ca-certificates.crt", path = "/etc/ssl/certs/ca-certificates.crt" },
   { uri = "file:/usr/lib/ssl/certs/ca-certificates.crt", path = "/usr/lib/ssl/certs/ca-certificates.crt" },
+  { type = "encrypted", uri = "file:{{ quartz_dir }}/sealed/", path = "/sealed/", key_name = "_sgx_mrenclave" },
 ]
 
 # sgx.debug = true
@@ -50,7 +52,6 @@ sgx.max_threads = 16
 sgx.edmm_enable = {{ 'true' if env.get('EDMM', '0') == '1' else 'false' }}
 
 sgx.remote_attestation = "{{ ra_type }}"
-sgx.ra_client_linkable = {{ 'true' if ra_client_linkable == '1' else 'false' }}
 
 sgx.trusted_files = [
   "file:{{ gramine.libos }}",

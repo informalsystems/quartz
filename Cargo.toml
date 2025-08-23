@@ -11,7 +11,7 @@ members = [
 exclude = ["examples/transfers/contracts", "examples/transfers/enclave"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.81.0"
 license = "Apache-2.0"
@@ -24,11 +24,6 @@ authors = ["Informal Systems <hello@informal.systems>"]
 # external
 anyhow = { version = "1.0.86", features = ["std", "backtrace"] }
 async-trait = { version = "0.1.79", default-features = false }
-bip32 = { version = "0.5.1", default-features = false, features = [
-    "alloc",
-    "secp256k1",
-    "bip39",
-] }
 ciborium = { version = "0.2.2", default-features = false }
 cargo-generate = { version = "0.21.3", default-features = false }
 clap = { version = "4.1.8", default-features = false, features = [
@@ -38,7 +33,6 @@ clap = { version = "4.1.8", default-features = false, features = [
 color-eyre = { version = "0.6.2", default-features = false }
 der = { version = "0.7.9", default-features = false }
 displaydoc = { version = "0.2.4", default-features = false }
-ecies = { version = "0.2.3", default-features = false, features = ["pure"] }
 futures = { version = "0.3.27", default-features = false, features = ["alloc"] }
 futures-util = { version = "0.3.30" }
 hex = { version = "0.4.3", default-features = false }
@@ -47,11 +41,11 @@ k256 = { version = "0.13.2", default-features = false, features = [
     "ecdsa",
     "alloc",
 ] }
+log = { version = "0.4.25", default-features = false }
 num-bigint = { version = "0.4.4", default-features = false }
 p256 = { version = "0.13.2", default-features = false }
 prost = { version = "0.13.1", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["getrandom"] }
-rand_core = { version = "0.6", default-features = false, features = ["std"] }
 reqwest = { version = "0.12.2", default-features = false, features = [
     "json",
     "rustls-tls",
@@ -84,18 +78,15 @@ tonic-build = { version = "0.12.1", default-features = false, features = [
     "prost",
     "transport",
 ] }
-tower = { version = "0.5.0" }
 tracing = { version = "0.1.39", default-features = false }
 tracing-subscriber = { version = "0.3.17", default-features = false, features = [
     "fmt",
 ] }
 urlencoding = { version = "2.1.3", default-features = false }
-uuid = { version = "1.4.1", default-features = false, features = ["serde"] }
 x509-cert = { version = "0.2.5", default-features = false }
 x509-parser = { version = "0.16.0", default-features = false, features = [
     "verify",
 ] }
-zeroize = { version = "1.7.0", default-features = false }
 
 # cosmos
 cosmos-sdk-proto = { version = "0.26.0", default-features = false }
@@ -120,27 +111,27 @@ tendermint-rpc = { version = "=0.40.1", default-features = false, features = [
 ] }
 
 # mobilecoin
-mc-sgx-core-types = { version = "0.11.0", default-features = false }
-mc-sgx-dcap-types = { version = "0.11.0", default-features = false }
-mc-sgx-dcap-sys-types = { version = "0.11.0", default-features = false }
-mc-attestation-verifier = { version = "0.4.3", default-features = false }
+mc-sgx-core-types = { version = "=0.11.0", default-features = false }
+mc-sgx-dcap-types = { version = "=0.11.0", default-features = false }
+mc-sgx-dcap-sys-types = { version = "=0.11.0", default-features = false }
+mc-attestation-verifier = { version = "=0.4.3", default-features = false }
 
 # quartz
-quartz-cw-proof = { version = "0.1.0", path = "crates/enclave/cw-proof", default-features = false }
-quartz-common = { version = "0.1.0", path = "crates/common", default-features = false }
-quartz-contract-core = { version = "0.1.0", path = "crates/contracts/core", default-features = false }
-quartz-contract-core-derive = { version = "0.1.0", path = "crates/contracts/core/derive", default-features = false }
-quartz-dcap-verifier-msgs = { version = "0.1.0", path = "crates/contracts/dcap-verifier/msgs", default-features = false }
-quartz-enclave-core = { version = "0.1.1", path = "crates/enclave/core", default-features = false }
-quartz-proto = { version = "0.1.0", path = "crates/enclave/proto", default-features = false }
-quartz-tee-ra = { version = "0.1.0", path = "crates/contracts/tee-ra", default-features = false }
-quartz-tcbinfo = { version = "0.1.0", path = "crates/contracts/tcbinfo", default-features = false, features = [
+quartz-cw-proof = { version = "0.2.0", path = "crates/enclave/cw-proof", default-features = false }
+quartz-common = { version = "0.2.0", path = "crates/common", default-features = false }
+quartz-contract-core = { version = "0.2.0", path = "crates/contracts/core", default-features = false }
+quartz-contract-core-derive = { version = "0.2.0", path = "crates/contracts/core/derive", default-features = false }
+quartz-dcap-verifier-msgs = { version = "0.2.0", path = "crates/contracts/dcap-verifier/msgs", default-features = false }
+quartz-enclave-core = { version = "0.2.0", path = "crates/enclave/core", default-features = false }
+quartz-proto = { version = "0.2.0", path = "crates/enclave/proto", default-features = false }
+quartz-tee-ra = { version = "0.2.0", path = "crates/contracts/tee-ra", default-features = false }
+quartz-tcbinfo = { version = "0.2.0", path = "crates/contracts/tcbinfo", default-features = false, features = [
     "library",
 ] }
-quartz-tcbinfo-msgs = { version = "0.1.0", path = "crates/contracts/tcbinfo/msgs", default-features = false }
-quartz-tm-prover = { version = "0.1.0", path = "crates/utils/tm-prover", default-features = false }
-quartz-tm-stateless-verifier = { version = "0.1.0", path = "crates/enclave/tm-stateless-verifier", default-features = false }
-cw-client = { version = "0.1.0", path = "crates/utils/cw-client", default-features = false }
+quartz-tcbinfo-msgs = { version = "0.2.0", path = "crates/contracts/tcbinfo/msgs", default-features = false }
+quartz-tm-prover = { version = "0.2.0", path = "crates/utils/tm-prover", default-features = false }
+quartz-tm-stateless-verifier = { version = "0.2.0", path = "crates/enclave/tm-stateless-verifier", default-features = false }
+cw-client = { version = "0.2.0", path = "crates/utils/cw-client", default-features = false }
 
 [profile.release]
 opt-level = "z"

@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, str::FromStr};
 
 use anyhow::anyhow;
 use cosmos_sdk_proto::{
@@ -25,7 +25,7 @@ use cosmrs::{
     tendermint::chain::Id as TmChainId,
     tx,
     tx::{Fee, Msg, SignDoc, SignerInfo},
-    AccountId, Coin,
+    AccountId, Amount, Coin, Denom,
 };
 use reqwest::Url;
 use serde::de::DeserializeOwned;
@@ -100,7 +100,7 @@ impl CwClient for GrpcClient {
         gas: u64,
         _sender: &str,
         msg: M,
-        _pay_amount: &str,
+        pay_amount: &str,
     ) -> Result<String, Self::Error> {
         let tm_pubkey = self.sk.public_key();
         let sender = tm_pubkey
@@ -119,10 +119,7 @@ impl CwClient for GrpcClient {
         let account = account_info(self.url.to_string(), sender.to_string())
             .await
             .map_err(|e| anyhow!("error querying account info: {}", e))?;
-        let amount = Coin {
-            amount: 11000u128,
-            denom: "untrn".parse().expect("hardcoded denom"),
-        };
+        let amount = parse_coin(pay_amount)?;
         let tx_bytes = tx_bytes(
             &self.sk,
             amount,
@@ -214,4 +211,83 @@ pub async fn send_tx(
     });
     let tx_response = client.broadcast_tx(request).await?;
     Ok(tx_response.into_inner())
+}
+
+pub fn parse_coin(input: &str) -> anyhow::Result<Coin> {
+    let split_at = input
+        .find(|c: char| !c.is_ascii_digit())
+        .ok_or(anyhow!("invalid coin format: missing denomination"))?;
+    let (amt_str, denom_str) = input.split_at(split_at);
+
+    let amount: Amount = amt_str.parse()?;
+    let denom: Denom = Denom::from_str(denom_str).map_err(|e| anyhow!("invalid denom: {e}"))?;
+
+    Ok(Coin { denom, amount })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use super::*;
+
+    #[test]
+    fn parse_valid_basic() {
+        let coin = parse_coin("11000untrn").unwrap();
+        assert_eq!(coin.amount, 11_000);
+        assert_eq!(coin.denom, Denom::from_str("untrn").unwrap());
+    }
+
+    #[test]
+    fn parse_leading_zeros() {
+        let coin = parse_coin("000123abc").unwrap();
+        assert_eq!(coin.amount, 123);
+        assert_eq!(coin.denom, Denom::from_str("abc").unwrap());
+    }
+
+    #[test]
+    fn parse_zero_amount() {
+        let coin = parse_coin("0xyz").unwrap();
+        assert_eq!(coin.amount, 0);
+        assert_eq!(coin.denom, Denom::from_str("xyz").unwrap());
+    }
+
+    #[test]
+    fn parse_denom_with_digits() {
+        let coin = parse_coin("10token123").unwrap();
+        assert_eq!(coin.amount, 10);
+        assert_eq!(coin.denom, Denom::from_str("token123").unwrap());
+    }
+
+    #[test]
+    fn parse_max_u128_amount() {
+        // u128::MAX = 340282366920938463463374607431768211455
+        let s = "340282366920938463463374607431768211455max";
+        let coin = parse_coin(s).unwrap();
+        assert_eq!(coin.amount, u128::MAX);
+        assert_eq!(coin.denom, Denom::from_str("max").unwrap());
+    }
+
+    #[test]
+    fn error_missing_denom() {
+        assert!(parse_coin("123").is_err());
+    }
+
+    #[test]
+    fn error_missing_amount() {
+        assert!(parse_coin("abc").is_err());
+    }
+
+    #[test]
+    fn error_overflow_amount() {
+        // one more than u128::MAX
+        let s = "340282366920938463463374607431768211456overflow";
+        assert!(parse_coin(s).is_err());
+    }
+
+    #[test]
+    fn error_negative_amount() {
+        // '-' is non-digit at pos 0 → empty amount → parse error
+        assert!(parse_coin("-100untrn").is_err());
+    }
 }

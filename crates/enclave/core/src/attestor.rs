@@ -1,9 +1,10 @@
 use std::{
     error::Error,
     fs::{read, File},
-    io::{Error as IoError, ErrorKind, Write},
+    io::{Error as IoError, Write},
 };
 
+use log::{debug, error, trace};
 use mc_sgx_dcap_sys_types::sgx_ql_qve_collateral_t;
 use quartz_contract_core::{
     msg::{
@@ -16,10 +17,15 @@ use quartz_contract_core::{
     state::{MrEnclave, UserData},
 };
 use quartz_tee_ra::intel_sgx::dcap::{Collateral, Quote3Error};
-use reqwest::blocking::Client;
-use serde::Serialize;
+use reqwest::{blocking::Client, Url};
+use serde::{Deserialize, Serialize};
+use serde_json::Error as SerdeError;
+use serde_with::{serde_as, DisplayFromStr};
 
-use crate::types::Fmspc;
+use crate::{
+    backup_restore::{Export, Import},
+    types::Fmspc,
+};
 
 #[cfg(not(feature = "mock-sgx"))]
 pub type DefaultAttestor = DcapAttestor;
@@ -46,9 +52,12 @@ pub trait Attestor: Send + Sync + 'static {
 }
 
 /// An `Attestor` for generating DCAP attestations for Gramine based enclaves.
-#[derive(Clone, PartialEq, Debug)]
+#[serde_as]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct DcapAttestor {
     pub fmspc: Fmspc,
+    #[serde_as(as = "DisplayFromStr")]
+    pub pccs_url: Url,
 }
 
 impl Attestor for DcapAttestor {
@@ -57,6 +66,7 @@ impl Attestor for DcapAttestor {
     type RawAttestation = RawDcapAttestation;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
+        debug!("Generating DCAP quote");
         let user_data = user_data.user_data();
         let mut user_report_data = File::create("/dev/attestation/user_report_data")?;
         user_report_data.write_all(user_data.as_slice())?;
@@ -65,6 +75,7 @@ impl Attestor for DcapAttestor {
     }
 
     fn mr_enclave(&self) -> Result<MrEnclave, Self::Error> {
+        debug!("Retrieving MRENCLAVE");
         let quote = self.quote(NullUserData)?;
         Ok(quote[112..(112 + 32)]
             .try_into()
@@ -72,13 +83,17 @@ impl Attestor for DcapAttestor {
     }
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
-        fn pccs_query_pck() -> Result<(Vec<u8>, String), Box<dyn Error>> {
-            let url = "https://127.0.0.1:8081/sgx/certification/v4/pckcrl?ca=processor";
+        debug!("Generating DCAP attestation");
+
+        fn pccs_query_pck(pccs_url: Url) -> Result<(Vec<u8>, String), Box<dyn Error>> {
+            let mut pccs_url = pccs_url.join("pckcrl/").expect("hardcoded URL");
+            pccs_url.set_query(Some("ca=processor"));
+            trace!("Querying PCCS for PCK certificate: {pccs_url}");
 
             let client = Client::builder()
                 .danger_accept_invalid_certs(true) // FIXME(hu55a1n1): required?
                 .build()?;
-            let response = client.get(url).send()?;
+            let response = client.get(pccs_url.as_str()).send()?;
 
             // Parse relevant headers
             let pck_crl_issuer_chain = response
@@ -143,16 +158,39 @@ impl Attestor for DcapAttestor {
 
         let collateral = {
             let (pck_crl, pck_crl_issuer_chain) =
-                pccs_query_pck().map_err(|e| IoError::new(ErrorKind::Other, e.to_string()))?;
+                pccs_query_pck(self.pccs_url.clone()).map_err(|e| {
+                    error!("Failed to query PCCS: {}", e);
+                    IoError::other(e.to_string())
+                })?;
             collateral(&self.fmspc.to_string(), pck_crl, pck_crl_issuer_chain)
         };
 
+        debug!("Successfully generated DCAP attestation");
         Ok(DcapAttestation::new(
-            quote
-                .try_into()
-                .map_err(|e: Quote3Error| IoError::other(e.to_string()))?,
+            quote.try_into().map_err(|e: Quote3Error| {
+                error!("Failed to convert quote: {}", e);
+                IoError::other(e.to_string())
+            })?,
             collateral,
         ))
+    }
+}
+
+#[async_trait::async_trait]
+impl Import for DcapAttestor {
+    type Error = SerdeError;
+
+    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
+        serde_json::from_slice(&data)
+    }
+}
+
+#[async_trait::async_trait]
+impl Export for DcapAttestor {
+    type Error = SerdeError;
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
+        serde_json::to_vec(self)
     }
 }
 
@@ -167,16 +205,37 @@ impl Attestor for MockAttestor {
     type RawAttestation = RawMockAttestation;
 
     fn quote(&self, user_data: impl HasUserData) -> Result<Vec<u8>, Self::Error> {
+        debug!("Generating mock quote");
         let user_data = user_data.user_data();
         Ok(user_data.to_vec())
     }
 
     fn mr_enclave(&self) -> Result<MrEnclave, Self::Error> {
+        debug!("Retrieving mock MRENCLAVE");
         Ok(Default::default())
     }
 
     fn attestation(&self, user_data: impl HasUserData) -> Result<Self::Attestation, Self::Error> {
+        debug!("Generating mock attestation");
         Ok(MockAttestation(user_data.user_data()))
+    }
+}
+
+#[async_trait::async_trait]
+impl Import for MockAttestor {
+    type Error = ();
+
+    async fn import(_data: Vec<u8>) -> Result<Self, Self::Error> {
+        Ok(MockAttestor)
+    }
+}
+
+#[async_trait::async_trait]
+impl Export for MockAttestor {
+    type Error = ();
+
+    async fn export(&self) -> Result<Vec<u8>, Self::Error> {
+        Ok(vec![])
     }
 }
 

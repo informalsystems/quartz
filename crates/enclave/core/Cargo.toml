@@ -1,6 +1,6 @@
 [package]
 name = "quartz-enclave-core"
-version = "0.1.1"
+version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -21,21 +21,18 @@ mock-sgx = ["quartz-contract-core/mock-sgx"]
 # external
 anyhow.workspace = true
 async-trait.workspace = true
-sha2 = { workspace = true }
-clap.workspace = true
-color-eyre.workspace = true
-ecies.workspace = true
+displaydoc.workspace = true
 futures-util.workspace = true
 hex.workspace = true
-k256.workspace = true
+k256 = { workspace = true, features = ["pem", "serde"] }
+log.workspace = true
 rand.workspace = true
 reqwest = { workspace = true, features = ["blocking"] }
 serde.workspace = true
 serde_json.workspace = true
-thiserror.workspace = true
+serde_with.workspace = true
 tonic.workspace = true
-tokio.workspace = true
-tower.workspace = true
+tokio = { workspace = true, features = ["fs"] }
 urlencoding.workspace = true
 
 # mobilecoin
@@ -43,14 +40,15 @@ mc-sgx-dcap-sys-types.workspace = true
 
 # cosmos
 cosmrs.workspace = true
-cosmwasm-std.workspace = true
 tendermint.workspace = true
 tendermint-light-client.workspace = true
 tendermint-rpc = { workspace = true, features = ["websocket-client", "http-client"] }
 
 # quartz
+cw-client.workspace = true
 quartz-cw-proof.workspace = true
 quartz-contract-core.workspace = true
 quartz-proto.workspace = true
+quartz-tm-prover.workspace = true
 quartz-tee-ra.workspace = true
 quartz-tm-stateless-verifier.workspace = true

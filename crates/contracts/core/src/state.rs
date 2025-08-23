@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{HexBinary, StdError, Uint64};
 use cw_storage_plus::Item;
-use k256::ecdsa::VerifyingKey;
+use serde::{Deserialize, Serialize};
 
 pub type MrEnclave = [u8; 32];
 pub type Nonce = [u8; 32];
@@ -17,7 +17,7 @@ pub const CONFIG: Item<RawConfig> = Item::new(CONFIG_KEY);
 pub const SESSION: Item<Session> = Item::new(SESSION_KEY);
 pub const SEQUENCE_NUM: Item<Uint64> = Item::new(SEQUENCE_NUM_KEY);
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     mr_enclave: MrEnclave,
     light_client_opts: LightClientOpts,
@@ -101,7 +101,7 @@ impl From<Config> for RawConfig {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LightClientOpts {
     chain_id: String,
     trusted_height: Height,
@@ -233,9 +233,9 @@ impl Session {
         }
     }
 
-    pub fn with_pub_key(mut self, nonce: Nonce, pub_key: VerifyingKey) -> Option<Self> {
+    pub fn with_pub_key(mut self, nonce: Nonce, pub_key: Vec<u8>) -> Option<Self> {
         if self.nonce == nonce && self.pub_key.is_none() {
-            self.pub_key = Some(pub_key.to_sec1_bytes().into_vec().into());
+            self.pub_key = Some(pub_key.into());
             Some(self)
         } else {
             None
@@ -244,5 +244,9 @@ impl Session {
 
     pub fn nonce(&self) -> Nonce {
         self.nonce.to_array().expect("correct by construction")
+    }
+
+    pub fn pub_key(self) -> Option<HexBinary> {
+        self.pub_key
     }
 }

@@ -9,6 +9,8 @@ pub enum Error {
     Std(#[from] StdError),
     #[error("{0}")]
     RaVerification(#[from] RaVerificationError),
+    #[error("Signature verification error: {0}")]
+    SignatureVerification(String),
     #[error("Not Secp256K1")]
     K256(K256Error),
     #[error("invalid session nonce or attempt to reset pub_key")]

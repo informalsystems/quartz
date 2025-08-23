@@ -1,11 +1,11 @@
-use std::{env, net::SocketAddr};
+use std::{env, net::SocketAddr, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
 use reqwest::Url;
-use tendermint::Hash;
+use tendermint::{chain::Id, Hash};
 use tendermint_light_client::types::{Height, TrustThreshold};
 
 fn parse_trust_threshold(s: &str) -> Result<TrustThreshold> {
@@ -27,11 +27,15 @@ pub struct Cli {
 
     /// Identifier of the chain
     #[clap(long)]
-    pub chain_id: String,
+    pub chain_id: Id,
 
     /// FMSPC (Family-Model-Stepping-Platform-Custom SKU)
     #[clap(long)]
     pub fmspc: Option<Fmspc>,
+
+    /// PCCS URL (for DCAP)
+    #[clap(long)]
+    pub pccs_url: Option<Url>,
 
     /// TcbInfo contract address
     #[clap(long)]
@@ -76,6 +80,9 @@ pub struct Cli {
 
     #[clap(long, default_value = "admin")]
     pub tx_sender: String,
+
+    #[clap(long, default_value = "sealed/quartz.backup")]
+    pub backup_path: PathBuf,
 }
 
 fn default_rpc_addr() -> SocketAddr {

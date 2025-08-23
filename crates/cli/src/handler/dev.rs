@@ -1,4 +1,7 @@
-use std::{path::PathBuf, time::Duration};
+use std::{
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use async_trait::async_trait;
 use color_eyre::{
@@ -83,7 +86,11 @@ async fn dev_driver(
                     .wrap_err("Could not run `contract build`")?;
 
                 // Start enclave in background
-                spawn_enclave_start(args, &config)?;
+                let restored = spawn_enclave_start(args, &config)?;
+                if restored {
+                    info!("{}", "Skipping handshake...".green().bold());
+                    continue;
+                }
 
                 // Deploy new contract and perform handshake
                 let res = deploy_and_handshake(None, args, &config).await;
@@ -113,7 +120,11 @@ async fn dev_driver(
                 sleep(Duration::from_secs(1)).await;
 
                 // Start enclave in background
-                spawn_enclave_start(args, &config)?;
+                let restored = spawn_enclave_start(args, &config)?;
+                if restored {
+                    info!("{}", "Skipping handshake...".green().bold());
+                    continue;
+                }
 
                 // todo: should not unconditionally deploy here
                 let res = deploy_and_handshake(Some(&contract), args, &config).await;
@@ -157,11 +168,12 @@ async fn dev_driver(
 }
 
 // Spawns enclve start in a separate task which runs in the background
-fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<()> {
+fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<bool> {
     // In separate process, launch the enclave
     let enclave_start = EnclaveStartRequest {
         unsafe_trust_latest: args.unsafe_trust_latest,
         fmspc: args.fmspc.clone(),
+        pccs_url: None,
         tcbinfo_contract: args.tcbinfo_contract.clone(),
         dcap_verifier_contract: args.dcap_verifier_contract.clone(),
     };
@@ -174,7 +186,7 @@ fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<()> {
         }
     });
 
-    Ok(())
+    Ok(Path::new("sealed/quartz.backup").exists())
 }
 
 // TODO: do not shutdown if cli calls fail, just print

@@ -318,16 +318,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "chrono"
-version = "0.4.38"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a21f936df1771bf62b77f047b726c4625ff2e8aa607c01ec06e5a05bd8463401"
-dependencies = [
- "num-traits",
- "serde",
-]
-
-[[package]]
 name = "ciborium"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1315,7 +1305,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-contract-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ciborium",
  "cosmwasm-schema",
@@ -1328,26 +1318,21 @@ dependencies = [
  "quartz-tee-ra",
  "serde",
  "serde_json",
- "serde_with",
  "sha2",
  "thiserror",
 ]
 
 [[package]]
 name = "quartz-contract-core-derive"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
- "proc-macro2",
- "quartz-contract-core",
  "quote",
- "serde_json",
- "sha2",
  "syn 1.0.109",
 ]
 
 [[package]]
 name = "quartz-dcap-verifier-msgs"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1355,25 +1340,20 @@ dependencies = [
 
 [[package]]
 name = "quartz-tcbinfo-msgs"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cosmwasm-schema",
 ]
 
 [[package]]
 name = "quartz-tee-ra"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
  "der",
  "hex-literal",
  "mc-attestation-verifier",
  "mc-sgx-dcap-types",
- "num-bigint",
  "serde",
- "serde_json",
- "sha2",
  "thiserror",
  "x509-cert",
  "x509-parser",
@@ -1636,14 +1616,9 @@ version = "3.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e28bdad6db2b8340e449f7108f020b3b092e8583a9e3fb82713e1d4e71fe817"
 dependencies = [
- "base64",
- "chrono",
- "hex",
  "serde",
  "serde_derive",
- "serde_json",
  "serde_with_macros",
- "time",
 ]
 
 [[package]]
@@ -1805,7 +1780,7 @@ dependencies = [
 
 [[package]]
 name = "transfers-contract"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1816,7 +1791,6 @@ dependencies = [
  "quartz-contract-core",
  "quartz-contract-core-derive",
  "serde_json",
- "sha2",
  "thiserror",
 ]
 

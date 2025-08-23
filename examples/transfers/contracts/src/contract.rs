@@ -246,10 +246,10 @@ mod query {
     }
 
     pub fn get_requests(deps: Deps) -> StdResult<Vec<Request>> {
-        Ok(REQUESTS.load(deps.storage)?)
+        REQUESTS.load(deps.storage)
     }
 
     pub fn get_state(deps: Deps) -> StdResult<HexBinary> {
-        Ok(STATE.load(deps.storage)?)
+        STATE.load(deps.storage)
     }
 }

@@ -97,6 +97,19 @@ pub trait HasUserData {
     fn user_data(&self) -> UserData;
 }
 
+pub fn user_data_json<T: Serialize>(value: &T) -> UserData {
+    use serde_json::to_string;
+    use sha2::{Digest, Sha256};
+
+    let mut hasher = Sha256::new();
+    hasher.update(to_string(value).expect("infallible serializer"));
+    let digest: [u8; 32] = hasher.finalize().into();
+
+    let mut user_data = [0u8; 64];
+    user_data[0..32].copy_from_slice(&digest);
+    user_data
+}
+
 pub trait Attestation {
     fn mr_enclave(&self) -> MrEnclave;
 }
