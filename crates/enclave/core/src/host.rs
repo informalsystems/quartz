@@ -187,15 +187,6 @@ where
         let (mut health_reporter, health_service) = health_reporter();
         health_reporter.set_not_serving::<CoreServer<E>>().await;
 
-        // connect to the websocket client
-        let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
-        let driver_handle = tokio::spawn(async move { driver.run().await });
-
-        let restore_res = self.enclave.try_restore(self.backup_path.clone()).await;
-        if let Err(e) = restore_res {
-            error!("failed to restore from backup: {e}");
-        }
-
         // start core grpc service
         let enclave = self.enclave.clone();
         tokio::spawn(async move {
@@ -205,6 +196,16 @@ where
                 .serve(rpc_addr)
                 .await
         });
+
+        // connect to the websocket client
+        let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
+        let driver_handle = tokio::spawn(async move { driver.run().await });
+
+        // try to restore from last backup (if it exists)
+        let restore_res = self.enclave.try_restore(self.backup_path.clone()).await;
+        if let Err(e) = restore_res {
+            error!("failed to restore from backup: {e}");
+        }
 
         // wait for handshake
         if let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
