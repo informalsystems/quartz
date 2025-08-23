@@ -119,7 +119,7 @@ async fn deploy(
     let init_output: WasmdTxResponse = serde_json::from_str(&cw_client.init(
         &config.chain_id,
         &config.tx_sender,
-        Some(&config.tx_sender),
+        args.admin.as_deref(),
         code_id,
         json!(init_msg),
         &format!("{} Contract #{}", args.label, code_id),

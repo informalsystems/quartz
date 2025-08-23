@@ -11,6 +11,7 @@ pub struct DevRequest {
     pub unsafe_trust_latest: bool,
     pub init_msg: serde_json::Value,
     pub label: String,
+    pub admin: Option<String>,
     pub contract_manifest: PathBuf,
     pub release: bool,
     pub fmspc: Option<Fmspc>,

@@ -9,6 +9,7 @@ use crate::request::Request;
 pub struct ContractDeployRequest {
     pub init_msg: serde_json::Value,
     pub label: String,
+    pub admin: Option<String>,
     pub contract_manifest: PathBuf,
 }
 

@@ -226,6 +226,7 @@ async fn deploy_and_handshake(
         let contract_deploy = ContractDeployRequest {
             init_msg: args.init_msg.clone(),
             label: args.label.clone(),
+            admin: args.admin.clone(),
             contract_manifest: args.contract_manifest.clone(),
         };
         // Call handler
