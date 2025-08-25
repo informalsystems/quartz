@@ -227,6 +227,7 @@ async fn deploy_and_handshake(
             init_msg: args.init_msg.clone(),
             label: args.label.clone(),
             admin: args.admin.clone(),
+            no_admin: args.no_admin,
             contract_manifest: args.contract_manifest.clone(),
         };
         // Call handler

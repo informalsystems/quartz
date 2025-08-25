@@ -58,11 +58,8 @@ impl TryFrom<Command> for Request {
                     contract_manifest: args.contract_deploy.contract_manifest,
                     init_msg: serde_json::from_str(&args.contract_deploy.init_msg)?,
                     label: args.contract_deploy.label,
-                    admin: admin_from_args(
-                        args.contract_deploy.admin,
-                        args.contract_deploy.no_admin,
-                        args.contract_deploy.tx_sender,
-                    )?,
+                    admin: args.contract_deploy.admin,
+                    no_admin: args.contract_deploy.no_admin,
                     release: args.enclave_build.release,
                     fmspc: args.fmspc,
                     tcbinfo_contract: args.tcbinfo_contract,
@@ -93,7 +90,8 @@ impl TryFrom<ContractCommand> for Request {
                 Ok(ContractDeployRequest {
                     init_msg: serde_json::from_str(&args.init_msg)?,
                     label: args.label,
-                    admin: admin_from_args(args.admin, args.no_admin, args.tx_sender)?,
+                    admin: args.admin,
+                    no_admin: args.no_admin,
                     contract_manifest: args.contract_manifest,
                 }
                 .into())
@@ -129,27 +127,6 @@ impl TryFrom<EnclaveCommand> for Request {
                 dcap_verifier_contract: args.dcap_verifier_contract,
             }
             .into()),
-        }
-    }
-}
-
-fn admin_from_args(
-    admin: Option<String>,
-    no_admin: bool,
-    tx_sender: Option<String>,
-) -> Result<Option<String>> {
-    match (admin, no_admin) {
-        (Some(_), true) => Err(eyre!(
-            "Cannot use `--no-admin` while `--admin` is specified"
-        )),
-        (Some(admin), false) => Ok(Some(admin)),
-        (None, true) => Ok(None),
-        (None, false) => {
-            if let Some(tx_sender) = tx_sender {
-                Ok(Some(tx_sender))
-            } else {
-                Err(eyre!("`--admin` and `--tx-sender` are both unspecified"))
-            }
         }
     }
 }

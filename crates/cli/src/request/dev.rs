@@ -12,6 +12,7 @@ pub struct DevRequest {
     pub init_msg: serde_json::Value,
     pub label: String,
     pub admin: Option<String>,
+    pub no_admin: bool,
     pub contract_manifest: PathBuf,
     pub release: bool,
     pub fmspc: Option<Fmspc>,

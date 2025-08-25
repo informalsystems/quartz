@@ -116,10 +116,11 @@ async fn deploy(
 
     info!("🚀 Instantiating {}", args.label);
 
+    let admin = admin_from_args(args.admin, args.no_admin, config.tx_sender.clone())?;
     let init_output: WasmdTxResponse = serde_json::from_str(&cw_client.init(
         &config.chain_id,
         &config.tx_sender,
-        args.admin.as_deref(),
+        admin.as_deref(),
         code_id,
         json!(init_msg),
         &format!("{} Contract #{}", args.label, code_id),
@@ -149,4 +150,19 @@ async fn deploy(
     debug!("{contract_addr}");
 
     Ok((code_id, contract_addr.to_owned()))
+}
+
+fn admin_from_args(
+    admin: Option<String>,
+    no_admin: bool,
+    tx_sender: String,
+) -> Result<Option<String>> {
+    match (admin, no_admin) {
+        (Some(_), true) => Err(eyre!(
+            "Cannot use `--no-admin` while `--admin` is specified"
+        )),
+        (Some(admin), false) => Ok(Some(admin)),
+        (None, true) => Ok(None),
+        (None, false) => Ok(Some(tx_sender)),
+    }
 }
