@@ -31,8 +31,9 @@ reqwest = { workspace = true, features = ["blocking"] }
 serde.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
-tonic.workspace = true
 tokio = { workspace = true, features = ["fs"] }
+tonic.workspace = true
+tonic-health.workspace = true
 urlencoding.workspace = true
 
 # mobilecoin
