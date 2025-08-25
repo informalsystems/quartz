@@ -70,7 +70,8 @@ quartz-common = { workspace = true, features = ["full"] }
 cw-client.workspace = true
 tempfile.workspace = true
 
-# Pinning (temporarily) transitive `liquid` deps to versions compatible with rustc 1.81.0.
+# Pinning (temporarily) transitive deps to versions compatible with rustc 1.81.0.
+ed25519-zebra = "=4.0.3"
 liquid-core = "=0.26.9"
 liquid-lib = "=0.26.9"
 liquid-derive = "=0.26.8"

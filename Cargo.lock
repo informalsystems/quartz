@@ -1569,6 +1569,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "115531babc129696a58c64a4fef0a8bf9e9698629fb97e9e40767d235cfbcd53"
 dependencies = [
  "pkcs8",
+ "serde",
  "signature",
 ]
 
@@ -1596,6 +1597,7 @@ dependencies = [
  "hashbrown 0.14.5",
  "hex",
  "rand_core 0.6.4",
+ "serde",
  "sha2 0.10.9",
  "zeroize",
 ]
@@ -4502,6 +4504,7 @@ dependencies = [
  "cw-client",
  "dcap-qvl",
  "dirs 5.0.1",
+ "ed25519-zebra",
  "figment",
  "futures-util",
  "hex",

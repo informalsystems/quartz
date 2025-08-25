@@ -58,6 +58,8 @@ impl TryFrom<Command> for Request {
                     contract_manifest: args.contract_deploy.contract_manifest,
                     init_msg: serde_json::from_str(&args.contract_deploy.init_msg)?,
                     label: args.contract_deploy.label,
+                    admin: args.contract_deploy.admin,
+                    no_admin: args.contract_deploy.no_admin,
                     release: args.enclave_build.release,
                     fmspc: args.fmspc,
                     tcbinfo_contract: args.tcbinfo_contract,
@@ -88,6 +90,8 @@ impl TryFrom<ContractCommand> for Request {
                 Ok(ContractDeployRequest {
                     init_msg: serde_json::from_str(&args.init_msg)?,
                     label: args.label,
+                    admin: args.admin,
+                    no_admin: args.no_admin,
                     contract_manifest: args.contract_manifest,
                 }
                 .into())
