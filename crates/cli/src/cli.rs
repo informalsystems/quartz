@@ -193,6 +193,15 @@ pub struct ContractDeployArgs {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tx_sender: Option<String>,
 
+    /// Address or key name of an admin
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub admin: Option<String>,
+
+    /// Set contract admin to ""
+    #[arg(long, default_value_t = false)]
+    pub no_admin: bool,
+
     /// The network chain ID
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
