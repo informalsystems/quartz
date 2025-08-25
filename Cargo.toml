@@ -44,7 +44,7 @@ k256 = { version = "0.13.2", default-features = false, features = [
 log = { version = "0.4.25", default-features = false }
 num-bigint = { version = "0.4.4", default-features = false }
 p256 = { version = "0.13.2", default-features = false }
-prost = { version = "0.13.1", default-features = false }
+prost = { version = "0.13.5", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["getrandom"] }
 reqwest = { version = "0.12.2", default-features = false, features = [
     "json",
@@ -69,12 +69,13 @@ tokio = { version = "1.39.2", default-features = false, features = [
     "macros",
     "rt",
 ] }
-tonic = { version = "0.12.1", default-features = false, features = [
+tonic = { version = "0.13.1", default-features = false, features = [
     "codegen",
     "prost",
+    "router",
     "transport",
 ] }
-tonic-build = { version = "0.12.1", default-features = false, features = [
+tonic-build = { version = "0.13.1", default-features = false, features = [
     "prost",
     "transport",
 ] }
@@ -89,8 +90,8 @@ x509-parser = { version = "0.16.0", default-features = false, features = [
 ] }
 
 # cosmos
-cosmos-sdk-proto = { version = "0.26.0", default-features = false }
-cosmrs = { version = "0.21.1", default-features = false }
+cosmos-sdk-proto = { version = "0.27.0", default-features = false }
+cosmrs = { version = "0.22.0", default-features = false }
 cosmwasm-schema = { version = "2.1.1", default-features = false }
 cosmwasm-std = { version = "2.1.1", default-features = false, features = [
     "std",
@@ -101,12 +102,12 @@ cw2 = { version = "2.0.0", default-features = false }
 ics23 = { version = "0.12.0", default-features = false, features = [
     "host-functions",
 ] }
-tendermint = { version = "=0.40.1", default-features = false }
-tendermint-light-client = { version = "=0.40.1", default-features = false, features = [
+tendermint = { version = "=0.40.4", default-features = false }
+tendermint-light-client = { version = "=0.40.4", default-features = false, features = [
     "rust-crypto",
 ] }
-tendermint-light-client-detector = { version = "=0.40.1", default-features = false }
-tendermint-rpc = { version = "=0.40.1", default-features = false, features = [
+tendermint-light-client-detector = { version = "=0.40.4", default-features = false }
+tendermint-rpc = { version = "=0.40.4", default-features = false, features = [
     "http-client",
 ] }
 
