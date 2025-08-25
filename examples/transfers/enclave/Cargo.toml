@@ -47,7 +47,7 @@ tokio = { version = "1.39.2", default-features = false, features = [
     "macros",
     "rt",
 ] }
-tonic = { version = "0.12.1", default-features = false, features = [
+tonic = { version = "0.13.1", default-features = false, features = [
     "codegen",
     "prost",
     "transport",
@@ -55,13 +55,13 @@ tonic = { version = "0.12.1", default-features = false, features = [
 tracing = "0.1.39"
 
 # cosmos
-cosmrs = { version = "0.18.0", default-features = false, features = ["getrandom"] }
+cosmrs = { version = "0.22.0", default-features = false, features = ["getrandom"] }
 cosmwasm-std = { version = "2.1.1", default-features = false, features = [
     "std",
 ] }
-tendermint = { version = "=0.38.1", default-features = false }
-tendermint-rpc = { version = "=0.38.1", default-features = false }
-tendermint-light-client = { version = "=0.38.1", default-features = false, features = [
+tendermint = { version = "=0.40.4", default-features = false }
+tendermint-rpc = { version = "=0.40.4", default-features = false }
+tendermint-light-client = { version = "=0.40.4", default-features = false, features = [
     "rust-crypto",
 ] }
 transfers-contract = { path = "../contracts", default-features = false }

@@ -184,7 +184,7 @@ where
         rpc_addr: SocketAddr,
         query: Option<Query>,
     ) -> Result<(), Self::Error> {
-        let (mut health_reporter, health_service) = health_reporter();
+        let (health_reporter, health_service) = health_reporter();
         health_reporter.set_not_serving::<CoreServer<E>>().await;
 
         // start core grpc service
