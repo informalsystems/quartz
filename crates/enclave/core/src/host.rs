@@ -203,12 +203,16 @@ where
 
         // try to restore from last backup
         if self.enclave.has_backup(self.backup_path.clone()).await {
+            info!("found backup; attempting to restore after 30s...");
             busy_wait_iters(3_000_000_000);
 
             let restore_res = self.enclave.try_restore(self.backup_path.clone()).await;
             if let Err(e) = restore_res {
                 error!("failed to restore from backup: {e}");
+                // FIXME(hu55a1n1): exit?
             }
+        } else {
+            info!("no backup found; waiting for handshake completion...");
         }
 
         // wait for handshake
