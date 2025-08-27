@@ -197,10 +197,6 @@ where
                 .await
         });
 
-        // connect to the websocket client
-        let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
-        let driver_handle = tokio::spawn(async move { driver.run().await });
-
         // try to restore from last backup
         if self.enclave.has_backup(self.backup_path.clone()).await {
             info!("found backup; attempting to restore after 30s...");
@@ -219,6 +215,10 @@ where
         if let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
             self.enclave.backup(self.backup_path.clone()).await?;
         }
+
+        // connect to the websocket client
+        let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
+        let driver_handle = tokio::spawn(async move { driver.run().await });
 
         // subscribe to relevant events
         // TODO: default to `Query::from(EventType::Tx).and_eq("wasm._contract_address", contract)`
