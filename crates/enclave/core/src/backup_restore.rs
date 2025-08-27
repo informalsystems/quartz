@@ -12,6 +12,10 @@ pub trait Backup {
     /// Ideally implemented as a bunch of exports (see `Export` trait).
     async fn backup(&self, config: Self::Config) -> Result<(), Self::Error>;
 
+    /// Checks if a backup exists
+    /// It is not guaranteed that the existing backup is valid
+    async fn has_backup(&self, config: Self::Config) -> bool;
+
     /// Restore the backed-up state based on the specified config.
     /// Ideally implemented as a bunch of imports (see `Import` trait).
     async fn try_restore(&mut self, config: Self::Config) -> Result<(), Self::Error>;

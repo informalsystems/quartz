@@ -298,6 +298,10 @@ where
         Ok(())
     }
 
+    async fn has_backup(&self, config: Self::Config) -> bool {
+        File::open(config).await.is_ok()
+    }
+
     async fn try_restore(&mut self, config: Self::Config) -> Result<(), Self::Error> {
         trace!("Restoring from {config:?}");
 
