@@ -299,7 +299,7 @@ where
     }
 
     async fn has_backup(&self, config: Self::Config) -> bool {
-        File::open(config).await.is_ok()
+        config.is_file()
     }
 
     async fn try_restore(&mut self, config: Self::Config) -> Result<(), Self::Error> {
