@@ -197,20 +197,28 @@ where
                 .await
         });
 
-        // connect to the websocket client
-        let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
-        let driver_handle = tokio::spawn(async move { driver.run().await });
+        // try to restore from last backup
+        if self.enclave.has_backup(self.backup_path.clone()).await {
+            info!("found backup; attempting to restore after 30s...");
+            busy_wait_iters(3_000_000_000);
 
-        // try to restore from last backup (if it exists)
-        let restore_res = self.enclave.try_restore(self.backup_path.clone()).await;
-        if let Err(e) = restore_res {
-            error!("failed to restore from backup: {e}");
+            let restore_res = self.enclave.try_restore(self.backup_path.clone()).await;
+            if let Err(e) = restore_res {
+                error!("failed to restore from backup: {e}");
+                // FIXME(hu55a1n1): exit?
+            }
+        } else {
+            info!("no backup found; waiting for handshake completion...");
         }
 
         // wait for handshake
         if let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
             self.enclave.backup(self.backup_path.clone()).await?;
         }
+
+        // connect to the websocket client
+        let (client, driver) = WebSocketClient::new(url.as_str()).await.unwrap();
+        let driver_handle = tokio::spawn(async move { driver.run().await });
 
         // subscribe to relevant events
         // TODO: default to `Query::from(EventType::Tx).and_eq("wasm._contract_address", contract)`
@@ -287,5 +295,23 @@ where
         let _ = driver_handle.await;
 
         Ok(())
+    }
+}
+
+/// Busy-wait for `iters` iterations. Blocks the current thread.
+/// No clocks or timers involved.
+#[inline(never)]
+fn busy_wait_iters(mut iters: u64) {
+    use core::sync::atomic::{AtomicU64, Ordering};
+
+    static SPIN_TICK: AtomicU64 = AtomicU64::new(0);
+
+    while iters != 0 {
+        // Prevent the loop from being optimized away and provide a tiny side effect.
+        std::hint::black_box(SPIN_TICK.fetch_add(1, Ordering::Relaxed));
+        // Hint to CPU that we're in a spin loop (x86: emits PAUSE).
+        core::hint::spin_loop();
+
+        iters -= 1;
     }
 }
