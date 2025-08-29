@@ -10,6 +10,10 @@ pub mod default;
 pub trait Store: Send + Sync + 'static {
     /// The type representing the contract that the store manages.
     type Contract: Send + Sync;
+    /// The type representing the chain height that the store manages.
+    type Height: Send + Sync;
+    /// The type representing the chain hash that the store manages.
+    type Hash: Send + Sync;
     /// The error type returned by store operations.
     type Error: ToString + Send + Sync;
 
@@ -39,4 +43,14 @@ pub trait Store: Send + Sync + 'static {
 
     /// Increments the sequence number by the given count.
     async fn inc_seq_num(&self, count: usize) -> Result<u64, Self::Error>;
+
+    /// Retrieves the current trusted height & hash.
+    async fn get_trusted_height_hash(&self) -> Result<(Self::Height, Self::Hash), Self::Error>;
+
+    /// Sets a new trusted height & hash.
+    async fn set_trusted_height_hash(
+        &self,
+        height: Self::Height,
+        hash: Self::Hash,
+    ) -> Result<(Self::Height, Self::Hash), Self::Error>;
 }

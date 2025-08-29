@@ -33,6 +33,7 @@ use quartz_common::{
 use crate::{
     event::EnclaveEvent,
     request::{EnclaveRequest, EnclaveResponse},
+    state::{AppCtx, AppEnclave},
 };
 
 #[tokio::main(flavor = "current_thread")]
@@ -90,9 +91,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.trusted_hash,
     );
 
-    let (enclave, notifier_rx) = DefaultSharedEnclave::shared(attestor, config, ());
+    let app_ctx = AppCtx {
+        backup_path: args.backup_path.clone(),
+    };
+    let (enclave, notifier_rx) = DefaultSharedEnclave::shared(attestor, config, app_ctx);
 
-    let host = DefaultHost::<EnclaveRequest, EnclaveEvent, _, _>::new(
+    let host = DefaultHost::<EnclaveRequest, EnclaveEvent, _, AppEnclave>::new(
         enclave,
         chain_client,
         gas_fn,

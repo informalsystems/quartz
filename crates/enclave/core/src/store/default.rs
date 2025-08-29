@@ -6,6 +6,7 @@ use log::{debug, info, trace};
 use quartz_contract_core::state::{Config, Nonce};
 use serde::{Deserialize, Serialize};
 use serde_json::Error;
+use tendermint::{block::Height, Hash};
 use tokio::sync::RwLock;
 
 use crate::{
@@ -20,6 +21,8 @@ pub struct DefaultStore {
     contract: Arc<RwLock<Option<AccountId>>>,
     nonce: Arc<RwLock<Option<Nonce>>>,
     seq_num: Arc<RwLock<u64>>,
+    trusted_height: Arc<RwLock<Height>>,
+    trusted_hash: Arc<RwLock<Hash>>,
 }
 
 impl DefaultStore {
@@ -30,6 +33,8 @@ impl DefaultStore {
             contract: Default::default(),
             nonce: Default::default(),
             seq_num: Default::default(),
+            trusted_height: Arc::new(Default::default()),
+            trusted_hash: Arc::new(Default::default()),
         }
     }
 }
@@ -40,6 +45,8 @@ pub enum StoreError {}
 #[async_trait::async_trait]
 impl Store for DefaultStore {
     type Contract = AccountId;
+    type Height = Height;
+    type Hash = Hash;
     type Error = StoreError;
 
     async fn get_config(&self) -> Result<Option<Config>, Self::Error> {
@@ -92,6 +99,28 @@ impl Store for DefaultStore {
         );
         Ok(prev_seq_num)
     }
+
+    async fn get_trusted_height_hash(&self) -> Result<(Self::Height, Self::Hash), Self::Error> {
+        let height = *self.trusted_height.read().await;
+        let hash = *self.trusted_hash.read().await;
+        Ok((height, hash))
+    }
+
+    async fn set_trusted_height_hash(
+        &self,
+        height: Self::Height,
+        hash: Self::Hash,
+    ) -> Result<(Self::Height, Self::Hash), Self::Error> {
+        let mut curr_height = self.trusted_height.write().await;
+        let prev_height = *curr_height;
+        *curr_height = height;
+
+        let mut curr_hash = self.trusted_hash.write().await;
+        let prev_hash = *curr_hash;
+        *curr_hash = hash;
+
+        Ok((prev_height, prev_hash))
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -100,7 +129,10 @@ struct StoreDTO {
     contract: Option<AccountId>,
     nonce: Option<Nonce>,
     seq_num: u64,
+    height: Height,
+    hash: Hash,
 }
+
 #[async_trait::async_trait]
 impl Import for DefaultStore {
     type Error = Error;
@@ -113,6 +145,8 @@ impl Import for DefaultStore {
             contract: Arc::new(RwLock::new(dto.contract)),
             nonce: Arc::new(RwLock::new(dto.nonce)),
             seq_num: Arc::new(RwLock::new(dto.seq_num)),
+            trusted_height: Arc::new(RwLock::new(dto.height)),
+            trusted_hash: Arc::new(RwLock::new(dto.hash)),
         })
     }
 }
@@ -127,6 +161,8 @@ impl Export for DefaultStore {
             contract: self.contract.read().await.clone(),
             nonce: *self.nonce.read().await,
             seq_num: *self.seq_num.read().await,
+            height: *self.trusted_height.read().await,
+            hash: *self.trusted_hash.read().await,
         };
 
         Ok(serde_json::to_vec(&dto)?)

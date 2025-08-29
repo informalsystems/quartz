@@ -7,6 +7,7 @@ use quartz_proto::quartz::{
     SessionSetPubKeyRequest as RawSessionSetPubKeyRequest,
     SessionSetPubKeyResponse as RawSessionSetPubKeyResponse,
 };
+use tendermint::{block::Height, Hash};
 use tonic::Status;
 
 use crate::{
@@ -24,7 +25,7 @@ impl<E> Handler<E> for RawSessionSetPubKeyRequest
 where
     E: Enclave,
     E::KeyManager: KeyManager,
-    E::Store: Store<Contract = AccountId>,
+    E::Store: Store<Contract = AccountId, Height = Height, Hash = Hash>,
 {
     type Error = Status;
     type Response = RawSessionSetPubKeyResponse;
@@ -47,14 +48,31 @@ where
             .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("config not found"))?;
+        let (trusted_height, trusted_hash) = ctx
+            .store()
+            .await
+            .get_trusted_height_hash()
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+        let (target_height, target_hash) = proof.target_height_hash();
+
         let (value, _msg) = proof
             .verify(
                 config.light_client_opts(),
+                trusted_height,
+                trusted_hash,
                 contract,
                 SESSION_KEY.to_string(),
                 None,
             )
             .map_err(Status::failed_precondition)?;
+
+        // update trusted height and hash
+        ctx.store()
+            .await
+            .set_trusted_height_hash(target_height, target_hash)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         // make sure session nonce matches what we have locally
         let session: Session = serde_json::from_slice(&value).unwrap();
