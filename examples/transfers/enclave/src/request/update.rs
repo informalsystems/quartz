@@ -2,11 +2,12 @@ use std::collections::btree_map::Entry;
 
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use quartz_common::enclave::{
+    backup_restore::Backup,
     handler::{ensure_seq_num_consistency, Handler},
     key_manager::KeyManager,
     proof_of_publication::ProofOfPublication,
     store::Store,
-    DefaultSharedEnclave, Enclave,
+    Enclave,
 };
 use serde::{Deserialize, Serialize};
 use tonic::Status;
@@ -18,7 +19,7 @@ use transfers_contract::{
 use crate::{
     proto::UpdateRequest,
     request::{decrypt_state, decrypt_transfer, encrypt_state},
-    state::State,
+    state::{AppEnclave, State},
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -29,11 +30,11 @@ pub struct UpdateRequestMessage {
 }
 
 #[async_trait::async_trait]
-impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
+impl Handler<AppEnclave> for UpdateRequest {
     type Error = Status;
     type Response = UpdateMsg;
 
-    async fn handle(self, ctx: &DefaultSharedEnclave<()>) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &AppEnclave) -> Result<Self::Response, Self::Error> {
         // verify proof
         let proof: ProofOfPublication<UpdateRequestMessage> = {
             let message = self.message;
@@ -106,6 +107,11 @@ impl Handler<DefaultSharedEnclave<()>> for UpdateRequest {
                 .await
                 .map_err(|_| Status::internal("store read error"))?;
         }
+
+        // update backup to write latest state (i.e. sequence num and trusted height/hash)
+        ctx.backup(ctx.ctx.backup_path.clone())
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         // Decrypt and deserialize the state
         let mut state = match &message.state.to_vec()[..] {

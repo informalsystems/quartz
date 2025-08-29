@@ -6,7 +6,7 @@ use quartz_common::{
     enclave::{
         attestor::{Attestor, DefaultAttestor},
         handler::Handler,
-        DefaultSharedEnclave, Enclave,
+        Enclave,
     },
 };
 use tonic::Status;
@@ -14,7 +14,7 @@ use transfers_contract::msg::{execute::ClearTextTransferRequestMsg, AttestedMsg,
 
 use crate::{
     proto::{QueryRequest, UpdateRequest},
-    state::{Balance, State},
+    state::{AppEnclave, Balance, State},
 };
 
 pub mod query;
@@ -43,11 +43,11 @@ fn attested_msg<T: HasUserData + Clone, A: Attestor>(
 }
 
 #[async_trait::async_trait]
-impl Handler<DefaultSharedEnclave<()>> for EnclaveRequest {
+impl Handler<AppEnclave> for EnclaveRequest {
     type Error = Status;
     type Response = EnclaveResponse;
 
-    async fn handle(self, ctx: &DefaultSharedEnclave<()>) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &AppEnclave) -> Result<Self::Response, Self::Error> {
         let attestor = ctx.attestor().await;
         match self {
             EnclaveRequest::Update(request) => request
