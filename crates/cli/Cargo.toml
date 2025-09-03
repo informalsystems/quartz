@@ -71,7 +71,13 @@ cw-client.workspace = true
 tempfile.workspace = true
 
 # Pinning (temporarily) transitive deps to versions compatible with rustc 1.81.0.
+backtrace = "=0.3.74"
+base64ct = "=1.7.3"
 ed25519-zebra = "=4.0.3"
+idna_adapter = "=1.1.0"
 liquid-core = "=0.26.9"
 liquid-lib = "=0.26.9"
 liquid-derive = "=0.26.8"
+litemap = "=0.7.5"
+zerovec = "=0.10.4"
+zerotrie = "=0.1.3"
