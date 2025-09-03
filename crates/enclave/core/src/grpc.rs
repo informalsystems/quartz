@@ -4,6 +4,7 @@ use quartz_proto::quartz::{
     core_server::Core, InstantiateRequest, InstantiateResponse, SessionCreateRequest,
     SessionCreateResponse, SessionSetPubKeyRequest, SessionSetPubKeyResponse,
 };
+use tendermint::{block::Height, Hash};
 use tonic::{Request, Response, Status};
 
 use crate::{
@@ -33,7 +34,7 @@ where
     C: Send + Sync + 'static,
     A: Attestor + Clone,
     K: KeyManager + Clone,
-    S: Store<Contract = AccountId> + Clone,
+    S: Store<Contract = AccountId, Height = Height, Hash = Hash> + Clone,
 {
     async fn instantiate(
         &self,

@@ -1,6 +1,6 @@
 use cosmwasm_std::{Addr, HexBinary, Uint128};
 use k256::ecdsa::VerifyingKey;
-use quartz_common::enclave::{handler::Handler, DefaultSharedEnclave};
+use quartz_common::enclave::handler::Handler;
 use serde::{Deserialize, Serialize};
 use tonic::Status;
 use transfers_contract::msg::execute;
@@ -8,7 +8,7 @@ use transfers_contract::msg::execute;
 use crate::{
     proto::QueryRequest,
     request::{decrypt_state, encrypt_balance},
-    state::{Balance, State},
+    state::{AppEnclave, Balance, State},
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -19,11 +19,11 @@ pub struct QueryRequestMessage {
 }
 
 #[async_trait::async_trait]
-impl Handler<DefaultSharedEnclave<()>> for QueryRequest {
+impl Handler<AppEnclave> for QueryRequest {
     type Error = Status;
     type Response = execute::QueryResponseMsg;
 
-    async fn handle(self, ctx: &DefaultSharedEnclave<()>) -> Result<Self::Response, Self::Error> {
+    async fn handle(self, ctx: &AppEnclave) -> Result<Self::Response, Self::Error> {
         let message: QueryRequestMessage = {
             let message: String = self.message;
             serde_json::from_str(&message).map_err(|e| Status::invalid_argument(e.to_string()))?

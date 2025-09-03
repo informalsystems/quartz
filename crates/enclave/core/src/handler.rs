@@ -5,6 +5,7 @@ use quartz_proto::quartz::{
     InstantiateRequest, InstantiateResponse, SessionCreateRequest, SessionCreateResponse,
     SessionSetPubKeyRequest, SessionSetPubKeyResponse,
 };
+use tendermint::{block::Height, Hash};
 use tonic::Status;
 
 use crate::{attestor::Attestor, key_manager::KeyManager, store::Store, Enclave};
@@ -62,7 +63,7 @@ impl<E: Enclave> Handler<E> for CoreEnclaveRequest
 where
     E: Enclave,
     E::KeyManager: KeyManager<PubKey = VerifyingKey>,
-    E::Store: Store<Contract = AccountId>,
+    E::Store: Store<Contract = AccountId, Height = Height, Hash = Hash>,
 {
     type Error = Status;
     type Response = CoreEnclaveResponse;
