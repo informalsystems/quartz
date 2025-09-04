@@ -28,13 +28,21 @@ pub struct DefaultStore {
 impl DefaultStore {
     pub fn new(config: Config) -> Self {
         info!("Creating new default store with config: {config:?}");
+
+        let trusted_height: u32 = config
+            .light_client_opts()
+            .trusted_height()
+            .try_into()
+            .expect("invalid height");
+        let trusted_hash = *config.light_client_opts().trusted_hash();
+
         DefaultStore {
             config: Arc::new(RwLock::new(Some(config))),
             contract: Default::default(),
             nonce: Default::default(),
             seq_num: Default::default(),
-            trusted_height: Arc::new(Default::default()),
-            trusted_hash: Arc::new(Default::default()),
+            trusted_height: Arc::new(RwLock::new(trusted_height.into())),
+            trusted_hash: Arc::new(RwLock::new(Hash::Sha256(trusted_hash))),
         }
     }
 }
