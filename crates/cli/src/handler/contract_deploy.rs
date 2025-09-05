@@ -40,8 +40,8 @@ impl Handler for ContractDeployRequest {
 
         // take the wasm bin path from the args if provided, otherwise use the default
         let wasm_bin_path = {
-            if self.wasm_bin_path.is_some() {
-                self.wasm_bin_path.clone().unwrap()
+            if let Some(path) = self.wasm_bin_path.clone() {
+                path
             } else {
                 config
                     .app_dir
