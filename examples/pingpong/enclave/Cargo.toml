@@ -2,7 +2,7 @@
 
 [package]
 name = "ping-pong-enclave"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Informal Systems <hello@informal.systems>"]
 
@@ -57,7 +57,7 @@ ping-pong-contract = { path = "../contracts", default-features = false }
 # quartz
 # TODO: Until the repo is public, let's use the relative path
 cw-client = { path = "../../../crates/utils/cw-client", default-features = false }
-quartz-common = { version = "0.2.0", features = ["full"] }
+quartz-common = { version = "0.3.0", features = ["full"] }
 
 [dev-dependencies]
 cw-multi-test = "2.1.0"
