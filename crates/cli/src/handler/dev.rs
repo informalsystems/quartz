@@ -76,14 +76,23 @@ async fn dev_driver(
                 let enclave_build = EnclaveBuildRequest {};
                 enclave_build.handle(&config).await?;
 
-                // Build contract
-                let contract_build = ContractBuildRequest {
-                    contract_manifest: args.contract_manifest.clone(),
-                };
-                contract_build
-                    .handle(&config)
-                    .await
-                    .wrap_err("Could not run `contract build`")?;
+                // Build contract unless wasm bin path is provided
+                if args.wasm_bin_path.is_none() {
+                    let contract_build = ContractBuildRequest {
+                        contract_manifest: args.contract_manifest.clone(),
+                    };
+                    contract_build
+                        .handle(&config)
+                        .await
+                        .wrap_err("Could not run `contract build`")?;
+                } else {
+                    info!(
+                        "{}",
+                        "wasm_bin_path provided - skipping contract build..."
+                            .green()
+                            .bold()
+                    );
+                }
 
                 // Start enclave in background
                 let restored = spawn_enclave_start(args, &config)?;
