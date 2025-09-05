@@ -38,11 +38,18 @@ impl Handler for ContractDeployRequest {
             .clone()
             .replace('-', "_");
 
-        let wasm_bin_path = config
-            .app_dir
-            .join("target/wasm32-unknown-unknown/release")
-            .join(package_name)
-            .with_extension("wasm");
+        // take the wasm bin path from the args if provided, otherwise use the default
+        let wasm_bin_path = {
+            if let Some(path) = self.wasm_bin_path.clone() {
+                path
+            } else {
+                config
+                    .app_dir
+                    .join("target/wasm32-unknown-unknown/release")
+                    .join(package_name)
+                    .with_extension("wasm")
+            }
+        };
 
         let (code_id, contract_addr) = deploy(wasm_bin_path.as_path(), self, config).await?;
 

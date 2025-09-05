@@ -37,7 +37,7 @@ impl Handler for EnclaveBuildRequest {
             command.arg("--release");
         }
 
-        info!("{}", "🚧 Running build command ...".green().bold());
+        info!("{}", "🚧 Running enclave build command ...".green().bold());
         let status = command.status().await?;
 
         if !status.success() {

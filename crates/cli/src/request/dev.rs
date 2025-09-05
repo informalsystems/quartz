@@ -18,6 +18,7 @@ pub struct DevRequest {
     pub fmspc: Option<Fmspc>,
     pub tcbinfo_contract: Option<AccountId>,
     pub dcap_verifier_contract: Option<AccountId>,
+    pub wasm_bin_path: Option<PathBuf>,
 }
 
 impl From<DevRequest> for Request {

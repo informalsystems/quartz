@@ -214,6 +214,13 @@ pub struct ContractDeployArgs {
     /// Path to Cargo manifest file for CosmWasm contract package
     #[arg(long, default_value = "./contracts/Cargo.toml")]
     pub contract_manifest: PathBuf,
+
+    /// Path to Wasm binary file for CosmWasm contract package
+    /// If not provided, the wasm binary will be built using the contract manifest
+    /// otherwise the provided wasm binary will be used
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wasm_bin_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]

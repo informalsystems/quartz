@@ -12,6 +12,7 @@ pub struct ContractDeployRequest {
     pub admin: Option<String>,
     pub no_admin: bool,
     pub contract_manifest: PathBuf,
+    pub wasm_bin_path: Option<PathBuf>,
 }
 
 impl From<ContractDeployRequest> for Request {
