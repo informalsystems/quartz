@@ -64,6 +64,7 @@ impl TryFrom<Command> for Request {
                     fmspc: args.fmspc,
                     tcbinfo_contract: args.tcbinfo_contract,
                     dcap_verifier_contract: args.dcap_verifier_contract,
+                    wasm_bin_path: args.contract_deploy.wasm_bin_path,
                 }
                 .into())
             }
@@ -93,6 +94,7 @@ impl TryFrom<ContractCommand> for Request {
                     admin: args.admin,
                     no_admin: args.no_admin,
                     contract_manifest: args.contract_manifest,
+                    wasm_bin_path: args.wasm_bin_path,
                 }
                 .into())
             }

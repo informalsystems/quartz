@@ -229,6 +229,7 @@ async fn deploy_and_handshake(
             admin: args.admin.clone(),
             no_admin: args.no_admin,
             contract_manifest: args.contract_manifest.clone(),
+            wasm_bin_path: args.wasm_bin_path.clone(),
         };
         // Call handler
         let cd_res = contract_deploy
