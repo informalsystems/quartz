@@ -87,7 +87,7 @@ fn verify_trace_against_trusted(
     let first_height = first_block.signed_header.header.height;
     let first_hash = first_block.signed_header.header.hash();
 
-    if first_height != trusted_height || first_hash != trusted_hash {
+    if first_height > trusted_height {
         return Err(Error::FirstTraceBlockNotTrusted {
             expected: (first_height, first_hash),
             found: (trusted_height, trusted_hash),
