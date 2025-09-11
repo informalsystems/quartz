@@ -929,7 +929,7 @@ dependencies = [
 
 [[package]]
 name = "cw-client"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2720,7 +2720,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-app-transfers-enclave"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2747,7 +2747,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-common"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "quartz-contract-core",
  "quartz-enclave-core",
@@ -2756,7 +2756,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-contract-core"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "ciborium",
  "cosmwasm-schema",
@@ -2775,7 +2775,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-contract-core-derive"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -2783,7 +2783,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-cw-proof"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "cosmrs",
  "displaydoc",
@@ -2797,7 +2797,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-dcap-verifier-msgs"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -2805,7 +2805,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-enclave-core"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2839,7 +2839,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-proto"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "prost",
  "tonic",
@@ -2848,14 +2848,14 @@ dependencies = [
 
 [[package]]
 name = "quartz-tcbinfo-msgs"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "cosmwasm-schema",
 ]
 
 [[package]]
 name = "quartz-tee-ra"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "der",
  "hex-literal",
@@ -2869,7 +2869,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-tm-prover"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "clap",
  "color-eyre",
@@ -2888,7 +2888,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-tm-stateless-verifier"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "displaydoc",
  "tendermint",
@@ -4398,7 +4398,7 @@ dependencies = [
 
 [[package]]
 name = "transfers-contract"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
