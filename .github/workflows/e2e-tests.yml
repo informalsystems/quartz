@@ -43,5 +43,6 @@ jobs:
         run: npm ci
 
       - name: Run all E2E tests
+        timeout-minutes: 40
         working-directory: examples/transfers/frontend
         run: xvfb-run --auto-servernum --server-num=1 --server-args='-screen 0, 1920x1080x24' npm run test
