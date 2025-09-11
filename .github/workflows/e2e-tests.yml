@@ -1,0 +1,47 @@
+name: E2E tests
+on:
+  pull_request:
+    types: [synchronize, ready_for_review]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          check-latest: true
+
+      - name: Run Backend stack
+        run: docker compose -f docker/docker-compose.yml up -d --build
+
+      - name: Wait for enclave to listen
+        timeout-minutes: 25
+        run: |
+          echo "Waiting for handshake completion..."
+          while ! docker logs enclave 2>&1 | grep -q "Enclave is listening"; do
+            sleep 30
+          done
+
+      - name: Capture logs from CLI
+        working-directory: examples/transfers/frontend
+        run: docker logs --tail 50 enclave &> enclave.logs.txt
+
+      - name: Setup Frontend environment variables for quartz
+        working-directory: examples/transfers/frontend
+        run: |
+          cp .env.example .env.local
+          sed -i "s/^NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=.*/NEXT_PUBLIC_TRANSFERS_CONTRACT_ADDRESS=$(grep 'Contract Address:' enclave.logs.txt | awk '{print $NF}')/" .env.local
+          sed -i "s/^NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=.*/NEXT_PUBLIC_ENCLAVE_PUBLIC_KEY=$(grep 'Handshake complete:' enclave.logs.txt | awk '{print $NF}')/" .env.local
+
+      - name: Install Frontend dependencies
+        working-directory: examples/transfers/frontend
+        run: npm ci
+
+      - name: Run all E2E tests
+        working-directory: examples/transfers/frontend
+        run: xvfb-run --auto-servernum --server-num=1 --server-args='-screen 0, 1920x1080x24' npm run test
