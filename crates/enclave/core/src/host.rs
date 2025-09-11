@@ -274,7 +274,7 @@ where
             let response = match self.enclave_call(request).await {
                 Ok(r) => r,
                 Err(e) => {
-                    warn!("request handler: {e}");
+                    error!("request handler: {e}");
                     continue;
                 }
             };

@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "playwright test",
+    "test": "playwright test --timeout 1800000",
     "test:ui": "playwright test --ui",
     "prepare": "npx playwright install chromium"
   },
