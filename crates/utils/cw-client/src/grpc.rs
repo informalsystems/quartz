@@ -220,6 +220,7 @@ pub async fn simulate_tx(
     tx_bytes: Vec<u8>,
 ) -> Result<SimulateResponse, Box<dyn Error>> {
     let mut client = ServiceClient::connect(node.to_string()).await?;
+    #[allow(deprecated)] // must provide the Tx as None
     let request = tonic::Request::new(SimulateRequest { tx: None, tx_bytes });
     let simulate_response = client.simulate(request).await?;
     Ok(simulate_response.into_inner())
