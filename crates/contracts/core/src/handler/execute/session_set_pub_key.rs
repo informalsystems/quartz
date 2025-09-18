@@ -8,15 +8,19 @@ use crate::{
 };
 
 impl Handler for SessionSetPubKey {
+    // Add msg.pub_key to SESSION and initialize SEQUENCE_NUM.
     fn handle(self, deps: DepsMut<'_>, _env: &Env, _info: &MessageInfo) -> Result<Response, Error> {
         let session = SESSION.load(deps.storage).map_err(Error::Std)?;
         let (nonce, pub_key) = self.into_tuple();
 
+        // ASSERT SESSION.nonce == msg.nonce, SESSION.pubkey == None
+        // STORE SESSION: (SESSION.nonce, msg.pubkey)
         let session = session
             .with_pub_key(nonce, pub_key.clone())
             .ok_or(Error::BadSessionTransition)?;
         SESSION.save(deps.storage, &session).map_err(Error::Std)?;
 
+        // STORE SEQUENCE_NUM: 0
         let sequence_num = Uint64::new(0);
         SEQUENCE_NUM
             .save(deps.storage, &sequence_num)
