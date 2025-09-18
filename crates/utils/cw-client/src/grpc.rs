@@ -9,6 +9,7 @@ use cosmos_sdk_proto::{
         },
         tx::v1beta1::{
             service_client::ServiceClient, BroadcastMode, BroadcastTxRequest, BroadcastTxResponse,
+            SimulateRequest, SimulateResponse,
         },
     },
     cosmwasm::wasm::v1::{
@@ -212,6 +213,17 @@ pub async fn send_tx(
     });
     let tx_response = client.broadcast_tx(request).await?;
     Ok(tx_response.into_inner())
+}
+
+pub async fn simulate_tx(
+    node: impl ToString,
+    tx_bytes: Vec<u8>,
+) -> Result<SimulateResponse, Box<dyn Error>> {
+    let mut client = ServiceClient::connect(node.to_string()).await?;
+    #[allow(deprecated)] // must provide the Tx as None
+    let request = tonic::Request::new(SimulateRequest { tx: None, tx_bytes });
+    let simulate_response = client.simulate(request).await?;
+    Ok(simulate_response.into_inner())
 }
 
 pub fn parse_coin(input: &str) -> anyhow::Result<Coin> {
