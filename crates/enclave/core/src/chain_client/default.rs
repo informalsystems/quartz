@@ -132,7 +132,7 @@ impl ChainClient for DefaultChainClient {
     async fn send_tx<M: Serialize>(
         &self,
         contract: &Self::Contract,
-        msgs: impl Iterator<Item=M> + Send + Sync,
+        msgs: impl Iterator<Item = M> + Send + Sync,
         config: Self::TxConfig,
     ) -> Result<Self::TxOutput, Self::Error> {
         debug!(

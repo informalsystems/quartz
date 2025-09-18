@@ -151,7 +151,7 @@ impl CwClient for CliClient {
         chain_id: &Id,
         gas: u64,
         sender: &str,
-        msgs: impl Iterator<Item=M> + Send + Sync,
+        msgs: impl Iterator<Item = M> + Send + Sync,
         pay_amount: &str,
     ) -> Result<String, Self::Error> {
         let gas_amount = match gas {

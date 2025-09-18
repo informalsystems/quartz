@@ -99,7 +99,7 @@ impl CwClient for GrpcClient {
         chain_id: &TmChainId,
         gas: u64,
         _sender: &str,
-        msgs: impl Iterator<Item=M> + Send + Sync,
+        msgs: impl Iterator<Item = M> + Send + Sync,
         pay_amount: &str,
     ) -> Result<String, Self::Error> {
         let tm_pubkey = self.sk.public_key();
@@ -107,14 +107,18 @@ impl CwClient for GrpcClient {
             .account_id("neutron")
             .map_err(|e| anyhow!("failed to create AccountId from pubkey: {}", e))?;
 
-        let msgs = msgs.map(|msg| MsgExecuteContract {
-            sender: sender.clone(),
-            contract: contract.clone(),
-            msg: msg.to_string().into_bytes(),
-            funds: vec![],
-        }
-        .to_any()
-        .unwrap()).collect();
+        let msgs = msgs
+            .map(|msg| {
+                MsgExecuteContract {
+                    sender: sender.clone(),
+                    contract: contract.clone(),
+                    msg: msg.to_string().into_bytes(),
+                    funds: vec![],
+                }
+                .to_any()
+                .unwrap()
+            })
+            .collect();
 
         let account = account_info(self.url.to_string(), sender.to_string())
             .await
