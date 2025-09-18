@@ -70,10 +70,10 @@ pub trait ChainClient: Send + Sync + 'static {
     ///
     /// A `Result` containing the transaction output of type `Self::TxOutput` on success,
     /// or an error of type `Self::Error` if the transaction fails.
-    async fn send_tx<T: Serialize + Send + Sync>(
+    async fn send_tx<M: Serialize>(
         &self,
         contract: &Self::Contract,
-        tx: T,
+        msgs: impl Iterator<Item=M> + Send + Sync,
         config: Self::TxConfig,
     ) -> Result<Self::TxOutput, Self::Error>;
 

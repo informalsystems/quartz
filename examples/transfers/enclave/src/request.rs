@@ -1,3 +1,5 @@
+use std::vec::IntoIter;
+
 use cosmwasm_std::HexBinary;
 use ecies::{decrypt, encrypt};
 use k256::ecdsa::{SigningKey, VerifyingKey};
@@ -20,7 +22,8 @@ use crate::{
 pub mod query;
 pub mod update;
 
-pub type EnclaveResponse = ExecuteMsg<<DefaultAttestor as Attestor>::RawAttestation>;
+pub type EnclaveMsg = ExecuteMsg<<DefaultAttestor as Attestor>::RawAttestation>;
+pub type EnclaveResponse = IntoIter<EnclaveMsg>;
 
 #[derive(Clone, Debug)]
 pub enum EnclaveRequest {
@@ -61,6 +64,7 @@ impl Handler<AppEnclave> for EnclaveRequest {
                 .map(|msg| attested_msg(msg, attestor))?
                 .map(ExecuteMsg::QueryResponse),
         }
+        .map(|msg| vec![msg].into_iter())
     }
 }
 

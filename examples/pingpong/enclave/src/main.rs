@@ -31,7 +31,7 @@ use quartz_common::{
 
 use crate::{
     event::EnclaveEvent,
-    request::{EnclaveRequest, EnclaveResponse},
+    request::{EnclaveMsg, EnclaveRequest, EnclaveResponse},
 };
 
 #[tokio::main(flavor = "current_thread")]
@@ -105,7 +105,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn gas_fn(response: &EnclaveResponse) -> DefaultTxConfig {
-    if matches!(response, EnclaveResponse::Ping(_)) {
+    let response = response.clone().collect::<Vec<_>>();
+    if matches!(response.first(), Some(EnclaveMsg::Ping(_))) {
         DefaultTxConfig {
             gas: 2000000,
             amount: "11000untrn".to_string(),

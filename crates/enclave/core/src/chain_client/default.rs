@@ -129,10 +129,10 @@ impl ChainClient for DefaultChainClient {
         Ok(proof_output)
     }
 
-    async fn send_tx<T: Serialize + Send + Sync>(
+    async fn send_tx<M: Serialize>(
         &self,
         contract: &Self::Contract,
-        tx: T,
+        msgs: impl Iterator<Item=M> + Send + Sync,
         config: Self::TxConfig,
     ) -> Result<Self::TxOutput, Self::Error> {
         debug!(
@@ -145,7 +145,7 @@ impl ChainClient for DefaultChainClient {
                 &self.chain_id,
                 config.gas,
                 "",
-                json!(tx),
+                msgs.map(|m| json!(m)),
                 &config.amount,
             )
             .await

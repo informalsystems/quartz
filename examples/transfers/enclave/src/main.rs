@@ -32,7 +32,7 @@ use quartz_common::{
 
 use crate::{
     event::EnclaveEvent,
-    request::{EnclaveRequest, EnclaveResponse},
+    request::{EnclaveMsg, EnclaveRequest, EnclaveResponse},
     state::{AppCtx, AppEnclave},
 };
 
@@ -110,9 +110,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn gas_fn(response: &EnclaveResponse) -> DefaultTxConfig {
+    let response = response.clone().collect::<Vec<_>>();
     if matches!(
-        response,
-        EnclaveResponse::Update(_) | EnclaveResponse::QueryResponse(_)
+        response.first(),
+        Some(EnclaveMsg::Update(_)) | Some(EnclaveMsg::QueryResponse(_))
     ) {
         DefaultTxConfig {
             gas: 2000000,

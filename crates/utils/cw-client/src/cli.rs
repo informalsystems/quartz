@@ -145,19 +145,23 @@ impl CwClient for CliClient {
         Ok(query_result)
     }
 
-    async fn tx_execute<M: ToString + Send>(
+    async fn tx_execute<M: ToString>(
         &self,
         contract: &Self::Address,
         chain_id: &Id,
         gas: u64,
         sender: &str,
-        msg: M,
+        msgs: impl Iterator<Item=M> + Send + Sync,
         pay_amount: &str,
     ) -> Result<String, Self::Error> {
         let gas_amount = match gas {
             0 => "auto",
             _ => &gas.to_string(),
         };
+
+        // only support one message for now
+        let msgs = msgs.collect::<Vec<_>>();
+        let msg = msgs.first().ok_or(eyre!("No messages provided"))?;
 
         let mut command = self.new_command()?;
         let command = command
