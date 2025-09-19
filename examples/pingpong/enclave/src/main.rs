@@ -19,19 +19,23 @@ pub mod request;
 
 use clap::Parser;
 use cli::Cli;
+use cosmrs::AccountId;
 use quartz_common::{
     contract::state::{Config, LightClientOpts},
     enclave::{
         attestor::{self, Attestor},
-        chain_client::default::{DefaultChainClient, DefaultTxConfig},
-        host::{DefaultHost, Host},
+        chain_client::{
+            default::{DefaultChainClient, DefaultTxConfig},
+            ChainClient,
+        },
+        host::{DefaultHost, GasProvider, Host},
         DefaultSharedEnclave,
     },
 };
 
 use crate::{
     event::EnclaveEvent,
-    request::{EnclaveMsg, EnclaveRequest, EnclaveResponse},
+    request::{EnclaveRequest, EnclaveResponse},
 };
 
 #[tokio::main(flavor = "current_thread")]
@@ -94,7 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let host = DefaultHost::<EnclaveRequest, EnclaveEvent, _, _>::new(
         enclave,
         chain_client,
-        gas_fn,
+        GasSimulator,
         args.backup_path,
         notifier_rx,
     );
@@ -104,14 +108,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn gas_fn(response: &EnclaveResponse) -> DefaultTxConfig {
-    let response = response.clone().collect::<Vec<_>>();
-    if matches!(response.first(), Some(EnclaveMsg::Ping(_))) {
-        DefaultTxConfig {
+struct GasSimulator;
+
+#[async_trait::async_trait]
+impl GasProvider<EnclaveResponse, DefaultChainClient> for GasSimulator {
+    async fn gas_for_tx(
+        &self,
+        tx: &EnclaveResponse,
+        chain_client: &DefaultChainClient,
+        contract: &AccountId,
+    ) -> Result<DefaultTxConfig, anyhow::Error> {
+        let default_config = DefaultTxConfig {
             gas: 2000000,
             amount: "11000untrn".to_string(),
-        }
-    } else {
-        unreachable!()
+        };
+        let gas_info = chain_client
+            .simulate_tx(contract, tx.as_slice().iter(), default_config)
+            .await?;
+        Ok(DefaultTxConfig {
+            gas: gas_info.gas_used,
+            amount: "11000untrn".to_string(),
+        })
     }
 }
