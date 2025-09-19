@@ -20,6 +20,7 @@ use cosmos_sdk_proto::{
     Any,
 };
 use cosmrs::{
+    abci::GasInfo,
     auth::BaseAccount,
     cosmwasm::MsgExecuteContract,
     crypto::{secp256k1::SigningKey, PublicKey},
@@ -145,6 +146,59 @@ impl CwClient for GrpcClient {
             .tx_response
             .map(|tx_response| tx_response.txhash)
             .unwrap_or_default())
+    }
+
+    async fn tx_simulate<M: ToString>(
+        &self,
+        contract: &Self::Address,
+        chain_id: &TmChainId,
+        gas: u64,
+        _sender: &str,
+        msgs: impl Iterator<Item = M> + Send + Sync,
+        pay_amount: &str,
+    ) -> Result<GasInfo, Self::Error> {
+        let tm_pubkey = self.sk.public_key();
+        let sender = tm_pubkey
+            .account_id("neutron")
+            .map_err(|e| anyhow!("failed to create AccountId from pubkey: {}", e))?;
+
+        let msgs = msgs
+            .map(|msg| {
+                MsgExecuteContract {
+                    sender: sender.clone(),
+                    contract: contract.clone(),
+                    msg: msg.to_string().into_bytes(),
+                    funds: vec![],
+                }
+                .to_any()
+                .unwrap()
+            })
+            .collect();
+
+        let account = account_info(self.url.to_string(), sender.to_string())
+            .await
+            .map_err(|e| anyhow!("error querying account info: {}", e))?;
+        let amount = parse_coin(pay_amount)?;
+        let tx_bytes = tx_bytes(
+            &self.sk,
+            amount,
+            gas,
+            tm_pubkey,
+            msgs,
+            account.sequence,
+            account.account_number,
+            chain_id,
+        )
+        .map_err(|e| anyhow!("failed to create msg/tx: {}", e))?;
+
+        let response = simulate_tx(self.url.to_string(), tx_bytes)
+            .await
+            .map_err(|e| anyhow!("failed to simulate tx: {}", e))?;
+        response
+            .gas_info
+            .expect("missing gas info from tx_simulate response")
+            .try_into()
+            .map_err(|e| anyhow!("failed to simulate tx: {}", e))
     }
 
     fn deploy<M: ToString>(

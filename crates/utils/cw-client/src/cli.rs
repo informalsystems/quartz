@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use color_eyre::{eyre::eyre, Help, Report, Result};
-use cosmrs::{tendermint::chain::Id, AccountId};
+use cosmrs::{abci::GasInfo, tendermint::chain::Id, AccountId};
 use reqwest::Url;
 use serde::de::DeserializeOwned;
 
@@ -185,6 +185,18 @@ impl CwClient for CliClient {
 
         // TODO: find the rust type for the tx output and return that
         Ok((String::from_utf8(output.stdout)?).to_string())
+    }
+
+    async fn tx_simulate<M: ToString + Send + Sync>(
+        &self,
+        _contract: &Self::Address,
+        _chain_id: &Id,
+        _gas: u64,
+        _sender: &str,
+        _msgs: impl Iterator<Item = M> + Send + Sync,
+        _pay_amount: &str,
+    ) -> std::result::Result<GasInfo, Self::Error> {
+        unimplemented!()
     }
 
     fn deploy<M: ToString>(

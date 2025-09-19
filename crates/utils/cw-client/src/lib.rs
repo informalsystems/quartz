@@ -1,4 +1,5 @@
 pub use cli::CliClient;
+pub use cosmrs::abci::GasInfo;
 use cosmrs::tendermint::chain::Id;
 pub use grpc::GrpcClient;
 use hex::ToHex;
@@ -39,6 +40,16 @@ pub trait CwClient {
         msgs: impl Iterator<Item = M> + Send + Sync,
         pay_amount: &str,
     ) -> Result<String, Self::Error>;
+
+    async fn tx_simulate<M: ToString + Send + Sync>(
+        &self,
+        contract: &Self::Address,
+        chain_id: &Id,
+        gas: u64,
+        sender: &str,
+        msgs: impl Iterator<Item = M> + Send + Sync,
+        pay_amount: &str,
+    ) -> Result<GasInfo, Self::Error>;
 
     fn deploy<M: ToString>(
         &self,
