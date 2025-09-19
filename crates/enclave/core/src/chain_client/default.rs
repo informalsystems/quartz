@@ -74,7 +74,6 @@ impl ChainClient for DefaultChainClient {
     type Error = anyhow::Error;
     type Proof = ProofOutput;
     type Query = Query;
-    type TxConfig = DefaultTxConfig;
     type TxOutput = String;
 
     async fn query_contract<R: DeserializeOwned + Default + Send>(
@@ -133,7 +132,7 @@ impl ChainClient for DefaultChainClient {
         &self,
         contract: &Self::Contract,
         msgs: impl Iterator<Item = M> + Send + Sync,
-        config: Self::TxConfig,
+        config: DefaultTxConfig,
     ) -> Result<Self::TxOutput, Self::Error> {
         debug!(
             "Sending transaction to contract {contract} with gas {}",

@@ -22,8 +22,6 @@ pub trait ChainClient: Send + Sync + 'static {
     type Proof: Serialize + Send + Sync + 'static;
     /// The type used to represent query messages.
     type Query: Send + Sync + 'static;
-    /// The configuration type for transactions (e.g. gas fees, parameters).
-    type TxConfig: Send + Sync + 'static;
     /// The output type returned after sending a transaction.
     type TxOutput: Send + Sync + 'static;
 
@@ -66,7 +64,7 @@ pub trait ChainClient: Send + Sync + 'static {
     /// # Parameters
     ///
     /// - `contract`: A reference to the contract identifier.
-    /// - `tx`: The transaction payload, which must be serializable.
+    /// - `msgs`: The transaction messages, which must be serializable.
     /// - `config`: The transaction configuration (e.g., gas, fees).
     ///
     /// # Returns
@@ -77,7 +75,7 @@ pub trait ChainClient: Send + Sync + 'static {
         &self,
         contract: &Self::Contract,
         msgs: impl Iterator<Item = M> + Send + Sync,
-        config: Self::TxConfig,
+        config: DefaultTxConfig,
     ) -> Result<Self::TxOutput, Self::Error>;
 
     /// Simulates a transaction returning the gas_info.
