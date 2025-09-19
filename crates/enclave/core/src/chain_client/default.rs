@@ -21,12 +21,12 @@ use crate::chain_client::ChainClient;
 ///     - websocket for waiting for blocks
 ///     - tendermint HTTP RPC for generating light client proofs
 pub struct DefaultChainClient {
-    chain_id: TmChainId,
-    grpc_client: GrpcClient,
-    node_url: Url,
-    ws_url: Url,
-    trusted_height: Height,
-    trusted_hash: Hash,
+    pub chain_id: TmChainId,
+    pub grpc_client: GrpcClient,
+    pub node_url: Url,
+    pub ws_url: Url,
+    pub trusted_height: Height,
+    pub trusted_hash: Hash,
 }
 
 impl DefaultChainClient {
