@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use color_eyre::{eyre::eyre, Help, Report, Result};
-use cosmrs::{tendermint::chain::Id, AccountId};
+use cosmrs::{abci::GasInfo, tendermint::chain::Id, AccountId};
 use reqwest::Url;
 use serde::de::DeserializeOwned;
 
@@ -145,19 +145,23 @@ impl CwClient for CliClient {
         Ok(query_result)
     }
 
-    async fn tx_execute<M: ToString + Send>(
+    async fn tx_execute<M: ToString>(
         &self,
         contract: &Self::Address,
         chain_id: &Id,
         gas: u64,
         sender: &str,
-        msg: M,
+        msgs: impl Iterator<Item = M> + Send + Sync,
         pay_amount: &str,
     ) -> Result<String, Self::Error> {
         let gas_amount = match gas {
             0 => "auto",
             _ => &gas.to_string(),
         };
+
+        // only support one message for now
+        let msgs = msgs.collect::<Vec<_>>();
+        let msg = msgs.first().ok_or(eyre!("No messages provided"))?;
 
         let mut command = self.new_command()?;
         let command = command
@@ -181,6 +185,18 @@ impl CwClient for CliClient {
 
         // TODO: find the rust type for the tx output and return that
         Ok((String::from_utf8(output.stdout)?).to_string())
+    }
+
+    async fn tx_simulate<M: ToString + Send + Sync>(
+        &self,
+        _contract: &Self::Address,
+        _chain_id: &Id,
+        _gas: u64,
+        _sender: &str,
+        _msgs: impl Iterator<Item = M> + Send + Sync,
+        _pay_amount: &str,
+    ) -> std::result::Result<GasInfo, Self::Error> {
+        unimplemented!()
     }
 
     fn deploy<M: ToString>(

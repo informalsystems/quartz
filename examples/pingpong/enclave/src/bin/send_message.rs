@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{iter, str::FromStr};
 
 use cosmrs::{tendermint::chain::Id as ChainId, AccountId};
 use cosmwasm_std::HexBinary;
@@ -47,7 +47,7 @@ async fn main() {
             chain_id,
             2000000,
             "admin",
-            json!(pong_msg),
+            iter::once(json!(pong_msg)),
             "11000untrn",
         )
         .await;

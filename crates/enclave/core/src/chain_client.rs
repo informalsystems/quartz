@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
+use cosmrs::abci::GasInfo;
 use serde::{de::DeserializeOwned, Serialize};
+
+use crate::chain_client::default::DefaultTxConfig;
 
 pub mod default;
 
@@ -19,8 +22,6 @@ pub trait ChainClient: Send + Sync + 'static {
     type Proof: Serialize + Send + Sync + 'static;
     /// The type used to represent query messages.
     type Query: Send + Sync + 'static;
-    /// The configuration type for transactions (e.g. gas fees, parameters).
-    type TxConfig: Send + Sync + 'static;
     /// The output type returned after sending a transaction.
     type TxOutput: Send + Sync + 'static;
 
@@ -63,19 +64,38 @@ pub trait ChainClient: Send + Sync + 'static {
     /// # Parameters
     ///
     /// - `contract`: A reference to the contract identifier.
-    /// - `tx`: The transaction payload, which must be serializable.
+    /// - `msgs`: The transaction messages, which must be serializable.
     /// - `config`: The transaction configuration (e.g., gas, fees).
     ///
     /// # Returns
     ///
     /// A `Result` containing the transaction output of type `Self::TxOutput` on success,
     /// or an error of type `Self::Error` if the transaction fails.
-    async fn send_tx<T: Serialize + Send + Sync>(
+    async fn send_tx<M: Serialize>(
         &self,
         contract: &Self::Contract,
-        tx: T,
-        config: Self::TxConfig,
+        msgs: impl Iterator<Item = M> + Send + Sync,
+        config: DefaultTxConfig,
     ) -> Result<Self::TxOutput, Self::Error>;
+
+    /// Simulates a transaction returning the gas_info.
+    ///
+    /// # Parameters
+    ///
+    /// - `contract`: A reference to the contract identifier.
+    /// - `msgs`: The transaction messages, which must be serializable.
+    /// - `config`: The transaction configuration (e.g., gas, fees).
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the `GasInfo` on success,
+    /// or an error of type `Self::Error` if the transaction fails.
+    async fn simulate_tx<M: Serialize>(
+        &self,
+        contract: &Self::Contract,
+        msgs: impl Iterator<Item = M> + Send + Sync,
+        config: DefaultTxConfig,
+    ) -> Result<GasInfo, Self::Error>;
 
     /// Waits for a specified number of blocks to be produced on the blockchain.
     ///

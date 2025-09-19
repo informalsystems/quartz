@@ -1,3 +1,5 @@
+use std::vec::IntoIter;
+
 use ecies::{decrypt, encrypt};
 use ping_pong_contract::{
     msg::{execute, execute::Ping, AttestedMsg, ExecuteMsg},
@@ -17,7 +19,8 @@ use tonic::Status;
 
 use crate::proto::PingRequest;
 
-pub type EnclaveResponse = ExecuteMsg<<DefaultAttestor as Attestor>::RawAttestation>;
+pub type EnclaveMsg = ExecuteMsg<<DefaultAttestor as Attestor>::RawAttestation>;
+pub type EnclaveResponse = IntoIter<EnclaveMsg>;
 
 #[derive(Clone, Debug)]
 pub enum EnclaveRequest {
@@ -52,6 +55,7 @@ impl Handler<DefaultSharedEnclave<()>> for EnclaveRequest {
                 .map(|msg| attested_msg(msg, attestor))?
                 .map(ExecuteMsg::Pong),
         }
+        .map(|msg| vec![msg].into_iter())
     }
 }
 

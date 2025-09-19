@@ -1,3 +1,5 @@
+use std::iter;
+
 use async_trait::async_trait;
 use color_eyre::{eyre::eyre, owo_colors::OwoColorize, Report, Result};
 use cw_client::{CliClient, CwClient};
@@ -55,7 +57,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String> {
                 &config.chain_id,
                 2000000,
                 &config.tx_sender,
-                json!(res),
+                iter::once(json!(res)),
                 "0untrn"
             )
             .await
@@ -105,7 +107,7 @@ async fn handshake(args: HandshakeRequest, config: Config) -> Result<String> {
                 &config.chain_id,
                 2000000,
                 &config.tx_sender,
-                json!(res),
+                iter::once(json!(res)),
                 "0untrn"
             )
             .await
