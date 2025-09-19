@@ -23,7 +23,10 @@ use tonic_health::server::health_reporter;
 
 use crate::{
     backup_restore::Backup,
-    chain_client::{default::DefaultChainClient, ChainClient},
+    chain_client::{
+        default::{DefaultChainClient, DefaultTxConfig},
+        ChainClient,
+    },
     event::QuartzEvent,
     handler::Handler,
     store::Store,
@@ -160,7 +163,7 @@ where
     <<R as Handler<E>>::Response as Iterator>::Item: Serialize + Send + Sync + 'static,
     EV: Handler<C, Response = R, Error = anyhow::Error>,
     EV: TryFrom<TmEvent, Error = anyhow::Error>,
-    GF: Fn(&<R as Handler<E>>::Response) -> <C as ChainClient>::TxConfig + Send + Sync + 'static,
+    GF: GasProvider<<R as Handler<E>>::Response, C> + Send + Sync + 'static,
 {
     type ChainClient = C;
     type Enclave = E;
@@ -281,10 +284,13 @@ where
             };
 
             // submit response to the chain
-            let tx_config = (self.gas_fn)(&response);
+            let gas_info = self
+                .gas_fn
+                .gas_for_tx(&response, &self.chain_client, &contract)
+                .await?;
             let output = self
                 .chain_client
-                .send_tx(&contract, response, tx_config)
+                .send_tx(&contract, response, gas_info)
                 .await;
             match output {
                 Ok(o) => info!("tx output: {o}"),
