@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
+use cosmrs::abci::GasInfo;
 use serde::{de::DeserializeOwned, Serialize};
+
+use crate::chain_client::default::DefaultTxConfig;
 
 pub mod default;
 
@@ -76,6 +79,25 @@ pub trait ChainClient: Send + Sync + 'static {
         msgs: impl Iterator<Item = M> + Send + Sync,
         config: Self::TxConfig,
     ) -> Result<Self::TxOutput, Self::Error>;
+
+    /// Simulates a transaction returning the gas_info.
+    ///
+    /// # Parameters
+    ///
+    /// - `contract`: A reference to the contract identifier.
+    /// - `msgs`: The transaction messages, which must be serializable.
+    /// - `config`: The transaction configuration (e.g., gas, fees).
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the `GasInfo` on success,
+    /// or an error of type `Self::Error` if the transaction fails.
+    async fn simulate_tx<M: Serialize>(
+        &self,
+        contract: &Self::Contract,
+        msgs: impl Iterator<Item = M> + Send + Sync,
+        config: DefaultTxConfig,
+    ) -> Result<GasInfo, Self::Error>;
 
     /// Waits for a specified number of blocks to be produced on the blockchain.
     ///

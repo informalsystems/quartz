@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use cosmrs::{crypto::secp256k1::SigningKey, AccountId};
+use cosmrs::{abci::GasInfo, crypto::secp256k1::SigningKey, AccountId};
 use cw_client::{CwClient, GrpcClient};
 use futures_util::StreamExt;
 use log::{debug, error, info, trace};
@@ -141,6 +141,28 @@ impl ChainClient for DefaultChainClient {
         );
         self.grpc_client
             .tx_execute(
+                contract,
+                &self.chain_id,
+                config.gas,
+                "",
+                msgs.map(|m| json!(m)),
+                &config.amount,
+            )
+            .await
+    }
+
+    async fn simulate_tx<M: Serialize>(
+        &self,
+        contract: &Self::Contract,
+        msgs: impl Iterator<Item = M> + Send + Sync,
+        config: DefaultTxConfig,
+    ) -> Result<GasInfo, Self::Error> {
+        debug!(
+            "Simulating a transaction to contract {contract} with gas {}",
+            config.gas
+        );
+        self.grpc_client
+            .tx_simulate(
                 contract,
                 &self.chain_id,
                 config.gas,
