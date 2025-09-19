@@ -316,3 +316,13 @@ fn busy_wait_iters(mut iters: u64) {
         iters -= 1;
     }
 }
+
+#[async_trait::async_trait]
+pub trait GasProvider<Tx, CC> {
+    async fn gas_for_tx(
+        &self,
+        tx: &Tx,
+        chain_client: &CC,
+        contract: &AccountId,
+    ) -> Result<DefaultTxConfig, anyhow::Error>;
+}
