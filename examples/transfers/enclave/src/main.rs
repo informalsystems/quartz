@@ -130,9 +130,11 @@ impl GasProvider<EnclaveResponse, DefaultChainClient> for GasSimulator {
         let gas_info = chain_client
             .simulate_tx(contract, tx.as_slice().iter(), default_config)
             .await?;
-        Ok(DefaultTxConfig {
-            gas: gas_info.gas_used,
-            amount: "11000untrn".to_string(),
-        })
+        Ok(DefaultTxConfig::new(
+            gas_info.gas_used,
+            1.3,
+            0.0053,
+            "untrn",
+        ))
     }
 }
