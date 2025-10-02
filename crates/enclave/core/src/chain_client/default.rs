@@ -206,3 +206,26 @@ pub struct DefaultTxConfig {
     pub gas: u64,
     pub amount: String,
 }
+
+impl DefaultTxConfig {
+    pub fn new(gas_used: u64, multiplier: f64, base_gas_price: u64, denom: &str) -> Self {
+        let gas = scale_gas(gas_used, multiplier);
+        let amount_num = gas * base_gas_price;
+        Self {
+            gas,
+            amount: format!("{amount_num}{denom}"),
+        }
+    }
+}
+
+pub fn scale_gas(gas: u64, multiplier: f64) -> u64 {
+    if !multiplier.is_finite() || multiplier < 0.0 {
+        return gas;
+    }
+    let prod = (gas as f64) * multiplier;
+    if prod >= (u64::MAX as f64) {
+        u64::MAX
+    } else {
+        prod.ceil() as u64
+    }
+}
