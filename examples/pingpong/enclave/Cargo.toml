@@ -59,6 +59,13 @@ ping-pong-contract = { path = "../contracts", default-features = false }
 cw-client = { path = "../../../crates/utils/cw-client", default-features = false }
 quartz-common = { version = "0.4.0", features = ["full"] }
 
+# patch indirect deps
+getrandom = { version = "0.2.15", features = ["js"] }
+backtrace = "=0.3.74"
+url = "=2.5.0"
+base64ct = "=1.7.3"
+ed25519-zebra = "=4.0.3"
+
 [dev-dependencies]
 cw-multi-test = "2.1.0"
 

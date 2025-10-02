@@ -48,6 +48,8 @@ quartz-contract-core-derive = { path = "../../../crates/contracts/core/derive" }
 
 # patch indirect deps
 getrandom = { version = "0.2.15", features = ["js"] }
+base64ct = "=1.7.3"
+ed25519-zebra = "=4.0.3"
 
 [dev-dependencies]
 cw-multi-test = { version = "2.1.0", default-features = false }
