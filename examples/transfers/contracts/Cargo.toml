@@ -1,6 +1,6 @@
 [package]
 name = "transfers-contract"
-version = "0.3.1"
+version = "0.4.0"
 edition = "2021"
 rust-version = "1.75.0"
 license = "Apache-2.0"
@@ -52,6 +52,8 @@ quartz-contract-core-derive = { path = "../../../crates/contracts/core/derive" }
 
 # patch indirect deps
 getrandom = { version = "0.2.15", features = ["js"] }
+base64ct = "=1.7.3"
+ed25519-zebra = "=4.0.3"
 
 [dev-dependencies]
 cw-multi-test = { version = "2.1.0", default-features = false }
