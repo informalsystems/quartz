@@ -208,9 +208,9 @@ pub struct DefaultTxConfig {
 }
 
 impl DefaultTxConfig {
-    pub fn new(gas_used: u64, multiplier: f64, base_gas_price: u64, denom: &str) -> Self {
+    pub fn new(gas_used: u64, multiplier: f64, base_gas_price: f64, denom: &str) -> Self {
         let gas = scale_gas(gas_used, multiplier);
-        let amount_num = gas * base_gas_price;
+        let amount_num = scale_gas(gas, base_gas_price);
         Self {
             gas,
             amount: format!("{amount_num}{denom}"),
