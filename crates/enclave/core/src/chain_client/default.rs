@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use cosmrs::{crypto::secp256k1::SigningKey, AccountId};
+use cosmrs::{abci::GasInfo, crypto::secp256k1::SigningKey, AccountId};
 use cw_client::{CwClient, GrpcClient};
 use futures_util::StreamExt;
 use log::{debug, error, info, trace};
@@ -21,12 +21,12 @@ use crate::chain_client::ChainClient;
 ///     - websocket for waiting for blocks
 ///     - tendermint HTTP RPC for generating light client proofs
 pub struct DefaultChainClient {
-    chain_id: TmChainId,
-    grpc_client: GrpcClient,
-    node_url: Url,
-    ws_url: Url,
-    trusted_height: Height,
-    trusted_hash: Hash,
+    pub chain_id: TmChainId,
+    pub grpc_client: GrpcClient,
+    pub node_url: Url,
+    pub ws_url: Url,
+    pub trusted_height: Height,
+    pub trusted_hash: Hash,
 }
 
 impl DefaultChainClient {
@@ -74,7 +74,6 @@ impl ChainClient for DefaultChainClient {
     type Error = anyhow::Error;
     type Proof = ProofOutput;
     type Query = Query;
-    type TxConfig = DefaultTxConfig;
     type TxOutput = String;
 
     async fn query_contract<R: DeserializeOwned + Default + Send>(
@@ -129,11 +128,11 @@ impl ChainClient for DefaultChainClient {
         Ok(proof_output)
     }
 
-    async fn send_tx<T: Serialize + Send + Sync>(
+    async fn send_tx<M: Serialize>(
         &self,
         contract: &Self::Contract,
-        tx: T,
-        config: Self::TxConfig,
+        msgs: impl Iterator<Item = M> + Send + Sync,
+        config: DefaultTxConfig,
     ) -> Result<Self::TxOutput, Self::Error> {
         debug!(
             "Sending transaction to contract {contract} with gas {}",
@@ -145,7 +144,29 @@ impl ChainClient for DefaultChainClient {
                 &self.chain_id,
                 config.gas,
                 "",
-                json!(tx),
+                msgs.map(|m| json!(m)),
+                &config.amount,
+            )
+            .await
+    }
+
+    async fn simulate_tx<M: Serialize>(
+        &self,
+        contract: &Self::Contract,
+        msgs: impl Iterator<Item = M> + Send + Sync,
+        config: DefaultTxConfig,
+    ) -> Result<GasInfo, Self::Error> {
+        debug!(
+            "Simulating a transaction to contract {contract} with gas {}",
+            config.gas
+        );
+        self.grpc_client
+            .tx_simulate(
+                contract,
+                &self.chain_id,
+                config.gas,
+                "",
+                msgs.map(|m| json!(m)),
                 &config.amount,
             )
             .await
@@ -184,4 +205,27 @@ impl ChainClient for DefaultChainClient {
 pub struct DefaultTxConfig {
     pub gas: u64,
     pub amount: String,
+}
+
+impl DefaultTxConfig {
+    pub fn new(gas_used: u64, multiplier: f64, base_gas_price: f64, denom: &str) -> Self {
+        let gas = scale_gas(gas_used, multiplier);
+        let amount_num = scale_gas(gas, base_gas_price);
+        Self {
+            gas,
+            amount: format!("{amount_num}{denom}"),
+        }
+    }
+}
+
+pub fn scale_gas(gas: u64, multiplier: f64) -> u64 {
+    if !multiplier.is_finite() || multiplier < 0.0 {
+        return gas;
+    }
+    let prod = (gas as f64) * multiplier;
+    if prod >= (u64::MAX as f64) {
+        u64::MAX
+    } else {
+        prod.ceil() as u64
+    }
 }

@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use color_eyre::{eyre::eyre, Help, Report, Result};
-use cosmrs::{tendermint::chain::Id, AccountId};
+use cosmrs::{abci::GasInfo, tendermint::chain::Id, AccountId};
 use reqwest::Url;
 use serde::de::DeserializeOwned;
 
@@ -145,19 +145,23 @@ impl CwClient for CliClient {
         Ok(query_result)
     }
 
-    async fn tx_execute<M: ToString + Send>(
+    async fn tx_execute<M: ToString>(
         &self,
         contract: &Self::Address,
         chain_id: &Id,
         gas: u64,
         sender: &str,
-        msg: M,
+        msgs: impl Iterator<Item = M> + Send + Sync,
         pay_amount: &str,
     ) -> Result<String, Self::Error> {
         let gas_amount = match gas {
             0 => "auto",
             _ => &gas.to_string(),
         };
+
+        // only support one message for now
+        let msgs = msgs.collect::<Vec<_>>();
+        let msg = msgs.first().ok_or(eyre!("No messages provided"))?;
 
         let mut command = self.new_command()?;
         let command = command
@@ -181,6 +185,49 @@ impl CwClient for CliClient {
 
         // TODO: find the rust type for the tx output and return that
         Ok((String::from_utf8(output.stdout)?).to_string())
+    }
+
+    async fn tx_simulate<M: ToString + Send + Sync>(
+        &self,
+        contract: &Self::Address,
+        chain_id: &Id,
+        gas: u64,
+        sender: &str,
+        msgs: impl Iterator<Item = M> + Send + Sync,
+        pay_amount: &str,
+    ) -> std::result::Result<GasInfo, Self::Error> {
+        let gas_amount = match gas {
+            0 => "auto",
+            _ => &gas.to_string(),
+        };
+
+        // only support one message for now
+        let msgs = msgs.collect::<Vec<_>>();
+        let msg = msgs.first().ok_or(eyre!("No messages provided"))?;
+
+        let mut command = self.new_command()?;
+        let command = command
+            .args(["--node", self.url.as_str()])
+            .args(["--chain-id", chain_id.as_ref()])
+            .args(["tx", "wasm"])
+            .args(["execute", contract.as_ref(), &msg.to_string()])
+            .args(["--amount", pay_amount])
+            .args(["--gas", gas_amount])
+            .args(["--gas-adjustment", "1.3"])
+            .args(["--gas-prices", "0.025untrn"])
+            .args(["--from", sender])
+            .args(["--output", "json"])
+            .arg("--dry-run")
+            .arg("-y");
+
+        let output = command.output()?;
+
+        if !output.status.success() {
+            return Err(eyre!("{:?}", output));
+        }
+
+        let gas_info: GasInfo = serde_json::from_slice(&output.stdout)?;
+        Ok(gas_info)
     }
 
     fn deploy<M: ToString>(
