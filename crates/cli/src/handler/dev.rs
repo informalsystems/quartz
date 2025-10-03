@@ -181,6 +181,7 @@ fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<bool> {
     // In separate process, launch the enclave
     let enclave_start = EnclaveStartRequest {
         unsafe_trust_latest: args.unsafe_trust_latest,
+        bin_path: args.bin_path.clone(),
         fmspc: args.fmspc.clone(),
         pccs_url: None,
         tcbinfo_contract: args.tcbinfo_contract.clone(),

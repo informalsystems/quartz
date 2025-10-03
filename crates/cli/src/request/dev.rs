@@ -19,6 +19,7 @@ pub struct DevRequest {
     pub tcbinfo_contract: Option<AccountId>,
     pub dcap_verifier_contract: Option<AccountId>,
     pub wasm_bin_path: Option<PathBuf>,
+    pub bin_path: Option<PathBuf>,
 }
 
 impl From<DevRequest> for Request {
