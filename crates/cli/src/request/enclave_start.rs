@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use color_eyre::Result;
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
@@ -10,6 +12,7 @@ use crate::{config::Config, handler::utils::helpers::query_latest_height_hash, r
 #[derive(Clone, Debug)]
 pub struct EnclaveStartRequest {
     pub unsafe_trust_latest: bool,
+    pub bin_path: Option<PathBuf>,
     pub fmspc: Option<Fmspc>,
     pub pccs_url: Option<Url>,
     pub tcbinfo_contract: Option<AccountId>,

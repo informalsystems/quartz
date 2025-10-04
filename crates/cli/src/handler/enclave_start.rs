@@ -1,4 +1,7 @@
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
@@ -56,9 +59,13 @@ impl Handler for EnclaveStartRequest {
             ];
 
             // Run quartz enclave and block
-            let enclave_child =
-                create_mock_enclave_child(config.app_dir.as_path(), config.release, enclave_args)
-                    .await?;
+            let enclave_child = create_mock_enclave_child(
+                config.app_dir.as_path(),
+                config.release,
+                enclave_args,
+                self.bin_path.as_ref(),
+            )
+            .await?;
             handle_process(enclave_child).await?;
         } else {
             let Some(fmspc) = self.fmspc else {
@@ -134,24 +141,28 @@ async fn create_mock_enclave_child(
     app_dir: &Path,
     release: bool,
     enclave_args: Vec<String>,
+    bin_path: Option<&PathBuf>,
 ) -> Result<Child> {
-    let enclave_dir = app_dir.join("enclave");
-    let target_dir = app_dir.join("target");
-
-    // Use the enclave package metadata to get the path to the program binary
-    let package_name = MetadataCommand::new()
-        .manifest_path(enclave_dir.join("Cargo.toml"))
-        .exec()?
-        .root_package()
-        .ok_or("No root package found in the metadata")
-        .map_err(|e| eyre!(e))?
-        .name
-        .clone();
-
-    let executable = if release {
-        target_dir.join("release").join(package_name)
+    let executable = if let Some(bin_path) = bin_path {
+        bin_path.clone()
     } else {
-        target_dir.join("debug").join(package_name)
+        let enclave_dir = app_dir.join("enclave");
+        let target_dir = app_dir.join("target");
+
+        let package_name = MetadataCommand::new()
+            .manifest_path(enclave_dir.join("Cargo.toml"))
+            .exec()?
+            .root_package()
+            .ok_or("No root package found in the metadata")
+            .map_err(|e| eyre!(e))?
+            .name
+            .clone();
+
+        if release {
+            target_dir.join("release").join(package_name)
+        } else {
+            target_dir.join("debug").join(package_name)
+        }
     };
 
     let mut command = Command::new(executable.display().to_string());

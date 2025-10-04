@@ -65,6 +65,7 @@ impl TryFrom<Command> for Request {
                     tcbinfo_contract: args.tcbinfo_contract,
                     dcap_verifier_contract: args.dcap_verifier_contract,
                     wasm_bin_path: args.contract_deploy.wasm_bin_path,
+                    bin_path: args.bin_path,
                 }
                 .into())
             }
@@ -123,6 +124,7 @@ impl TryFrom<EnclaveCommand> for Request {
             EnclaveCommand::Build(_) => Ok(EnclaveBuildRequest {}.into()),
             EnclaveCommand::Start(args) => Ok(EnclaveStartRequest {
                 unsafe_trust_latest: args.unsafe_trust_latest,
+                bin_path: args.bin_path,
                 fmspc: args.fmspc,
                 pccs_url: args.pccs_url,
                 tcbinfo_contract: args.tcbinfo_contract,

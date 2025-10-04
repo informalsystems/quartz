@@ -268,6 +268,11 @@ pub struct EnclaveStartArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "is_false")]
     pub release: bool,
+
+    /// Path to the enclave executable (only used in mock-sgx mode)
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bin_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
@@ -300,6 +305,11 @@ pub struct DevArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dcap_verifier_contract: Option<AccountId>,
+
+    /// Path to the enclave executable (only used in mock-sgx mode)
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bin_path: Option<PathBuf>,
 }
 
 #[serde_as]
