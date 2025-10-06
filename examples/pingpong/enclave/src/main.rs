@@ -101,7 +101,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         enclave,
         chain_client,
         GasSimulator,
-        args.backup_path,
+        if !args.no_backup {
+            Some(args.backup_path)
+        } else {
+            None
+        },
         notifier_rx,
     );
 
