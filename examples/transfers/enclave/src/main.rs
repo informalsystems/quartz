@@ -42,7 +42,9 @@ use crate::{
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .write_style(env_logger::WriteStyle::Always)
+        .init();
 
     let args = Cli::parse();
 
