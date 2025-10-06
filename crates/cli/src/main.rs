@@ -77,6 +77,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_target(false)
         .with_writer(std::io::stderr)
+        .with_ansi(true)
         .with_env_filter(env_filter)
         .finish()
         .init();
