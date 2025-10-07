@@ -186,7 +186,7 @@ fn spawn_enclave_start(args: &DevRequest, config: &Config) -> Result<bool> {
         pccs_url: None,
         tcbinfo_contract: args.tcbinfo_contract.clone(),
         dcap_verifier_contract: args.dcap_verifier_contract.clone(),
-        no_backup: false,
+        no_backup: args.no_backup,
     };
 
     let config_cpy = config.clone();

@@ -84,7 +84,7 @@ pub struct Cli {
     #[clap(long, default_value = "sealed/quartz.backup")]
     pub backup_path: PathBuf,
 
-    #[clap(long)]
+    #[clap(long, default_value_t = false)]
     pub no_backup: bool,
 }
 
