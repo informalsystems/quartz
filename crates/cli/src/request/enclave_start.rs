@@ -17,6 +17,7 @@ pub struct EnclaveStartRequest {
     pub pccs_url: Option<Url>,
     pub tcbinfo_contract: Option<AccountId>,
     pub dcap_verifier_contract: Option<AccountId>,
+    pub no_backup: bool,
 }
 
 impl From<EnclaveStartRequest> for Request {
