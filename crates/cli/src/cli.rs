@@ -311,6 +311,11 @@ pub struct DevArgs {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dcap_verifier_contract: Option<AccountId>,
 
+    /// PCCS URL
+    #[arg(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pccs_url: Option<Url>,
+
     /// Path to the enclave executable (only used in mock-sgx mode)
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]

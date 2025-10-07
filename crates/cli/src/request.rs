@@ -64,6 +64,7 @@ impl TryFrom<Command> for Request {
                     fmspc: args.fmspc,
                     tcbinfo_contract: args.tcbinfo_contract,
                     dcap_verifier_contract: args.dcap_verifier_contract,
+                    pccs_url: args.pccs_url,
                     wasm_bin_path: args.contract_deploy.wasm_bin_path,
                     bin_path: args.bin_path,
                     no_backup: args.no_backup,

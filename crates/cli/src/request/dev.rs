@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use cosmrs::AccountId;
 use quartz_common::enclave::types::Fmspc;
+use reqwest::Url;
 
 use crate::request::Request;
 
@@ -18,6 +19,7 @@ pub struct DevRequest {
     pub fmspc: Option<Fmspc>,
     pub tcbinfo_contract: Option<AccountId>,
     pub dcap_verifier_contract: Option<AccountId>,
+    pub pccs_url: Option<Url>,
     pub wasm_bin_path: Option<PathBuf>,
     pub bin_path: Option<PathBuf>,
     pub no_backup: bool,
