@@ -1318,7 +1318,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-contract-core"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "ciborium",
  "cosmwasm-schema",
@@ -1337,7 +1337,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-contract-core-derive"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -1345,7 +1345,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-dcap-verifier-msgs"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1353,14 +1353,14 @@ dependencies = [
 
 [[package]]
 name = "quartz-tcbinfo-msgs"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "cosmwasm-schema",
 ]
 
 [[package]]
 name = "quartz-tee-ra"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "der",
  "hex-literal",
@@ -1845,7 +1845,7 @@ dependencies = [
 
 [[package]]
 name = "transfers-contract"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "base64ct",
  "cosmwasm-schema",
