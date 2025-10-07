@@ -123,7 +123,7 @@ pub struct DefaultHost<R, EV, GF, E, C = DefaultChainClient> {
     enclave: E,
     chain_client: C,
     gas_fn: GF,
-    backup_path: PathBuf,
+    backup_path: Option<PathBuf>,
     notifier_rx: Receiver<Notification>,
     _phantom: PhantomData<(R, EV)>,
 }
@@ -137,7 +137,7 @@ where
         enclave: E,
         chain_client: C,
         gas_fn: GF,
-        backup_path: PathBuf,
+        backup_path: Option<PathBuf>,
         notifier_rx: Receiver<Notification>,
     ) -> Self {
         Self {
@@ -201,23 +201,29 @@ where
                 .await
         });
 
-        // try to restore from last backup
-        if self.enclave.has_backup(self.backup_path.clone()).await {
-            info!("found backup; attempting to restore after 30s...");
-            busy_wait_iters(3_000_000_000);
+        if let Some(ref backup_path) = self.backup_path {
+            // try to restore from last backup
+            if self.enclave.has_backup(backup_path.clone()).await {
+                info!("found backup; attempting to restore after 30s...");
+                busy_wait_iters(3_000_000_000);
 
-            let restore_res = self.enclave.try_restore(self.backup_path.clone()).await;
-            if let Err(e) = restore_res {
-                error!("failed to restore from backup: {e}");
-                // FIXME(hu55a1n1): exit?
+                let restore_res = self.enclave.try_restore(backup_path.clone()).await;
+                if let Err(e) = restore_res {
+                    error!("failed to restore from backup: {e}");
+                    // FIXME(hu55a1n1): exit?
+                }
+            } else {
+                info!("no backup found; waiting for handshake completion...");
             }
         } else {
-            info!("no backup found; waiting for handshake completion...");
+            info!("backup path not specified; skipping backup/restore operations");
         }
 
         // wait for handshake
         if let Some(Notification::HandshakeComplete) = self.notifier_rx.recv().await {
-            self.enclave.backup(self.backup_path.clone()).await?;
+            if let Some(ref backup_path) = self.backup_path {
+                self.enclave.backup(backup_path.clone()).await?;
+            }
         }
 
         // connect to the websocket client

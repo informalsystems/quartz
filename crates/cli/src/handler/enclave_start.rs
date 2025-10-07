@@ -41,7 +41,7 @@ impl Handler for EnclaveStartRequest {
         write_cache_hash_height(trusted_height, trusted_hash, &config).await?;
 
         if config.mock_sgx {
-            let enclave_args: Vec<String> = vec![
+            let mut enclave_args: Vec<String> = vec![
                 "--chain-id".to_string(),
                 config.chain_id.to_string(),
                 "--trusted-height".to_string(),
@@ -57,6 +57,10 @@ impl Handler for EnclaveStartRequest {
                 "--tx-sender".to_string(),
                 config.tx_sender,
             ];
+
+            if self.no_backup {
+                enclave_args.push("--no-backup".to_string());
+            }
 
             // Run quartz enclave and block
             let enclave_child = create_mock_enclave_child(
@@ -113,6 +117,7 @@ impl Handler for EnclaveStartRequest {
                 &config.node_url,
                 &config.ws_url,
                 &config.grpc_url,
+                self.no_backup,
             )
             .await?;
 
@@ -204,6 +209,7 @@ async fn gramine_manifest(
     node_url: &Url,
     ws_url: &Url,
     grpc_url: &Url,
+    no_backup: bool,
 ) -> Result<()> {
     let host = target_lexicon::HOST;
     let arch_libdir = format!(
@@ -235,6 +241,7 @@ async fn gramine_manifest(
             "-Ddcap_verifier_contract={}",
             dcap_verifier_contract
         ))
+        .arg(format!("-Dno_backup={}", no_backup))
         .arg("quartz.manifest.template")
         .arg("quartz.manifest")
         .current_dir(enclave_dir)

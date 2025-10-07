@@ -34,7 +34,8 @@ loader.argv = ["quartz-app-transfers-enclave",
                 "--grpc-url", "{{ grpc_url }}",
                 "--rpc-addr", "0.0.0.0:11090",
                 "--trusted-height", "{{ trusted_height }}",
-                "--trusted-hash", "{{ trusted_hash }}"]
+                "--trusted-hash", "{{ trusted_hash }}",
+                "--no-backup", "{{ no_backup }}"]
 
 fs.mounts = [
   { uri = "file:{{ gramine.runtimedir() }}", path = "/lib" },
