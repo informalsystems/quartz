@@ -273,6 +273,11 @@ pub struct EnclaveStartArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bin_path: Option<PathBuf>,
+
+    /// Disable backup/restore; do not write sealed backup file
+    #[arg(long, default_value_t = false)]
+    #[serde(skip_serializing_if = "is_false")]
+    pub no_backup: bool,
 }
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize)]
@@ -310,6 +315,11 @@ pub struct DevArgs {
     #[arg(long)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bin_path: Option<PathBuf>,
+
+    /// Disable backup/restore; do not write sealed backup file
+    #[arg(long, default_value_t = false)]
+    #[serde(skip_serializing_if = "is_false")]
+    pub no_backup: bool,
 }
 
 #[serde_as]

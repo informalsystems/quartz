@@ -20,6 +20,7 @@ pub struct DevRequest {
     pub dcap_verifier_contract: Option<AccountId>,
     pub wasm_bin_path: Option<PathBuf>,
     pub bin_path: Option<PathBuf>,
+    pub no_backup: bool,
 }
 
 impl From<DevRequest> for Request {

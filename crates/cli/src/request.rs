@@ -66,6 +66,7 @@ impl TryFrom<Command> for Request {
                     dcap_verifier_contract: args.dcap_verifier_contract,
                     wasm_bin_path: args.contract_deploy.wasm_bin_path,
                     bin_path: args.bin_path,
+                    no_backup: args.no_backup,
                 }
                 .into())
             }
@@ -129,6 +130,7 @@ impl TryFrom<EnclaveCommand> for Request {
                 pccs_url: args.pccs_url,
                 tcbinfo_contract: args.tcbinfo_contract,
                 dcap_verifier_contract: args.dcap_verifier_contract,
+                no_backup: args.no_backup,
             }
             .into()),
         }
