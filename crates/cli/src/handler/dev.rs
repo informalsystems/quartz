@@ -72,9 +72,18 @@ async fn dev_driver(
             DevRebuild::Init => {
                 info!("{}", "Launching quartz app...".green().bold());
 
-                // Build enclave
-                let enclave_build = EnclaveBuildRequest {};
-                enclave_build.handle(&config).await?;
+                // Build enclave unless enclave bin path is provided
+                if args.bin_path.is_none() {
+                    let enclave_build = EnclaveBuildRequest {};
+                    enclave_build.handle(&config).await?;
+                } else {
+                    info!(
+                        "{}",
+                        "bin_path provided - skipping enclave build..."
+                            .green()
+                            .bold()
+                    );
+                }
 
                 // Build contract unless wasm bin path is provided
                 if args.wasm_bin_path.is_none() {
