@@ -928,7 +928,7 @@ dependencies = [
 
 [[package]]
 name = "cw-client"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2548,7 +2548,7 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "ping-pong-contract"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "base64ct",
  "cosmwasm-schema",
@@ -2565,7 +2565,7 @@ dependencies = [
 
 [[package]]
 name = "ping-pong-enclave"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2751,7 +2751,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-common"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "quartz-contract-core",
  "quartz-enclave-core",
@@ -2760,7 +2760,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-contract-core"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "ciborium",
  "cosmwasm-schema",
@@ -2779,7 +2779,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-contract-core-derive"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -2787,7 +2787,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-cw-proof"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "cosmrs",
  "displaydoc",
@@ -2801,7 +2801,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-dcap-verifier-msgs"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -2809,7 +2809,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-enclave-core"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2843,7 +2843,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-proto"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "prost 0.13.5",
  "tonic",
@@ -2852,14 +2852,14 @@ dependencies = [
 
 [[package]]
 name = "quartz-tcbinfo-msgs"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "cosmwasm-schema",
 ]
 
 [[package]]
 name = "quartz-tee-ra"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "der",
  "hex-literal",
@@ -2873,7 +2873,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-tm-prover"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "clap",
  "color-eyre",
@@ -2892,7 +2892,7 @@ dependencies = [
 
 [[package]]
 name = "quartz-tm-stateless-verifier"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "displaydoc",
  "tendermint",
