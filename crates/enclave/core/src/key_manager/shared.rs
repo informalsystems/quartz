@@ -35,12 +35,11 @@ impl<K: KeyManager> KeyManager for SharedKeyManager<K> {
 }
 
 #[async_trait::async_trait]
-impl<K: KeyManager + Import> Import for SharedKeyManager<K> {
+impl<K: KeyManager + Import + Send> Import for SharedKeyManager<K> {
     type Error = K::Error;
 
-    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
-        let km = K::import(data).await?;
-        Ok(Self::wrapping(km))
+    async fn import(&mut self, data: Vec<u8>) -> Result<(), Self::Error> {
+        self.inner.write().await.import(data).await
     }
 }
 
