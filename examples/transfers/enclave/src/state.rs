@@ -28,8 +28,9 @@ pub struct AppCtx {
 impl Import for AppCtx {
     type Error = serde_json::Error;
 
-    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
-        serde_json::from_slice(&data)
+    async fn import(&mut self, data: Vec<u8>) -> Result<(), Self::Error> {
+        *self = serde_json::from_slice(&data)?;
+        Ok(())
     }
 }
 
