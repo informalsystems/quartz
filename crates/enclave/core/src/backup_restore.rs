@@ -42,22 +42,22 @@ impl Export for () {
     }
 }
 
-/// Import bytes as a type. Analogous to deserialization.
+/// Import bytes into an existing instance. Analogous to deserialization/restoration.
 /// `Export` and `Import` implementations must be bijective.
 #[async_trait::async_trait]
-pub trait Import: Sized {
+pub trait Import {
     /// The error type returned by import ops.
     type Error: Send + Sync + Debug;
 
-    /// Import bytes as `Self`.
-    async fn import(data: Vec<u8>) -> Result<Self, Self::Error>;
+    /// Import bytes into `self`, restoring its state.
+    async fn import(&mut self, data: Vec<u8>) -> Result<(), Self::Error>;
 }
 
 #[async_trait::async_trait]
 impl Import for () {
     type Error = ();
 
-    async fn import(_data: Vec<u8>) -> Result<Self, Self::Error> {
+    async fn import(&mut self, _data: Vec<u8>) -> Result<(), Self::Error> {
         Ok(())
     }
 }

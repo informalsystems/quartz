@@ -180,8 +180,9 @@ impl Attestor for DcapAttestor {
 impl Import for DcapAttestor {
     type Error = SerdeError;
 
-    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
-        serde_json::from_slice(&data)
+    async fn import(&mut self, data: Vec<u8>) -> Result<(), Self::Error> {
+        *self = serde_json::from_slice(&data)?;
+        Ok(())
     }
 }
 
@@ -225,8 +226,8 @@ impl Attestor for MockAttestor {
 impl Import for MockAttestor {
     type Error = ();
 
-    async fn import(_data: Vec<u8>) -> Result<Self, Self::Error> {
-        Ok(MockAttestor)
+    async fn import(&mut self, _data: Vec<u8>) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 

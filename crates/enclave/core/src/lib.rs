@@ -310,23 +310,22 @@ where
         sealed_file.read_to_end(&mut backup_ser).await?;
         let backup: DefaultBackup = serde_json::from_slice(&backup_ser)?;
 
-        let imported_store = S::import(backup.store)
+        self.store
+            .import(backup.store)
             .await
             .map_err(|e| anyhow!("store import failed: {e:?}"))?;
-        let imported_key_manager = K::import(backup.key_manager)
+        self.key_manager
+            .import(backup.key_manager)
             .await
             .map_err(|e| anyhow!("key-manager import failed: {e:?}"))?;
-        let imported_attestor = A::import(backup.attestor)
+        self.attestor
+            .import(backup.attestor)
             .await
             .map_err(|e| anyhow!("attestor import failed: {e:?}"))?;
-        let imported_ctx = C::import(backup.ctx)
+        self.ctx
+            .import(backup.ctx)
             .await
             .map_err(|e| anyhow!("ctx import failed: {e:?}"))?;
-
-        self.store = imported_store;
-        self.key_manager = imported_key_manager;
-        self.attestor = imported_attestor;
-        self.ctx = imported_ctx;
 
         // if restored from a previous backup - manually notify host of handshake completion
         self.notifier_tx

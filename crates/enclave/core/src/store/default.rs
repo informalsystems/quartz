@@ -145,17 +145,17 @@ struct StoreDTO {
 impl Import for DefaultStore {
     type Error = Error;
 
-    async fn import(data: Vec<u8>) -> Result<Self, Self::Error> {
+    async fn import(&mut self, data: Vec<u8>) -> Result<(), Self::Error> {
         let dto: StoreDTO = serde_json::from_slice(&data)?;
 
-        Ok(Self {
-            config: Arc::new(RwLock::new(dto.config)),
-            contract: Arc::new(RwLock::new(dto.contract)),
-            nonce: Arc::new(RwLock::new(dto.nonce)),
-            seq_num: Arc::new(RwLock::new(dto.seq_num)),
-            trusted_height: Arc::new(RwLock::new(dto.height)),
-            trusted_hash: Arc::new(RwLock::new(dto.hash)),
-        })
+        *self.config.write().await = dto.config;
+        *self.contract.write().await = dto.contract;
+        *self.nonce.write().await = dto.nonce;
+        *self.seq_num.write().await = dto.seq_num;
+        *self.trusted_height.write().await = dto.height;
+        *self.trusted_hash.write().await = dto.hash;
+
+        Ok(())
     }
 }
 
