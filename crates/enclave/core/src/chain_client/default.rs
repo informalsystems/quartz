@@ -172,23 +172,19 @@ impl ChainClient for DefaultChainClient {
             .await
     }
 
-    async fn wait_for_blocks(&self, blocks: u8) -> Result<(), Self::Error> {
+    async fn wait_for_blocks(&self, mut blocks: u8) -> Result<(), Self::Error> {
         debug!("Waiting for {} blocks", blocks);
-        let (client, driver) = WebSocketClient::new(self.ws_url.to_string().as_str()).await?;
 
+        let (client, driver) = WebSocketClient::new(self.ws_url.to_string().as_str()).await?;
         let driver_handle = tokio::spawn(async move { driver.run().await });
 
         // Subscription functionality
         let mut subs = client.subscribe(EventType::NewBlock.into()).await?;
-
-        // Wait 2 NewBlock events
-        let mut ev_count = 2_i32;
-
         while let Some(res) = subs.next().await {
             let _ev = res?;
-            ev_count -= 1;
-            trace!("Received new block event, {} remaining", ev_count);
-            if ev_count == 0 {
+            blocks -= 1;
+            trace!("Received new block event, {} remaining", blocks);
+            if blocks == 0 {
                 break;
             }
         }
